@@ -1,0 +1,23 @@
+.about-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 3rem 1rem;
+}
+
+.about-wrap h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.about-lead {
+    font-size: 1.1rem;
+    color: #444;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.about-wrap p {
+    color: #666;
+    line-height: 1.7;
+    margin-bottom: 1rem;
+}

@@ -1,0 +1,10 @@
+CREATE TABLE categories (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    royalty_rate DECIMAL(5,4) NOT NULL DEFAULT 0.1000,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE products
+    ADD COLUMN category_id INT UNSIGNED NULL AFTER business_id,
+    ADD CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL;

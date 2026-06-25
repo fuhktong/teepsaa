@@ -1,0 +1,33 @@
+<?php
+session_start();
+require __DIR__ . '/../../config/csrf.php';
+require __DIR__ . '/../../config/db.php';
+
+if (!isset($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
+    header('Location: /login-admin/');
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: /admin/messages/');
+    exit;
+}
+
+csrf_verify();
+
+$threadId = (int)($_POST['thread_id'] ?? 0);
+$action   = $_POST['action'] ?? '';
+
+if (!$threadId || !in_array($action, ['close', 'reopen'], true)) {
+    header('Location: /admin/messages/');
+    exit;
+}
+
+$newStatus = $action === 'close' ? 'closed' : 'open';
+
+$pdo->prepare('UPDATE support_threads SET status = ? WHERE id = ?')
+    ->execute([$newStatus, $threadId]);
+
+$_SESSION['admin_msg_success'] = $action === 'close' ? 'Thread closed.' : 'Thread reopened.';
+header('Location: /admin/messages/thread.php?id=' . $threadId);
+exit;

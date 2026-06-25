@@ -1,0 +1,43 @@
+.account-wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+.account-wrap h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.account-wrap p {
+    color: #666;
+    margin-bottom: 2rem;
+}
+
+.account-links {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.account-btn {
+    display: inline-block;
+    padding: 0.65rem 1.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.95rem;
+    background: #2d3a6b;
+    color: #fff;
+}
+
+.account-btn:hover { background: #1e2a52; }
+
+.account-btn--secondary {
+    background: #fff;
+    color: #2d3a6b;
+    border: 1px solid #2d3a6b;
+}
+
+.account-btn--secondary:hover { background: #f0f2fa; }

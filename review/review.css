@@ -1,0 +1,70 @@
+.review-form {
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Inputs in reverse DOM order (5→1), displayed left-to-right via row-reverse */
+.star-rating {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 0.25rem;
+}
+
+.star-rating input[type="radio"] {
+    display: none;
+}
+
+.star-rating label {
+    font-size: 2.25rem;
+    color: #d1d5db;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.1s;
+}
+
+/* Highlight checked star and all stars to its right (lower values = visually left) */
+.star-rating input[type="radio"]:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+    color: #f59e0b;
+}
+
+.star-hint {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    margin: 0;
+}
+
+.review-comment {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.review-comment:focus {
+    outline: none;
+    border-color: #6b7280;
+}
+
+.btn-submit-review {
+    padding: 0.55rem 1.25rem;
+    background: #2d3a6b;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    align-self: flex-start;
+}
+
+.btn-submit-review:hover {
+    background: #1e2a52;
+}

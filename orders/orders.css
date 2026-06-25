@@ -1,0 +1,28 @@
+.orders-wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+.orders-wrap h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.orders-wrap p {
+    color: #666;
+    margin-bottom: 2rem;
+}
+
+.orders-btn {
+    display: inline-block;
+    padding: 0.65rem 1.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.95rem;
+    background: #2d3a6b;
+    color: #fff;
+}
+
+.orders-btn:hover { background: #1e2a52; }

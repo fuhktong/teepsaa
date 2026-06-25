@@ -1,0 +1,2 @@
+ALTER TABLE vendors ADD COLUMN admin_note TEXT NULL;
+ALTER TABLE orders  ADD COLUMN admin_note TEXT NULL;

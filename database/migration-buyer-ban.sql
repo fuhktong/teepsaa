@@ -1,0 +1,5 @@
+ALTER TABLE buyers
+    ADD COLUMN banned TINYINT(1) NOT NULL DEFAULT 0,
+    ADD COLUMN ban_reason VARCHAR(255) NULL,
+    ADD COLUMN banned_at DATETIME NULL,
+    ADD COLUMN admin_note TEXT NULL;

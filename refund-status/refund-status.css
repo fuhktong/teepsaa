@@ -1,0 +1,6 @@
+/* Refund status bar — reuses .ostatus-* classes from order-status.css */
+/* Override active dot colour to red for refund states */
+.ostatus-step.refund-active .ostatus-dot {
+    background: #ef4444;
+    border-color: #ef4444;
+}

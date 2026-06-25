@@ -1,0 +1,8 @@
+# php_flag / php_value directives require mod_php and do not work with PHP-FPM (MAMP).
+# Session cookie hardening (HttpOnly, SameSite) is handled at the PHP level in production.
+
+# Block direct access to sensitive files
+<FilesMatch "^\.env|\.gitignore|\.log$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

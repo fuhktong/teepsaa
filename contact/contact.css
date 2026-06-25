@@ -1,0 +1,107 @@
+.contact-header {
+    margin-bottom: 1.25rem;
+}
+
+.contact-header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.3rem;
+}
+
+.contact-lead {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.contact-help-note {
+    font-size: 0.875rem;
+    color: #555;
+    margin-bottom: 1.5rem;
+}
+
+.contact-help-note a {
+    color: #2d3a6b;
+}
+
+.contact-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    border-radius: 6px;
+    padding: 0.65rem 1rem;
+    font-size: 0.875rem;
+    margin-bottom: 1.25rem;
+}
+
+.contact-form {
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.contact-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.contact-field label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #111;
+}
+
+.contact-req {
+    color: #e53935;
+}
+
+.contact-field input,
+.contact-field textarea {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #111;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.contact-field input:focus,
+.contact-field textarea:focus {
+    outline: none;
+    border-color: #2d3a6b;
+}
+
+.contact-field textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.contact-hint-text {
+    font-size: 0.78rem;
+    color: #6b7280;
+}
+
+.contact-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.contact-btn {
+    display: inline-block;
+    background: #2d3a6b;
+    color: #fff;
+    padding: 0.55rem 1.4rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.contact-btn:hover {
+    background: #1e2a52;
+}

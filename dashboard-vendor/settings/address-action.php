@@ -1,0 +1,48 @@
+<?php
+session_start();
+require __DIR__ . '/../../config/db.php';
+require __DIR__ . '/../../config/csrf.php';
+
+if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
+    header('Location: /login-vendor/');
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: /dashboard-vendor/settings/?tab=address');
+    exit;
+}
+
+csrf_verify();
+
+$userId      = $_SESSION['user_id'];
+$houseNumber = trim($_POST['house_number'] ?? '');
+$address     = trim($_POST['address'] ?? '');
+$notes       = trim($_POST['address_notes'] ?? '');
+$khan        = trim($_POST['khan'] ?? '');
+$sangkat     = trim($_POST['sangkat'] ?? '');
+$lat         = $_POST['lat'] ?? '';
+$lng         = $_POST['lng'] ?? '';
+
+$latVal = $lat !== '' ? filter_var($lat, FILTER_VALIDATE_FLOAT) : null;
+$lngVal = $lng !== '' ? filter_var($lng, FILTER_VALIDATE_FLOAT) : null;
+
+$stmt = $pdo->prepare('
+    UPDATE businesses
+    SET house_number = ?, address = ?, address_notes = ?, khan = ?, sangkat = ?, lat = ?, lng = ?
+    WHERE user_id = ?
+');
+$stmt->execute([
+    $houseNumber ?: null,
+    $address     ?: null,
+    $notes       ?: null,
+    $khan        ?: null,
+    $sangkat     ?: null,
+    $latVal,
+    $lngVal,
+    $userId,
+]);
+
+$_SESSION['settings_success'] = 'Address updated.';
+header('Location: /dashboard-vendor/settings/?tab=address');
+exit;

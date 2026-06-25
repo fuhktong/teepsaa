@@ -1,0 +1,2 @@
+ALTER TABLE businesses ADD COLUMN royalty_add_on DECIMAL(5,4) NOT NULL DEFAULT 0;
+ALTER TABLE products   ADD COLUMN royalty_add_on DECIMAL(5,4) NOT NULL DEFAULT 0;

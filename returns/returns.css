@@ -1,0 +1,26 @@
+.returns-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 3rem 1rem;
+}
+
+.returns-wrap h1 {
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
+}
+
+.returns-section {
+    margin-bottom: 2rem;
+}
+
+.returns-section h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #111;
+}
+
+.returns-section p {
+    color: #555;
+    line-height: 1.7;
+}

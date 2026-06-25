@@ -1,0 +1,26 @@
+.shipping-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 3rem 1rem;
+}
+
+.shipping-wrap h1 {
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
+}
+
+.shipping-section {
+    margin-bottom: 2rem;
+}
+
+.shipping-section h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #111;
+}
+
+.shipping-section p {
+    color: #555;
+    line-height: 1.7;
+}

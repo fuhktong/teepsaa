@@ -1,0 +1,88 @@
+<?php
+session_start();
+require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/csrf.php';
+
+if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
+    header('Location: /login-buyer/');
+    exit;
+}
+
+$userId  = $_SESSION['user_id'];
+$success = $_SESSION['msg_success'] ?? '';
+$error   = $_SESSION['msg_error'] ?? '';
+unset($_SESSION['msg_success'], $_SESSION['msg_error']);
+
+$pendingThread = $pdo->prepare("SELECT id FROM support_threads WHERE sender_id = ? AND sender_role = 'buyer' AND status = 'pending' LIMIT 1");
+$pendingThread->execute([$userId]);
+$pendingThread = $pendingThread->fetch();
+
+$stmt = $pdo->prepare('
+    SELECT t.id, t.subject, t.status, t.updated_at,
+           (SELECT body FROM support_messages WHERE thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_body,
+           (SELECT sender FROM support_messages WHERE thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_sender,
+           (SELECT COUNT(*) FROM support_messages WHERE thread_id = t.id AND sender = \'admin\' AND read_at IS NULL) AS unread_count
+    FROM support_threads t
+    WHERE t.sender_id = ? AND t.sender_role = \'buyer\'
+    ORDER BY t.updated_at DESC
+');
+$stmt->execute([$userId]);
+$threads = $stmt->fetchAll();
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Messages — teepsaa</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/header/header.css">
+    <link rel="stylesheet" href="/footer/footer.css">
+    <link rel="stylesheet" href="/messages-buyer/messages-buyer.css">
+</head>
+<body>
+
+<?php require __DIR__ . '/../header/header.php'; ?>
+
+<main>
+    <div class="msg-header">
+        <h1>Support</h1>
+        <?php if ($pendingThread): ?>
+            <a href="/messages-buyer/thread.php?id=<?= $pendingThread['id'] ?>" class="msg-contact-btn">View pending request</a>
+        <?php else: ?>
+            <a href="/contact-buyer/" class="msg-contact-btn">Contact Support</a>
+        <?php endif; ?>
+    </div>
+
+    <?php if ($success): ?><p class="msg-success"><?= htmlspecialchars($success) ?></p><?php endif; ?>
+    <?php if ($error): ?><p class="msg-error"><?= htmlspecialchars($error) ?></p><?php endif; ?>
+
+    <?php if (empty($threads)): ?>
+        <p class="msg-empty">No messages yet.</p>
+    <?php else: ?>
+    <div class="thread-list">
+        <?php foreach ($threads as $t): ?>
+        <a href="/messages-buyer/thread.php?id=<?= $t['id'] ?>" class="thread-row <?= $t['unread_count'] > 0 ? 'thread-row--unread' : '' ?>">
+            <?php if ($t['unread_count'] > 0): ?>
+                <span class="thread-unread-dot"></span>
+            <?php else: ?>
+                <span style="width:8px;flex-shrink:0;"></span>
+            <?php endif; ?>
+            <span class="thread-subject"><?= htmlspecialchars($t['subject']) ?></span>
+            <?php if ($t['last_body']): ?>
+            <span class="thread-preview"><?= htmlspecialchars(mb_substr($t['last_body'], 0, 80)) ?></span>
+            <?php endif; ?>
+            <span class="thread-meta">
+                <span class="thread-badge thread-badge--<?= $t['status'] ?>"><?= ucfirst($t['status']) ?></span>
+                <span class="thread-date"><?= date('M j', strtotime($t['updated_at'])) ?></span>
+            </span>
+        </a>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+</main>
+
+<?php require __DIR__ . '/../footer/footer.php'; ?>
+
+</body>
+</html>

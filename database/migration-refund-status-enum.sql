@@ -1,0 +1,1 @@
+ALTER TABLE orders MODIFY COLUMN status ENUM('pending','paid','dispatched','delivered','completed','cancelled','refund_requested','return_approved','refunded','refund_rejected') NOT NULL DEFAULT 'pending';

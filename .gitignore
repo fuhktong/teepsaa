@@ -1,0 +1,22 @@
+# Secrets
+.env
+config/resend.php
+config/db.php
+config/mapbox.php
+
+# Uploads (user content — too large for git)
+uploads/
+
+# Mail log (local dev only)
+mail.log
+
+# Deploy script (contains FTP password)
+deploycode.txt
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp

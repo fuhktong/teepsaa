@@ -1,0 +1,143 @@
+Here's what's now in place:
+
+  - lang/en.php — 100+ keyed strings
+  covering every buyer/vendor/public
+  surface: homepage, search, product,
+  cart, checkout, login, register,
+  orders, wishlist, settings, vendor
+  dashboard, messages, about, footer
+  - lang/km.php — full Khmer
+  translations for every key (these
+  are real Khmer, not
+  machine-translated placeholder text)
+  - Header loader — $t is available on
+  every page that includes
+  header.php, defaulting to Khmer (km)
+  since that's the session default
+
+  Next step when you're ready: wire
+  the strings into the actual pages by
+  replacing hardcoded text like
+  "Featured products" with <?=
+  $t['home_featured'] ?>. We'd tackle
+  one page at a time, starting with
+  the homepage and footer.
+
+✻ Cooked for 3m 27s
+
+※ recap: Building a Khmer/English
+  language toggle. The string files
+  and header loader are done. Next
+  step is wiring the strings into the
+  actual pages, starting with the
+  homepage and footer.
+
+❯ im still not sure what were         
+  building here regarding the         
+  translation toggle. can you explain 
+  in very plain english? im afraid    
+  youre going to change a lot without 
+  me knowing whats happening. also,   
+  i really want to make these changes 
+  very incrementally                  
+  ⎿  ⧉ Selected 1 lines from z-checkli
+     sts/teepsaa-checklist-language.md
+     in Visual Studio Code
+
+⏺ Totally fair. Let me be very clear
+  about what this is and what we've
+  done so far.
+
+  ---
+  What the toggle does in plain
+  English:
+
+  Right now every page has text like
+  "Add to cart", "Your cart is empty",
+  "Checkout" etc. baked directly into
+  the PHP files. A Khmer-speaking
+  buyer sees English everywhere.
+
+  The goal is: when a buyer clicks the
+  🇰🇭 flag in the header, those words
+  switch to Khmer. Click 🇺🇸 and they
+  switch back to English. That's it.
+
+  ---
+  What we've built so far (nothing
+  visible has changed yet):
+
+  1. lang/en.php — a lookup table.
+  Just a PHP file with a list like
+  'add_to_cart' => 'Add to cart'. No
+  page uses it yet.
+  2. lang/km.php — same list but in
+  Khmer. No page uses it yet.
+  3. The header now loads the right
+  file into a variable called $t. But
+  nothing reads from $t yet, so zero
+  pages have changed.
+
+  The pages are 100% identical to
+  before. We just created the
+  dictionary. Nothing is wired in yet.
+
+  ---
+  What "wiring it in" looks like (the
+
+  ---
+  What we've built so far (nothing visible has changed yet):
+  Next step when you're ready: wire the strings into the actual pages by replacing hardcoded text like "Featured products"
+  with <?= $t['home_featured'] ?>. We'd tackle one page at a time, starting with the homepage and footer.
+
+✻ Cooked for 3m 27s
+
+※ recap: Building a Khmer/English language toggle. The string files and header loader are done. Next step is wiring the
+  strings into the actual pages, starting with the homepage and footer.
+
+❯ im still not sure what were building here regarding the translation toggle. can you explain in very plain english? im       
+  afraid youre going to change a lot without me knowing whats happening. also, i really want to make these changes very       
+  incrementally                                                                                                               
+  ⎿  ⧉ Selected 1 lines from z-checklists/teepsaa-checklist-language.md in Visual Studio Code
+
+
+
+⏺ Totally fair. Let me be very clear about what this is and what we've done so far.
+
+  ---
+  What the toggle does in plain English:
+
+  Right now every page has text like "Add to cart", "Your cart is empty", "Checkout" etc. baked directly into the PHP files. A
+  Khmer-speaking buyer sees English everywhere.
+
+  The goal is: when a buyer clicks the 🇰🇭 flag in the header, those words switch to Khmer. Click 🇺🇸 and they switch back to
+  English. That's it.
+
+  ---
+  What we've built so far (nothing visible has changed yet):
+
+  1. lang/en.php — a lookup table. Just a PHP file with a list like 'add_to_cart' => 'Add to cart'. No page uses it yet.
+  2. lang/km.php — same list but in Khmer. No page uses it yet.
+  3. The header now loads the right file into a variable called $t. But nothing reads from $t yet, so zero pages have changed.
+
+  The pages are 100% identical to before. We just created the dictionary. Nothing is wired in yet.
+
+  ---
+  What "wiring it in" looks like (the incremental part):
+
+  Right now a page might say:
+  <h2>Featured products</h2>
+
+  After wiring, it says:
+  <h2><?= $t['home_featured'] ?></h2>
+
+  That's the entire change per string. We'd do one page at a time, you can review each one before we move to the next.
+
+  ---
+  My recommendation for proceeding:
+
+  Start with just the homepage — it has the fewest strings (section headings only: Featured products, Best sellers, etc.). You
+  can see it working in both languages before we touch anything else. Then we do footer, then search, then product page — one
+  at a time.
+
+  Want to start with just the homepage?

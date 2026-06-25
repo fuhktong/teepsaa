@@ -1,0 +1,123 @@
+.ostatus-bar {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.ostatus-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.ostatus-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #d1d5db;
+    background: #fff;
+}
+
+.ostatus-step.done .ostatus-dot {
+    background: #22c55e;
+    border-color: #22c55e;
+}
+
+.ostatus-step.active .ostatus-dot {
+    width: 14px;
+    height: 14px;
+    background: #f97316;
+    border-color: #f97316;
+    box-shadow: 0 0 0 3px rgba(249,115,22,0.15);
+}
+
+.ostatus-label {
+    font-size: 0.62rem;
+    color: #6b7280;
+    text-align: center;
+    line-height: 1.3;
+}
+
+.ostatus-step.active .ostatus-label {
+    color: #f97316;
+    font-weight: 600;
+}
+
+.ostatus-step.done .ostatus-label {
+    color: #16a34a;
+}
+
+.ostatus-line {
+    flex: 1;
+    height: 2px;
+    background: #e5e7eb;
+    margin-top: 5px;
+    min-width: 12px;
+}
+
+.ostatus-line.done {
+    background: #22c55e;
+}
+
+.ostatus-cancelled {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #ef4444;
+    padding: 0.25rem 0;
+}
+
+.toast-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: #16a34a;
+    color: #fff;
+    text-align: center;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    z-index: 9999;
+    transform: translateY(-100%);
+    transition: transform 0.25s ease;
+}
+.toast-bar--visible {
+    transform: translateY(0);
+}
+.toast-bar--error {
+    background: #dc2626;
+}
+.toast-bar a {
+    color: #fff;
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+.btn-refresh {
+    background: none;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 0.25rem;
+    line-height: 0;
+    color: #6b7280;
+    cursor: pointer;
+}
+.btn-refresh:hover {
+    border-color: #6b7280;
+    color: #374151;
+}
+.btn-refresh:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+.btn-refresh svg {
+    display: block;
+}
+@keyframes btn-spin {
+    to { transform: rotate(360deg); }
+}
+.btn-refresh.is-spinning svg {
+    animation: btn-spin 0.7s linear infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+}

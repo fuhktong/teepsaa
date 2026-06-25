@@ -1,0 +1,3 @@
+ALTER TABLE products
+    ADD COLUMN sale_price   DECIMAL(10,2) NULL DEFAULT NULL,
+    ADD COLUMN sale_ends_at DATETIME      NULL DEFAULT NULL;

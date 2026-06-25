@@ -1,0 +1,21 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /api/
+Disallow: /config/
+Disallow: /database/
+Disallow: /cron/
+Disallow: /checkout/
+Disallow: /cart/
+Disallow: /dashboard-buyer/
+Disallow: /dashboard-vendor/
+Disallow: /orders-vendor/
+Disallow: /login-buyer/
+Disallow: /login-vendor/
+Disallow: /login-admin/
+Disallow: /register-buyer/
+Disallow: /register-vendor/
+Disallow: /wishlist/
+Disallow: /messages-buyer/
+Disallow: /messages-vendor/
+
+Sitemap: https://teepsaa.com/sitemap.php
