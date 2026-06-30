@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shipping &amp; Policies — teepsaa</title>
+    <title>Shipping — teepsaa</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -14,7 +14,7 @@
 <?php require __DIR__ . '/../header/header.php'; ?>
 <main>
     <div class="shipping-wrap">
-        <h1>Shipping &amp; Policies</h1>
+        <h1>Shipping</h1>
 
         <div class="shipping-section">
             <h2>Delivery</h2>

@@ -793,12 +793,12 @@ if ($editing) {
         </script>
         <style>
         .variant-row { display:flex; gap:0.5rem; align-items:center; margin-bottom:0.4rem; }
-        .variant-row input[type="text"] { flex:2; min-width:0; padding:0.45rem 0.6rem; border:1px solid #d1d5db; border-radius:5px; font-size:0.875rem; font-family:inherit; }
-        .variant-row input[type="number"] { flex:1; min-width:0; padding:0.45rem 0.6rem; border:1px solid #d1d5db; border-radius:5px; font-size:0.875rem; font-family:inherit; }
+        .variant-row input[type="text"] { flex:2; min-width:0; padding:0.45rem 0.6rem; border:1px solid var(--border-strong); border-radius: var(--radius-sm); font-size:0.875rem; font-family:inherit; }
+        .variant-row input[type="number"] { flex:1; min-width:0; padding:0.45rem 0.6rem; border:1px solid var(--border-strong); border-radius: var(--radius-sm); font-size:0.875rem; font-family:inherit; }
         .variant-row-remove { background:none; border:none; color:#9ca3af; font-size:1.1rem; cursor:pointer; padding:0 0.25rem; line-height:1; }
-        .variant-row-remove:hover { color:#c0392b; }
-        .btn-add-variant { margin-top:0.35rem; padding:0.35rem 0.85rem; font-size:0.85rem; border:1px dashed #d1d5db; border-radius:5px; background:#fff; color:#6b7280; cursor:pointer; font-family:inherit; }
-        .btn-add-variant:hover { border-color:#9ca3af; color:#374151; }
+        .variant-row-remove:hover { color:var(--error-fg); }
+        .btn-add-variant { margin-top:0.35rem; padding:0.35rem 0.85rem; font-size:0.85rem; border:1px dashed var(--border-strong); border-radius: var(--radius-sm); background:#fff; color:var(--text-muted); cursor:pointer; font-family:inherit; }
+        .btn-add-variant:hover { border-color:#9ca3af; color:var(--text-soft); }
         </style>
         <?php else: ?>
         <script>
@@ -982,25 +982,25 @@ if ($editing) {
         })();
         </script>
         <style>
-        .btn-add-variant { margin-top:0.35rem; padding:0.35rem 0.85rem; font-size:0.85rem; border:1px dashed #d1d5db; border-radius:5px; background:#fff; color:#6b7280; cursor:pointer; font-family:inherit; }
-        .btn-add-variant:hover { border-color:#9ca3af; color:#374151; }
-        .option-type-block { border:1px solid #e5e7eb; border-radius:7px; padding:0.85rem; margin-bottom:0.75rem; }
+        .btn-add-variant { margin-top:0.35rem; padding:0.35rem 0.85rem; font-size:0.85rem; border:1px dashed var(--border-strong); border-radius: var(--radius-sm); background:#fff; color:var(--text-muted); cursor:pointer; font-family:inherit; }
+        .btn-add-variant:hover { border-color:#9ca3af; color:var(--text-soft); }
+        .option-type-block { border:1px solid var(--border); border-radius: var(--radius-sm); padding:0.85rem; margin-bottom:0.75rem; }
         .option-type-header { display:flex; gap:0.5rem; align-items:center; margin-bottom:0.6rem; }
-        .option-type-name { flex:1; height:34px; padding:0 0.6rem; border:1px solid #d1d5db; border-radius:5px; font-size:0.875rem; font-family:inherit; }
-        .option-type-remove { padding:0.3rem 0.65rem; border:1px solid #fca5a5; border-radius:5px; background:#fff; color:#dc2626; font-size:0.8rem; cursor:pointer; font-family:inherit; }
+        .option-type-name { flex:1; height:34px; padding:0 0.6rem; border:1px solid var(--border-strong); border-radius: var(--radius-sm); font-size:0.875rem; font-family:inherit; }
+        .option-type-remove { padding:0.3rem 0.65rem; border:1px solid #fca5a5; border-radius: var(--radius-sm); background:#fff; color:#dc2626; font-size:0.8rem; cursor:pointer; font-family:inherit; }
         .option-type-remove:hover { background:#fee2e2; }
         .option-value-list { display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.5rem; }
         .option-value-row { display:flex; gap:0.3rem; align-items:center; }
-        .option-value-input { height:32px; padding:0 0.55rem; border:1px solid #d1d5db; border-radius:5px; font-size:0.875rem; font-family:inherit; width:110px; }
+        .option-value-input { height:32px; padding:0 0.55rem; border:1px solid var(--border-strong); border-radius: var(--radius-sm); font-size:0.875rem; font-family:inherit; width:110px; }
         .option-value-remove { background:none; border:none; color:#9ca3af; font-size:1.1rem; cursor:pointer; padding:0 0.2rem; line-height:1; }
-        .option-value-remove:hover { color:#c0392b; }
-        .btn-add-value { padding:0.25rem 0.6rem; border:1px dashed #d1d5db; border-radius:5px; background:#fff; color:#6b7280; font-size:0.8rem; cursor:pointer; font-family:inherit; }
-        .btn-add-value:hover { border-color:#9ca3af; color:#374151; }
-        .combo-heading { font-size:0.8rem; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:0.04em; margin:0.75rem 0 0.5rem; }
+        .option-value-remove:hover { color:var(--error-fg); }
+        .btn-add-value { padding:0.25rem 0.6rem; border:1px dashed var(--border-strong); border-radius: var(--radius-sm); background:#fff; color:var(--text-muted); font-size:0.8rem; cursor:pointer; font-family:inherit; }
+        .btn-add-value:hover { border-color:#9ca3af; color:var(--text-soft); }
+        .combo-heading { font-size:0.8rem; font-weight:700; color:var(--text-soft); text-transform:uppercase; letter-spacing:0.04em; margin:0.75rem 0 0.5rem; }
         .combo-table { width:100%; border-collapse:collapse; }
-        .combo-th { text-align:left; padding:0.4rem 0.75rem; font-size:0.78rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #e5e7eb; }
+        .combo-th { text-align:left; padding:0.4rem 0.75rem; font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid var(--border); }
         .combo-td { padding:0.4rem 0.75rem; border-bottom:1px solid #f3f4f6; font-size:0.875rem; vertical-align:middle; }
-        .combo-td input { width:90px; padding:0.35rem 0.5rem; border:1px solid #d1d5db; border-radius:5px; font-size:0.875rem; font-family:inherit; }
+        .combo-td input { width:90px; padding:0.35rem 0.5rem; border:1px solid var(--border-strong); border-radius: var(--radius-sm); font-size:0.875rem; font-family:inherit; }
         </style>
         <?php endif; ?>
         <?php endif; ?>

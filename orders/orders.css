@@ -18,11 +18,11 @@
 .orders-btn {
     display: inline-block;
     padding: 0.65rem 1.5rem;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     text-decoration: none;
     font-size: 0.95rem;
-    background: #2d3a6b;
+    background: var(--primary);
     color: #fff;
 }
 
-.orders-btn:hover { background: #1e2a52; }
+.orders-btn:hover { background: var(--primary-hover); }

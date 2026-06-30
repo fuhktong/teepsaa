@@ -47,14 +47,14 @@ $adminTab     = 'banners';
             align-items: center;
             gap: 1rem;
             background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
             padding: 0.75rem 1rem;
         }
         .banner-admin-thumb {
             width: 140px;
             height: 72px;
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             object-fit: cover;
             flex-shrink: 0;
             background: #f3f4f6;
@@ -62,28 +62,28 @@ $adminTab     = 'banners';
         .banner-admin-thumb--empty {
             width: 140px;
             height: 72px;
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             background: #f3f4f6;
             flex-shrink: 0;
         }
         .banner-admin-info { flex: 1; min-width: 0; }
         .banner-admin-info strong { display: block; font-size: 0.95rem; }
-        .banner-admin-info span  { font-size: 0.82rem; color: #6b7280; display: block; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .banner-admin-info span  { font-size: 0.82rem; color: var(--text-muted); display: block; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .banner-admin-controls { display: flex; gap: 0.4rem; align-items: center; flex-shrink: 0; }
         .banner-inactive { opacity: 0.45; }
-        .banner-badge-active   { font-size: 0.75rem; font-weight: 600; color: #15803d; background: #dcfce7; padding: 2px 8px; border-radius: 12px; }
-        .banner-badge-inactive { font-size: 0.75rem; font-weight: 600; color: #92400e; background: #fef3c7; padding: 2px 8px; border-radius: 12px; }
+        .banner-badge-active   { font-size: 0.75rem; font-weight: 600; color: #15803d; background: #dcfce7; padding: 2px 8px; border-radius: var(--radius-lg); }
+        .banner-badge-inactive { font-size: 0.75rem; font-weight: 600; color: #92400e; background: #fef3c7; padding: 2px 8px; border-radius: var(--radius-lg); }
         .banner-sort-btns { display: flex; flex-direction: column; gap: 2px; }
         .banner-sort-btn {
-            background: none; border: 1px solid #d1d5db; border-radius: 4px;
+            background: none; border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
             width: 26px; height: 22px; cursor: pointer; font-size: 0.75rem; line-height: 1;
             display: flex; align-items: center; justify-content: center;
         }
         .banner-sort-btn:hover { background: #f3f4f6; }
         .upload-section {
             background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
             padding: 1.5rem;
         }
         .upload-section h2 { font-size: 1rem; margin-bottom: 1rem; }
@@ -97,25 +97,25 @@ $adminTab     = 'banners';
         .upload-input {
             width: 100%;
             padding: 0.5rem 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-sm);
             font-size: 0.9rem;
         }
-        .upload-hint { font-size: 0.78rem; color: #6b7280; margin-top: 3px; }
+        .upload-hint { font-size: 0.78rem; color: var(--text-muted); margin-top: 3px; }
         .btn {
-            display: inline-block; padding: 0.35rem 0.75rem; border-radius: 6px;
-            border: 1px solid #d1d5db; background: #fff; font-size: 0.85rem;
+            display: inline-block; padding: 0.35rem 0.75rem; border-radius: var(--radius-sm);
+            border: 1px solid var(--border-strong); background: #fff; font-size: 0.85rem;
             cursor: pointer; font-family: inherit; white-space: nowrap;
         }
         .btn:hover { background: #f3f4f6; }
         .btn-primary {
-            background: #2d3a6b; color: #fff; border-color: #2d3a6b;
+            background: var(--primary); color: #fff; border-color: var(--primary);
         }
-        .btn-primary:hover { background: #1e2a52; border-color: #1e2a52; }
+        .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
         .btn-danger { color: #dc2626; border-color: #fca5a5; }
         .btn-danger:hover { background: #fef2f2; }
         .admin-alert {
-            padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem;
+            padding: 0.75rem 1rem; border-radius: var(--radius); font-size: 0.9rem;
         }
         .admin-alert--error   { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
         .admin-alert--success { background: #f0fdf4; color: #15803d; border: 1px solid #86efac; }

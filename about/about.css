@@ -21,3 +21,64 @@
     line-height: 1.7;
     margin-bottom: 1rem;
 }
+
+.about-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.about-section h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.about-section p {
+    margin-bottom: 0;
+}
+
+.about-section a {
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.about-section a:hover {
+    text-decoration: underline;
+}
+
+.about-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2.5rem;
+}
+
+.about-btn {
+    display: inline-block;
+    padding: 0.65rem 1.4rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.about-btn:hover {
+    background: var(--bg-subtle);
+}
+
+.about-btn-primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.about-btn-primary:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}

@@ -25,19 +25,19 @@
 .account-btn {
     display: inline-block;
     padding: 0.65rem 1.5rem;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     text-decoration: none;
     font-size: 0.95rem;
-    background: #2d3a6b;
+    background: var(--primary);
     color: #fff;
 }
 
-.account-btn:hover { background: #1e2a52; }
+.account-btn:hover { background: var(--primary-hover); }
 
 .account-btn--secondary {
     background: #fff;
-    color: #2d3a6b;
-    border: 1px solid #2d3a6b;
+    color: var(--primary);
+    border: 1px solid var(--primary);
 }
 
 .account-btn--secondary:hover { background: #f0f2fa; }

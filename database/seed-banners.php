@@ -77,7 +77,7 @@ $stmt = $pdo->prepare('
 
 echo '<!DOCTYPE html><html><head><meta charset="UTF-8">
 <style>body{font-family:sans-serif;max-width:700px;margin:2rem auto;padding:0 1rem}
-img{width:100%;border-radius:8px;margin:0.5rem 0}
+img{width:100%;border-radius: var(--radius);margin:0.5rem 0}
 .ok{color:#15803d}.err{color:#dc2626}</style></head><body>';
 echo '<h2>Banner Seeder</h2>';
 

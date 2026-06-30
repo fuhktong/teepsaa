@@ -31,7 +31,7 @@
 }
 
 .store-rating-count {
-    color: #6b7280;
+    color: var(--text-muted);
     font-size: 0.85rem;
 }
 
@@ -60,7 +60,7 @@
     width: 100%;
     aspect-ratio: 16 / 9;
     object-fit: cover;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     display: block;
 }
 
@@ -95,7 +95,7 @@
     text-decoration: none;
     color: inherit;
     border: 1px solid #e5e5e5;
-    border-radius: 8px;
+    border-radius: var(--radius);
     overflow: hidden;
     background: #fff;
     transition: box-shadow 0.15s;
@@ -113,7 +113,7 @@
 }
 
 .product-photo--empty {
-    background: #f0f0f0;
+    background: var(--divider);
 }
 
 .product-body {
@@ -148,6 +148,6 @@
 
 .product-stock {
     font-size: 0.78rem;
-    color: #6b7280;
+    color: var(--text-muted);
 }
 

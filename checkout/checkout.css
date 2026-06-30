@@ -1,7 +1,7 @@
 /* Address switcher */
 .checkout-addr-switcher {
-    border: 1px solid #e5e7eb;
-    border-radius: 7px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
     margin-bottom: 1.5rem;
 }
 
@@ -24,13 +24,13 @@
 
 .checkout-addr-change {
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--text-muted);
     text-decoration: underline;
     text-underline-offset: 2px;
 }
 
 .checkout-addr-list {
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--border);
     padding: 0.5rem 0;
 }
 
@@ -48,7 +48,7 @@
 
 .checkout-addr-option-text {
     font-size: 0.875rem;
-    color: #374151;
+    color: var(--text-soft);
     flex: 1;
     min-width: 0;
 }
@@ -56,9 +56,9 @@
 .checkout-addr-default-badge {
     font-size: 0.7rem;
     font-weight: 600;
-    background: #111;
+    background: var(--primary);
     color: #fff;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 0.1rem 0.35rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -68,12 +68,12 @@
 .btn-addr-use {
     flex-shrink: 0;
     padding: 0.35rem 0.8rem;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
     background: #fff;
     font-size: 0.8rem;
     cursor: pointer;
-    color: #374151;
+    color: var(--text-soft);
     white-space: nowrap;
 }
 
@@ -123,23 +123,23 @@
 .checkout-line--sub {
     font-weight: 600;
     color: #111;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--divider);
     margin-top: 0.25rem;
     padding-top: 0.5rem;
 }
 
 .checkout-line--delivery {
-    color: #6b7280;
+    color: var(--text-muted);
     font-size: 0.88rem;
 }
 
 .checkout-line--muted {
-    color: #6b7280;
+    color: var(--text-muted);
     font-size: 0.88rem;
 }
 
 .checkout-line--error {
-    color: #c0392b;
+    color: var(--error-fg);
     font-size: 0.88rem;
 }
 
@@ -153,7 +153,7 @@
     display: flex;
     justify-content: space-between;
     font-size: 0.9rem;
-    color: #6b7280;
+    color: var(--text-muted);
     padding: 0.2rem 0;
 }
 
@@ -172,23 +172,23 @@
 }
 
 .checkout-delivery-est {
-    color: #6b7280;
+    color: var(--text-muted);
 }
 
 .checkout-delivery-note {
     font-size: 0.78rem;
-    color: #6b7280;
+    color: var(--text-muted);
 }
 
 .checkout-cod-note {
     font-size: 0.85rem;
-    color: #374151;
+    color: var(--text-soft);
     margin: 0.5rem 0 0;
     line-height: 1.5;
 }
 
 .checkout-cod-note--est {
-    color: #6b7280;
+    color: var(--text-muted);
     margin-top: 0.25rem;
 }
 
@@ -209,7 +209,7 @@
 
 .grab-notice-modal {
     background: #fff;
-    border-radius: 10px;
+    border-radius: var(--radius);
     padding: 2rem;
     max-width: 420px;
     width: 100%;
@@ -232,37 +232,37 @@
 
 .grab-notice-list li {
     font-size: 0.925rem;
-    color: #374151;
+    color: var(--text-soft);
     line-height: 1.6;
 }
 
 .grab-notice-btn {
     width: 100%;
     padding: 0.75rem;
-    background: #2d3a6b;
+    background: var(--primary);
     color: #fff;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     font-size: 0.95rem;
     cursor: pointer;
     font-family: inherit;
 }
 
 .grab-notice-btn:hover {
-    background: #1e2a52;
+    background: var(--primary-hover);
 }
 
 .checkout-alert {
-    background: #fdecea;
-    color: #c0392b;
-    border-radius: 6px;
+    background: var(--error-bg);
+    color: var(--error-fg);
+    border-radius: var(--radius-sm);
     padding: 0.75rem 1rem;
     font-size: 0.9rem;
     margin-bottom: 1.5rem;
 }
 
 .checkout-instructions--error {
-    color: #c0392b;
+    color: var(--error-fg);
 }
 
 .btn-paid--disabled {
@@ -273,7 +273,7 @@
 .checkout-payment {
     background: #f9f9f9;
     border: 1px solid #e5e5e5;
-    border-radius: 8px;
+    border-radius: var(--radius);
     padding: 1.5rem;
 }
 
@@ -294,19 +294,19 @@
     width: 200px;
     height: 200px;
     margin: 0 auto 1.25rem;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
 }
 
 .aba-qr-placeholder {
     width: 200px;
     height: 200px;
     background: #efefef;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 0.85rem;
-    color: #6b7280;
+    color: var(--text-muted);
     margin: 0 auto 1.25rem;
 }
 
@@ -315,7 +315,7 @@
     box-sizing: border-box;
     padding: 0.6rem 0.75rem;
     border: 1px solid #ddd;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     font-size: 0.875rem;
     font-family: inherit;
     resize: vertical;
@@ -325,27 +325,27 @@
 
 .checkout-notes:focus {
     outline: none;
-    border-color: #2d3a6b;
+    border-color: var(--primary);
 }
 
 .btn-paid {
     width: 100%;
     padding: 0.85rem;
-    background: #2d3a6b;
+    background: var(--primary);
     color: #fff;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     font-size: 1rem;
     cursor: pointer;
 }
 
 .btn-paid:hover {
-    background: #1e2a52;
+    background: var(--primary-hover);
 }
 
 .checkout-note {
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--text-muted);
     margin-top: 0.75rem;
     line-height: 1.5;
     text-align: center;
@@ -369,15 +369,15 @@
 .btn-primary {
     display: inline-block;
     padding: 0.7rem 1.5rem;
-    background: #2d3a6b;
+    background: var(--primary);
     color: #fff;
     text-decoration: none;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     font-size: 0.95rem;
 }
 
 .btn-primary:hover {
-    background: #1e2a52;
+    background: var(--primary-hover);
 }
 
 .checkout-empty {
@@ -385,5 +385,5 @@
 }
 
 .checkout-empty a {
-    color: #2d3a6b;
+    color: var(--primary);
 }

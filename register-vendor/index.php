@@ -2,10 +2,14 @@
 session_start();
 require __DIR__ . '/../config/csrf.php';
 
+$buyerBlocked = false;
 if (isset($_SESSION['user_id'])) {
     $role = $_SESSION['role'] ?? 'buyer';
-    header('Location: ' . ($role === 'vendor' ? '/dashboard-vendor/' : '/dashboard-buyer/'));
-    exit;
+    if ($role === 'vendor') { header('Location: /dashboard-vendor/'); exit; }
+    if ($role === 'admin')  { header('Location: /admin/'); exit; }
+    // A logged-in buyer can't sell — vendor accounts are separate accounts.
+    // Show an explainer instead of silently bouncing to the buyer dashboard.
+    $buyerBlocked = true;
 }
 
 $error = $_SESSION['auth_error'] ?? '';
@@ -28,6 +32,13 @@ unset($_SESSION['auth_error']);
 
 <main>
     <div class="auth-box">
+        <?php if ($buyerBlocked): ?>
+        <h1>Want to sell on teepsaa?</h1>
+        <p class="auth-info">You're signed in with a <strong>buyer</strong> account. Vendor accounts are separate, so to start selling you'll need to register a vendor account with a different email address.</p>
+        <p class="auth-info">Log out first, then create your vendor account.</p>
+        <a class="auth-cta" href="/logout/logout.php?next=/register-vendor/">Log out &amp; register as a vendor</a>
+        <p class="auth-switch">Changed your mind? <a href="/dashboard-buyer/">Back to your account</a></p>
+        <?php else: ?>
         <h1>Register as a vendor</h1>
         <?php if ($error): ?>
             <p class="auth-error"><?= htmlspecialchars($error) ?></p>
@@ -48,6 +59,7 @@ unset($_SESSION['auth_error']);
         </form>
         <p class="auth-tos">By registering you agree to our <a href="/terms/">Terms of Service</a> and <a href="/privacy/">Privacy Policy</a>.</p>
         <p class="auth-switch">Already have an account? <a href="/login-vendor/">Vendor log in</a></p>
+        <?php endif; ?>
     </div>
 </main>
 

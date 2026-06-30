@@ -7,6 +7,13 @@ if (!isset($t)) {
     $t = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km']) ? $lang : 'en') . '.php';
 }
 
+// The header reads the DB for a logged-in user's cart count and unread
+// badges. Static pages (privacy, about, terms, …) don't load the DB
+// config, so ensure $pdo exists when it's actually needed.
+if (!isset($pdo) && !empty($_SESSION['user_id'])) {
+    require_once __DIR__ . '/../config/db.php';
+}
+
 if (!function_exists('_avatar_svg')) {
     function _avatar_svg(int $uid, ?int $colorIdx = null, int $size = 26): string {
         $p = [

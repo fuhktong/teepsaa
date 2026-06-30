@@ -2,7 +2,7 @@
 return [
 
     // ── Header ───────────────────────────────────────────────────────────
-    'search_placeholder' => 'ស្វែងរកតិបសា',
+    'search_placeholder' => 'ស្វែងរកទីផ្សារ',
     'nav_login'          => 'ចូលគណនី',
     'nav_orders'         => 'កម្មង់',
     'nav_wishlist'       => 'បញ្ជីចង់បាន',
@@ -28,15 +28,18 @@ return [
     'footer_your_account'=> 'គណនីរបស់ខ្ញុំ',
     'footer_your_orders' => 'កម្មង់របស់ខ្ញុំ',
     'footer_wishlist'    => 'បញ្ជីចង់បាន',
-    'footer_sell_on'     => 'លក់នៅតិបសា',
+    'footer_sell_on'     => 'លក់នៅទីផ្សារ',
     'footer_about'       => 'អំពី',
     'footer_careers'     => 'ការងារ',
     'footer_help_center' => 'មជ្ឈមណ្ឌលជំនួយ',
-    'footer_returns'     => 'ការប្រគល់ទំនិញ',
-    'footer_shipping'    => 'ការដឹកជញ្ជូន និងគោលការណ៍',
+    'footer_returns'     => 'ការប្រគល់ទំនិញវិញ',
+    'footer_shipping'    => 'ការដឹកជញ្ជូន',
     'footer_privacy'     => 'គោលការណ៍ភាពឯកជន',
     'footer_terms'       => 'លក្ខខណ្ឌប្រើប្រាស់',
-    'footer_copyright'   => 'តិបសា។ រក្សាសិទ្ធិគ្រប់យ៉ាង។',
+    'footer_sign_in'       => 'ចូលគណនី',
+    'footer_create_account'=> 'បង្កើតគណនី',
+    'footer_brand'         => 'ទីផ្សារ',
+    'footer_copyright'   => 'ទីផ្សារ។ រក្សាសិទ្ធិគ្រប់យ៉ាង។',
 
     // ── Homepage sections ────────────────────────────────────────────────
     'home_shop_by_category'  => 'រកទិញតាមប្រភេទ',
@@ -221,7 +224,7 @@ return [
     'messages_pending' => 'មើលសំណើដែលកំពុងរង់ចាំ',
 
     // ── About ────────────────────────────────────────────────────────────
-    'about_title'      => 'អំពីតិបសា',
+    'about_title'      => 'អំពីទីផ្សារ',
     'about_coming_soon'=> 'នឹងមានបន្ថែមទៀតឆាប់ៗ។',
 
     // ── Shared / generic ─────────────────────────────────────────────────

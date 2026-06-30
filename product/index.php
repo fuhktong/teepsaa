@@ -104,33 +104,41 @@ $reviews = $rStmt->fetchAll();
     <link rel="stylesheet" href="/product/product.css">
     <style>
     .variant-selector { margin-bottom: 0.85rem; }
-    .variant-selector-label { font-size: 0.8rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+    .variant-selector-label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
     .variant-options { display: flex; flex-wrap: wrap; gap: 0.4rem; }
     .variant-opt { display: inline-block; }
     .variant-opt input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
     .variant-opt-label {
         display: block;
         padding: 0.35rem 0.85rem;
-        border: 1.5px solid #d1d5db;
-        border-radius: 5px;
+        border: 1.5px solid var(--border-strong);
+        border-radius: var(--radius-sm);
         font-size: 0.875rem;
         cursor: pointer;
         user-select: none;
         transition: border-color 0.1s, background 0.1s;
-        color: #374151;
+        color: var(--text-soft);
     }
     .variant-opt input[type="radio"]:checked + .variant-opt-label {
-        border-color: #2d3a6b;
-        background: #2d3a6b;
+        border-color: var(--primary);
+        background: var(--primary);
         color: #fff;
     }
     .variant-opt--oos .variant-opt-label {
-        color: #d1d5db;
+        color: var(--border-strong);
         border-color: #f3f4f6;
         background: #f9fafb;
         cursor: not-allowed;
         text-decoration: line-through;
     }
+    .cart-select-hint {
+        color: var(--error-fg);
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-top: 0.6rem;
+    }
+    .variant-selector--error .variant-selector-label { color: var(--error-fg); }
+    .variant-selector--error .variant-opt-label { border-color: var(--error-fg); }
     </style>
 </head>
 <body>
@@ -226,11 +234,12 @@ $reviews = $rStmt->fetchAll();
 
                 <?php if ($isBuyer): ?>
                     <?php $outOfStock = empty($variants) && $product['stock'] < 1; ?>
-                    <button type="submit" class="btn-add-cart <?= $outOfStock ? 'btn-add-cart--disabled' : '' ?>"
+                    <button type="submit" class="btn-add-cart <?= $outOfStock ? 'btn-add-cart--disabled' : (!empty($variants) ? 'btn-add-cart--pending' : '') ?>"
                             id="add-cart-btn"
-                            <?= ($outOfStock || !empty($variants)) ? 'disabled' : '' ?>>
+                            <?= $outOfStock ? 'disabled' : '' ?>>
                         Add to cart
                     </button>
+                    <p class="cart-select-hint" id="cart-select-hint" style="display:none"></p>
                 <?php else: ?>
                     <a href="/login-buyer/" class="btn-login-to-buy">Login to buy</a>
                 <?php endif; ?>
@@ -402,36 +411,73 @@ $reviews = $rStmt->fetchAll();
         return typeIds.every(function(tid){ return selections[tid] != null; });
     }
 
+    function setPending(p) { if (addBtn) addBtn.classList.toggle('btn-add-cart--pending', p); }
+
     function updateState() {
         if (!allSelected()) {
             stockEl.textContent = 'Select options';
-            if (addBtn) addBtn.disabled = true;
             if (variantIn) variantIn.value = '';
+            setPending(true);
             return;
         }
         var key   = comboKey();
         var match = variantLookup[key];
         if (!match) {
             stockEl.textContent = 'Combination not available';
-            if (addBtn) addBtn.disabled = true;
             if (variantIn) variantIn.value = '';
+            setPending(true);
             return;
         }
         if (variantIn) variantIn.value = match.variant_id;
         stockEl.textContent = match.stock > 0 ? 'In stock' : 'Out of stock';
         var override = match.price_override !== null ? parseFloat(match.price_override) : null;
         setPriceHtml(override);
-        if (addBtn) addBtn.disabled = match.stock < 1;
+        setPending(match.stock < 1);
     }
+
+    var formEl     = document.getElementById('cart-form');
+    var hintEl     = document.getElementById('cart-select-hint');
+    var TYPE_NAMES = <?= json_encode(array_column($optionTypes, 'name', 'id')) ?>;
 
     document.querySelectorAll('[data-type-id]').forEach(function(optDiv) {
         var tid = parseInt(optDiv.dataset.typeId);
         optDiv.querySelectorAll('input[type="radio"]').forEach(function(r) {
             r.addEventListener('change', function() {
                 selections[tid] = parseInt(this.dataset.valId);
+                var sel = optDiv.closest('.variant-selector');
+                if (sel) sel.classList.remove('variant-selector--error');
+                if (hintEl) hintEl.style.display = 'none';
                 updateState();
             });
         });
+    });
+
+    if (formEl) formEl.addEventListener('submit', function(e) {
+        if (hintEl) hintEl.style.display = 'none';
+        document.querySelectorAll('.variant-selector--error').forEach(function(s){ s.classList.remove('variant-selector--error'); });
+
+        var missing = typeIds.filter(function(tid){ return selections[tid] == null; });
+        if (missing.length) {
+            e.preventDefault();
+            var names = missing.map(function(tid){ return TYPE_NAMES[tid]; });
+            if (hintEl) { hintEl.textContent = 'Please select ' + names.join(' and ') + '.'; hintEl.style.display = ''; }
+            missing.forEach(function(tid){
+                var div = document.querySelector('[data-type-id="' + tid + '"]');
+                var sel = div && div.closest('.variant-selector');
+                if (sel) sel.classList.add('variant-selector--error');
+            });
+            return;
+        }
+        var match = variantLookup[comboKey()];
+        if (!match) {
+            e.preventDefault();
+            if (hintEl) { hintEl.textContent = "That combination isn't available."; hintEl.style.display = ''; }
+            return;
+        }
+        if (match.stock < 1) {
+            e.preventDefault();
+            if (hintEl) { hintEl.textContent = 'Sorry, that option is out of stock.'; hintEl.style.display = ''; }
+        }
     });
 
     updateState();
@@ -458,14 +504,34 @@ $reviews = $rStmt->fetchAll();
         }
     }
 
+    var formEl = document.getElementById('cart-form');
+    var hintEl = document.getElementById('cart-select-hint');
+    var groupEl = document.querySelector('.variant-selector');
+
     document.querySelectorAll('input[name="variant_id"]').forEach(function (r) {
         r.addEventListener('change', function () {
             var stock    = parseInt(this.dataset.stock, 10);
             var rawPrice = this.dataset.price;
             stockEl.textContent = stock > 0 ? 'In stock' : 'Out of stock';
             setPriceHtml(rawPrice !== '' ? parseFloat(rawPrice) : null);
-            if (addBtn) addBtn.disabled = stock < 1;
+            if (addBtn) addBtn.classList.toggle('btn-add-cart--pending', stock < 1);
+            if (groupEl) groupEl.classList.remove('variant-selector--error');
+            if (hintEl) hintEl.style.display = 'none';
         });
+    });
+
+    if (formEl) formEl.addEventListener('submit', function (e) {
+        var checked = document.querySelector('input[name="variant_id"]:checked');
+        if (!checked) {
+            e.preventDefault();
+            if (hintEl) { hintEl.textContent = 'Please select a variant.'; hintEl.style.display = ''; }
+            if (groupEl) groupEl.classList.add('variant-selector--error');
+            return;
+        }
+        if (parseInt(checked.dataset.stock, 10) < 1) {
+            e.preventDefault();
+            if (hintEl) { hintEl.textContent = 'Sorry, that variant is out of stock.'; hintEl.style.display = ''; }
+        }
     });
 })();
 <?php endif; ?>
@@ -499,7 +565,7 @@ $reviews = $rStmt->fetchAll();
     max-width: 90vw;
     max-height: 88vh;
     object-fit: contain;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     display: block;
     user-select: none;
 }
@@ -529,7 +595,7 @@ $reviews = $rStmt->fetchAll();
     line-height: 1;
     cursor: pointer;
     padding: 0.4rem 0.7rem;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     opacity: 0.75;
 }
 .lightbox-prev:hover,
@@ -557,11 +623,11 @@ $reviews = $rStmt->fetchAll();
     gap: 0.4rem;
     margin-top: 0.6rem;
     background: none;
-    border: 1.5px solid #d1d5db;
-    border-radius: 6px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--radius-sm);
     padding: 0.45rem 0.9rem;
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--text-muted);
     cursor: pointer;
     font-family: inherit;
     transition: border-color 0.15s, color 0.15s;

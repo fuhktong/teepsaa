@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200..900;1,200..900&family=Pacifico&family=Metal&display=swap");
 
 *,
 *::before,
@@ -8,11 +8,61 @@
   padding: 0;
 }
 
+/* ── Design tokens ─────────────────────────────────────────────────
+   Single source of truth for color, status, and radius. Pages should
+   reference these vars rather than hardcoding hex values. */
+:root {
+  /* Brand / actions */
+  --primary: #cc8a6c;
+  --primary-hover: #b06f52;
+  --primary-rgb:
+    204, 138, 108; /* keep in sync with --primary, for tinted shadows/overlays */
+
+  /* Text */
+  --text: #111;
+  --text-soft: #374151;
+  --text-muted: #6b7280;
+
+  /* Surfaces */
+  --surface: #fff;
+  --bg: #f9f9f9;
+  --bg-subtle: #f5f5f5;
+
+  /* Borders */
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+  --divider: #f0f0f0;
+
+  /* Status */
+  --success-bg: #e6f4ea;
+  --success-fg: #1e7e34;
+  --error-bg: #fdecea;
+  --error-fg: #c0392b;
+
+  /* Radius */
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  /* Footer — terracotta top into warm charcoal */
+  --footer-top: var(--primary);
+  --footer-bottom: #333;
+
+  /* Engraved footer text — matches the logo ink (#4a4a4a) */
+  --footer-ink: #4a4a4a;
+  --footer-ink-rgb: 74, 74, 74;
+
+  /* Signature / script accent — swap the first name to restyle */
+  --font-script: "Pacifico", cursive;
+  --font-script-km: "Metal", cursive;
+}
+
 body {
   font-family: "Source Sans 3", "Optima", "Candara", sans-serif;
   font-size: 1rem;
-  color: #111;
-  background: #f9f9f9;
+  color: var(--text);
+  background: var(--bg);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -27,7 +77,6 @@ a {
   position: relative;
   width: 100%;
   height: 380px;
-  border-radius: 12px;
   overflow: hidden;
   margin-bottom: 2rem;
   background: #1a1a1a;
@@ -183,7 +232,7 @@ main {
   font-size: 0.68rem;
   font-weight: 700;
   padding: 0.15rem 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   margin-left: 0.5rem;
   vertical-align: middle;
   text-transform: uppercase;

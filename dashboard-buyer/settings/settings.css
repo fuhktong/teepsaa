@@ -14,9 +14,9 @@
 .settings-nav a {
     display: block;
     padding: 0.55rem 0.8rem;
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     text-decoration: none;
-    color: #374151;
+    color: var(--text-soft);
     font-size: 0.9rem;
     margin-bottom: 2px;
 }
@@ -45,7 +45,7 @@
     font-size: 1.1rem;
     margin-bottom: 1.25rem;
     padding-bottom: 0.6rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--border);
 }
 
 .settings-field {
@@ -62,7 +62,7 @@
     display: block;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #374151;
+    color: var(--text-soft);
     margin-bottom: 0.35rem;
 }
 
@@ -73,8 +73,8 @@
 .settings-field select {
     width: 100%;
     padding: 0.55rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 5px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
     font-size: 0.9rem;
     background: #fff;
     box-sizing: border-box;
@@ -85,7 +85,7 @@
 .settings-field input:focus,
 .settings-field select:focus {
     outline: none;
-    border-color: #6b7280;
+    border-color: var(--text-muted);
 }
 
 .settings-field select {
@@ -98,50 +98,50 @@
 
 .settings-field input[readonly] {
     background: #f9fafb;
-    color: #6b7280;
+    color: var(--text-muted);
     cursor: not-allowed;
 }
 
 .field-hint {
     font-size: 0.78rem;
-    color: #6b7280;
+    color: var(--text-muted);
     margin-top: 0.3rem;
 }
 
 .btn-save {
     padding: 0.55rem 1.3rem;
-    background: #111;
+    background: var(--primary);
     color: #fff;
     border: none;
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     font-size: 0.875rem;
     cursor: pointer;
     margin-top: 0.25rem;
 }
 
 .btn-save:hover {
-    background: #333;
+    background: var(--primary-hover);
 }
 
 .settings-msg {
     padding: 0.5rem 0.75rem;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 0.875rem;
     margin-bottom: 1.25rem;
 }
 
-.settings-msg--success { background: #e6f4ea; color: #1e7e34; }
-.settings-msg--error   { background: #fdecea; color: #c0392b; }
+.settings-msg--success { background: var(--success-bg); color: var(--success-fg); }
+.settings-msg--error   { background: var(--error-bg); color: var(--error-fg); }
 
 .danger-zone {
     border: 1px solid #fca5a5;
-    border-radius: 8px;
+    border-radius: var(--radius);
     padding: 1.25rem;
 }
 
 .danger-zone p {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--text-muted);
     margin: 0 0 1rem;
 }
 
@@ -150,7 +150,7 @@
     background: #dc2626;
     color: #fff;
     border: none;
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     font-size: 0.875rem;
     cursor: pointer;
 }
@@ -161,20 +161,20 @@
 
 .form-divider {
     border: none;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--border);
     margin: 1.5rem 0;
 }
 
 #addr-map {
     height: 260px;
-    border-radius: 6px;
-    border: 1px solid #d1d5db;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
     margin-bottom: 0.5rem;
 }
 
 .pin-label {
     font-size: 0.78rem;
-    color: #6b7280;
+    color: var(--text-muted);
     margin: 0 0 0.5rem;
 }
 
@@ -196,14 +196,14 @@
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
 }
 
 .avatar-preview--empty {
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    background: #2d3a6b;
+    background: var(--primary);
     color: #fff;
     font-size: 1.5rem;
     font-weight: 700;
@@ -217,16 +217,16 @@
     display: inline-block;
     padding: 0.45rem 1rem;
     background: #f3f4f6;
-    border: 1px solid #d1d5db;
-    border-radius: 5px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
     font-size: 0.875rem;
     font-weight: 600;
-    color: #374151;
+    color: var(--text-soft);
     cursor: pointer;
 }
 
 .btn-upload:hover {
-    background: #e5e7eb;
+    background: var(--border);
 }
 
 /* Address display + edit toggle */
@@ -242,13 +242,13 @@
 
 .addr-display-notes {
     font-size: 0.82rem;
-    color: #6b7280;
+    color: var(--text-muted);
     margin: 0;
 }
 
 .addr-display-empty {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--text-muted);
     margin: 0 0 0.75rem;
 }
 
@@ -261,7 +261,7 @@
     align-items: center;
     gap: 0.3rem;
     font-size: 0.82rem;
-    color: #6b7280;
+    color: var(--text-muted);
     cursor: pointer;
     list-style: none;
     user-select: none;
@@ -278,7 +278,7 @@
 .addr-edit-body {
     margin-top: 1rem;
     padding-top: 1rem;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--border);
 }
 
 /* Address book */
@@ -290,8 +290,8 @@
 }
 
 .saved-addr-item {
-    border: 1px solid #e5e7eb;
-    border-radius: 7px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
     padding: 0.9rem 1rem;
 }
 
@@ -312,9 +312,9 @@
 .saved-addr-badge {
     font-size: 0.7rem;
     font-weight: 600;
-    background: #111;
+    background: var(--primary);
     color: #fff;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 0.1rem 0.4rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -322,13 +322,13 @@
 
 .saved-addr-text {
     font-size: 0.875rem;
-    color: #374151;
+    color: var(--text-soft);
     margin: 0 0 0.1rem;
 }
 
 .saved-addr-notes {
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--text-muted);
     margin: 0 0 0.6rem;
 }
 
@@ -341,12 +341,12 @@
 
 .btn-addr-action {
     padding: 0.35rem 0.8rem;
-    border-radius: 4px;
-    border: 1px solid #d1d5db;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
     background: #fff;
     font-size: 0.8rem;
     cursor: pointer;
-    color: #374151;
+    color: var(--text-soft);
 }
 
 .btn-addr-action:hover {
@@ -364,8 +364,8 @@
 
 #new-addr-map {
     height: 240px;
-    border-radius: 6px;
-    border: 1px solid #d1d5db;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
     margin-bottom: 0.5rem;
     margin-top: 0.5rem;
 }
@@ -424,21 +424,21 @@
   display: block;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-soft);
   margin-bottom: 0.45rem;
 }
 
 .btn-remove-avatar {
   background: none;
-  border: 1px solid #d1d5db;
-  border-radius: 5px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
   padding: 0.45rem 0.75rem;
   font-size: 0.875rem;
-  color: #c0392b;
+  color: var(--error-fg);
   cursor: pointer;
 }
 
 .btn-remove-avatar:hover {
-  background: #fdecea;
-  border-color: #c0392b;
+  background: var(--error-bg);
+  border-color: var(--error-fg);
 }

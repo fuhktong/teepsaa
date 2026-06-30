@@ -6,6 +6,7 @@
     font-size: 1.4rem;
     font-weight: 700;
     margin: 0 0 1.5rem;
+    padding-left: 1.5rem;
     color: #111;
 }
 
@@ -23,28 +24,29 @@
 .btn-browse {
     display: inline-block;
     padding: 0.6rem 1.4rem;
-    background: #2d3a6b;
+    background: var(--primary);
     color: #fff;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     text-decoration: none;
     font-size: 0.9rem;
     font-weight: 600;
 }
 
 .btn-browse:hover {
-    background: #1e2a52;
+    background: var(--primary-hover);
 }
 
 .wishlist-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 1.25rem;
+    padding: 0 1.5rem;
 }
 
 .wl-card {
     position: relative;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     overflow: hidden;
     background: #fff;
     transition: box-shadow 0.15s;
@@ -96,12 +98,12 @@
 .wl-card-price {
     font-size: 0.95rem;
     font-weight: 700;
-    color: #2d3a6b;
+    color: var(--primary);
 }
 
 .wl-card-seller {
     font-size: 0.78rem;
-    color: #6b7280;
+    color: var(--text-muted);
 }
 
 .wl-card-rating {
@@ -123,12 +125,12 @@
     height: 26px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.9);
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #6b7280;
+    color: var(--text-muted);
     padding: 0;
 }
 

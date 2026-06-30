@@ -189,15 +189,27 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
     <link rel="stylesheet" href="/footer/footer.css">
     <style>
 
-        .home-section { margin: 1.5rem 0 2rem; }
+        /* Homepage-only: let the banner span the full container, edge-to-edge
+           and flush under the header. Side gutter moves onto each section. */
+        main { padding: 0; }
+        .banner-carousel {
+            border-radius: 0;
+            width: 100vw;
+            margin-left: calc(50% - 50vw);
+            margin-right: calc(50% - 50vw);
+        }
+
+        .home-section { margin: 3rem 0; padding: 0 1.5rem; }
+        .home-section:first-of-type { margin-top: 2rem; }
 
         .home-section-head {
             display: flex;
             align-items: baseline;
             justify-content: space-between;
-            padding: 0 0.25rem 0.75rem;
+            padding: 0 0.25rem 1rem;
         }
-        .home-section-head h2 { font-size: 1.1rem; font-weight: 700; }
+        .home-section-head h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; display: flex; align-items: center; gap: 0.6rem; }
+        .home-section-head h2::before { content: ""; flex-shrink: 0; width: 4px; height: 1.05em; background: var(--primary); border-radius: var(--radius-pill); }
         .home-section-head h2 a { color: inherit; text-decoration: none; }
         .home-section-head h2 a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
@@ -207,7 +219,11 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
             display: flex;
             gap: 1rem;
             overflow-x: auto;
-            padding-bottom: 0.5rem;
+            /* overflow-x:auto also clips vertically, shearing the hover shadow.
+               Padding enlarges the clip-box; equal negative margins cancel it
+               so card alignment and section spacing stay unchanged. */
+            margin: -12px -1.5rem -38px;
+            padding: 12px 1.5rem 38px;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
             -ms-overflow-style: none;
@@ -221,8 +237,8 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
             z-index: 10;
             width: 36px;
             height: 200px;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
             background: rgba(255,255,255,0.92);
             box-shadow: 0 2px 8px rgba(0,0,0,0.12);
             cursor: pointer;
@@ -243,12 +259,15 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
             text-decoration: none;
             color: inherit;
             background: #fff;
-            border: 1px solid #e5e5e5;
-            border-radius: 8px;
+            border-radius: var(--radius);
             overflow: hidden;
-            transition: box-shadow 0.15s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+            transition: box-shadow 0.18s;
         }
-        .home-scroll .product-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+        .home-scroll .product-card:hover {
+            box-shadow: 4px 4px 6px rgba(var(--primary-rgb), 0.55),
+                        6px 10px 16px rgba(0,0,0,0.10);
+        }
 
         .card-photo { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
         .card-photo--empty { background: #efefef; aspect-ratio: 1; }
@@ -262,12 +281,12 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
         .home-scroll .cat-preview {
             flex: 0 0 200px;
             position: relative;
-            border-radius: 8px;
+            border-radius: var(--radius);
             overflow: hidden;
             aspect-ratio: 1;
             text-decoration: none;
             display: block;
-            background: #e5e7eb;
+            background: var(--border);
         }
         .cat-preview-img {
             width: 100%;
@@ -296,7 +315,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
         .cat-preview-placeholder {
             width: 100%;
             height: 100%;
-            background: #d1d5db;
+            background: var(--border-strong);
         }
     </style>
 </head>

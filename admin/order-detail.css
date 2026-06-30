@@ -12,7 +12,7 @@
 
 .od-back {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--text-muted);
   text-decoration: none;
   white-space: nowrap;
   margin-right: 0.25rem;
@@ -40,8 +40,8 @@
 }
 
 .od-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 1rem 1.25rem;
   background: #fff;
 }
@@ -75,7 +75,7 @@
 
 .od-table-head {
   padding: 0 0 0.45rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border);
   font-size: 0.72rem;
   color: #9ca3af;
   text-transform: uppercase;
@@ -93,7 +93,7 @@
 
 /* Totals block */
 .od-totals {
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border);
   padding-top: 0.6rem;
   display: flex;
   flex-direction: column;
@@ -104,7 +104,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--text-soft);
 }
 
 .od-total-row--note {
@@ -124,7 +124,7 @@
   justify-content: space-between;
   align-items: baseline;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--text-soft);
   padding: 0.3rem 0;
   border-bottom: 1px solid #f3f4f6;
   gap: 1rem;

@@ -199,11 +199,11 @@ $imgFail = count($imgLog) - $imgOk;
   body { font-family: -apple-system, sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1.5rem; color: #111; line-height: 1.5; }
   h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
   .subtitle { color: #6b7280; font-size: 0.9rem; margin-bottom: 2rem; }
-  .alert { padding: 0.8rem 1.1rem; border-radius: 6px; margin-bottom: 1.5rem; font-size: 0.9rem; }
+  .alert { padding: 0.8rem 1.1rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem; font-size: 0.9rem; }
   .alert-warn  { background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; }
   .alert-error { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
   .alert-ok    { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
-  .vendor-block { border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1.25rem; overflow: hidden; }
+  .vendor-block { border: 1px solid #e5e7eb; border-radius: var(--radius); margin-bottom: 1.25rem; overflow: hidden; }
   .vendor-head { background: #f9fafb; padding: 0.75rem 1.1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; }
   .vendor-name { font-weight: 700; font-size: 0.95rem; }
   .vendor-email { font-size: 0.8rem; color: #6b7280; }
@@ -214,11 +214,11 @@ $imgFail = count($imgLog) - $imgOk;
   .product-list li .img-ok  { color: #16a34a; font-size: 0.78rem; }
   .product-list li .img-fail { color: #dc2626; font-size: 0.78rem; }
   .product-price { color: #6b7280; }
-  .creds { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.9rem 1.1rem; margin-top: 2rem; font-size: 0.875rem; }
+  .creds { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); padding: 0.9rem 1.1rem; margin-top: 2rem; font-size: 0.875rem; }
   .creds h2 { font-size: 0.95rem; margin: 0 0 0.5rem; }
-  .creds code { background: #e2e8f0; padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.85rem; }
+  .creds code { background: #e2e8f0; padding: 0.15rem 0.4rem; border-radius: var(--radius-sm); font-size: 0.85rem; }
   .stats { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
-  .stat { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.65rem 1rem; }
+  .stat { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: var(--radius-sm); padding: 0.65rem 1rem; }
   .stat-num { font-size: 1.4rem; font-weight: 700; }
   .stat-label { font-size: 0.75rem; color: #6b7280; }
 </style>

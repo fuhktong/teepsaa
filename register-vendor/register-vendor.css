@@ -23,7 +23,7 @@
 .auth-box input {
     padding: 0.6rem 0.75rem;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 1rem;
     width: 100%;
 }
@@ -31,20 +31,20 @@
 .auth-box button {
     margin-top: 1rem;
     padding: 0.7rem;
-    background: #111;
+    background: var(--primary);
     color: #fff;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 1rem;
     cursor: pointer;
 }
 
 .auth-box button:hover {
-    background: #333;
+    background: var(--primary-hover);
 }
 
 .auth-error {
-    color: #c0392b;
+    color: var(--error-fg);
     font-size: 0.9rem;
     margin-bottom: 0.75rem;
 }
@@ -52,15 +52,38 @@
 .auth-tos {
     margin-top: 0.85rem;
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--text-muted);
 }
 
 .auth-tos a {
-    color: #6b7280;
+    color: var(--text-muted);
 }
 
 .auth-switch {
     margin-top: 1rem;
     font-size: 0.9rem;
     color: #555;
+}
+
+.auth-info {
+    font-size: 0.95rem;
+    color: #444;
+    line-height: 1.6;
+    margin-bottom: 0.85rem;
+}
+
+.auth-cta {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.7rem 1.25rem;
+    background: var(--primary);
+    color: #fff;
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.auth-cta:hover {
+    background: var(--primary-hover);
 }

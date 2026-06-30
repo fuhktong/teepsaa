@@ -19,7 +19,7 @@
 
 .star-rating label {
     font-size: 2.25rem;
-    color: #d1d5db;
+    color: var(--border-strong);
     cursor: pointer;
     line-height: 1;
     transition: color 0.1s;
@@ -41,8 +41,8 @@
 .review-comment {
     width: 100%;
     padding: 0.6rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
     font-size: 0.875rem;
     font-family: inherit;
     resize: vertical;
@@ -51,20 +51,20 @@
 
 .review-comment:focus {
     outline: none;
-    border-color: #6b7280;
+    border-color: var(--text-muted);
 }
 
 .btn-submit-review {
     padding: 0.55rem 1.25rem;
-    background: #2d3a6b;
+    background: var(--primary);
     color: #fff;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 0.875rem;
     cursor: pointer;
     align-self: flex-start;
 }
 
 .btn-submit-review:hover {
-    background: #1e2a52;
+    background: var(--primary-hover);
 }

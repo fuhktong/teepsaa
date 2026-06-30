@@ -106,8 +106,8 @@ $adminTab     = 'buyer-map';
 .buyer-map-toggle {
     display: flex;
     gap: 0;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
     overflow: hidden;
 }
 .map-view-btn {
@@ -115,15 +115,15 @@ $adminTab     = 'buyer-map';
     font-size: 0.8rem;
     border: none;
     background: #fff;
-    color: #6b7280;
+    color: var(--text-muted);
     cursor: pointer;
     font-family: inherit;
 }
 .map-view-btn + .map-view-btn {
-    border-left: 1px solid #d1d5db;
+    border-left: 1px solid var(--border-strong);
 }
 .map-view-btn.active {
-    background: #2d3a6b;
+    background: var(--primary);
     color: #fff;
 }
 </style>

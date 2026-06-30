@@ -15,7 +15,7 @@
 
 .popup-modal {
     background: #fff;
-    border-radius: 10px;
+    border-radius: var(--radius);
     max-width: 580px;
     width: 100%;
     max-height: 90vh;
@@ -33,7 +33,7 @@
     font-size: 1.4rem;
     line-height: 1;
     cursor: pointer;
-    color: #6b7280;
+    color: var(--text-muted);
 }
 
 .popup-close:hover { color: #111; }
@@ -54,7 +54,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #6b7280;
+    color: var(--text-muted);
     margin-bottom: 0.4rem;
 }
 
@@ -69,7 +69,7 @@
 
 .popup-row:last-child { border-bottom: none; }
 
-.popup-row-label { color: #6b7280; }
+.popup-row-label { color: var(--text-muted); }
 .popup-row-value { font-weight: 500; }
 
 .popup-items {
@@ -82,10 +82,10 @@
 .popup-items th {
     text-align: left;
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--text-muted);
     font-weight: 600;
     padding: 0 0 0.4rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--border);
 }
 
 .popup-items td {
@@ -101,7 +101,7 @@
     display: flex;
     justify-content: space-between;
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--text-muted);
     padding: 0.2rem 0;
 }
 
@@ -112,12 +112,12 @@
     font-size: 0.95rem;
     padding-top: 0.6rem;
     margin-top: 0.25rem;
-    border-top: 2px solid #e5e7eb;
+    border-top: 2px solid var(--border);
 }
 
 .popup-divider {
     border: none;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--border);
     margin: 1.25rem 0;
 }
 
@@ -139,8 +139,8 @@
     width: 160px;
     height: 160px;
     object-fit: cover;
-    border-radius: 5px;
-    border: 1px solid #e5e7eb;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
 }
 
 .popup-status-bar {
@@ -158,21 +158,21 @@
     flex: 1;
     font-size: 0.85rem;
     padding: 0.4rem 0.65rem;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
     outline: none;
 }
 
 .popup-inline-form input[type="url"]:focus {
-    border-color: #6b7280;
+    border-color: var(--text-muted);
 }
 
 .popup-payout-box {
     margin-top: 0.75rem;
     padding-top: 0.75rem;
-    border-top: 1px dashed #e5e7eb;
+    border-top: 1px dashed var(--border);
 }
 
 .popup-total--payout {
-    color: #1e7e34;
+    color: var(--success-fg);
 }

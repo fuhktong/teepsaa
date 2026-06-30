@@ -33,9 +33,12 @@ return [
     'footer_careers'     => 'Careers',
     'footer_help_center' => 'Help Center',
     'footer_returns'     => 'Returns',
-    'footer_shipping'    => 'Shipping & Policies',
+    'footer_shipping'    => 'Shipping',
     'footer_privacy'     => 'Privacy Policy',
     'footer_terms'       => 'Terms of Service',
+    'footer_sign_in'       => 'Sign in',
+    'footer_create_account'=> 'Create account',
+    'footer_brand'         => 'teepsaa',
     'footer_copyright'   => 'teepsaa. All rights reserved.',
 
     // ── Homepage sections ────────────────────────────────────────────────
