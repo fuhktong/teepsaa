@@ -28,6 +28,7 @@ function redirect_banners(string $msg = '', bool $error = false): never {
 
 match ($action) {
     'upload'    => do_upload(),
+    'edit'      => do_edit($id),
     'delete'    => do_delete($id),
     'toggle'    => do_toggle($id),
     'move_up'   => do_move($id, 'up'),
@@ -35,15 +36,14 @@ match ($action) {
     default     => redirect_banners(),
 };
 
-function do_upload(): void {
-    global $pdo;
-
+// Validate + store an uploaded image, returning its new filename (or null
+// on no upload). Redirects with an error on a bad file.
+function save_banner_image(): ?string {
     if (empty($_FILES['image']['tmp_name'])) {
-        redirect_banners('No file uploaded.', true);
+        return null;
     }
-
-    $file   = $_FILES['image'];
-    $mime   = mime_content_type($file['tmp_name']);
+    $file    = $_FILES['image'];
+    $mime    = mime_content_type($file['tmp_name']);
     $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
     if (!array_key_exists($mime, $allowed)) {
         redirect_banners('File must be JPEG, PNG, or WebP.', true);
@@ -51,31 +51,74 @@ function do_upload(): void {
     if ($file['size'] > 5 * 1024 * 1024) {
         redirect_banners('File must be under 5 MB.', true);
     }
-
-    $ext      = $allowed[$mime];
-    $filename = 'banner_' . bin2hex(random_bytes(8)) . '.' . $ext;
-    $dest     = __DIR__ . '/../uploads/' . $filename;
-
-    if (!move_uploaded_file($file['tmp_name'], $dest)) {
+    $filename = 'banner_' . bin2hex(random_bytes(8)) . '.' . $allowed[$mime];
+    if (!move_uploaded_file($file['tmp_name'], __DIR__ . '/../uploads/' . $filename)) {
         redirect_banners('Failed to save file.', true);
     }
+    return $filename;
+}
 
-    $title    = trim($_POST['title']    ?? '');
-    $subtitle = trim($_POST['subtitle'] ?? '');
-    $link     = trim($_POST['link_url'] ?? '');
+function do_upload(): void {
+    global $pdo;
+
+    $filename = save_banner_image();
+    if ($filename === null) {
+        redirect_banners('No file uploaded.', true);
+    }
+
+    $title       = trim($_POST['title']       ?? '');
+    $titleKm     = trim($_POST['title_km']    ?? '');
+    $subtitle    = trim($_POST['subtitle']    ?? '');
+    $subtitleKm  = trim($_POST['subtitle_km'] ?? '');
+    $link        = trim($_POST['link_url']    ?? '');
 
     $maxSort = (int) $pdo->query('SELECT COALESCE(MAX(sort_order), 0) FROM banners')->fetchColumn();
 
-    $stmt = $pdo->prepare('INSERT INTO banners (title, subtitle, link_url, image_filename, sort_order) VALUES (?, ?, ?, ?, ?)');
+    $stmt = $pdo->prepare('INSERT INTO banners (title, title_km, subtitle, subtitle_km, link_url, image_filename, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)');
     $stmt->execute([
-        $title    ?: null,
-        $subtitle ?: null,
-        $link     ?: null,
+        $title      ?: null,
+        $titleKm    ?: null,
+        $subtitle   ?: null,
+        $subtitleKm ?: null,
+        $link       ?: null,
         $filename,
         $maxSort + 1,
     ]);
 
     redirect_banners('Banner uploaded.');
+}
+
+function do_edit(int $id): void {
+    global $pdo;
+    if (!$id) redirect_banners('Invalid banner.', true);
+
+    $row = $pdo->prepare('SELECT image_filename FROM banners WHERE id = ?');
+    $row->execute([$id]);
+    $banner = $row->fetch();
+    if (!$banner) redirect_banners('Banner not found.', true);
+
+    $title      = trim($_POST['title']       ?? '');
+    $titleKm    = trim($_POST['title_km']    ?? '');
+    $subtitle   = trim($_POST['subtitle']    ?? '');
+    $subtitleKm = trim($_POST['subtitle_km'] ?? '');
+    $link       = trim($_POST['link_url']    ?? '');
+
+    // Image is optional on edit — only replace if a new one was uploaded.
+    $newImage = save_banner_image();
+
+    $stmt = $pdo->prepare('UPDATE banners SET title = ?, title_km = ?, subtitle = ?, subtitle_km = ?, link_url = ?' . ($newImage ? ', image_filename = ?' : '') . ' WHERE id = ?');
+    $params = [$title ?: null, $titleKm ?: null, $subtitle ?: null, $subtitleKm ?: null, $link ?: null];
+    if ($newImage) $params[] = $newImage;
+    $params[] = $id;
+    $stmt->execute($params);
+
+    // Remove the old image file if it was replaced.
+    if ($newImage && $banner['image_filename'] && $banner['image_filename'] !== $newImage) {
+        $old = __DIR__ . '/../uploads/' . $banner['image_filename'];
+        if (is_file($old)) @unlink($old);
+    }
+
+    redirect_banners('Banner updated.');
 }
 
 function do_delete(int $id): void {

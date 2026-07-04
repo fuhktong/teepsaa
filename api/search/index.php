@@ -81,9 +81,9 @@ $orderBy = match($sort) {
 $fetchParams = array_merge($params, [$limit + 1, $offset]);
 
 $stmt = $pdo->prepare("
-    SELECT p.id, p.name, p.description, p.price, p.sale_price, p.sale_ends_at,
+    SELECT p.id, p.name, p.name_km, p.description, p.description_km, p.price, p.sale_price, p.sale_ends_at,
            pp.filename AS photo,
-           b.id AS business_id, b.name AS business_name,
+           b.id AS business_id, b.name AS business_name, b.name_km AS business_name_km,
            COALESCE(rv.avg_rating, 0) AS avg_rating,
            COALESCE(rv.review_count, 0) AS review_count
     FROM products p
@@ -101,6 +101,11 @@ $hasMore  = count($rows) > $limit;
 $products = array_slice($rows, 0, $limit);
 
 foreach ($products as &$p) {
+    // Resolve display language server-side so the client just uses name/description
+    $p['name']          = lang_field($p, 'name');
+    $p['description']   = lang_field($p, 'description');
+    $p['business_name'] = pick_lang($p['business_name'], $p['business_name_km'] ?? null);
+    unset($p['name_km'], $p['description_km'], $p['business_name_km']);
     $p['id']           = (int)$p['id'];
     $p['business_id']  = (int)$p['business_id'];
     $p['price']        = (float)$p['price'];

@@ -40,15 +40,13 @@ foreach ($buyers as $buyer) {
         $rows .= '<li>' . htmlspecialchars($item['name']) . ($item['quantity'] > 1 ? ' &times; ' . (int)$item['quantity'] : '') . '</li>';
     }
 
-    $greeting = $buyer['name'] ? htmlspecialchars($buyer['name']) : 'there';
-    $html = notification_email_html(
-        'You left something in your cart',
-        "Hi {$greeting}, you have item" . (count($items) > 1 ? 's' : '') . " waiting in your teepsaa cart:<ul style=\"margin:12px 0;padding-left:20px\">{$rows}</ul>Your cart is saved — head back whenever you're ready.",
-        'Go to my cart',
-        SITE_URL . '/cart/'
-    );
-
-    send_email($buyer['email'], 'Your teepsaa cart is waiting', $html);
+    $cartList = "<ul style=\"margin:12px 0;padding-left:20px\">{$rows}</ul>";
+    [$subj, $html] = render_email_template($pdo, 'abandoned_cart', [
+        'name'      => $buyer['name'] ? htmlspecialchars($buyer['name']) : 'អ្នក',
+        'cart_list' => $cartList,
+        'cta_url'   => SITE_URL . '/cart/',
+    ]);
+    if ($html !== '') send_email($buyer['email'], $subj, $html);
     notify($pdo, 'buyer', $buyer['id'], 'abandoned_cart', 'You have items waiting in your cart.', '/cart/');
     $pdo->prepare('UPDATE buyers SET abandoned_cart_notified_at = NOW() WHERE id = ?')->execute([$buyer['id']]);
 }

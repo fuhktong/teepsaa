@@ -42,7 +42,7 @@ unset($_SESSION['auth_error']);
 
 <main>
     <div class="auth-box">
-        <h1>Reset password</h1>
+        <h1><?= $t['rp_title'] ?></h1>
         <?php if (!$valid): ?>
             <p class="auth-error"><?= $errorMsg ?></p>
         <?php else: ?>
@@ -52,11 +52,11 @@ unset($_SESSION['auth_error']);
             <form method="POST" action="/reset-password-vendor/reset.php">
                 <?= csrf_input() ?>
                 <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
-                <label for="password">New password</label>
+                <label for="password"><?= $t['settings_new_pw'] ?></label>
                 <input type="password" id="password" name="password" required minlength="8" autofocus>
-                <label for="password_confirm">Confirm new password</label>
+                <label for="password_confirm"><?= $t['settings_confirm_pw'] ?></label>
                 <input type="password" id="password_confirm" name="password_confirm" required minlength="8">
-                <button type="submit">Reset password</button>
+                <button type="submit"><?= $t['rp_title'] ?></button>
             </form>
         <?php endif; ?>
     </div>

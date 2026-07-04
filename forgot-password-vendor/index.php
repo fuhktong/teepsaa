@@ -28,22 +28,22 @@ unset($_SESSION['auth_error'], $_SESSION['auth_success']);
 
 <main>
     <div class="auth-box">
-        <h1>Forgot your password?</h1>
+        <h1><?= $t['fp_title'] ?></h1>
         <?php if ($success): ?>
             <p class="auth-success"><?= htmlspecialchars($success) ?></p>
-            <p class="auth-switch"><a href="/login-vendor/">&larr; Back to log in</a></p>
+            <p class="auth-switch"><a href="/login-vendor/">&larr; <?= $t['auth_back_login'] ?></a></p>
         <?php else: ?>
             <?php if ($error): ?>
                 <p class="auth-error"><?= htmlspecialchars($error) ?></p>
             <?php endif; ?>
-            <p class="auth-hint">Enter your vendor email address and we'll send you a reset link.</p>
+            <p class="auth-hint"><?= $t['fp_hint_vendor'] ?></p>
             <form method="POST" action="/forgot-password-vendor/request.php">
                 <?= csrf_input() ?>
-                <label for="email">Email</label>
+                <label for="email"><?= $t['login_email'] ?></label>
                 <input type="email" id="email" name="email" required autofocus>
-                <button type="submit">Send reset link</button>
+                <button type="submit"><?= $t['fp_send'] ?></button>
             </form>
-            <p class="auth-switch"><a href="/login-vendor/">&larr; Back to log in</a></p>
+            <p class="auth-switch"><a href="/login-vendor/">&larr; <?= $t['auth_back_login'] ?></a></p>
         <?php endif; ?>
     </div>
 </main>

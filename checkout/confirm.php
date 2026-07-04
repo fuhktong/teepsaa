@@ -248,20 +248,16 @@ try {
                 $unitWord = $units !== 1 ? 'units' : 'unit';
                 notify($pdo, 'vendor', (int)$lp['vendor_id'], 'low_stock',
                     'Low stock: "' . $lp['name'] . '" — ' . $units . ' ' . $unitWord . ' remaining.',
-                    '/products/?action=edit&id=' . $lp['id']
+                    '/products/?action=edit&id=' . $lp['id'],
+                    ['name' => $lp['name'], 'units' => $units]
                 );
-                send_email(
-                    $lp['vendor_email'],
-                    'Low stock alert — ' . $lp['name'],
-                    notification_email_html(
-                        'Low stock alert',
-                        'Hi ' . htmlspecialchars($lp['vendor_name']) . ', <strong>'
-                            . htmlspecialchars($lp['name']) . '</strong> has only <strong>'
-                            . $units . ' ' . $unitWord . ' remaining</strong>. Restock soon to keep selling.',
-                        'Update stock',
-                        'https://teepsaa.com/products/?action=edit&id=' . $lp['id']
-                    )
-                );
+                [$subj, $html] = render_email_template($pdo, 'low_stock', [
+                    'name'    => htmlspecialchars($lp['vendor_name']),
+                    'product' => htmlspecialchars($lp['name']),
+                    'units'   => $units,
+                    'cta_url' => 'https://teepsaa.com/products/?action=edit&id=' . $lp['id'],
+                ]);
+                if ($html !== '') send_email($lp['vendor_email'], $subj, $html);
                 $pdo->prepare('UPDATE products SET low_stock_notified_at = NOW() WHERE id = ?')
                     ->execute([$lp['id']]);
             }
@@ -284,23 +280,18 @@ try {
         }
     }
     $notesRow = $buyerNotes
-        ? '<p style="margin:16px 0 0;font-size:0.85rem;color:#555"><strong>Delivery note:</strong> ' . htmlspecialchars($buyerNotes) . '</p>'
+        ? '<p style="margin:16px 0 0;font-size:0.85rem;color:#555"><strong>កំណត់ចំណាំដឹកជញ្ជូន · Delivery note:</strong> ' . htmlspecialchars($buyerNotes) . '</p>'
         : '';
-    $emailBody = '<table style="width:100%;border-collapse:collapse">' . $itemLines . '</table>'
+    // Shared order summary (item names + prices) — shown once, under the Khmer block.
+    $emailSummary = '<table style="width:100%;border-collapse:collapse">' . $itemLines . '</table>'
         . '<hr style="border:none;border-top:1px solid #eee;margin:16px 0">'
-        . '<p style="margin:0;font-size:0.95rem"><strong>Total: $' . number_format($grandTotal, 2) . '</strong></p>'
-        . $notesRow
-        . '<p style="margin:16px 0 0;font-size:0.85rem;color:#666">We\'ll verify your ABA payment and confirm your order within 1 hour. You\'ll receive another email once confirmed.</p>';
-    send_email(
-        $buyer['email'],
-        'Order received — teepsaa',
-        notification_email_html(
-            'We received your order!',
-            $emailBody,
-            'View my orders',
-            'https://teepsaa.com/dashboard-buyer/'
-        )
-    );
+        . '<p style="margin:0;font-size:0.95rem"><strong>សរុប · Total: $' . number_format($grandTotal, 2) . '</strong></p>'
+        . $notesRow;
+    [$subj, $html] = render_email_template($pdo, 'order_received', [
+        'summary' => $emailSummary,
+        'cta_url' => 'https://teepsaa.com/dashboard-buyer/',
+    ]);
+    if ($html !== '') send_email($buyer['email'], $subj, $html);
 
 } catch (Exception $e) {
     $pdo->rollBack();

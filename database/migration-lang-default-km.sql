@@ -1,0 +1,2 @@
+ALTER TABLE buyers  MODIFY COLUMN lang ENUM('en','km') NOT NULL DEFAULT 'km';
+ALTER TABLE vendors MODIFY COLUMN lang ENUM('en','km') NOT NULL DEFAULT 'km';

@@ -23,25 +23,27 @@ try {
 <?php require __DIR__ . '/../header/header.php'; ?>
 <main>
     <div class="careers-wrap">
-        <h1>Careers</h1>
-        <p class="careers-lead">We're building the go-to marketplace for Phnom Penh. If you'd like to be part of it, we'd love to hear from you.</p>
+        <?php $empLabels = ['Full-time'=>$t['emp_full_time'], 'Part-time'=>$t['emp_part_time'], 'Contract'=>$t['emp_contract'], 'Internship'=>$t['emp_internship'], 'Freelance'=>$t['emp_freelance']]; ?>
+        <h1><?= $t['careers_title'] ?></h1>
+        <p class="careers-lead"><?= $t['careers_lead'] ?></p>
 
         <?php if (empty($jobs)): ?>
-        <p class="careers-empty">No open positions at this time. Check back soon.</p>
+        <p class="careers-empty"><?= $t['careers_empty'] ?></p>
         <?php else: ?>
         <ul class="job-list">
             <?php foreach ($jobs as $j): ?>
+            <?php $empDisp = $j['employment_type'] ? ($empLabels[$j['employment_type']] ?? $j['employment_type']) : ''; ?>
             <li class="job-card">
                 <div class="job-card-head">
-                    <h2 class="job-card-title"><?= htmlspecialchars($j['title']) ?></h2>
+                    <h2 class="job-card-title"><?= htmlspecialchars(lang_field($j, 'title')) ?></h2>
                     <?php if ($j['location'] || $j['employment_type']): ?>
-                    <p class="job-card-meta"><?= $j['location'] ? htmlspecialchars($j['location']) : '' ?><?= ($j['location'] && $j['employment_type']) ? ' · ' : '' ?><?= $j['employment_type'] ? htmlspecialchars($j['employment_type']) : '' ?></p>
+                    <p class="job-card-meta"><?= $j['location'] ? htmlspecialchars(lang_field($j, 'location')) : '' ?><?= ($j['location'] && $j['employment_type']) ? ' · ' : '' ?><?= htmlspecialchars($empDisp) ?></p>
                     <?php endif; ?>
                 </div>
-                <?php if (!empty($j['description'])): ?>
-                <p class="job-card-desc"><?= nl2br(htmlspecialchars($j['description'])) ?></p>
+                <?php if (lang_field($j, 'description')): ?>
+                <p class="job-card-desc"><?= nl2br(htmlspecialchars(lang_field($j, 'description'))) ?></p>
                 <?php endif; ?>
-                <a class="job-card-apply" href="/careers/apply.php?job=<?= $j['id'] ?>">Apply for this role</a>
+                <a class="job-card-apply" href="/careers/apply.php?job=<?= $j['id'] ?>"><?= $t['careers_apply'] ?></a>
             </li>
             <?php endforeach; ?>
         </ul>

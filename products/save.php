@@ -28,7 +28,9 @@ if (empty($ownedIds)) {
 }
 
 $name        = trim($_POST['name'] ?? '');
+$nameKm      = trim($_POST['name_km'] ?? '');
 $description = trim($_POST['description'] ?? '');
+$descriptionKm = trim($_POST['description_km'] ?? '');
 $price       = (float)($_POST['price'] ?? 0);
 $stock       = max(0, (int)($_POST['stock'] ?? 0));
 $deliveryMethod = in_array($_POST['delivery_method'] ?? '', ['bike','tuktuk']) ? $_POST['delivery_method'] : 'bike';
@@ -121,6 +123,7 @@ function save_gallery_photos(PDO $pdo, string $uploadDir, array $allowed, int $p
 function save_variants(PDO $pdo, int $productId): void {
     $variantIds    = $_POST['variant_id']    ?? [];
     $variantLabels = $_POST['variant_label'] ?? [];
+    $variantLabelsKm = $_POST['variant_label_km'] ?? [];
     $variantStocks = $_POST['variant_stock'] ?? [];
     $variantPrices = $_POST['variant_price'] ?? [];
 
@@ -130,6 +133,7 @@ function save_variants(PDO $pdo, int $productId): void {
         $label = trim($rawLabel);
         if ($label === '') continue;
 
+        $labelKm = trim($variantLabelsKm[$i] ?? '') ?: null;
         $vStock = max(0, (int)($variantStocks[$i] ?? 0));
         $vPriceRaw = $variantPrices[$i] ?? '';
         $vPrice = ($vPriceRaw !== '' && is_numeric($vPriceRaw) && (float)$vPriceRaw >= 0)
@@ -138,12 +142,12 @@ function save_variants(PDO $pdo, int $productId): void {
         $vId = (int)($variantIds[$i] ?? 0);
 
         if ($vId) {
-            $pdo->prepare('UPDATE product_variants SET label=?, stock=?, price_override=?, sort_order=? WHERE id=? AND product_id=?')
-                ->execute([$label, $vStock, $vPrice, $i, $vId, $productId]);
+            $pdo->prepare('UPDATE product_variants SET label=?, label_km=?, stock=?, price_override=?, sort_order=? WHERE id=? AND product_id=?')
+                ->execute([$label, $labelKm, $vStock, $vPrice, $i, $vId, $productId]);
             $submittedIds[] = $vId;
         } else {
-            $pdo->prepare('INSERT INTO product_variants (product_id, label, stock, price_override, sort_order) VALUES (?,?,?,?,?)')
-                ->execute([$productId, $label, $vStock, $vPrice, $i]);
+            $pdo->prepare('INSERT INTO product_variants (product_id, label, label_km, stock, price_override, sort_order) VALUES (?,?,?,?,?,?)')
+                ->execute([$productId, $label, $labelKm, $vStock, $vPrice, $i]);
             $submittedIds[] = (int)$pdo->lastInsertId();
         }
     }
@@ -169,20 +173,22 @@ function save_option_types_and_variants(PDO $pdo, int $productId): void {
     $submittedVariantIds = [];
     $tidToDbId           = [];
     $valueLabelMap       = [];
+    $valueLabelKmMap     = [];
 
     if ($data && !empty($data['optionTypes'])) {
         foreach ($data['optionTypes'] as $order => $typeData) {
             $typeName = trim($typeData['name'] ?? '');
             if (!$typeName) continue;
+            $typeNameKm = trim($typeData['name_km'] ?? '') ?: null;
             $typeDbId = (int)($typeData['id'] ?? 0);
 
             if ($typeDbId) {
-                $pdo->prepare('UPDATE product_option_types SET name=?, display_order=? WHERE id=? AND product_id=?')
-                    ->execute([$typeName, $order, $typeDbId, $productId]);
+                $pdo->prepare('UPDATE product_option_types SET name=?, name_km=?, display_order=? WHERE id=? AND product_id=?')
+                    ->execute([$typeName, $typeNameKm, $order, $typeDbId, $productId]);
                 $savedTypeId = $typeDbId;
             } else {
-                $pdo->prepare('INSERT INTO product_option_types (product_id, name, display_order) VALUES (?,?,?)')
-                    ->execute([$productId, $typeName, $order]);
+                $pdo->prepare('INSERT INTO product_option_types (product_id, name, name_km, display_order) VALUES (?,?,?,?)')
+                    ->execute([$productId, $typeName, $typeNameKm, $order]);
                 $savedTypeId = (int)$pdo->lastInsertId();
             }
             $submittedTypeIds[] = $savedTypeId;
@@ -190,20 +196,24 @@ function save_option_types_and_variants(PDO $pdo, int $productId): void {
             foreach (($typeData['values'] ?? []) as $vOrder => $valData) {
                 $valLabel = trim($valData['label'] ?? '');
                 if (!$valLabel) continue;
+                $valLabelKm = trim($valData['label_km'] ?? '') ?: null;
                 $valDbId = (int)($valData['id'] ?? 0);
                 $valTid  = (int)($valData['tid'] ?? 0);
 
                 if ($valDbId) {
-                    $pdo->prepare('UPDATE product_option_values SET label=?, display_order=? WHERE id=? AND option_type_id=?')
-                        ->execute([$valLabel, $vOrder, $valDbId, $savedTypeId]);
+                    $pdo->prepare('UPDATE product_option_values SET label=?, label_km=?, display_order=? WHERE id=? AND option_type_id=?')
+                        ->execute([$valLabel, $valLabelKm, $vOrder, $valDbId, $savedTypeId]);
                     $savedValId = $valDbId;
                 } else {
-                    $pdo->prepare('INSERT INTO product_option_values (option_type_id, label, display_order) VALUES (?,?,?)')
-                        ->execute([$savedTypeId, $valLabel, $vOrder]);
+                    $pdo->prepare('INSERT INTO product_option_values (option_type_id, label, label_km, display_order) VALUES (?,?,?,?)')
+                        ->execute([$savedTypeId, $valLabel, $valLabelKm, $vOrder]);
                     $savedValId = (int)$pdo->lastInsertId();
                 }
                 if ($valTid) $tidToDbId[$valTid] = $savedValId;
-                $valueLabelMap[$savedValId] = $valLabel;
+                $valueLabelMap[$savedValId]   = $valLabel;
+                // For the composed Khmer variant label, fall back to the English
+                // value label when this value has no Khmer translation.
+                $valueLabelKmMap[$savedValId] = $valLabelKm ?: $valLabel;
             }
         }
     }
@@ -224,30 +234,36 @@ function save_option_types_and_variants(PDO $pdo, int $productId): void {
         $rawPrice = $variantData['price'] ?? null;
         $price   = ($rawPrice !== null && $rawPrice !== '' && is_numeric($rawPrice)) ? (float)$rawPrice : null;
 
-        $valueIds   = [];
-        $labelParts = [];
+        $valueIds     = [];
+        $labelParts   = [];
+        $labelKmParts = [];
         foreach (($variantData['valueRefs'] ?? []) as $ref) {
             $tid      = (int)($ref['tid']  ?? 0);
             $refDbId  = (int)($ref['dbId'] ?? 0);
             $resolved = $tidToDbId[$tid] ?? ($refDbId ?: 0);
             if ($resolved) {
-                $valueIds[]   = $resolved;
-                $labelParts[] = $valueLabelMap[$resolved] ?? '';
+                $valueIds[]     = $resolved;
+                $labelParts[]   = $valueLabelMap[$resolved] ?? '';
+                $labelKmParts[] = $valueLabelKmMap[$resolved] ?? ($valueLabelMap[$resolved] ?? '');
             }
         }
         if (empty($valueIds)) continue;
 
-        $label = implode(' / ', array_filter($labelParts));
+        $label   = implode(' / ', array_filter($labelParts));
+        // Compose the Khmer label from the values; store NULL if it ends up
+        // identical to the English label (no real translation → fall back).
+        $labelKm = implode(' / ', array_filter($labelKmParts));
+        $labelKm = ($labelKm !== '' && $labelKm !== $label) ? $labelKm : null;
         if ($varDbId) {
             $check = $pdo->prepare('SELECT id FROM product_variants WHERE id=? AND product_id=?');
             $check->execute([$varDbId, $productId]);
             if (!$check->fetch()) continue;
-            $pdo->prepare('UPDATE product_variants SET label=?, stock=?, price_override=? WHERE id=?')
-                ->execute([$label, $stock, $price, $varDbId]);
+            $pdo->prepare('UPDATE product_variants SET label=?, label_km=?, stock=?, price_override=? WHERE id=?')
+                ->execute([$label, $labelKm, $stock, $price, $varDbId]);
             $savedVarId = $varDbId;
         } else {
-            $pdo->prepare('INSERT INTO product_variants (product_id, label, stock, price_override, sort_order) VALUES (?,?,?,?,0)')
-                ->execute([$productId, $label, $stock, $price]);
+            $pdo->prepare('INSERT INTO product_variants (product_id, label, label_km, stock, price_override, sort_order) VALUES (?,?,?,?,?,0)')
+                ->execute([$productId, $label, $labelKm, $stock, $price]);
             $savedVarId = (int)$pdo->lastInsertId();
         }
 
@@ -284,8 +300,8 @@ if ($action === 'gallery_upload') {
 }
 
 if ($action === 'add') {
-    $stmt = $pdo->prepare('INSERT INTO products (business_id, category_id, name, description, price, stock, delivery_method, sale_price, sale_ends_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-    $stmt->execute([$businessId, $categoryId, $name, $description, $price, $stock, $deliveryMethod, $salePrice, $saleEndsAt]);
+    $stmt = $pdo->prepare('INSERT INTO products (business_id, category_id, name, name_km, description, description_km, price, stock, delivery_method, sale_price, sale_ends_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $stmt->execute([$businessId, $categoryId, $name, $nameKm ?: null, $description, $descriptionKm ?: null, $price, $stock, $deliveryMethod, $salePrice, $saleEndsAt]);
     $newId = (int)$pdo->lastInsertId();
     if ($photo) {
         $pdo->prepare('INSERT INTO product_photos (product_id, filename, sort_order, is_primary) VALUES (?, ?, 0, 1)')
@@ -312,8 +328,8 @@ if ($action === 'add') {
 
     $active = ($_POST['active'] ?? '0') === '1' ? 1 : 0;
 
-    $stmt = $pdo->prepare('UPDATE products SET category_id=?, name=?, description=?, price=?, stock=?, delivery_method=?, active=?, sale_price=?, sale_ends_at=? WHERE id=?');
-    $stmt->execute([$categoryId, $name, $description, $price, $stock, $deliveryMethod, $active, $salePrice, $saleEndsAt, $productId]);
+    $stmt = $pdo->prepare('UPDATE products SET category_id=?, name=?, name_km=?, description=?, description_km=?, price=?, stock=?, delivery_method=?, active=?, sale_price=?, sale_ends_at=? WHERE id=?');
+    $stmt->execute([$categoryId, $name, $nameKm ?: null, $description, $descriptionKm ?: null, $price, $stock, $deliveryMethod, $active, $salePrice, $saleEndsAt, $productId]);
     // If stock was replenished above threshold, clear the notification flag so vendor gets alerted again if it drops low again
     $pdo->prepare('UPDATE products SET low_stock_notified_at = NULL WHERE id = ? AND stock > low_stock_threshold')
         ->execute([$productId]);

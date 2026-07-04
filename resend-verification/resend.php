@@ -3,7 +3,7 @@ session_start();
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/app.php';
-require __DIR__ . '/../config/mail.php';
+require __DIR__ . '/../config/notify.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: /login-buyer/');
@@ -49,14 +49,12 @@ $pdo->prepare("UPDATE {$table} SET verify_token = ?, verify_code_expires = ? WHE
 $_SESSION['dev_otp'] = $code;
 
 $name = htmlspecialchars($user['name'] ?? '', ENT_QUOTES);
-send_email(
-    $user['email'],
-    "Your Teepsaa verification code",
-    "<p>Hi {$name},</p>"
-    . "<p>Your verification code is:</p>"
-    . "<p style=\"font-size:2rem;font-weight:bold;letter-spacing:0.3em;font-family:monospace;\">{$code}</p>"
-    . "<p>This code expires in 15 minutes. If you didn't create a Teepsaa account, ignore this email.</p>"
-);
+$codeHtml = '<div style="font-size:2rem;font-weight:bold;letter-spacing:0.3em;font-family:monospace;margin:12px 0;color:#111">' . $code . '</div>';
+[$subj, $html] = render_email_template($pdo, 'verify_code', [
+    'name' => htmlspecialchars($name, ENT_QUOTES),
+    'code' => $codeHtml,
+]);
+if ($html !== '') send_email($user['email'], $subj, $html);
 
 $_SESSION['verify_success'] = 'New code sent — check your inbox (or the server log for dev).';
 header('Location: /verify-email/');

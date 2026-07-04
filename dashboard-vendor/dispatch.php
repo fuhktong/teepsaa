@@ -45,17 +45,13 @@ if ($stmt->rowCount() > 0) {
     if ($buyer) {
         $oid = order_display_id((int)$buyer['order_id'], $buyer['created_at']);
         $msg = 'Your order #' . $oid . ' has been dispatched and is on its way.';
-        notify($pdo, 'buyer', (int)$buyer['buyer_id'], 'order_dispatched', $msg, '/dashboard-buyer/order.php?id=' . $orderId);
-        send_email(
-            $buyer['email'],
-            'Your order is on its way',
-            notification_email_html(
-                'Order dispatched',
-                'Hi ' . htmlspecialchars($buyer['name']) . ', your order <strong>#' . $oid . '</strong> has been dispatched. You can confirm delivery once it arrives.',
-                'Track order',
-                'https://teepsaa.com/dashboard-buyer/order.php?id=' . $orderId
-            )
-        );
+        notify($pdo, 'buyer', (int)$buyer['buyer_id'], 'order_dispatched', $msg, '/dashboard-buyer/order.php?id=' . $orderId, ['ref' => $oid]);
+        [$subj, $html] = render_email_template($pdo, 'order_dispatched', [
+            'name'    => htmlspecialchars($buyer['name']),
+            'order'   => $oid,
+            'cta_url' => 'https://teepsaa.com/dashboard-buyer/order.php?id=' . $orderId,
+        ]);
+        if ($html !== '') send_email($buyer['email'], $subj, $html);
     }
 }
 

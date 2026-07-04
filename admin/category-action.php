@@ -17,6 +17,7 @@ csrf_verify();
 
 $action   = $_POST['action'] ?? '';
 $name     = trim($_POST['name'] ?? '');
+$nameKm   = trim($_POST['name_km'] ?? '');
 $rate     = round((float)($_POST['royalty_rate'] ?? 0) / 100, 4);
 $parentId = (int)($_POST['parent_id'] ?? 0) ?: null;
 
@@ -27,8 +28,8 @@ if (!$name || $rate < 0 || $rate > 1) {
 }
 
 if ($action === 'add') {
-    $stmt = $pdo->prepare('INSERT INTO categories (parent_id, name, royalty_rate) VALUES (?, ?, ?)');
-    $stmt->execute([$parentId, $name, $rate]);
+    $stmt = $pdo->prepare('INSERT INTO categories (parent_id, name, name_km, royalty_rate) VALUES (?, ?, ?, ?)');
+    $stmt->execute([$parentId, $name, $nameKm ?: null, $rate]);
     $_SESSION['admin_success'] = 'Category "' . htmlspecialchars($name) . '" added.';
 
 } elseif ($action === 'edit') {
@@ -38,8 +39,8 @@ if ($action === 'add') {
         header('Location: /admin/categories.php');
         exit;
     }
-    $stmt = $pdo->prepare('UPDATE categories SET parent_id = ?, name = ?, royalty_rate = ? WHERE id = ?');
-    $stmt->execute([$parentId, $name, $rate, $id]);
+    $stmt = $pdo->prepare('UPDATE categories SET parent_id = ?, name = ?, name_km = ?, royalty_rate = ? WHERE id = ?');
+    $stmt->execute([$parentId, $name, $nameKm ?: null, $rate, $id]);
     $_SESSION['admin_success'] = 'Category updated.';
 }
 

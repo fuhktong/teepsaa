@@ -10,6 +10,10 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 
 $userId = $_SESSION['user_id'];
 
+// Translations loaded early — business status label is built before the header.
+$lang = $_SESSION['lang'] ?? 'km';
+$t = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km']) ? $lang : 'en') . '.php';
+
 $stmt = $pdo->prepare('SELECT id, name, category, approved, trial_starts_at, trial_ends_at, royalty_free_threshold FROM businesses WHERE user_id = ? ORDER BY created_at DESC LIMIT 1');
 $stmt->execute([$userId]);
 $business = $stmt->fetch();
@@ -91,9 +95,9 @@ if ($business && $business['approved'] === 1) {
 }
 
 if ($business) {
-    if ($business['approved'] === 1)       { $statusLabel = 'Approved'; $statusClass = 'status-approved'; }
-    elseif ($business['approved'] === -1)  { $statusLabel = 'Rejected'; $statusClass = 'status-rejected'; }
-    else                                   { $statusLabel = 'Pending';  $statusClass = 'status-pending'; }
+    if ($business['approved'] === 1)       { $statusLabel = $t['vendor_biz_approved']; $statusClass = 'status-approved'; }
+    elseif ($business['approved'] === -1)  { $statusLabel = $t['vendor_biz_rejected']; $statusClass = 'status-rejected'; }
+    else                                   { $statusLabel = $t['vendor_biz_pending'];  $statusClass = 'status-pending'; }
 }
 
 ?>
@@ -116,14 +120,14 @@ if ($business) {
 <main>
     <div class="dashboard-header">
         <h1>
-            <?= htmlspecialchars($business['name'] ?? 'My Business') ?>
+            <?= htmlspecialchars($business['name'] ?? $t['vendor_my_business']) ?>
             <?php if ($business): ?>
                 <span class="status <?= $statusClass ?>"><?= $statusLabel ?></span>
             <?php endif; ?>
         </h1>
         <?php if (!$business): ?>
         <div class="dashboard-actions">
-            <a href="/submit/" class="btn">+ Submit a business</a>
+            <a href="/submit/" class="btn"><?= $t['vendor_submit_biz'] ?></a>
         </div>
         <?php endif; ?>
     </div>
@@ -131,23 +135,23 @@ if ($business) {
     <?php if ($trial): ?>
     <div class="trial-banner">
         <div class="trial-banner-text">
-            <strong>0% platform fee trial active</strong>
-            — teepsaa is taking no commission on your sales.
-            Trial ends <?= date('d M Y', strtotime($trial['ends_at'])) ?>.
+            <strong><?= $t['vendor_trial_active'] ?></strong>
+            <?= $t['vendor_trial_no_commission'] ?>
+            <?= sprintf($t['vendor_trial_ends'], fmt_date('d M Y', strtotime($trial['ends_at']))) ?>
         </div>
         <div class="trial-banner-progress">
             <div class="trial-progress-row">
-                <span>Sales progress</span>
-                <span>$<?= number_format($trial['sales'], 2) ?> of $<?= number_format($trial['threshold'], 0) ?></span>
+                <span><?= $t['vendor_sales_progress'] ?></span>
+                <span><?= sprintf($t['vendor_of'], '$' . number_format($trial['sales'], 2), '$' . number_format($trial['threshold'], 0)) ?></span>
             </div>
             <div class="trial-progress-bar">
                 <div class="trial-progress-fill" style="width:<?= min(100, round($trial['sales'] / $trial['threshold'] * 100)) ?>%"></div>
             </div>
             <p class="trial-progress-note">
                 <?php if (!$trial['within_time']): ?>
-                    Time period has ended — trial continues until you reach $<?= number_format($trial['threshold'], 0) ?> in sales.
+                    <?= sprintf($t['vendor_trial_time_ended'], '$' . number_format($trial['threshold'], 0)) ?>
                 <?php else: ?>
-                    Normal fees begin after <?= date('d M Y', strtotime($trial['ends_at'])) ?> and $<?= number_format($trial['threshold'], 0) ?> in sales — whichever comes last.
+                    <?= sprintf($t['vendor_trial_normal_fees'], fmt_date('d M Y', strtotime($trial['ends_at'])), '$' . number_format($trial['threshold'], 0)) ?>
                 <?php endif; ?>
             </p>
         </div>
@@ -157,34 +161,34 @@ if ($business) {
     <?php if ($business && $business['approved'] === 1): ?>
     <div class="dashboard-section analytics-section">
         <div class="dashboard-section-header">
-            <h2>Analytics</h2>
+            <h2><?= $t['vendor_analytics'] ?></h2>
         </div>
         <div class="analytics-stats">
             <div class="analytics-stat">
                 <div class="analytics-stat-value">$<?= number_format((float)$stats['total_payout'], 2) ?></div>
-                <div class="analytics-stat-label">All-time revenue</div>
+                <div class="analytics-stat-label"><?= $t['vendor_all_time_rev'] ?></div>
             </div>
             <div class="analytics-stat">
                 <div class="analytics-stat-value">$<?= number_format((float)$stats['month_payout'], 2) ?></div>
-                <div class="analytics-stat-label"><?= date('F') ?> revenue</div>
+                <div class="analytics-stat-label"><?= $t['vendor_this_month_revenue'] ?></div>
             </div>
             <div class="analytics-stat">
                 <div class="analytics-stat-value"><?= (int)$stats['total_orders'] ?></div>
-                <div class="analytics-stat-label">Total orders</div>
+                <div class="analytics-stat-label"><?= $t['vendor_total_orders'] ?></div>
             </div>
             <div class="analytics-stat">
                 <div class="analytics-stat-value"><?= (int)$stats['month_orders'] ?></div>
-                <div class="analytics-stat-label"><?= date('F') ?> orders</div>
+                <div class="analytics-stat-label"><?= $t['vendor_this_month_orders'] ?></div>
             </div>
         </div>
         <?php if (!empty($bestSellers)): ?>
-        <h3 class="analytics-sub-heading">Best sellers</h3>
+        <h3 class="analytics-sub-heading"><?= $t['vendor_best_sellers'] ?></h3>
         <table class="business-table analytics-table">
             <thead>
                 <tr>
-                    <th>Product</th>
-                    <th>Units sold</th>
-                    <th>Revenue</th>
+                    <th><?= $t['vendor_col_product'] ?></th>
+                    <th><?= $t['vendor_units_sold'] ?></th>
+                    <th><?= $t['vendor_col_revenue'] ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -198,21 +202,21 @@ if ($business) {
             </tbody>
         </table>
         <?php else: ?>
-        <p class="empty analytics-empty">Complete your first delivery to see analytics here.</p>
+        <p class="empty analytics-empty"><?= $t['vendor_analytics_empty'] ?></p>
         <?php endif; ?>
     </div>
     <?php endif; ?>
 
     <div class="dashboard-section">
         <div class="dashboard-section-header">
-            <h2><a href="/orders-vendor/" class="section-header-link">Orders</a></h2>
+            <h2><a href="/orders-vendor/" class="section-header-link"><?= $t['vendor_orders'] ?></a></h2>
             <?php if (!empty($orders)): ?>
                 <button class="btn-refresh" data-refresh-all-btn type="button" title="Refresh orders"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
             <?php endif; ?>
         </div>
 
         <?php if (empty($orders)): ?>
-            <p class="empty">No orders yet.</p>
+            <p class="empty"><?= $t['vendor_no_orders'] ?></p>
         <?php else: ?>
         <div class="order-cards">
             <?php foreach ($orders as $o): ?>
@@ -223,7 +227,7 @@ if ($business) {
                     <span class="order-card-id"><?= $oid ?></span>
                     <span class="order-card-items"><?= htmlspecialchars($o['items']) ?></span>
                     <span class="order-card-meta"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span>
-                    <span class="order-card-date"><?= date('M j, g:ia', strtotime($o['created_at'])) ?></span>
+                    <span class="order-card-date"><?= fmt_date('M j, g:ia', strtotime($o['created_at'])) ?></span>
                     <span class="order-card-total">$<?= number_format($o['subtotal'], 2) ?></span>
                 </div>
                 <div class="order-card-status" data-status-bar>
@@ -238,21 +242,21 @@ if ($business) {
 
     <div class="dashboard-section">
         <div class="dashboard-section-header">
-            <h2><a href="/products/" class="section-header-link">Products</a></h2>
+            <h2><a href="/products/" class="section-header-link"><?= $t['vendor_products'] ?></a></h2>
         </div>
 
         <?php if (!$business): ?>
-            <p class="empty">Submit a business to start adding products.</p>
+            <p class="empty"><?= $t['vendor_submit_to_add'] ?></p>
         <?php elseif (empty($products)): ?>
-            <p class="empty">No products yet. <a href="/products/?action=add">Add your first product</a>.</p>
+            <p class="empty"><?= $t['vendor_no_products'] ?> <a href="/products/?action=add"><?= $t['vendor_add_product'] ?></a>.</p>
         <?php else: ?>
         <table class="business-table">
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Price</th>
-                    <th>Stock</th>
-                    <th>Status</th>
+                    <th><?= $t['vendor_col_name'] ?></th>
+                    <th><?= $t['vendor_col_price'] ?></th>
+                    <th><?= $t['vendor_col_stock'] ?></th>
+                    <th><?= $t['vendor_col_status'] ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -263,12 +267,12 @@ if ($business) {
                     <td>
                         <?= (int)$p['stock'] ?>
                         <?php if ($p['stock'] > 0 && $p['stock'] <= $p['low_stock_threshold']): ?>
-                            <span class="stock-low-badge">Low</span>
+                            <span class="stock-low-badge"><?= $t['vendor_stock_low'] ?></span>
                         <?php elseif ($p['stock'] === 0): ?>
-                            <span class="stock-low-badge">Out</span>
+                            <span class="stock-low-badge"><?= $t['vendor_stock_out'] ?></span>
                         <?php endif; ?>
                     </td>
-                    <td><span class="status <?= $p['active'] ? 'status-approved' : 'status-rejected' ?>"><?= $p['active'] ? 'Active' : 'Inactive' ?></span></td>
+                    <td><span class="status <?= $p['active'] ? 'status-approved' : 'status-rejected' ?>"><?= $p['active'] ? $t['vendor_status_active'] : $t['vendor_status_inactive'] ?></span></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

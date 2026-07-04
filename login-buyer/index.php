@@ -34,7 +34,7 @@ unset($_SESSION['auth_error'], $_SESSION['auth_success']);
 
 <main>
     <div class="auth-box">
-        <h1>Log in</h1>
+        <h1><?= $t['login_title'] ?></h1>
         <?php if ($success): ?>
             <p class="auth-success"><?= htmlspecialchars($success) ?></p>
         <?php endif; ?>
@@ -43,14 +43,14 @@ unset($_SESSION['auth_error'], $_SESSION['auth_success']);
         <?php endif; ?>
         <form method="POST" action="/login-buyer/login-buyer.php">
             <?= csrf_input() ?>
-            <label for="email">Email</label>
+            <label for="email"><?= $t['login_email'] ?></label>
             <input type="email" id="email" name="email" required autofocus>
-            <label for="password">Password</label>
+            <label for="password"><?= $t['login_password'] ?></label>
             <input type="password" id="password" name="password" required>
-            <button type="submit">Log in</button>
+            <button type="submit"><?= $t['login_submit'] ?></button>
         </form>
-        <p class="auth-switch">No account? <a href="/register-buyer/">Register</a></p>
-        <p class="auth-switch"><a href="/forgot-password-buyer/">Forgot password?</a></p>
+        <p class="auth-switch"><?= $t['login_no_account'] ?> <a href="/register-buyer/"><?= $t['login_register'] ?></a></p>
+        <p class="auth-switch"><a href="/forgot-password-buyer/"><?= $t['login_forgot'] ?></a></p>
     </div>
 </main>
 

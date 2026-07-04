@@ -10,7 +10,7 @@ if (!$id) {
 }
 
 $stmt = $pdo->prepare('
-    SELECT p.*, b.id AS business_id, b.name AS business_name
+    SELECT p.*, b.id AS business_id, b.name AS business_name, b.name_km AS business_name_km
     FROM products p
     JOIN businesses b ON b.id = p.business_id
     WHERE p.id = ? AND p.active = 1 AND p.archived = 0 AND b.approved = 1
@@ -27,19 +27,19 @@ $galleryStmt = $pdo->prepare('SELECT filename FROM product_photos WHERE product_
 $galleryStmt->execute([$id]);
 $galleryPhotos = $galleryStmt->fetchAll();
 
-$variantStmt = $pdo->prepare('SELECT id, label, stock, price_override FROM product_variants WHERE product_id = ? ORDER BY sort_order ASC, id ASC');
+$variantStmt = $pdo->prepare('SELECT id, label, label_km, stock, price_override FROM product_variants WHERE product_id = ? ORDER BY sort_order ASC, id ASC');
 $variantStmt->execute([$id]);
 $variants = $variantStmt->fetchAll();
 
 $optionTypes = [];
 $variantMap  = []; // value_ids (sorted CSV) → row data
 if (!empty($variants)) {
-    $otStmt = $pdo->prepare('SELECT id, name FROM product_option_types WHERE product_id = ? ORDER BY display_order, id');
+    $otStmt = $pdo->prepare('SELECT id, name, name_km FROM product_option_types WHERE product_id = ? ORDER BY display_order, id');
     $otStmt->execute([$id]);
     $optionTypes = $otStmt->fetchAll();
     if (!empty($optionTypes)) {
         foreach ($optionTypes as &$ot) {
-            $ovStmt = $pdo->prepare('SELECT id, label FROM product_option_values WHERE option_type_id = ? ORDER BY display_order, id');
+            $ovStmt = $pdo->prepare('SELECT id, label, label_km FROM product_option_values WHERE option_type_id = ? ORDER BY display_order, id');
             $ovStmt->execute([$ot['id']]);
             $ot['values'] = $ovStmt->fetchAll();
         }
@@ -166,12 +166,12 @@ $reviews = $rStmt->fetchAll();
         </div>
 
         <div class="product-info">
-            <p class="product-seller">Sold by <a href="/business/?id=<?= $product['business_id'] ?>"><?= htmlspecialchars($product['business_name']) ?></a></p>
-            <h1 class="product-name"><?= htmlspecialchars($product['name']) ?></h1>
+            <p class="product-seller"><?= $t['product_sold_by'] ?> <a href="/business/?id=<?= $product['business_id'] ?>"><?= htmlspecialchars(pick_lang($product['business_name'], $product['business_name_km'] ?? null)) ?></a></p>
+            <h1 class="product-name"><?= htmlspecialchars(lang_field($product, 'name')) ?></h1>
             <p class="product-price" id="product-price"><?= price_html($product) ?></p>
 
-            <?php if ($product['description']): ?>
-                <p class="product-desc"><?= nl2br(htmlspecialchars($product['description'])) ?></p>
+            <?php if (lang_field($product, 'description')): ?>
+                <p class="product-desc"><?= nl2br(htmlspecialchars(lang_field($product, 'description'))) ?></p>
             <?php endif; ?>
 
             <?php
@@ -192,12 +192,12 @@ $reviews = $rStmt->fetchAll();
                 <?php if ($hasOptionTypes): ?>
                     <?php foreach ($optionTypes as $ot): ?>
                     <div class="variant-selector">
-                        <div class="variant-selector-label"><?= htmlspecialchars($ot['name']) ?></div>
+                        <div class="variant-selector-label"><?= htmlspecialchars(lang_field($ot, 'name')) ?></div>
                         <div class="variant-options" data-type-id="<?= (int)$ot['id'] ?>">
                             <?php foreach ($ot['values'] as $val): ?>
                             <label class="variant-opt">
                                 <input type="radio" name="opt_type_<?= (int)$ot['id'] ?>" value="<?= (int)$val['id'] ?>" data-val-id="<?= (int)$val['id'] ?>">
-                                <span class="variant-opt-label"><?= htmlspecialchars($val['label']) ?></span>
+                                <span class="variant-opt-label"><?= htmlspecialchars(lang_field($val, 'label')) ?></span>
                             </label>
                             <?php endforeach; ?>
                         </div>
@@ -206,7 +206,7 @@ $reviews = $rStmt->fetchAll();
                     <input type="hidden" name="variant_id" id="selected_variant_id" value="">
                 <?php else: ?>
                     <div class="variant-selector">
-                        <div class="variant-selector-label">Variants</div>
+                        <div class="variant-selector-label"><?= $t['product_variants'] ?></div>
                         <div class="variant-options">
                             <?php foreach ($variants as $v): ?>
                             <label class="variant-opt <?= $v['stock'] < 1 ? 'variant-opt--oos' : '' ?>">
@@ -214,7 +214,7 @@ $reviews = $rStmt->fetchAll();
                                        data-stock="<?= (int)$v['stock'] ?>"
                                        data-price="<?= $v['price_override'] !== null ? htmlspecialchars($v['price_override']) : '' ?>"
                                        <?= $v['stock'] < 1 ? 'disabled' : '' ?>>
-                                <span class="variant-opt-label"><?= htmlspecialchars($v['label']) ?></span>
+                                <span class="variant-opt-label"><?= htmlspecialchars(lang_field($v, 'label')) ?></span>
                             </label>
                             <?php endforeach; ?>
                         </div>
@@ -224,11 +224,11 @@ $reviews = $rStmt->fetchAll();
 
                 <p class="product-stock" id="stock-display">
                     <?php if (!empty($variants)): ?>
-                        <?= $hasOptionTypes ? 'Select options' : 'Select a variant' ?>
+                        <?= $hasOptionTypes ? $t['product_select_options'] : $t['product_select_variant'] ?>
                     <?php elseif ($product['stock'] > 0): ?>
-                        In stock
+                        <?= $t['product_in_stock'] ?>
                     <?php else: ?>
-                        Out of stock
+                        <?= $t['product_out_of_stock'] ?>
                     <?php endif; ?>
                 </p>
 
@@ -237,11 +237,11 @@ $reviews = $rStmt->fetchAll();
                     <button type="submit" class="btn-add-cart <?= $outOfStock ? 'btn-add-cart--disabled' : (!empty($variants) ? 'btn-add-cart--pending' : '') ?>"
                             id="add-cart-btn"
                             <?= $outOfStock ? 'disabled' : '' ?>>
-                        Add to cart
+                        <?= $t['product_add_to_cart'] ?>
                     </button>
                     <p class="cart-select-hint" id="cart-select-hint" style="display:none"></p>
                 <?php else: ?>
-                    <a href="/login-buyer/" class="btn-login-to-buy">Login to buy</a>
+                    <a href="/login-buyer/" class="btn-login-to-buy"><?= $t['product_login_to_buy'] ?></a>
                 <?php endif; ?>
             </form>
             <?php endif; ?>
@@ -250,12 +250,12 @@ $reviews = $rStmt->fetchAll();
             <button class="wishlist-heart <?= $isWishlisted ? 'wishlist-heart--saved' : '' ?>"
                     id="wishlist-btn" data-product-id="<?= $product['id'] ?>" type="button">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="<?= $isWishlisted ? 'currentColor' : 'none' ?>" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                <span id="wishlist-label"><?= $isWishlisted ? 'Saved' : 'Save' ?></span>
+                <span id="wishlist-label"><?= $isWishlisted ? $t['product_saved'] : $t['product_save'] ?></span>
             </button>
             <?php endif; ?>
 
             <?php if ($cartSuccess): ?>
-                <div class="flash flash--success flash--btn">Added to cart — <a href="/cart/" class="flash-link">Proceed to checkout</a></div>
+                <div class="flash flash--success flash--btn"><?= $t['product_added_to_cart'] ?> — <a href="/cart/" class="flash-link"><?= $t['product_proceed_checkout'] ?></a></div>
             <?php elseif ($cartError): ?>
                 <div class="flash flash--error flash--btn"><?= htmlspecialchars($cartError) ?></div>
             <?php endif; ?>
@@ -272,9 +272,9 @@ $reviews = $rStmt->fetchAll();
     </div>
 
     <div class="product-reviews">
-        <h2 class="product-reviews-heading">Reviews</h2>
+        <h2 class="product-reviews-heading"><?= $t['product_reviews'] ?></h2>
         <?php if ($reviewCount === 0): ?>
-        <p class="product-reviews-empty">No reviews yet.</p>
+        <p class="product-reviews-empty"><?= $t['product_no_reviews'] ?></p>
         <?php else: ?>
         <div class="product-reviews-summary">
             <span class="product-reviews-stars-filled"><?= str_repeat('★', (int)round($avgRating)) . str_repeat('☆', 5 - (int)round($avgRating)) ?></span>
@@ -290,7 +290,7 @@ $reviews = $rStmt->fetchAll();
                 <div class="product-review-meta">
                     <span class="product-review-stars"><?= str_repeat('★', (int)$r['rating']) . str_repeat('☆', 5 - (int)$r['rating']) ?></span>
                     <span class="product-review-author"><?= htmlspecialchars($displayName) ?></span>
-                    <span class="product-review-date"><?= date('M j, Y', strtotime($r['created_at'])) ?></span>
+                    <span class="product-review-date"><?= fmt_date('M j, Y', strtotime($r['created_at'])) ?></span>
                 </div>
                 <?php if ($r['comment']): ?>
                 <p class="product-review-comment"><?= htmlspecialchars($r['comment']) ?></p>
@@ -415,7 +415,7 @@ $reviews = $rStmt->fetchAll();
 
     function updateState() {
         if (!allSelected()) {
-            stockEl.textContent = 'Select options';
+            stockEl.textContent = '<?= $t['product_select_options'] ?>';
             if (variantIn) variantIn.value = '';
             setPending(true);
             return;
@@ -423,13 +423,13 @@ $reviews = $rStmt->fetchAll();
         var key   = comboKey();
         var match = variantLookup[key];
         if (!match) {
-            stockEl.textContent = 'Combination not available';
+            stockEl.textContent = '<?= $t['product_combo_unavailable'] ?>';
             if (variantIn) variantIn.value = '';
             setPending(true);
             return;
         }
         if (variantIn) variantIn.value = match.variant_id;
-        stockEl.textContent = match.stock > 0 ? 'In stock' : 'Out of stock';
+        stockEl.textContent = match.stock > 0 ? '<?= $t['product_in_stock'] ?>' : '<?= $t['product_out_of_stock'] ?>';
         var override = match.price_override !== null ? parseFloat(match.price_override) : null;
         setPriceHtml(override);
         setPending(match.stock < 1);
@@ -460,7 +460,7 @@ $reviews = $rStmt->fetchAll();
         if (missing.length) {
             e.preventDefault();
             var names = missing.map(function(tid){ return TYPE_NAMES[tid]; });
-            if (hintEl) { hintEl.textContent = 'Please select ' + names.join(' and ') + '.'; hintEl.style.display = ''; }
+            if (hintEl) { hintEl.textContent = '<?= $t['product_please_select'] ?> ' + names.join(' <?= $t['product_and'] ?> ') + '.'; hintEl.style.display = ''; }
             missing.forEach(function(tid){
                 var div = document.querySelector('[data-type-id="' + tid + '"]');
                 var sel = div && div.closest('.variant-selector');
@@ -471,12 +471,12 @@ $reviews = $rStmt->fetchAll();
         var match = variantLookup[comboKey()];
         if (!match) {
             e.preventDefault();
-            if (hintEl) { hintEl.textContent = "That combination isn't available."; hintEl.style.display = ''; }
+            if (hintEl) { hintEl.textContent = '<?= $t['product_combo_unavailable'] ?>'; hintEl.style.display = ''; }
             return;
         }
         if (match.stock < 1) {
             e.preventDefault();
-            if (hintEl) { hintEl.textContent = 'Sorry, that option is out of stock.'; hintEl.style.display = ''; }
+            if (hintEl) { hintEl.textContent = '<?= $t['product_option_oos'] ?>'; hintEl.style.display = ''; }
         }
     });
 
@@ -512,7 +512,7 @@ $reviews = $rStmt->fetchAll();
         r.addEventListener('change', function () {
             var stock    = parseInt(this.dataset.stock, 10);
             var rawPrice = this.dataset.price;
-            stockEl.textContent = stock > 0 ? 'In stock' : 'Out of stock';
+            stockEl.textContent = stock > 0 ? '<?= $t['product_in_stock'] ?>' : '<?= $t['product_out_of_stock'] ?>';
             setPriceHtml(rawPrice !== '' ? parseFloat(rawPrice) : null);
             if (addBtn) addBtn.classList.toggle('btn-add-cart--pending', stock < 1);
             if (groupEl) groupEl.classList.remove('variant-selector--error');
@@ -524,13 +524,13 @@ $reviews = $rStmt->fetchAll();
         var checked = document.querySelector('input[name="variant_id"]:checked');
         if (!checked) {
             e.preventDefault();
-            if (hintEl) { hintEl.textContent = 'Please select a variant.'; hintEl.style.display = ''; }
+            if (hintEl) { hintEl.textContent = '<?= $t['product_please_select_variant'] ?>'; hintEl.style.display = ''; }
             if (groupEl) groupEl.classList.add('variant-selector--error');
             return;
         }
         if (parseInt(checked.dataset.stock, 10) < 1) {
             e.preventDefault();
-            if (hintEl) { hintEl.textContent = 'Sorry, that variant is out of stock.'; hintEl.style.display = ''; }
+            if (hintEl) { hintEl.textContent = '<?= $t['product_variant_oos'] ?>'; hintEl.style.display = ''; }
         }
     });
 })();

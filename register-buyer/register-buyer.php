@@ -48,7 +48,7 @@ if ($stmt->fetch()) {
 }
 
 require __DIR__ . '/../config/app.php';
-require __DIR__ . '/../config/mail.php';
+require __DIR__ . '/../config/notify.php';
 
 $code    = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 $expires = date('Y-m-d H:i:s', strtotime('+15 minutes'));
@@ -59,14 +59,12 @@ $newId = $pdo->lastInsertId();
 
 $_SESSION['dev_otp'] = $code;
 
-send_email(
-    $email,
-    "Your Teepsaa verification code",
-    "<p>Hi " . htmlspecialchars($name, ENT_QUOTES) . ",</p>"
-    . "<p>Your verification code is:</p>"
-    . "<p style=\"font-size:2rem;font-weight:bold;letter-spacing:0.3em;font-family:monospace;\">{$code}</p>"
-    . "<p>This code expires in 15 minutes. If you didn't create a Teepsaa account, ignore this email.</p>"
-);
+$codeHtml = '<div style="font-size:2rem;font-weight:bold;letter-spacing:0.3em;font-family:monospace;margin:12px 0;color:#111">' . $code . '</div>';
+[$subj, $html] = render_email_template($pdo, 'verify_code', [
+    'name' => htmlspecialchars($name, ENT_QUOTES),
+    'code' => $codeHtml,
+]);
+if ($html !== '') send_email($email, $subj, $html);
 
 session_regenerate_id(true);
 $_SESSION['user_id']      = $newId;

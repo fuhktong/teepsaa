@@ -1,0 +1,1 @@
+ALTER TABLE categories ADD COLUMN name_km VARCHAR(100) NULL AFTER name;

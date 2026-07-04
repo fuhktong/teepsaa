@@ -5,7 +5,7 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/mapbox.php';
 $locations = require __DIR__ . '/../config/phnom-penh-locations.php';
 
-$allCatsRaw = $pdo->query('SELECT id, parent_id, name FROM categories ORDER BY name ASC')->fetchAll();
+$allCatsRaw = $pdo->query('SELECT id, parent_id, name, name_km FROM categories ORDER BY name ASC')->fetchAll();
 function submitBuildCatTree(array $cats, $parentId = null): array {
     $branch = [];
     foreach ($cats as $cat) {
@@ -59,11 +59,11 @@ unset($_SESSION['submit_error'], $_SESSION['submit_success']);
 <?php require __DIR__ . '/../header/header.php'; ?>
 
 <main>
-    <h1>Submit a Business</h1>
+    <h1><?= $t['submit_title'] ?></h1>
 
     <?php if ($hasShop): ?>
-        <p class="form-error">Your account already has a business. Each vendor account is limited to one shop.</p>
-        <p><a href="/dashboard-vendor/">Back to dashboard</a></p>
+        <p class="form-error"><?= $t['submit_has_business'] ?></p>
+        <p><a href="/dashboard-vendor/"><?= $t['submit_back_dashboard'] ?></a></p>
     <?php else: ?>
 
     <?php if ($error): ?>
@@ -77,35 +77,35 @@ unset($_SESSION['submit_error'], $_SESSION['submit_success']);
         <?= csrf_input() ?>
 
         <div class="field">
-            <label for="name">Business name</label>
+            <label for="name"><?= $t['vendor_settings_biz_name'] ?></label>
             <input type="text" id="name" name="name" required>
         </div>
 
         <div class="field">
-            <label for="description">Description</label>
+            <label for="description"><?= $t['vendor_settings_description'] ?></label>
             <textarea id="description" name="description" rows="4"></textarea>
         </div>
 
         <div class="field">
-            <label>Category <span class="hint">You can add more categories when you list products</span></label>
+            <label><?= $t['submit_category'] ?> <span class="hint"><?= $t['submit_category_hint'] ?></span></label>
             <div id="cat-cascade" class="cat-cascade"></div>
             <input type="hidden" id="category_id" name="category_id" required>
         </div>
 
         <div class="field">
-            <label for="house_number">House / Unit #</label>
+            <label for="house_number"><?= $t['settings_address_house'] ?></label>
             <input type="text" id="house_number" name="house_number" placeholder="e.g. 15">
         </div>
 
         <div class="field">
-            <label for="address">Street</label>
+            <label for="address"><?= $t['settings_street'] ?></label>
             <input type="text" id="address" name="address" placeholder="e.g. Street 240">
         </div>
 
         <div class="field">
-            <label for="khan">Khan</label>
+            <label for="khan"><?= $t['settings_address_khan'] ?></label>
             <select id="khan" name="khan" onchange="updateSangkats(this.value)">
-                <option value="">Select Khan</option>
+                <option value=""><?= $t['settings_select_khan'] ?></option>
                 <?php foreach (array_keys($locations) as $k): ?>
                 <option value="<?= htmlspecialchars($k) ?>"><?= htmlspecialchars($k) ?></option>
                 <?php endforeach; ?>
@@ -113,26 +113,26 @@ unset($_SESSION['submit_error'], $_SESSION['submit_success']);
         </div>
 
         <div class="field">
-            <label for="sangkat">Sangkat</label>
+            <label for="sangkat"><?= $t['settings_address_sangkat'] ?></label>
             <select id="sangkat" name="sangkat">
-                <option value="">Select Sangkat</option>
+                <option value=""><?= $t['settings_select_sangkat'] ?></option>
             </select>
         </div>
 
         <div class="field">
-            <label>Location <span class="hint">Click the map to pin your business</span></label>
+            <label><?= $t['submit_location'] ?> <span class="hint"><?= $t['submit_location_hint'] ?></span></label>
             <div id="map"></div>
             <input type="hidden" id="lat" name="lat" required>
             <input type="hidden" id="lng" name="lng" required>
-            <p id="pin-label" class="pin-label">No location selected</p>
+            <p id="pin-label" class="pin-label"><?= $t['submit_no_location'] ?></p>
         </div>
 
         <div class="field">
-            <label for="photos">Photos <span class="hint">Up to 5 — jpg or png, max 2MB each</span></label>
+            <label for="photos"><?= $t['submit_photos'] ?> <span class="hint"><?= $t['submit_photos_hint'] ?></span></label>
             <input type="file" id="photos" name="photos[]" accept="image/jpeg,image/png" multiple>
         </div>
 
-        <button type="submit">Submit for review</button>
+        <button type="submit"><?= $t['submit_for_review'] ?></button>
     </form>
 
     <?php endif; ?>
@@ -146,6 +146,7 @@ unset($_SESSION['submit_error'], $_SESSION['submit_success']);
 // Category cascade
 (function () {
     var allCats = <?= json_encode(array_values($allFlat)) ?>;
+    var CAT_LANG = <?= json_encode($_SESSION['lang'] ?? 'km') ?>;
     var byParent = {}, byId = {};
     allCats.forEach(function (c) {
         byId[c.id] = c;
@@ -175,7 +176,7 @@ unset($_SESSION['submit_error'], $_SESSION['submit_success']);
         children.forEach(function (c) {
             var opt = document.createElement('option');
             opt.value = c.id;
-            opt.textContent = c.name;
+            opt.textContent = (CAT_LANG === 'km' && c.name_km) ? c.name_km : c.name;
             sel.appendChild(opt);
         });
         container.appendChild(sel);
@@ -201,7 +202,7 @@ unset($_SESSION['submit_error'], $_SESSION['submit_success']);
 const LOCATIONS = <?= json_encode($locations) ?>;
 function updateSangkats(khan) {
     const sel = document.getElementById('sangkat');
-    sel.innerHTML = '<option value="">Select Sangkat</option>';
+    sel.innerHTML = '<option value=""><?= $t['settings_select_sangkat'] ?></option>';
     if (khan && LOCATIONS[khan]) {
         LOCATIONS[khan].forEach(s => {
             const opt = document.createElement('option');

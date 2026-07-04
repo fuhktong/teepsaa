@@ -53,18 +53,18 @@ $isPending = $thread['status'] === 'pending';
 
     <?php if ($isPending): ?>
 
-    <a href="/messages-buyer/" class="ticket-back">← Support</a>
+    <a href="/messages-buyer/" class="ticket-back">← <?= $t['messages_title'] ?></a>
 
     <div class="ticket-header">
         <div class="ticket-header-top">
             <h1 class="ticket-subject"><?= htmlspecialchars($thread['subject']) ?></h1>
-            <span class="thread-badge thread-badge--pending">Pending</span>
+            <span class="thread-badge thread-badge--pending"><?= $t['messages_status_pending'] ?></span>
         </div>
         <div class="ticket-meta">
             <?php if ($thread['issue_type']): ?>
                 <span class="ticket-issue-type"><?= htmlspecialchars($thread['issue_type']) ?></span>
             <?php endif; ?>
-            <span class="ticket-date">Submitted <?= date('M j, Y', strtotime($thread['created_at'])) ?></span>
+            <span class="ticket-date"><?= $t['messages_submitted'] ?> <?= fmt_date('M j, Y', strtotime($thread['created_at'])) ?></span>
         </div>
     </div>
 
@@ -72,8 +72,8 @@ $isPending = $thread['status'] === 'pending';
         <?php foreach ($messages as $m): ?>
         <div class="ticket-msg ticket-msg--<?= $m['sender'] === 'admin' ? 'admin' : 'user' ?>" data-msg-id="<?= $m['id'] ?>">
             <div class="ticket-msg-header">
-                <span class="ticket-msg-from"><?= $m['sender'] === 'admin' ? "teepsaa Support" : 'You' ?></span>
-                <span class="ticket-msg-time"><?= date('M j, Y · g:ia', strtotime($m['created_at'])) ?></span>
+                <span class="ticket-msg-from"><?= $m['sender'] === 'admin' ? $t['messages_support_name'] : $t['messages_you'] ?></span>
+                <span class="ticket-msg-time"><?= fmt_date('M j, Y · g:ia', strtotime($m['created_at'])) ?></span>
             </div>
             <div class="ticket-msg-body"><?= nl2br(htmlspecialchars($m['body'])) ?></div>
         </div>
@@ -81,7 +81,7 @@ $isPending = $thread['status'] === 'pending';
     </div>
 
     <div class="ticket-notice ticket-notice--pending">
-        Your request is under review. Our team will respond as soon as possible — typically within one business day.
+        <?= $t['messages_pending_notice'] ?>
     </div>
 
     <?php else: ?>
@@ -91,11 +91,11 @@ $isPending = $thread['status'] === 'pending';
         <div class="chat-topbar-info">
             <div class="chat-topbar-title"><?= htmlspecialchars($thread['subject']) ?></div>
             <div class="chat-topbar-sub">
-                teepsaa Support
+                <?= $t['messages_support_name'] ?>
                 <?php if ($thread['issue_type']): ?>
                     · <span class="ticket-issue-type"><?= htmlspecialchars($thread['issue_type']) ?></span>
                 <?php endif; ?>
-                · <span class="thread-badge thread-badge--<?= $thread['status'] ?>"><?= ucfirst($thread['status']) ?></span>
+                · <span class="thread-badge thread-badge--<?= $thread['status'] ?>"><?= $t['messages_status_' . $thread['status']] ?? ucfirst($thread['status']) ?></span>
             </div>
         </div>
     </div>
@@ -105,7 +105,7 @@ $isPending = $thread['status'] === 'pending';
         <?php $isMe = $m['sender'] !== 'admin'; ?>
         <div class="msg-bubble-wrap <?= $isMe ? 'msg-bubble-wrap--user' : 'msg-bubble-wrap--admin' ?>" data-msg-id="<?= $m['id'] ?>">
             <div class="msg-bubble <?= $isMe ? 'msg-bubble--user' : 'msg-bubble--admin' ?>"><?= nl2br(htmlspecialchars($m['body'])) ?></div>
-            <div class="msg-bubble-time"><?= date('M j, g:ia', strtotime($m['created_at'])) ?></div>
+            <div class="msg-bubble-time"><?= fmt_date('M j, g:ia', strtotime($m['created_at'])) ?></div>
         </div>
         <?php endforeach; ?>
     </div>
@@ -116,7 +116,7 @@ $isPending = $thread['status'] === 'pending';
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
             <input type="hidden" name="thread_id" value="<?= $thread['id'] ?>">
             <textarea id="reply-body" name="body" class="chat-textarea" rows="1"
-                      placeholder="Message teepsaa Support…" maxlength="2000"></textarea>
+                      placeholder="<?= htmlspecialchars($t['messages_reply_placeholder']) ?>" maxlength="2000"></textarea>
             <button type="submit" class="chat-send-btn" aria-label="Send">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </button>

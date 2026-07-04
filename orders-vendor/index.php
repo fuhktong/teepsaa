@@ -128,27 +128,27 @@ if ($tab === 'refunds' && !empty($bizIds)) {
     <div class="vendor-penalty-notice">
         A royalty penalty of <strong>+<?= number_format($totalPenalty * 100, 1) ?>%</strong> is active on your account<?php
             if ($hasIndefinite) echo ' with no set expiry date';
-            elseif ($soonestExpiry) echo ', expiring ' . date('M j, Y', strtotime($soonestExpiry));
+            elseif ($soonestExpiry) echo ', expiring ' . fmt_date('M j, Y', strtotime($soonestExpiry));
         ?>.
     </div>
     <?php endif; ?>
 
     <nav class="products-subnav">
-        <a href="/orders-vendor/" class="<?= $tab === 'orders' ? 'active' : '' ?>">Orders</a>
-        <a href="/orders-vendor/?tab=refunds" class="<?= $tab === 'refunds' ? 'active' : '' ?>">Refunds<?php if ($vendorRefundCount > 0): ?> <span class="admin-tab-badge"><?= $vendorRefundCount ?></span><?php endif; ?></a>
+        <a href="/orders-vendor/" class="<?= $tab === 'orders' ? 'active' : '' ?>"><?= $t['vendor_orders'] ?></a>
+        <a href="/orders-vendor/?tab=refunds" class="<?= $tab === 'refunds' ? 'active' : '' ?>"><?= $t['vendor_refunds'] ?><?php if ($vendorRefundCount > 0): ?> <span class="admin-tab-badge"><?= $vendorRefundCount ?></span><?php endif; ?></a>
     </nav>
 
     <?php if ($tab === 'orders'): ?>
 
         <div class="page-header">
             <div style="display:flex;align-items:center;gap:0.75rem;">
-                <h1>Orders</h1>
+                <h1><?= $t['vendor_orders'] ?></h1>
                 <button class="btn-refresh" data-refresh-all-btn type="button" title="Refresh orders"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
             </div>
         </div>
 
         <?php if (empty($orders)): ?>
-            <p class="notice">No orders yet.</p>
+            <p class="notice"><?= $t['vendor_no_orders'] ?></p>
         <?php else: ?>
         <div class="order-cards">
             <?php foreach ($orders as $o): ?>
@@ -159,7 +159,7 @@ if ($tab === 'refunds' && !empty($bizIds)) {
                     <span class="order-card-id"><?= $oid ?></span>
                     <span class="order-card-items"><?= htmlspecialchars($o['items']) ?></span>
                     <span class="order-card-meta"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span>
-                    <span class="order-card-date"><?= date('M j, g:ia', strtotime($o['created_at'])) ?></span>
+                    <span class="order-card-date"><?= fmt_date('M j, g:ia', strtotime($o['created_at'])) ?></span>
                     <span class="order-card-total">$<?= number_format($o['subtotal'] + $o['delivery_fee'], 2) ?></span>
                 </div>
                 <div class="order-card-status" data-status-bar>
@@ -174,11 +174,11 @@ if ($tab === 'refunds' && !empty($bizIds)) {
     <?php elseif ($tab === 'refunds'): ?>
 
         <div class="page-header">
-            <h1>Refunds</h1>
+            <h1><?= $t['vendor_refunds'] ?></h1>
         </div>
 
         <?php if (empty($refundOrders)): ?>
-            <p class="notice">No refund orders.</p>
+            <p class="notice"><?= $t['vendor_no_refunds'] ?></p>
         <?php else: ?>
         <div class="order-cards">
             <?php foreach ($refundOrders as $o): ?>
@@ -189,7 +189,7 @@ if ($tab === 'refunds' && !empty($bizIds)) {
                     <span class="order-card-id"><?= $oid ?> <span class="refund-dot" title="Refund in progress"></span></span>
                     <span class="order-card-items"><?= htmlspecialchars($o['items']) ?></span>
                     <span class="order-card-meta"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span>
-                    <span class="order-card-date"><?= date('M j, g:ia', strtotime($o['created_at'])) ?></span>
+                    <span class="order-card-date"><?= fmt_date('M j, g:ia', strtotime($o['created_at'])) ?></span>
                     <span class="order-card-total">$<?= number_format($o['subtotal'], 2) ?> refund</span>
                 </div>
                 <div class="order-card-status">

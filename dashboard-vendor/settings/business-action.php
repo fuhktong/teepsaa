@@ -17,7 +17,9 @@ csrf_verify();
 
 $userId      = $_SESSION['user_id'];
 $name        = trim($_POST['business_name'] ?? '');
+$nameKm      = trim($_POST['business_name_km'] ?? '');
 $description = trim($_POST['description'] ?? '');
+$descriptionKm = trim($_POST['description_km'] ?? '');
 $rawCats     = $_POST['categories'] ?? [];
 
 if (!$name) {
@@ -30,8 +32,8 @@ $allParentNames = $pdo->query('SELECT name FROM categories WHERE parent_id IS NU
 $safeCats = array_values(array_filter($rawCats, fn($c) => in_array($c, $allParentNames, true)));
 $category = implode(', ', $safeCats);
 
-$stmt = $pdo->prepare('UPDATE businesses SET name = ?, description = ?, category = ? WHERE user_id = ?');
-$stmt->execute([$name, $description ?: null, $category, $userId]);
+$stmt = $pdo->prepare('UPDATE businesses SET name = ?, name_km = ?, description = ?, description_km = ?, category = ? WHERE user_id = ?');
+$stmt->execute([$name, $nameKm ?: null, $description, $descriptionKm ?: null, $category, $userId]);
 
 $_SESSION['settings_success'] = 'Business info updated.';
 header('Location: /dashboard-vendor/settings/?tab=business');

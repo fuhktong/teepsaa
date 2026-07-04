@@ -15,7 +15,7 @@ check_rate_limit($pdo);
 $email    = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
 
-$stmt = $pdo->prepare('SELECT id, name, password, avatar, avatar_color, banned, email_verified_at FROM vendors WHERE email = ?');
+$stmt = $pdo->prepare('SELECT id, name, password, avatar, avatar_color, banned, email_verified_at, lang FROM vendors WHERE email = ?');
 $stmt->execute([$email]);
 $user = $stmt->fetch();
 
@@ -45,5 +45,6 @@ $_SESSION['role']             = 'vendor';
 $_SESSION['user_name']        = $user['name'];
 $_SESSION['user_avatar']      = $user['avatar'] ?? '';
 $_SESSION['user_avatar_color'] = isset($user['avatar_color']) ? (int)$user['avatar_color'] : null;
+if (!empty($user['lang'])) $_SESSION['lang'] = $user['lang']; // restore saved language preference
 header('Location: /dashboard-vendor/');
 exit;

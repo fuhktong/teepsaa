@@ -33,10 +33,10 @@ if (!$success && ($buyerLat === null || $buyerLng === null)) {
 
 $stmt = $pdo->prepare('
     SELECT ci.id AS cart_item_id, ci.quantity, ci.variant_id,
-           p.id AS product_id, p.name AS product_name, p.price, p.stock, p.delivery_method,
+           p.id AS product_id, p.name AS product_name, p.name_km AS product_name_km, p.price, p.stock, p.delivery_method,
            COALESCE(pv.price_override, IF(p.sale_ends_at IS NOT NULL AND p.sale_ends_at > NOW(), p.sale_price, NULL), p.price) AS effective_price,
-           pv.label AS variant_label,
-           b.id AS business_id, b.name AS business_name, b.lat AS biz_lat, b.lng AS biz_lng
+           pv.label AS variant_label, pv.label_km AS variant_label_km,
+           b.id AS business_id, b.name AS business_name, b.name_km AS business_name_km, b.lat AS biz_lat, b.lng AS biz_lng
     FROM cart_items ci
     JOIN products p ON p.id = ci.product_id AND p.active = 1
     JOIN businesses b ON b.id = p.business_id AND b.approved = 1
@@ -55,7 +55,7 @@ foreach ($items as $item) {
     $bid = $item['business_id'];
     if (!isset($grouped[$bid])) {
         $grouped[$bid] = [
-            'name'     => $item['business_name'],
+            'name'     => pick_lang($item['business_name'], $item['business_name_km'] ?? null),
             'biz_lat'  => ($item['biz_lat'] !== null) ? (float)$item['biz_lat'] : null,
             'biz_lng'  => ($item['biz_lng'] !== null) ? (float)$item['biz_lng'] : null,
             'items'        => [],
@@ -110,25 +110,25 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
 
 <?php if ($success): ?>
     <div class="checkout-success">
-        <h1>Order placed!</h1>
+        <h1><?= $t['checkout_order_placed'] ?></h1>
         <p><?= htmlspecialchars($success) ?></p>
-        <a href="/dashboard-buyer/" class="btn-primary">View my orders</a>
+        <a href="/dashboard-buyer/" class="btn-primary"><?= $t['checkout_view_orders'] ?></a>
     </div>
 
 <?php elseif (empty($grouped)): ?>
-    <p class="checkout-empty">Your cart is empty. <a href="/search/">Browse businesses</a></p>
+    <p class="checkout-empty"><?= $t['checkout_empty'] ?> <a href="/search/"><?= $t['cart_browse'] ?></a></p>
 
 <?php else: ?>
     <?php if (!empty($outOfRange)): ?>
     <div class="checkout-alert">
-        Delivery unavailable for: <strong><?= htmlspecialchars(implode(', ', $outOfRange)) ?></strong> — too far from your address. Remove those items to continue.
+        <?= $t['checkout_oos_pre'] ?> <strong><?= htmlspecialchars(implode(', ', $outOfRange)) ?></strong> <?= $t['checkout_oos_post'] ?>
     </div>
     <?php endif; ?>
 
     <?php if (!empty($savedAddresses)): ?>
     <details class="checkout-addr-switcher">
         <summary class="checkout-addr-summary">
-            <span class="checkout-addr-label">Delivering to:
+            <span class="checkout-addr-label"><?= $t['checkout_delivering_to'] ?>
                 <?php
                 $parts = array_filter([
                     $buyer['house_number'],
@@ -136,10 +136,10 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
                     $buyer['sangkat'],
                     $buyer['khan'],
                 ]);
-                echo $parts ? htmlspecialchars(implode(', ', $parts)) : 'your saved address';
+                echo $parts ? htmlspecialchars(implode(', ', $parts)) : $t['checkout_your_saved_address'];
                 ?>
             </span>
-            <span class="checkout-addr-change">Change</span>
+            <span class="checkout-addr-change"><?= $t['checkout_change'] ?></span>
         </summary>
         <div class="checkout-addr-list">
             <?php foreach ($savedAddresses as $sa): ?>
@@ -150,11 +150,11 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
                     <?php if ($sa['label']): ?><strong><?= htmlspecialchars($sa['label']) ?></strong> — <?php endif; ?>
                     <?php
                     $saparts = array_filter([$sa['house_number'], $sa['address'], $sa['sangkat'], $sa['khan']]);
-                    echo $saparts ? htmlspecialchars(implode(', ', $saparts)) : 'Saved address';
+                    echo $saparts ? htmlspecialchars(implode(', ', $saparts)) : $t['checkout_saved_address'];
                     ?>
-                    <?php if ($sa['is_default']): ?> <span class="checkout-addr-default-badge">Default</span><?php endif; ?>
+                    <?php if ($sa['is_default']): ?> <span class="checkout-addr-default-badge"><?= $t['checkout_default'] ?></span><?php endif; ?>
                 </div>
-                <button type="submit" class="btn-addr-use">Use this address</button>
+                <button type="submit" class="btn-addr-use"><?= $t['checkout_use_address'] ?></button>
             </form>
             <?php endforeach; ?>
         </div>
@@ -164,16 +164,16 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
     <div class="checkout-layout">
 
         <div class="checkout-summary">
-            <h1>Order summary</h1>
+            <h1><?= $t['checkout_order_summary'] ?></h1>
             <?php foreach ($grouped as $group): ?>
             <div class="checkout-vendor">
                 <h2><?= htmlspecialchars($group['name']) ?></h2>
                 <?php foreach ($group['items'] as $item): ?>
                 <div class="checkout-line">
                     <span>
-                        <?= htmlspecialchars($item['product_name']) ?>
+                        <?= htmlspecialchars($lang === 'km' && !empty($item['product_name_km']) ? $item['product_name_km'] : $item['product_name']) ?>
                         <?php if ($item['variant_label']): ?>
-                            <span style="color:#9ca3af;font-size:0.85em">(<?= htmlspecialchars($item['variant_label']) ?>)</span>
+                            <span style="color:#9ca3af;font-size:0.85em">(<?= htmlspecialchars(pick_lang($item['variant_label'], $item['variant_label_km'] ?? null)) ?>)</span>
                         <?php endif; ?>
                         &times; <?= (int)$item['quantity'] ?>
                     </span>
@@ -181,24 +181,24 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
                 </div>
                 <?php endforeach; ?>
                 <div class="checkout-line checkout-line--sub">
-                    <span>Subtotal</span>
+                    <span><?= $t['checkout_subtotal'] ?></span>
                     <span><?= format_price($group['subtotal'] ?? 0) ?></span>
                 </div>
                 <?php $d = $group['delivery']; ?>
                 <?php if ($d['state'] === 'ok'): ?>
                 <div class="checkout-line checkout-line--delivery">
-                    <span>Est. <?= $d['vehicle_type'] === 'tuktuk' ? 'Grab Tuk-Tuk' : 'Grab Bike' ?></span>
-                    <span class="checkout-delivery-est">~<?= format_price($d['fee']) ?> <span class="checkout-delivery-note">COD</span></span>
+                    <span><?= $t['checkout_est'] ?> <?= $d['vehicle_type'] === 'tuktuk' ? 'Grab Tuk-Tuk' : 'Grab Bike' ?></span>
+                    <span class="checkout-delivery-est">~<?= format_price($d['fee']) ?> <span class="checkout-delivery-note"><?= $t['checkout_delivery_cod'] ?></span></span>
                 </div>
                 <?php elseif ($d['state'] === 'out_of_range'): ?>
                 <div class="checkout-line checkout-line--error">
-                    <span>Delivery — out of range (<?= $d['distance_km'] ?>km)</span>
+                    <span><?= $t['checkout_delivery_range'] ?> (<?= $d['distance_km'] ?>km)</span>
                     <span>—</span>
                 </div>
                 <?php elseif ($d['state'] === 'no_pin'): ?>
                 <div class="checkout-line checkout-line--muted">
-                    <span>Est. Grab delivery</span>
-                    <span class="checkout-delivery-note">Set pin for estimate</span>
+                    <span><?= $t['checkout_delivery'] ?></span>
+                    <span class="checkout-delivery-note"><?= $t['checkout_set_pin'] ?></span>
                 </div>
                 <?php endif; ?>
             </div>
@@ -206,38 +206,38 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
 
             <div class="checkout-total-block">
                 <div class="checkout-total">
-                    <span>Total</span>
+                    <span><?= $t['checkout_total'] ?></span>
                     <strong><?= format_price($grandTotal) ?></strong>
                 </div>
-                <p class="checkout-cod-note">Grab delivery is paid <strong>directly to the driver on arrival</strong> — cash or QR code. This is separate from your teepsaa payment.</p>
-                <p class="checkout-cod-note checkout-cod-note--est">Fee shown is an estimate based on your saved address and the business location.</p>
+                <p class="checkout-cod-note"><?= $t['checkout_cod_note1'] ?></p>
+                <p class="checkout-cod-note checkout-cod-note--est"><?= $t['checkout_cod_note2'] ?></p>
             </div>
         </div>
 
         <div class="checkout-payment">
-            <h2>Pay with ABA</h2>
+            <h2><?= $t['checkout_pay_aba'] ?></h2>
             <?php if ($canCheckout): ?>
-            <p class="checkout-instructions">Scan the QR code below in your ABA app and pay exactly <strong>$<?= number_format($grandTotal, 2) ?></strong>. Then click "I've paid" to place your order.</p>
+            <p class="checkout-instructions"><?= sprintf($t['checkout_scan_instructions'], '<strong>$' . number_format($grandTotal, 2) . '</strong>') ?></p>
             <?php else: ?>
-            <p class="checkout-instructions checkout-instructions--error">Remove out-of-range items from your cart before paying.</p>
+            <p class="checkout-instructions checkout-instructions--error"><?= $t['checkout_remove_range'] ?></p>
             <?php endif; ?>
 
             <?php if ($abaQr): ?>
                 <img src="/uploads/aba-qr.png" alt="teepsaa ABA QR Code" class="aba-qr">
             <?php else: ?>
-                <div class="aba-qr-placeholder">ABA QR code coming soon</div>
+                <div class="aba-qr-placeholder"><?= $t['checkout_aba_coming_soon'] ?></div>
             <?php endif; ?>
 
             <?php if ($canCheckout): ?>
             <form method="POST" action="/checkout/confirm.php">
                 <?= csrf_input() ?>
-                <textarea name="buyer_notes" class="checkout-notes" maxlength="500" rows="2" placeholder="Delivery instructions — gate code, call on arrival, etc. (optional)"></textarea>
-                <button type="submit" class="btn-paid">I've paid — place my order</button>
+                <textarea name="buyer_notes" class="checkout-notes" maxlength="500" rows="2" placeholder="<?= htmlspecialchars($t['checkout_notes_placeholder']) ?>"></textarea>
+                <button type="submit" class="btn-paid"><?= $t['checkout_ive_paid'] ?></button>
             </form>
             <?php else: ?>
-            <button type="button" class="btn-paid btn-paid--disabled" disabled>I've paid — place my order</button>
+            <button type="button" class="btn-paid btn-paid--disabled" disabled><?= $t['checkout_ive_paid'] ?></button>
             <?php endif; ?>
-            <p class="checkout-note">Your order will be confirmed once we verify your payment. This usually takes less than 1 hour.</p>
+            <p class="checkout-note"><?= $t['checkout_confirm_note'] ?></p>
         </div>
 
     </div>
@@ -250,12 +250,12 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
 <?php if (!empty($grouped)): ?>
 <div class="grab-notice-overlay" id="grab-notice-overlay">
     <div class="grab-notice-modal">
-        <h2 class="grab-notice-title">About your Grab delivery</h2>
+        <h2 class="grab-notice-title"><?= $t['checkout_about_grab'] ?></h2>
         <ul class="grab-notice-list">
-            <li>You pay the Grab driver <strong>directly on arrival</strong> — cash or QR code. This is <strong>separate</strong> from your teepsaa order payment.</li>
-            <li>The delivery fee shown is an <strong>estimate</strong> calculated from your saved address and the business location. The actual Grab fee may vary.</li>
+            <li><?= $t['checkout_grab_modal_1'] ?></li>
+            <li><?= $t['checkout_grab_modal_2'] ?></li>
         </ul>
-        <button type="button" class="grab-notice-btn" id="grab-notice-btn">I understand</button>
+        <button type="button" class="grab-notice-btn" id="grab-notice-btn"><?= $t['checkout_i_understand'] ?></button>
     </div>
 </div>
 <script>

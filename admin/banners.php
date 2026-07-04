@@ -19,6 +19,14 @@ try {
     $error = 'Banners table not found — run database/migration-banners.sql first.';
 }
 
+// Prefill the form when editing an existing banner.
+$editBanner = null;
+if (!empty($_GET['edit'])) {
+    $stmt = $pdo->prepare('SELECT * FROM banners WHERE id = ?');
+    $stmt->execute([(int) $_GET['edit']]);
+    $editBanner = $stmt->fetch() ?: null;
+}
+
 $error   = $_SESSION['banner_error']   ?? '';
 $success = $_SESSION['banner_success'] ?? '';
 unset($_SESSION['banner_error'], $_SESSION['banner_success']);
@@ -185,6 +193,7 @@ $adminTab     = 'banners';
                 <?php endif; ?>
             </div>
             <div class="banner-admin-controls">
+                <a href="/admin/banners.php?edit=<?= $b['id'] ?>#banner-form" class="btn btn-sm">Edit</a>
                 <form method="POST" action="/admin/banner-action.php">
                     <?= csrf_input() ?>
                     <input type="hidden" name="action" value="toggle">
@@ -206,37 +215,61 @@ $adminTab     = 'banners';
     </div>
     <?php endif; ?>
 
-    <div class="upload-section">
-        <h2>Upload new banner</h2>
+    <div class="upload-section" id="banner-form">
+        <h2><?= $editBanner ? 'Edit banner' : 'Upload new banner' ?></h2>
         <form method="POST" action="/admin/banner-action.php" enctype="multipart/form-data">
             <?= csrf_input() ?>
-            <input type="hidden" name="action" value="upload">
+            <input type="hidden" name="action" value="<?= $editBanner ? 'edit' : 'upload' ?>">
+            <?php if ($editBanner): ?>
+            <input type="hidden" name="id" value="<?= $editBanner['id'] ?>">
+            <?php endif; ?>
             <div class="upload-form-grid">
                 <div class="full">
-                    <label class="upload-label">Image <span style="color:#ef4444">*</span></label>
+                    <label class="upload-label">Image <?= $editBanner ? '<span style="color:#9ca3af">(leave blank to keep current)</span>' : '<span style="color:#ef4444">*</span>' ?></label>
+                    <?php if ($editBanner): ?>
+                    <img src="/uploads/<?= htmlspecialchars($editBanner['image_filename']) ?>" alt="" class="banner-admin-thumb" style="margin-bottom:0.5rem;" onerror="this.style.display='none'">
+                    <?php endif; ?>
                     <input type="file" name="image" accept="image/jpeg,image/png,image/webp"
-                           class="upload-input" required>
+                           class="upload-input" <?= $editBanner ? '' : 'required' ?>>
                     <div class="upload-hint">JPEG, PNG or WebP. Recommended size: 1200 × 380 px.</div>
                 </div>
                 <div>
-                    <label class="upload-label">Title <span style="color:#9ca3af">(optional)</span></label>
+                    <label class="upload-label">Title — English <span style="color:#9ca3af">(optional)</span></label>
                     <input type="text" name="title" class="upload-input" maxlength="150"
+                           value="<?= $editBanner ? htmlspecialchars($editBanner['title'] ?? '') : '' ?>"
                            placeholder="e.g. New season arrivals">
                 </div>
                 <div>
-                    <label class="upload-label">Subtitle <span style="color:#9ca3af">(optional)</span></label>
+                    <label class="upload-label">Title — ខ្មែរ <span style="color:#9ca3af">(optional)</span></label>
+                    <input type="text" name="title_km" class="upload-input" maxlength="150"
+                           value="<?= $editBanner ? htmlspecialchars($editBanner['title_km'] ?? '') : '' ?>"
+                           placeholder="ចំណងជើងជាភាសាខ្មែរ">
+                </div>
+                <div>
+                    <label class="upload-label">Subtitle — English <span style="color:#9ca3af">(optional)</span></label>
                     <input type="text" name="subtitle" class="upload-input" maxlength="255"
+                           value="<?= $editBanner ? htmlspecialchars($editBanner['subtitle'] ?? '') : '' ?>"
                            placeholder="e.g. Shop the latest from local makers">
+                </div>
+                <div>
+                    <label class="upload-label">Subtitle — ខ្មែរ <span style="color:#9ca3af">(optional)</span></label>
+                    <input type="text" name="subtitle_km" class="upload-input" maxlength="255"
+                           value="<?= $editBanner ? htmlspecialchars($editBanner['subtitle_km'] ?? '') : '' ?>"
+                           placeholder="អក្សររងជាភាសាខ្មែរ">
                 </div>
                 <div class="full">
                     <label class="upload-label">Link URL <span style="color:#9ca3af">(optional)</span></label>
                     <input type="text" name="link_url" class="upload-input" maxlength="500"
+                           value="<?= $editBanner ? htmlspecialchars($editBanner['link_url'] ?? '') : '' ?>"
                            placeholder="e.g. /search/?q=shoes">
-                    <div class="upload-hint">Leave blank for a non-clickable banner.</div>
+                    <div class="upload-hint">Leave blank for a non-clickable banner. Khmer fields fall back to English when empty.</div>
                 </div>
             </div>
-            <div style="margin-top:1rem;">
-                <button type="submit" class="btn btn-primary">Upload banner</button>
+            <div style="margin-top:1rem;display:flex;gap:0.5rem;">
+                <button type="submit" class="btn btn-primary"><?= $editBanner ? 'Save changes' : 'Upload banner' ?></button>
+                <?php if ($editBanner): ?>
+                <a href="/admin/banners.php" class="btn">Cancel</a>
+                <?php endif; ?>
             </div>
         </form>
     </div>

@@ -17,7 +17,7 @@ $stmt = $pdo->prepare('SELECT name, email, phone, avatar, avatar_color, aba_qr F
 $stmt->execute([$userId]);
 $vendor = $stmt->fetch();
 
-$stmt = $pdo->prepare('SELECT id, name, description, house_number, address, address_notes, khan, sangkat, lat, lng, banner FROM businesses WHERE user_id = ? LIMIT 1');
+$stmt = $pdo->prepare('SELECT id, name, name_km, description, description_km, house_number, address, address_notes, khan, sangkat, lat, lng, banner FROM businesses WHERE user_id = ? LIMIT 1');
 $stmt->execute([$userId]);
 $business = $stmt->fetch();
 
@@ -29,7 +29,7 @@ if ($tab === 'business' && $business) {
     $stmt->execute([$business['id']]);
     $photos = $stmt->fetchAll();
 
-    $parentCategories = $pdo->query('SELECT id, name FROM categories WHERE parent_id IS NULL ORDER BY name ASC')->fetchAll();
+    $parentCategories = $pdo->query('SELECT id, name, name_km FROM categories WHERE parent_id IS NULL ORDER BY name ASC')->fetchAll();
     $selectedCategories = array_filter(array_map('trim', explode(',', $business['category'] ?? '')));
 }
 
@@ -58,17 +58,17 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 <?php require __DIR__ . '/../../header/header.php'; ?>
 
 <main>
-    <h1 style="margin-bottom:1.5rem">Settings</h1>
+    <h1 style="margin-bottom:1.5rem"><?= $t['settings_title'] ?></h1>
 
     <div class="settings-wrap">
 
         <nav class="settings-nav">
-            <a href="?tab=account"  class="<?= $tab === 'account'  ? 'active' : '' ?>">Account</a>
-            <a href="?tab=address"  class="<?= $tab === 'address'  ? 'active' : '' ?>">Address</a>
-            <a href="?tab=business" class="<?= $tab === 'business' ? 'active' : '' ?>">Business</a>
-            <a href="?tab=aba-qr"   class="<?= $tab === 'aba-qr'   ? 'active' : '' ?>">Bank QR</a>
-            <a href="?tab=password" class="<?= $tab === 'password' ? 'active' : '' ?>">Password</a>
-            <a href="?tab=danger"   class="danger-link <?= $tab === 'danger' ? 'active' : '' ?>">Delete account</a>
+            <a href="?tab=account"  class="<?= $tab === 'account'  ? 'active' : '' ?>"><?= $t['settings_tab_account'] ?></a>
+            <a href="?tab=address"  class="<?= $tab === 'address'  ? 'active' : '' ?>"><?= $t['vendor_settings_tab_address'] ?></a>
+            <a href="?tab=business" class="<?= $tab === 'business' ? 'active' : '' ?>"><?= $t['vendor_settings_tab_business'] ?></a>
+            <a href="?tab=aba-qr"   class="<?= $tab === 'aba-qr'   ? 'active' : '' ?>"><?= $t['vendor_settings_tab_bank'] ?></a>
+            <a href="?tab=password" class="<?= $tab === 'password' ? 'active' : '' ?>"><?= $t['settings_password_heading'] ?></a>
+            <a href="?tab=danger"   class="danger-link <?= $tab === 'danger' ? 'active' : '' ?>"><?= $t['settings_delete_account'] ?></a>
         </nav>
 
         <div class="settings-content">
@@ -82,7 +82,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 
             <?php if ($tab === 'account'): ?>
             <div class="settings-section">
-                <h2>Account</h2>
+                <h2><?= $t['settings_tab_account'] ?></h2>
 
                 <?php $vColorIdx = isset($vendor['avatar_color']) ? (int)$vendor['avatar_color'] : (abs($userId) % 5); ?>
                 <div class="avatar-preview-wrap">
@@ -95,23 +95,23 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                         <form method="POST" action="/dashboard-vendor/settings/avatar-action.php" enctype="multipart/form-data" style="display:inline">
                             <?= csrf_input() ?>
                             <input type="hidden" name="action" value="photo">
-                            <label for="avatar" class="btn-upload">Choose photo</label>
+                            <label for="avatar" class="btn-upload"><?= $t['settings_choose_photo'] ?></label>
                             <input type="file" id="avatar" name="avatar" accept="image/jpeg,image/png" style="display:none" onchange="this.form.submit()">
                         </form>
                         <?php if ($vendor['avatar']): ?>
                         <form method="POST" action="/dashboard-vendor/settings/avatar-action.php" style="display:inline;margin-left:0.5rem">
                             <?= csrf_input() ?>
                             <input type="hidden" name="action" value="delete">
-                            <button type="submit" class="btn-remove-avatar">Remove</button>
+                            <button type="submit" class="btn-remove-avatar"><?= $t['settings_remove_photo'] ?></button>
                         </form>
                         <?php endif; ?>
-                        <p class="field-hint" style="margin-top:0.35rem">JPG or PNG, max 2MB. Updates your header avatar.</p>
+                        <p class="field-hint" style="margin-top:0.35rem"><?= $t['settings_photo_hint'] ?></p>
                     </div>
                 </div>
 
                 <?php $avPalette = ['#4a86e8','#e06055','#f6b026','#57bb8a','#8e63ce']; ?>
                 <div style="margin-top:1.1rem">
-                    <label class="settings-field-label">Avatar color <span class="field-hint" style="font-weight:400">— shown when no photo is set</span></label>
+                    <label class="settings-field-label"><?= $t['settings_avatar_color'] ?> <span class="field-hint" style="font-weight:400"><?= $t['settings_avatar_hint'] ?></span></label>
                     <form method="POST" action="/dashboard-vendor/settings/avatar-color-action.php">
                         <?= csrf_input() ?>
                         <div class="avatar-color-picker">
@@ -129,28 +129,28 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <form method="POST" action="/dashboard-vendor/settings/profile-action.php">
                     <?= csrf_input() ?>
                     <div class="settings-field">
-                        <label for="name">Vendor Contact — Full Name</label>
+                        <label for="name"><?= $t['vendor_contact_name'] ?></label>
                         <input type="text" id="name" name="name" value="<?= htmlspecialchars($vendor['name']) ?>" required>
                     </div>
                     <div class="settings-field">
-                        <label for="email">Vendor Contact — Email</label>
+                        <label for="email"><?= $t['vendor_contact_email'] ?></label>
                         <input type="email" id="email" value="<?= htmlspecialchars($vendor['email']) ?>" readonly>
-                        <p class="field-hint">Email cannot be changed here. Contact support.</p>
+                        <p class="field-hint"><?= $t['settings_email_hint'] ?></p>
                     </div>
                     <div class="settings-field">
-                        <label for="phone">Vendor Contact — Phone</label>
+                        <label for="phone"><?= $t['vendor_contact_phone'] ?></label>
                         <input type="tel" id="phone" name="phone" value="<?= htmlspecialchars($vendor['phone'] ?? '') ?>" placeholder="e.g. 012 345 678">
                     </div>
-                    <button type="submit" class="btn-save">Save</button>
+                    <button type="submit" class="btn-save"><?= $t['settings_save'] ?></button>
                 </form>
             </div>
 
             <?php elseif ($tab === 'address'): ?>
             <div class="settings-section">
-                <h2>Address</h2>
+                <h2><?= $t['vendor_settings_tab_address'] ?></h2>
 
                 <?php if (!$business): ?>
-                <p style="font-size:0.9rem;color:#6b7280;">You haven't submitted a business yet. <a href="/submit/">Submit one here.</a></p>
+                <p style="font-size:0.9rem;color:#6b7280;"><?= $t['vendor_no_business'] ?> <a href="/submit/"><?= $t['vendor_submit_one'] ?></a></p>
                 <?php else: ?>
 
                 <?php
@@ -171,34 +171,34 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     <?php endif; ?>
                 </div>
                 <?php else: ?>
-                <p class="addr-display-empty">No address saved yet.</p>
+                <p class="addr-display-empty"><?= $t['settings_no_address'] ?></p>
                 <?php endif; ?>
                 <details class="addr-edit"<?= !$hasAddress ? ' open' : '' ?>>
-                    <summary class="addr-edit-toggle">Edit address</summary>
+                    <summary class="addr-edit-toggle"><?= $t['settings_address_edit'] ?></summary>
                     <div class="addr-edit-body">
 
                 <form method="POST" action="/dashboard-vendor/settings/address-action.php">
                     <?= csrf_input() ?>
 
                     <div class="settings-field">
-                        <label for="house_number">House / Unit #</label>
+                        <label for="house_number"><?= $t['settings_address_house'] ?></label>
                         <input type="text" id="house_number" name="house_number" value="<?= htmlspecialchars($business['house_number'] ?? '') ?>" placeholder="e.g. 15">
                     </div>
 
                     <div class="settings-field">
-                        <label for="address">Street</label>
+                        <label for="address"><?= $t['settings_street'] ?></label>
                         <input type="text" id="address" name="address" value="<?= htmlspecialchars($business['address'] ?? '') ?>" placeholder="e.g. Street 240">
                     </div>
 
                     <div class="settings-field">
-                        <label for="address_notes">Floor / Unit / Landmark</label>
+                        <label for="address_notes"><?= $t['settings_address_floor'] ?></label>
                         <input type="text" id="address_notes" name="address_notes" value="<?= htmlspecialchars($business['address_notes'] ?? '') ?>" placeholder="e.g. Ground floor, blue sign">
                     </div>
 
                     <div class="settings-field">
-                        <label for="khan">Khan</label>
+                        <label for="khan"><?= $t['settings_address_khan'] ?></label>
                         <select id="khan" name="khan" onchange="updateSangkats(this.value)">
-                            <option value="">Select Khan</option>
+                            <option value=""><?= $t['settings_select_khan'] ?></option>
                             <?php foreach (array_keys($locations) as $k): ?>
                             <option value="<?= htmlspecialchars($k) ?>" <?= ($business['khan'] === $k) ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($k) ?>
@@ -208,9 +208,9 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     </div>
 
                     <div class="settings-field">
-                        <label for="sangkat">Sangkat</label>
+                        <label for="sangkat"><?= $t['settings_address_sangkat'] ?></label>
                         <select id="sangkat" name="sangkat">
-                            <option value="">Select Sangkat</option>
+                            <option value=""><?= $t['settings_select_sangkat'] ?></option>
                             <?php if ($business['khan'] && isset($locations[$business['khan']])): ?>
                                 <?php foreach ($locations[$business['khan']] as $s): ?>
                                 <option value="<?= htmlspecialchars($s) ?>" <?= ($business['sangkat'] === $s) ? 'selected' : '' ?>>
@@ -222,18 +222,18 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     </div>
 
                     <div class="settings-field">
-                        <label>Map pin <span class="field-hint" style="font-weight:400;display:inline"> — click to set your exact business location</span></label>
+                        <label><?= $t['vendor_map_pin'] ?> <span class="field-hint" style="font-weight:400;display:inline"> <?= $t['vendor_map_pin_hint'] ?></span></label>
                         <div id="addr-map"></div>
                         <p id="pin-label" class="pin-label">
                             <?= ($business['lat'] && $business['lng'])
                                 ? number_format((float)$business['lat'], 5) . ', ' . number_format((float)$business['lng'], 5)
-                                : 'No pin set — delivery distance cannot be calculated without a pin' ?>
+                                : $t['vendor_no_pin_full'] ?>
                         </p>
                         <input type="hidden" id="lat" name="lat" value="<?= htmlspecialchars($business['lat'] ?? '') ?>">
                         <input type="hidden" id="lng" name="lng" value="<?= htmlspecialchars($business['lng'] ?? '') ?>">
                     </div>
 
-                    <button type="submit" class="btn-save">Save address</button>
+                    <button type="submit" class="btn-save"><?= $t['settings_save_address'] ?></button>
                 </form>
 
                     </div>
@@ -244,58 +244,66 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 
             <?php elseif ($tab === 'business'): ?>
             <div class="settings-section">
-                <h2>Business</h2>
+                <h2><?= $t['vendor_settings_tab_business'] ?></h2>
 
                 <?php if (!$business): ?>
-                <p style="font-size:0.9rem;color:#6b7280;">You haven't submitted a business yet. <a href="/submit/">Submit one here.</a></p>
+                <p style="font-size:0.9rem;color:#6b7280;"><?= $t['vendor_no_business'] ?> <a href="/submit/"><?= $t['vendor_submit_one'] ?></a></p>
                 <?php else: ?>
 
                 <form method="POST" action="/dashboard-vendor/settings/business-action.php">
                     <?= csrf_input() ?>
                     <div class="settings-field">
-                        <label for="business_name">Business name</label>
+                        <label for="business_name"><?= $t['vendor_settings_biz_name'] ?></label>
                         <input type="text" id="business_name" name="business_name" value="<?= htmlspecialchars($business['name']) ?>" required>
                     </div>
                     <div class="settings-field">
-                        <label for="description">Description</label>
-                        <textarea id="description" name="description" rows="4" placeholder="Tell customers about your business…"><?= htmlspecialchars($business['description'] ?? '') ?></textarea>
+                        <label for="business_name_km"><?= $t['vendor_settings_biz_name'] ?> <span class="field-hint" style="font-weight:400;display:inline"><?= $t['form_km_field'] ?></span></label>
+                        <input type="text" id="business_name_km" name="business_name_km" value="<?= htmlspecialchars($business['name_km'] ?? '') ?>" placeholder="ឈ្មោះហាងជាភាសាខ្មែរ">
+                    </div>
+                    <div class="settings-field">
+                        <label for="description"><?= $t['vendor_settings_description'] ?></label>
+                        <textarea id="description" name="description" rows="4" placeholder="<?= htmlspecialchars($t['vendor_biz_desc_placeholder']) ?>"><?= htmlspecialchars($business['description'] ?? '') ?></textarea>
+                    </div>
+                    <div class="settings-field">
+                        <label for="description_km"><?= $t['vendor_settings_description'] ?> <span class="field-hint" style="font-weight:400;display:inline"><?= $t['form_km_field'] ?></span></label>
+                        <textarea id="description_km" name="description_km" rows="4" placeholder="ការពិពណ៌នាហាងជាភាសាខ្មែរ"><?= htmlspecialchars($business['description_km'] ?? '') ?></textarea>
                     </div>
                     <?php if (!empty($parentCategories)): ?>
                     <div class="settings-field">
-                        <label>Categories <span class="field-hint" style="font-weight:400;display:inline">— select all that apply</span></label>
+                        <label><?= $t['vendor_settings_categories'] ?> <span class="field-hint" style="font-weight:400;display:inline"><?= $t['vendor_cat_hint'] ?></span></label>
                         <div class="biz-cat-grid">
                             <?php foreach ($parentCategories as $cat): ?>
                             <?php $checked = in_array($cat['name'], $selectedCategories, true); ?>
                             <label class="biz-cat-option <?= $checked ? 'biz-cat-option--selected' : '' ?>">
                                 <input type="checkbox" name="categories[]" value="<?= htmlspecialchars($cat['name']) ?>" <?= $checked ? 'checked' : '' ?> onchange="this.closest('label').classList.toggle('biz-cat-option--selected', this.checked)">
-                                <?= htmlspecialchars($cat['name']) ?>
+                                <?= htmlspecialchars(cat_name($cat)) ?>
                             </label>
                             <?php endforeach; ?>
                         </div>
                     </div>
                     <?php endif; ?>
-                    <button type="submit" class="btn-save">Save</button>
+                    <button type="submit" class="btn-save"><?= $t['settings_save'] ?></button>
                 </form>
 
                 <hr class="form-divider">
 
                 <div class="settings-field">
-                    <label>Banner photo <span class="field-hint" style="font-weight:400;display:inline"> — displayed full-width at the top of your store page</span></label>
+                    <label><?= $t['vendor_settings_banner'] ?> <span class="field-hint" style="font-weight:400;display:inline"> <?= $t['vendor_settings_banner_hint'] ?></span></label>
                     <?php if ($business['banner']): ?>
                         <img src="/uploads/<?= htmlspecialchars($business['banner']) ?>" alt="" class="banner-preview">
                     <?php endif; ?>
                     <form method="POST" action="/dashboard-vendor/settings/banner-action.php" enctype="multipart/form-data">
                         <?= csrf_input() ?>
-                        <label for="banner" class="btn-upload" style="margin-top:0.6rem;display:inline-block"><?= $business['banner'] ? 'Replace banner' : 'Upload banner' ?></label>
+                        <label for="banner" class="btn-upload" style="margin-top:0.6rem;display:inline-block"><?= $business['banner'] ? $t['vendor_replace_banner'] : $t['vendor_upload_banner'] ?></label>
                         <input type="file" id="banner" name="banner" accept="image/jpeg,image/png" style="display:none" onchange="this.form.submit()">
-                        <p class="field-hint">JPG or PNG, max 4MB. Recommended size: 1200×400px (landscape). The image is cropped to a wide strip — tall or portrait images will be cut off at the top and bottom.</p>
+                        <p class="field-hint"><?= $t['vendor_banner_upload_hint'] ?></p>
                     </form>
                 </div>
 
                 <hr class="form-divider">
 
                 <div class="settings-field">
-                    <label>Gallery photos <span class="field-hint" style="font-weight:400;display:inline"> — up to 10 photos shown on your store page</span></label>
+                    <label><?= $t['vendor_gallery'] ?> <span class="field-hint" style="font-weight:400;display:inline"> <?= $t['vendor_settings_photos_hint'] ?></span></label>
                     <?php if (!empty($photos)): ?>
                     <div class="gallery-grid">
                         <?php foreach ($photos as $ph): ?>
@@ -313,9 +321,9 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     <?php if (count($photos) < 10): ?>
                     <form method="POST" action="/dashboard-vendor/settings/photo-upload-action.php" enctype="multipart/form-data" style="margin-top:0.75rem">
                         <?= csrf_input() ?>
-                        <label for="gallery_photo" class="btn-upload" style="margin-top:0.6rem;display:inline-block">Add photo</label>
+                        <label for="gallery_photo" class="btn-upload" style="margin-top:0.6rem;display:inline-block"><?= $t['vendor_settings_photos'] ?></label>
                         <input type="file" id="gallery_photo" name="gallery_photo[]" accept="image/jpeg,image/png" multiple style="display:none" onchange="this.form.submit()">
-                        <p class="field-hint">JPG or PNG, max 4MB. Recommended size: 1200×675px (landscape, 16:9). Portrait or square images will be cropped at the sides. <?= count($photos) ?>/10 used.</p>
+                        <p class="field-hint"><?= sprintf($t['vendor_gallery_upload_hint'], count($photos)) ?></p>
                     </form>
                     <?php endif; ?>
                 </div>
@@ -325,55 +333,55 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 
             <?php elseif ($tab === 'aba-qr'): ?>
             <div class="settings-section">
-                <h2>Bank QR Code</h2>
-                <p class="field-hint" style="margin-bottom:1.25rem;">Buyers scan this at checkout to pay for their order.</p>
+                <h2><?= $t['vendor_settings_bank_qr'] ?></h2>
+                <p class="field-hint" style="margin-bottom:1.25rem;"><?= $t['vendor_settings_bank_hint'] ?></p>
                 <?php if ($vendor['aba_qr']): ?>
                 <img src="/uploads/<?= htmlspecialchars($vendor['aba_qr']) ?>" alt="Your Bank QR" style="width:140px;height:140px;object-fit:contain;border:1px solid #e5e7eb;border-radius:6px;display:block;margin-bottom:1.25rem;">
                 <?php endif; ?>
                 <form method="POST" action="/dashboard-vendor/settings/aba-qr-action.php" enctype="multipart/form-data">
                     <?= csrf_input() ?>
                     <div class="settings-field">
-                        <label for="aba_qr"><?= $vendor['aba_qr'] ? 'Replace QR code' : 'Upload QR code' ?> <span class="field-hint" style="font-weight:400;display:inline">— JPG or PNG, max 2MB</span></label>
+                        <label for="aba_qr"><?= $vendor['aba_qr'] ? $t['vendor_replace_qr'] : $t['vendor_upload_qr'] ?> <span class="field-hint" style="font-weight:400;display:inline"><?= $t['vendor_qr_hint'] ?></span></label>
                         <input type="file" id="aba_qr" name="aba_qr" accept="image/jpeg,image/png" required>
                     </div>
-                    <button type="submit" class="btn-save">Upload</button>
+                    <button type="submit" class="btn-save"><?= $t['vendor_upload'] ?></button>
                 </form>
             </div>
 
             <?php elseif ($tab === 'password'): ?>
             <div class="settings-section">
-                <h2>Password</h2>
+                <h2><?= $t['settings_password_heading'] ?></h2>
                 <form method="POST" action="/dashboard-vendor/settings/password-action.php">
                     <?= csrf_input() ?>
                     <div class="settings-field">
-                        <label for="current_password">Current password</label>
+                        <label for="current_password"><?= $t['settings_current_pw'] ?></label>
                         <input type="password" id="current_password" name="current_password" required autocomplete="current-password">
                     </div>
                     <div class="settings-field">
-                        <label for="new_password">New password</label>
+                        <label for="new_password"><?= $t['settings_new_pw'] ?></label>
                         <input type="password" id="new_password" name="new_password" required autocomplete="new-password" minlength="8">
-                        <p class="field-hint">At least 8 characters.</p>
+                        <p class="field-hint"><?= $t['settings_pw_hint'] ?></p>
                     </div>
                     <div class="settings-field">
-                        <label for="confirm_password">Confirm new password</label>
+                        <label for="confirm_password"><?= $t['settings_confirm_pw'] ?></label>
                         <input type="password" id="confirm_password" name="confirm_password" required autocomplete="new-password">
                     </div>
-                    <button type="submit" class="btn-save">Update password</button>
+                    <button type="submit" class="btn-save"><?= $t['settings_update_pw'] ?></button>
                 </form>
             </div>
 
             <?php elseif ($tab === 'danger'): ?>
             <div class="settings-section">
-                <h2>Delete account</h2>
+                <h2><?= $t['settings_delete_account'] ?></h2>
                 <div class="danger-zone">
-                    <p>Deleting your account also removes your business and all associated products. This cannot be undone. Accounts with open orders cannot be deleted.</p>
+                    <p><?= $t['vendor_delete_warning'] ?></p>
                     <form method="POST" action="/dashboard-vendor/settings/delete-action.php">
                         <?= csrf_input() ?>
                         <div class="settings-field">
-                            <label for="delete_password">Confirm your password</label>
+                            <label for="delete_password"><?= $t['settings_confirm_pw_label'] ?></label>
                             <input type="password" id="delete_password" name="password" required autocomplete="current-password">
                         </div>
-                        <button type="submit" class="btn-danger">Delete my account</button>
+                        <button type="submit" class="btn-danger"><?= $t['settings_delete_confirm'] ?></button>
                     </form>
                 </div>
             </div>
@@ -393,7 +401,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 const LOCATIONS = <?= json_encode($locations) ?>;
 function updateSangkats(khan) {
     const sel = document.getElementById('sangkat');
-    sel.innerHTML = '<option value="">Select Sangkat</option>';
+    sel.innerHTML = '<option value=""><?= $t['settings_select_sangkat'] ?></option>';
     if (khan && LOCATIONS[khan]) {
         LOCATIONS[khan].forEach(s => {
             const opt = document.createElement('option');

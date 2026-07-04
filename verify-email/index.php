@@ -49,8 +49,8 @@ unset($_SESSION['verify_error'], $_SESSION['verify_success'], $_SESSION['dev_otp
 
 <main>
     <div class="auth-box">
-        <h1>Check your email</h1>
-        <p style="color:#6b7280;font-size:0.9rem;margin-bottom:1.5rem;">We sent a 6-digit code to <strong><?= htmlspecialchars($user['email'] ?? '') ?></strong>. Enter it below.</p>
+        <h1><?= $t['ve_title'] ?></h1>
+        <p style="color:#6b7280;font-size:0.9rem;margin-bottom:1.5rem;"><?= sprintf($t['ve_sent'], '<strong>' . htmlspecialchars($user['email'] ?? '') . '</strong>') ?></p>
 
 
         <?php if ($error): ?>
@@ -71,14 +71,14 @@ unset($_SESSION['verify_error'], $_SESSION['verify_success'], $_SESSION['dev_otp
                 <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
             </div>
             <input type="hidden" name="code" id="otp-hidden">
-            <button type="submit" class="otp-submit">Verify</button>
+            <button type="submit" class="otp-submit"><?= $t['ve_verify'] ?></button>
         </form>
 
         <p class="auth-switch">
-            Didn't get it?
+            <?= $t['ve_didnt_get'] ?>
             <form method="POST" action="/resend-verification/resend.php" style="display:inline">
                 <?= csrf_input() ?>
-                <button type="submit" class="btn-link-inline">Resend code</button>
+                <button type="submit" class="btn-link-inline"><?= $t['ve_resend_code'] ?></button>
             </form>
         </p>
     </div>

@@ -24,20 +24,20 @@ exit;
 
 <main>
     <div class="auth-box">
-        <h1>Verify your email</h1>
+        <h1><?= $t['rv_title'] ?></h1>
         <?php if ($user && $user['email_verified_at']): ?>
-            <p class="auth-success">Your email address is verified.</p>
+            <p class="auth-success"><?= $t['rv_verified'] ?></p>
         <?php elseif ($success): ?>
             <p class="auth-success"><?= htmlspecialchars($success) ?></p>
-            <p class="auth-switch">Didn't arrive? <a href="/resend-verification/">Resend</a>.</p>
+            <p class="auth-switch"><?= $t['rv_didnt_arrive'] ?> <a href="/resend-verification/"><?= $t['rv_resend'] ?></a>.</p>
         <?php else: ?>
             <?php if ($error): ?>
                 <p class="auth-error"><?= htmlspecialchars($error) ?></p>
             <?php endif; ?>
-            <p>We sent a verification link to <strong><?= htmlspecialchars($user['email'] ?? '') ?></strong>. Check your inbox and click the link to activate your account.</p>
+            <p><?= sprintf($t['rv_sent'], '<strong>' . htmlspecialchars($user['email'] ?? '') . '</strong>') ?></p>
             <form method="POST" action="/resend-verification/resend.php">
                 <?= csrf_input() ?>
-                <button type="submit">Resend verification email</button>
+                <button type="submit"><?= $t['rv_resend_email'] ?></button>
             </form>
         <?php endif; ?>
     </div>

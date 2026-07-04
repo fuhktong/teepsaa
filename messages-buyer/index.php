@@ -46,11 +46,11 @@ $threads = $stmt->fetchAll();
 
 <main>
     <div class="msg-header">
-        <h1>Support</h1>
+        <h1><?= $t['messages_title'] ?></h1>
         <?php if ($pendingThread): ?>
-            <a href="/messages-buyer/thread.php?id=<?= $pendingThread['id'] ?>" class="msg-contact-btn">View pending request</a>
+            <a href="/messages-buyer/thread.php?id=<?= $pendingThread['id'] ?>" class="msg-contact-btn"><?= $t['messages_pending'] ?></a>
         <?php else: ?>
-            <a href="/contact-buyer/" class="msg-contact-btn">Contact Support</a>
+            <a href="/contact-buyer/" class="msg-contact-btn"><?= $t['messages_contact'] ?></a>
         <?php endif; ?>
     </div>
 
@@ -58,7 +58,7 @@ $threads = $stmt->fetchAll();
     <?php if ($error): ?><p class="msg-error"><?= htmlspecialchars($error) ?></p><?php endif; ?>
 
     <?php if (empty($threads)): ?>
-        <p class="msg-empty">No messages yet.</p>
+        <p class="msg-empty"><?= $t['messages_empty'] ?></p>
     <?php else: ?>
     <div class="thread-list">
         <?php foreach ($threads as $t): ?>
@@ -74,7 +74,7 @@ $threads = $stmt->fetchAll();
             <?php endif; ?>
             <span class="thread-meta">
                 <span class="thread-badge thread-badge--<?= $t['status'] ?>"><?= ucfirst($t['status']) ?></span>
-                <span class="thread-date"><?= date('M j', strtotime($t['updated_at'])) ?></span>
+                <span class="thread-date"><?= fmt_date('M j', strtotime($t['updated_at'])) ?></span>
             </span>
         </a>
         <?php endforeach; ?>

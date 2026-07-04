@@ -54,13 +54,13 @@ $orders = $stmt->fetchAll();
 <main>
     <div class="dash-header">
         <div style="display:flex;align-items:center;gap:0.75rem;">
-            <h1>My Orders</h1>
+            <h1><?= $t['orders_title'] ?></h1>
             <button class="btn-refresh" data-refresh-all-btn type="button" title="Refresh orders"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
         </div>
     </div>
 
     <?php if (empty($orders)): ?>
-        <p class="dash-empty">You haven't placed any orders yet.</p>
+        <p class="dash-empty"><?= $t['orders_empty'] ?></p>
     <?php else: ?>
     <div class="order-cards">
         <?php foreach ($orders as $o): ?>
@@ -72,15 +72,15 @@ $orders = $stmt->fetchAll();
                 <span class="order-card-id"><?= $oid ?><?php if ($isRefund): ?> <span class="refund-dot"></span><?php endif; ?></span>
                 <span class="order-card-items"><?= htmlspecialchars($o['items']) ?></span>
                 <span class="order-card-meta"><?= htmlspecialchars($o['business_name']) ?></span>
-                <span class="order-card-date"><?= date('M j, g:ia', strtotime($o['created_at'])) ?></span>
+                <span class="order-card-date"><?= fmt_date('M j, g:ia', strtotime($o['created_at'])) ?></span>
                 <span class="order-card-total">$<?= number_format($o['subtotal'] + $o['delivery_fee'], 2) ?></span>
             </div>
             <div class="order-card-status" data-status-bar>
                 <?php $orderStatus = $o['status']; require __DIR__ . '/../order-status/order-status.php'; ?>
             </div>
-            <p class="order-pending-note" data-action-status="pending"<?= $o['status'] !== 'pending' ? ' style="display:none"' : '' ?>>Awaiting payment confirmation — usually within 1 hour.</p>
+            <p class="order-pending-note" data-action-status="pending"<?= $o['status'] !== 'pending' ? ' style="display:none"' : '' ?>><?= $t['orders_awaiting_payment'] ?></p>
             <?php if (in_array($o['status'], ['delivered', 'completed']) && $o['unreviewed_count'] > 0): ?>
-            <p class="order-review-prompt">★ Leave a review for this order</p>
+            <p class="order-review-prompt">★ <?= $t['orders_leave_review'] ?></p>
             <?php endif; ?>
         </div>
         </a>

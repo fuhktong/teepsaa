@@ -34,12 +34,12 @@ unset($_SESSION['contact_guest_error'], $_SESSION['contact_guest_old']);
 
 <main>
     <div class="contact-header">
-        <h1>Contact Us</h1>
-        <p class="contact-lead">Have a question? Send us a message and we'll get back to you.</p>
+        <h1><?= $t['contact_title'] ?></h1>
+        <p class="contact-lead"><?= $t['contact_lead'] ?></p>
     </div>
 
     <p class="contact-help-note">
-        Already have an account? <a href="/login-buyer/">Sign in</a> to contact support with your order details, or <a href="/help/">check our Help Center</a> for quick answers.
+        <?= sprintf($t['contact_signin_note'], '<a href="/login-buyer/">' . $t['footer_sign_in'] . '</a>', '<a href="/help/">' . $t['contact_help_link'] . '</a>') ?>
     </p>
 
     <?php if ($error): ?>
@@ -50,35 +50,35 @@ unset($_SESSION['contact_guest_error'], $_SESSION['contact_guest_old']);
         <input type="text" name="website" value="" autocomplete="off" tabindex="-1" style="display:none;position:absolute;left:-9999px;" aria-hidden="true">
 
         <div class="contact-field">
-            <label for="name">Your name <span class="contact-req">*</span></label>
+            <label for="name"><?= $t['contact_name'] ?> <span class="contact-req">*</span></label>
             <input type="text" id="name" name="name" maxlength="100" required
-                   placeholder="Full name"
+                   placeholder="<?= htmlspecialchars($t['register_name']) ?>"
                    value="<?= htmlspecialchars($old['name'] ?? '') ?>">
         </div>
 
         <div class="contact-field">
-            <label for="email">Email address <span class="contact-req">*</span></label>
+            <label for="email"><?= $t['contact_email'] ?> <span class="contact-req">*</span></label>
             <input type="email" id="email" name="email" maxlength="255" required
                    placeholder="you@example.com"
                    value="<?= htmlspecialchars($old['email'] ?? '') ?>">
         </div>
 
         <div class="contact-field">
-            <label for="subject">Subject <span class="contact-req">*</span></label>
+            <label for="subject"><?= $t['contact_subject'] ?> <span class="contact-req">*</span></label>
             <input type="text" id="subject" name="subject" maxlength="255" required
-                   placeholder="Brief summary of your question"
+                   placeholder="<?= htmlspecialchars($t['contact_subject_ph_generic']) ?>"
                    value="<?= htmlspecialchars($old['subject'] ?? '') ?>">
         </div>
 
         <div class="contact-field">
-            <label for="body">Message <span class="contact-req">*</span></label>
+            <label for="body"><?= $t['contact_message'] ?> <span class="contact-req">*</span></label>
             <textarea id="body" name="body" rows="6" maxlength="2000" required
-                      placeholder="How can we help?"><?= htmlspecialchars($old['body'] ?? '') ?></textarea>
-            <span class="contact-hint-text">Max 2000 characters</span>
+                      placeholder="<?= htmlspecialchars($t['contact_message_ph_generic']) ?>"><?= htmlspecialchars($old['body'] ?? '') ?></textarea>
+            <span class="contact-hint-text"><?= $t['contact_max_chars'] ?></span>
         </div>
 
         <div class="contact-actions">
-            <button type="submit" class="contact-btn">Send message</button>
+            <button type="submit" class="contact-btn"><?= $t['contact_send'] ?></button>
         </div>
     </form>
 </main>

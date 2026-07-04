@@ -8,19 +8,23 @@ if (in_array($orderStatus, $_oRefundStatuses)) {
     return;
 }
 unset($_oRefundStatuses);
+if (!isset($t)) {
+    $_ol = $_SESSION['lang'] ?? 'km';
+    $t = require __DIR__ . '/../lang/' . (in_array($_ol, ['en', 'km']) ? $_ol : 'en') . '.php';
+}
 $_osteps = [
-    'pending'    => 'Payment<br>submitted',
-    'paid'       => 'Payment<br>confirmed',
-    'dispatched' => 'Dispatched',
-    'delivered'  => 'Delivered',
-    'completed'  => 'Completed',
+    'pending'    => $t['ostatus_pending'],
+    'paid'       => $t['ostatus_paid'],
+    'dispatched' => $t['ostatus_dispatched'],
+    'delivered'  => $t['ostatus_delivered'],
+    'completed'  => $t['ostatus_completed'],
 ];
 $_okeys       = array_keys($_osteps);
 $_ocurrentIdx = array_search($orderStatus, $_okeys);
 $_ocancelled  = $_ocurrentIdx === false;
 ?>
 <?php if ($_ocancelled): ?>
-<div class="ostatus-bar ostatus-cancelled">Order cancelled</div>
+<div class="ostatus-bar ostatus-cancelled"><?= $t['ostatus_cancelled'] ?></div>
 <?php else: ?>
 <div class="ostatus-bar">
     <?php foreach ($_okeys as $_oi => $_okey): ?>

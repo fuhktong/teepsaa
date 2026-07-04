@@ -27,12 +27,12 @@ if (empty($buyer['address']) && empty($buyer['khan'])) {
 
 $stmt = $pdo->prepare('
     SELECT ci.id AS cart_item_id, ci.quantity, ci.variant_id,
-           p.id AS product_id, p.name AS product_name, p.price, p.stock, p.weight_g,
+           p.id AS product_id, p.name AS product_name, p.name_km AS product_name_km, p.price, p.stock, p.weight_g,
            COALESCE(pv.price_override, IF(p.sale_ends_at IS NOT NULL AND p.sale_ends_at > NOW(), p.sale_price, NULL), p.price) AS effective_price,
            COALESCE(pv.stock, p.stock) AS effective_stock,
-           pv.label AS variant_label,
+           pv.label AS variant_label, pv.label_km AS variant_label_km,
            pp.filename AS photo,
-           b.id AS business_id, b.name AS business_name, b.lat AS biz_lat, b.lng AS biz_lng
+           b.id AS business_id, b.name AS business_name, b.name_km AS business_name_km, b.lat AS biz_lat, b.lng AS biz_lng
     FROM cart_items ci
     JOIN products p ON p.id = ci.product_id AND p.active = 1
     JOIN businesses b ON b.id = p.business_id AND b.approved = 1
@@ -52,7 +52,7 @@ foreach ($items as $item) {
     $bid = $item['business_id'];
     if (!isset($grouped[$bid])) {
         $grouped[$bid] = [
-            'name'     => $item['business_name'],
+            'name'     => pick_lang($item['business_name'], $item['business_name_km'] ?? null),
             'biz_lat'  => ($item['biz_lat'] !== null) ? (float)$item['biz_lat'] : null,
             'biz_lng'  => ($item['biz_lng'] !== null) ? (float)$item['biz_lng'] : null,
             'items'    => [],
@@ -106,7 +106,7 @@ unset($_SESSION['cart_success'], $_SESSION['cart_error']);
 <?php require __DIR__ . '/../header/header.php'; ?>
 
 <main>
-    <h1 class="cart-title">Your cart</h1>
+    <h1 class="cart-title"><?= $t['cart_title'] ?></h1>
 
     <?php if ($error): ?>
         <p class="cart-msg cart-msg--error"><?= htmlspecialchars($error) ?></p>
@@ -116,7 +116,7 @@ unset($_SESSION['cart_success'], $_SESSION['cart_error']);
     <?php endif; ?>
 
     <?php if (empty($grouped)): ?>
-        <p class="cart-empty">Your cart is empty. <a href="/search/">Browse businesses</a></p>
+        <p class="cart-empty"><?= $t['cart_empty'] ?> <a href="/search/"><?= $t['cart_browse'] ?></a></p>
     <?php else: ?>
 
         <?php foreach ($grouped as $businessId => $group): ?>
@@ -130,19 +130,19 @@ unset($_SESSION['cart_success'], $_SESSION['cart_error']);
                     <div class="cart-item-photo cart-item-photo--empty"></div>
                 <?php endif; ?>
                 <div class="cart-item-info">
-                    <strong><?= htmlspecialchars($item['product_name']) ?></strong>
+                    <strong><?= htmlspecialchars($lang === 'km' && !empty($item['product_name_km']) ? $item['product_name_km'] : $item['product_name']) ?></strong>
                     <?php if ($item['variant_label']): ?>
-                        <span class="cart-item-variant"><?= htmlspecialchars($item['variant_label']) ?></span>
+                        <span class="cart-item-variant"><?= htmlspecialchars(pick_lang($item['variant_label'], $item['variant_label_km'] ?? null)) ?></span>
                     <?php endif; ?>
-                    <span class="cart-item-price"><?= format_price($item['effective_price']) ?> each</span>
+                    <span class="cart-item-price"><?= format_price($item['effective_price']) ?> <?= $t['cart_each'] ?></span>
                 </div>
                 <form method="POST" action="/cart/update.php" class="cart-item-controls">
                     <?= csrf_input() ?>
                     <input type="hidden" name="cart_item_id" value="<?= $item['cart_item_id'] ?>">
                     <input type="number" name="quantity" value="<?= (int)$item['quantity'] ?>"
                            min="0" max="<?= (int)$item['effective_stock'] ?>" class="cart-qty">
-                    <button type="submit" name="action" value="update" class="btn-qty">Update</button>
-                    <button type="submit" name="action" value="remove" class="btn-remove">Remove</button>
+                    <button type="submit" name="action" value="update" class="btn-qty"><?= $t['cart_update'] ?></button>
+                    <button type="submit" name="action" value="remove" class="btn-remove"><?= $t['cart_remove'] ?></button>
                 </form>
                 <span class="cart-item-subtotal"><?= format_price($item['effective_price'] * $item['quantity']) ?></span>
             </div>
@@ -150,26 +150,26 @@ unset($_SESSION['cart_success'], $_SESSION['cart_error']);
 
             <div class="cart-vendor-footer">
                 <div class="cart-vendor-subtotal">
-                    <span>Subtotal</span>
+                    <span><?= $t['cart_subtotal'] ?></span>
                     <span><?= format_price($group['subtotal']) ?></span>
                 </div>
                 <?php $d = $group['delivery']; ?>
                 <?php if ($d['state'] === 'no_address'): ?>
                     <div class="cart-delivery cart-delivery--cta">
-                        Grab delivery — <a href="/dashboard-buyer/settings/?tab=address">set your address to see estimate</a>
+                        <?= $t['cart_grab_delivery'] ?> — <a href="/dashboard-buyer/settings/?tab=address"><?= $t['cart_set_address'] ?></a>
                     </div>
                 <?php elseif ($d['state'] === 'no_pin'): ?>
                     <div class="cart-delivery cart-delivery--muted">
-                        Grab delivery — <a href="/dashboard-buyer/settings/?tab=address">set your pin for estimate</a>
+                        <?= $t['cart_grab_delivery'] ?> — <a href="/dashboard-buyer/settings/?tab=address"><?= $t['cart_set_pin'] ?></a>
                     </div>
                 <?php elseif ($d['state'] === 'out_of_range'): ?>
                     <div class="cart-delivery cart-delivery--error">
-                        Delivery unavailable — <?= $d['distance_km'] ?>km away (max <?= $cfg['max_distance'] ?>km)
+                        <?= $t['cart_delivery_unavailable'] ?> — <?= $d['distance_km'] ?><?= $t['cart_km_away'] ?> <?= $cfg['max_distance'] ?>km)
                     </div>
                 <?php else: ?>
                     <div class="cart-delivery cart-delivery--muted">
-                        <span>Est. Grab delivery</span>
-                        <span>~<?= format_price($d['fee']) ?> <span class="cart-cod-note">COD</span></span>
+                        <span><?= $t['cart_delivery_est'] ?></span>
+                        <span>~<?= format_price($d['fee']) ?> <span class="cart-cod-note"><?= $t['cart_delivery_cod'] ?></span></span>
                     </div>
                 <?php endif; ?>
             </div>
@@ -179,11 +179,11 @@ unset($_SESSION['cart_success'], $_SESSION['cart_error']);
         <div class="cart-footer">
             <div class="cart-totals">
                 <div class="cart-total">
-                    Total <strong><?= format_price($grandTotal) ?></strong>
+                    <?= $t['cart_total'] ?> <strong><?= format_price($grandTotal) ?></strong>
                 </div>
-                <p class="cart-cod-info">Grab delivery is paid cash to the driver on arrival.</p>
+                <p class="cart-cod-info"><?= $t['checkout_grab_note'] ?></p>
             </div>
-            <a href="/checkout/" class="btn-checkout">Checkout</a>
+            <a href="/checkout/" class="btn-checkout"><?= $t['cart_checkout'] ?></a>
         </div>
 
     <?php endif; ?>

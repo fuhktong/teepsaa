@@ -38,17 +38,13 @@ if ($stmt->rowCount() > 0) {
     if ($vendor) {
         $oid = order_display_id((int)$vendor['order_id'], $vendor['created_at']);
         $msg = 'Delivery confirmed for order #' . $oid . ' — payout incoming.';
-        notify($pdo, 'vendor', (int)$vendor['vendor_id'], 'delivery_confirmed', $msg, '/orders-vendor/order.php?id=' . $orderId);
-        send_email(
-            $vendor['email'],
-            'Delivery confirmed — payout incoming',
-            notification_email_html(
-                'Delivery confirmed',
-                'Hi ' . htmlspecialchars($vendor['name']) . ', the buyer has confirmed receipt of order <strong>#' . $oid . '</strong>. Teepsaa will process your payout shortly.',
-                'View order',
-                'https://teepsaa.com/orders-vendor/order.php?id=' . $orderId
-            )
-        );
+        notify($pdo, 'vendor', (int)$vendor['vendor_id'], 'delivery_confirmed', $msg, '/orders-vendor/order.php?id=' . $orderId, ['ref' => $oid]);
+        [$subj, $html] = render_email_template($pdo, 'delivery_confirmed', [
+            'name'    => htmlspecialchars($vendor['name']),
+            'order'   => $oid,
+            'cta_url' => 'https://teepsaa.com/orders-vendor/order.php?id=' . $orderId,
+        ]);
+        if ($html !== '') send_email($vendor['email'], $subj, $html);
     }
 }
 

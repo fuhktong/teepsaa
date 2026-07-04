@@ -39,6 +39,26 @@ $activeFlag = $lang === 'km'
     ? '<img src="/flags/kh.svg" width="28" height="18" alt="Khmer" style="display:block">'
     : '<img src="/flags/us.svg" width="28" height="18" alt="English" style="display:block">';
 ?>
+<script>window.T = <?= json_encode([
+    'st_pending'           => $t['js_st_pending'],
+    'st_paid'              => $t['js_st_paid'],
+    'st_dispatched'        => $t['js_st_dispatched'],
+    'st_delivered'         => $t['js_st_delivered'],
+    'st_completed'         => $t['js_st_completed'],
+    'st_refund_requested'  => $t['js_st_refund_requested'],
+    'st_return_approved'   => $t['js_st_return_approved'],
+    'st_return_dispatched' => $t['js_st_return_dispatched'],
+    'st_return_received'   => $t['js_st_return_received'],
+    'st_refunded'          => $t['js_st_refunded'],
+    'order_cancelled'      => $t['js_order_cancelled'],
+    'refund_rejected'      => $t['js_refund_rejected'],
+    'session_expired'      => $t['js_session_expired'],
+    'login_again'          => $t['js_login_again'],
+    'order_updated'        => $t['js_order_updated'],
+    'refresh_error'        => $t['js_refresh_error'],
+    'no_notifications'     => $t['js_no_notifications'],
+    'loading'              => $t['js_loading'],
+], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
 <header<?= ($_SESSION['role'] ?? '') === 'admin' ? ' class="admin-header"' : '' ?>>
     <div class="header-inner">
         <a href="/" class="site-name"><img src="/images/<?= $lang === 'km' ? 'teepsaa_logo_khm.png' : 'teepsaa_logo_eng_myriad.png' ?>" alt="teepsaa"></a>

@@ -49,9 +49,12 @@ function do_save(int $id): void {
     global $pdo;
 
     $title       = trim($_POST['title'] ?? '');
+    $titleKm     = trim($_POST['title_km'] ?? '');
     $location    = trim($_POST['location'] ?? '');
+    $locationKm  = trim($_POST['location_km'] ?? '');
     $type        = trim($_POST['employment_type'] ?? '');
     $description = trim($_POST['description'] ?? '');
+    $descriptionKm = trim($_POST['description_km'] ?? '');
     $isOpen      = isset($_POST['is_open']) ? 1 : 0;
 
     if ($title === '') {
@@ -59,13 +62,13 @@ function do_save(int $id): void {
     }
 
     if ($id) {
-        $stmt = $pdo->prepare('UPDATE job_postings SET title = ?, location = ?, employment_type = ?, description = ?, is_open = ? WHERE id = ?');
-        $stmt->execute([$title, $location ?: null, $type ?: null, $description ?: null, $isOpen, $id]);
+        $stmt = $pdo->prepare('UPDATE job_postings SET title = ?, title_km = ?, location = ?, location_km = ?, employment_type = ?, description = ?, description_km = ?, is_open = ? WHERE id = ?');
+        $stmt->execute([$title, $titleKm ?: null, $location ?: null, $locationKm ?: null, $type ?: null, $description ?: null, $descriptionKm ?: null, $isOpen, $id]);
         redirect_careers('Posting updated.');
     }
 
-    $stmt = $pdo->prepare('INSERT INTO job_postings (title, location, employment_type, description, is_open) VALUES (?, ?, ?, ?, ?)');
-    $stmt->execute([$title, $location ?: null, $type ?: null, $description ?: null, $isOpen]);
+    $stmt = $pdo->prepare('INSERT INTO job_postings (title, title_km, location, location_km, employment_type, description, description_km, is_open) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    $stmt->execute([$title, $titleKm ?: null, $location ?: null, $locationKm ?: null, $type ?: null, $description ?: null, $descriptionKm ?: null, $isOpen]);
     redirect_careers('Posting added.');
 }
 

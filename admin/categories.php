@@ -12,7 +12,7 @@ $success = $_SESSION['admin_success'] ?? '';
 $error   = $_SESSION['admin_error']   ?? '';
 unset($_SESSION['admin_success'], $_SESSION['admin_error']);
 
-$allCats = $pdo->query('SELECT id, parent_id, name, royalty_rate FROM categories ORDER BY name ASC')->fetchAll();
+$allCats = $pdo->query('SELECT id, parent_id, name, name_km, royalty_rate FROM categories ORDER BY name ASC')->fetchAll();
 
 function buildCatTree(array $cats, $parentId = null): array {
     $branch = [];
@@ -123,7 +123,8 @@ $adminTab     = 'categories';
                     <?php if ($cat['depth'] > 0): ?>
                         <span class="cat-tree-dash"><?= str_repeat('— ', $cat['depth']) ?></span>
                     <?php endif; ?>
-                    <input type="text" name="name" value="<?= htmlspecialchars($cat['name']) ?>" required class="cat-name-input">
+                    <input type="text" name="name" value="<?= htmlspecialchars($cat['name']) ?>" required class="cat-name-input" placeholder="English">
+                    <input type="text" name="name_km" value="<?= htmlspecialchars($cat['name_km'] ?? '') ?>" class="cat-name-input" placeholder="ខ្មែរ (optional)" style="margin-top:4px;">
                 </td>
                 <td>
                     <?php if ($isLeaf): ?>
@@ -164,6 +165,7 @@ $adminTab     = 'categories';
             <?= csrf_input() ?>
             <input type="hidden" name="action" value="add">
             <input type="text" name="name" placeholder="Category name" required class="cat-name-input">
+            <input type="text" name="name_km" placeholder="ខ្មែរ (optional)" class="cat-name-input">
             <select name="parent_id" class="cat-parent-select">
                 <option value="">— Top level —</option>
                 <?php foreach ($flat as $opt): ?>

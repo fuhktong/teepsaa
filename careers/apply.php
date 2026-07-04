@@ -99,20 +99,22 @@ if (!$notFound && $_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php require __DIR__ . '/../header/header.php'; ?>
 <main>
     <div class="careers-wrap">
+        <?php $empLabels = ['Full-time'=>$t['emp_full_time'], 'Part-time'=>$t['emp_part_time'], 'Contract'=>$t['emp_contract'], 'Internship'=>$t['emp_internship'], 'Freelance'=>$t['emp_freelance']]; ?>
         <?php if ($notFound): ?>
-        <h1>Position unavailable</h1>
-        <p>This position is no longer open. <a href="/careers/">See all open roles</a>.</p>
+        <h1><?= $t['apply_unavailable_title'] ?></h1>
+        <p><?= sprintf($t['apply_unavailable_body'], '<a href="/careers/">' . $t['apply_see_all'] . '</a>') ?></p>
 
         <?php elseif ($submitted): ?>
-        <h1>Application received</h1>
-        <p class="careers-lead">Thanks for applying to <strong><?= htmlspecialchars($job['title']) ?></strong>. We've received your application and will be in touch if there's a fit.</p>
-        <a class="job-card-apply" href="/careers/">Back to careers</a>
+        <h1><?= $t['apply_received_title'] ?></h1>
+        <p class="careers-lead"><?= sprintf($t['apply_received_body'], '<strong>' . htmlspecialchars(lang_field($job, 'title')) . '</strong>') ?></p>
+        <a class="job-card-apply" href="/careers/"><?= $t['apply_back_careers'] ?></a>
 
         <?php else: ?>
-        <p class="apply-back"><a href="/careers/">&larr; All roles</a></p>
-        <h1>Apply: <?= htmlspecialchars($job['title']) ?></h1>
+        <?php $empDisp = $job['employment_type'] ? ($empLabels[$job['employment_type']] ?? $job['employment_type']) : ''; ?>
+        <p class="apply-back"><a href="/careers/">&larr; <?= $t['apply_all_roles'] ?></a></p>
+        <h1><?= $t['apply_prefix'] ?> <?= htmlspecialchars(lang_field($job, 'title')) ?></h1>
         <?php if ($job['location'] || $job['employment_type']): ?>
-        <p class="job-card-meta"><?= htmlspecialchars($job['location'] ?? '') ?><?= ($job['location'] && $job['employment_type']) ? ' · ' : '' ?><?= htmlspecialchars($job['employment_type'] ?? '') ?></p>
+        <p class="job-card-meta"><?= htmlspecialchars($job['location'] ? lang_field($job, 'location') : '') ?><?= ($job['location'] && $job['employment_type']) ? ' · ' : '' ?><?= htmlspecialchars($empDisp) ?></p>
         <?php endif; ?>
 
         <?php if ($error): ?>
@@ -123,22 +125,22 @@ if (!$notFound && $_SERVER['REQUEST_METHOD'] === 'POST') {
             <?= csrf_input() ?>
             <input type="hidden" name="job_id" value="<?= $job['id'] ?>">
 
-            <label for="name">Full name <span class="req">*</span></label>
+            <label for="name"><?= $t['register_name'] ?> <span class="req">*</span></label>
             <input type="text" id="name" name="name" maxlength="120" required value="<?= htmlspecialchars($_POST['name'] ?? '') ?>">
 
-            <label for="email">Email <span class="req">*</span></label>
+            <label for="email"><?= $t['login_email'] ?> <span class="req">*</span></label>
             <input type="email" id="email" name="email" maxlength="190" required value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
 
-            <label for="phone">Phone <span class="opt">(optional)</span></label>
+            <label for="phone"><?= $t['apply_phone'] ?> <span class="opt"><?= $t['form_optional'] ?></span></label>
             <input type="text" id="phone" name="phone" maxlength="40" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>">
 
-            <label for="message">Why you're a fit <span class="opt">(optional)</span></label>
+            <label for="message"><?= $t['apply_why_fit'] ?> <span class="opt"><?= $t['form_optional'] ?></span></label>
             <textarea id="message" name="message" maxlength="5000" rows="6"><?= htmlspecialchars($_POST['message'] ?? '') ?></textarea>
 
-            <label for="resume">Résumé <span class="opt">(optional — PDF, DOC, or DOCX, max 5 MB)</span></label>
+            <label for="resume"><?= $t['apply_resume'] ?> <span class="opt"><?= $t['apply_resume_hint'] ?></span></label>
             <input type="file" id="resume" name="resume" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
 
-            <button type="submit" class="apply-submit">Submit application</button>
+            <button type="submit" class="apply-submit"><?= $t['apply_submit'] ?></button>
         </form>
         <?php endif; ?>
     </div>

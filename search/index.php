@@ -2,6 +2,10 @@
 session_start();
 require __DIR__ . '/../config/db.php';
 
+// Load translations early — sort labels/chips are built before the header.
+$lang = $_SESSION['lang'] ?? 'km';
+$t = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km']) ? $lang : 'en') . '.php';
+
 $q          = trim($_GET['q'] ?? '');
 $sort       = $_GET['sort'] ?? 'newest';
 $minPrice   = trim($_GET['min_price'] ?? '');
@@ -116,9 +120,9 @@ $count = (int)$countStmt->fetchColumn();
 
 // ── First 20 results ─────────────────────────────────────────────────
 $dataStmt = $pdo->prepare("
-    SELECT p.id, p.name, p.description, p.price, p.sale_price, p.sale_ends_at,
+    SELECT p.id, p.name, p.name_km, p.description, p.description_km, p.price, p.sale_price, p.sale_ends_at,
            pp.filename AS photo,
-           b.id AS business_id, b.name AS business_name,
+           b.id AS business_id, b.name AS business_name, b.name_km AS business_name_km,
            COALESCE(rv.avg_rating, 0) AS avg_rating,
            COALESCE(rv.review_count, 0) AS review_count
     FROM products p
@@ -138,7 +142,7 @@ $hasMore = $count > 20;
 $categories = [];
 if ($q !== '') {
     $categories = $pdo->query(
-        "SELECT c.id, c.name
+        "SELECT c.id, c.name, c.name_km
          FROM categories c
          WHERE c.id NOT IN (SELECT DISTINCT parent_id FROM categories WHERE parent_id IS NOT NULL)
            AND EXISTS (
@@ -153,11 +157,11 @@ if ($q !== '') {
 $title = $q ? htmlspecialchars($q) . ' — teepsaa' : 'Search — teepsaa';
 
 $sortLabels = [
-    'newest'     => 'Newest',
-    'price_asc'  => 'Price: low to high',
-    'price_desc' => 'Price: high to low',
-    'rating'     => 'Top rated',
-    'popular'    => 'Most popular',
+    'newest'     => $t['sort_newest'],
+    'price_asc'  => $t['sort_price_asc'],
+    'price_desc' => $t['sort_price_desc'],
+    'rating'     => $t['sort_rating'],
+    'popular'    => $t['sort_popular'],
 ];
 
 // ── Build filter chips ───────────────────────────────────────────────
@@ -182,10 +186,10 @@ if ($sort !== 'newest') {
 if ($categoryId > 0) {
     $catName = '';
     foreach ($categories as $cat) {
-        if ((int)$cat['id'] === $categoryId) { $catName = $cat['name']; break; }
+        if ((int)$cat['id'] === $categoryId) { $catName = cat_name($cat); break; }
     }
     $chips[] = [
-        'label' => $catName ?: 'Category',
+        'label' => $catName ?: $t['search_category'],
         'url'   => searchUrl($q, $sort, $minPrice, $maxPrice, 0, $minRating, $selectedValueIds),
     ];
 }
@@ -196,7 +200,7 @@ if ($minPrice !== '' && $maxPrice !== '') {
     ];
 } elseif ($minPrice !== '') {
     $chips[] = [
-        'label' => 'From $' . $minPrice,
+        'label' => $t['search_from'] . ' $' . $minPrice,
         'url'   => searchUrl($q, $sort, '', $maxPrice, $categoryId, $minRating, $selectedValueIds),
     ];
 } elseif ($maxPrice !== '') {
@@ -263,17 +267,17 @@ foreach ($selectedValueIds as $vid) {
                     <line x1="2" y1="6" x2="12" y2="6"/>
                     <line x1="4" y1="11" x2="10" y2="11"/>
                 </svg>
-                Filters<?= $hasActiveFilters ? ' <span class="filter-active-dot"></span>' : '' ?>
+                <?= $t['search_filters'] ?><?= $hasActiveFilters ? ' <span class="filter-active-dot"></span>' : '' ?>
             </button>
 
             <div class="sidebar-body" id="sidebar-body">
-                <p class="sidebar-heading">Filters</p>
+                <p class="sidebar-heading"><?= $t['search_filters'] ?></p>
 
                 <form method="get" action="/search/" id="filter-form">
                     <input type="hidden" name="q" value="<?= htmlspecialchars($q) ?>">
 
                     <div class="filter-group">
-                        <label class="filter-label">Sort by</label>
+                        <label class="filter-label"><?= $t['search_sort_by'] ?></label>
                         <select name="sort" class="filter-select" onchange="this.form.submit()">
                             <?php foreach ($sortLabels as $val => $label): ?>
                             <option value="<?= $val ?>"<?= $sort === $val ? ' selected' : '' ?>><?= $label ?></option>
@@ -283,12 +287,12 @@ foreach ($selectedValueIds as $vid) {
 
                     <?php if (!empty($categories)): ?>
                     <div class="filter-group">
-                        <label class="filter-label">Category</label>
+                        <label class="filter-label"><?= $t['search_category'] ?></label>
                         <select name="category" class="filter-select" onchange="this.form.submit()">
-                            <option value="">All categories</option>
+                            <option value=""><?= $t['search_all_categories'] ?></option>
                             <?php foreach ($categories as $cat): ?>
                             <option value="<?= (int)$cat['id'] ?>"<?= $categoryId === (int)$cat['id'] ? ' selected' : '' ?>>
-                                <?= htmlspecialchars($cat['name']) ?>
+                                <?= htmlspecialchars(cat_name($cat)) ?>
                             </option>
                             <?php endforeach; ?>
                         </select>
@@ -296,24 +300,24 @@ foreach ($selectedValueIds as $vid) {
                     <?php endif; ?>
 
                     <div class="filter-group">
-                        <label class="filter-label">Price (USD)</label>
+                        <label class="filter-label"><?= $t['search_price_usd'] ?></label>
                         <div class="price-inputs">
-                            <input type="number" name="min_price" class="filter-input" placeholder="Min"
+                            <input type="number" name="min_price" class="filter-input" placeholder="<?= htmlspecialchars($t['search_price_min']) ?>"
                                    min="0" step="0.01" value="<?= htmlspecialchars($minPrice) ?>">
                             <span class="price-dash">–</span>
-                            <input type="number" name="max_price" class="filter-input" placeholder="Max"
+                            <input type="number" name="max_price" class="filter-input" placeholder="<?= htmlspecialchars($t['search_price_max']) ?>"
                                    min="0" step="0.01" value="<?= htmlspecialchars($maxPrice) ?>">
                         </div>
-                        <button type="submit" class="price-apply">Apply</button>
+                        <button type="submit" class="price-apply"><?= $t['search_apply'] ?></button>
                     </div>
 
                     <div class="filter-group">
-                        <label class="filter-label">Rating</label>
+                        <label class="filter-label"><?= $t['search_rating'] ?></label>
                         <select name="min_rating" class="filter-select" onchange="this.form.submit()">
-                            <option value="">Any rating</option>
-                            <option value="4"<?= $minRating === 4.0 ? ' selected' : '' ?>>★ 4 &amp; up</option>
-                            <option value="3"<?= $minRating === 3.0 ? ' selected' : '' ?>>★ 3 &amp; up</option>
-                            <option value="2"<?= $minRating === 2.0 ? ' selected' : '' ?>>★ 2 &amp; up</option>
+                            <option value=""><?= $t['search_any_rating'] ?></option>
+                            <option value="4"<?= $minRating === 4.0 ? ' selected' : '' ?>>★ 4 <?= $t['search_rating_up'] ?></option>
+                            <option value="3"<?= $minRating === 3.0 ? ' selected' : '' ?>>★ 3 <?= $t['search_rating_up'] ?></option>
+                            <option value="2"<?= $minRating === 2.0 ? ' selected' : '' ?>>★ 2 <?= $t['search_rating_up'] ?></option>
                         </select>
                     </div>
 
@@ -334,7 +338,7 @@ foreach ($selectedValueIds as $vid) {
                     <?php endforeach; ?>
 
                     <?php if ($hasActiveFilters): ?>
-                    <a href="/search/?q=<?= urlencode($q) ?>" class="filter-clear">Clear filters</a>
+                    <a href="/search/?q=<?= urlencode($q) ?>" class="filter-clear"><?= $t['search_clear'] ?></a>
                     <?php endif; ?>
                 </form>
             </div>
@@ -344,7 +348,7 @@ foreach ($selectedValueIds as $vid) {
         <div class="search-results">
             <div class="browse-toolbar">
                 <p class="browse-count">
-                    <?= $count ?> product<?= $count !== 1 ? 's' : '' ?> for <em><?= htmlspecialchars($q) ?></em>
+                    <?= $count ?> <?= $t['search_products'] ?> <?= $t['search_for'] ?> <em><?= htmlspecialchars($q) ?></em>
                 </p>
             </div>
 
@@ -359,7 +363,7 @@ foreach ($selectedValueIds as $vid) {
             <?php endif; ?>
 
             <?php if (empty($products)): ?>
-                <p class="no-results">No products found<?= $hasActiveFilters ? ' — try removing some filters' : '' ?>.</p>
+                <p class="no-results"><?= $t['search_no_results'] ?><?= $hasActiveFilters ? ' ' . $t['search_no_results_hint'] : '' ?></p>
             <?php else: ?>
             <div class="product-grid" id="product-grid">
                 <?php foreach ($products as $p): ?>
@@ -370,14 +374,14 @@ foreach ($selectedValueIds as $vid) {
                         <div class="card-photo card-photo--empty"></div>
                     <?php endif; ?>
                     <div class="card-body">
-                        <strong class="card-name"><?= htmlspecialchars($p['name']) ?></strong>
+                        <strong class="card-name"><?= htmlspecialchars(lang_field($p, 'name')) ?></strong>
                         <span class="card-price"><?= price_html($p) ?></span>
-                        <span class="card-seller"><?= htmlspecialchars($p['business_name']) ?></span>
+                        <span class="card-seller"><?= htmlspecialchars(pick_lang($p['business_name'], $p['business_name_km'] ?? null)) ?></span>
                         <?php if ($p['review_count'] > 0): ?>
                         <span class="card-rating">★ <?= number_format($p['avg_rating'], 1) ?> (<?= (int)$p['review_count'] ?>)</span>
                         <?php endif; ?>
-                        <?php if ($p['description']): ?>
-                            <p class="card-desc"><?= htmlspecialchars(mb_strimwidth($p['description'], 0, 100, '…')) ?></p>
+                        <?php if (lang_field($p, 'description')): ?>
+                            <p class="card-desc"><?= htmlspecialchars(mb_strimwidth(lang_field($p, 'description'), 0, 100, '…')) ?></p>
                         <?php endif; ?>
                     </div>
                 </a>
@@ -398,11 +402,11 @@ foreach ($selectedValueIds as $vid) {
 <?php else: ?>
 
     <div class="browse-toolbar">
-        <p class="browse-count"><?= $count ?> product<?= $count !== 1 ? 's' : '' ?></p>
+        <p class="browse-count"><?= $count ?> <?= $t['search_products'] ?></p>
     </div>
 
     <?php if (empty($products)): ?>
-        <p class="no-results">No products found.</p>
+        <p class="no-results"><?= $t['search_no_results'] ?></p>
     <?php else: ?>
     <div class="product-grid" id="product-grid">
         <?php foreach ($products as $p): ?>
@@ -413,14 +417,14 @@ foreach ($selectedValueIds as $vid) {
                 <div class="card-photo card-photo--empty"></div>
             <?php endif; ?>
             <div class="card-body">
-                <strong class="card-name"><?= htmlspecialchars($p['name']) ?></strong>
+                <strong class="card-name"><?= htmlspecialchars(lang_field($p, 'name')) ?></strong>
                 <span class="card-price"><?= price_html($p) ?></span>
-                <span class="card-seller"><?= htmlspecialchars($p['business_name']) ?></span>
+                <span class="card-seller"><?= htmlspecialchars(pick_lang($p['business_name'], $p['business_name_km'] ?? null)) ?></span>
                 <?php if ($p['review_count'] > 0): ?>
                 <span class="card-rating">★ <?= number_format($p['avg_rating'], 1) ?> (<?= (int)$p['review_count'] ?>)</span>
                 <?php endif; ?>
-                <?php if ($p['description']): ?>
-                    <p class="card-desc"><?= htmlspecialchars(mb_strimwidth($p['description'], 0, 100, '…')) ?></p>
+                <?php if (lang_field($p, 'description')): ?>
+                    <p class="card-desc"><?= htmlspecialchars(mb_strimwidth(lang_field($p, 'description'), 0, 100, '…')) ?></p>
                 <?php endif; ?>
             </div>
         </a>

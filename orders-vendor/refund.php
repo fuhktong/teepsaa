@@ -8,6 +8,10 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     exit;
 }
 
+// Translations loaded early — status badge label is built before the header.
+$lang = $_SESSION['lang'] ?? 'km';
+$t = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km']) ? $lang : 'en') . '.php';
+
 $userId  = $_SESSION['user_id'];
 $orderId = (int)($_GET['id'] ?? 0);
 if (!$orderId) {
@@ -50,16 +54,8 @@ $statusClasses = [
     'refunded'          => 'badge-green',
     'refund_rejected'   => 'badge-grey',
 ];
-$statusLabels = [
-    'refund_requested'  => 'Requested',
-    'return_approved'   => 'Return Approved',
-    'return_dispatched' => 'Return Sent',
-    'return_received'   => 'Item Received',
-    'refunded'          => 'Refunded',
-    'refund_rejected'   => 'Rejected',
-];
 $statusClass = $statusClasses[$o['status']] ?? 'badge-grey';
-$statusLabel = $statusLabels[$o['status']] ?? ucwords(str_replace('_', ' ', $o['status']));
+$statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' ', $o['status']));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -79,25 +75,25 @@ $statusLabel = $statusLabels[$o['status']] ?? ucwords(str_replace('_', ' ', $o['
 <?php require __DIR__ . '/../header/header.php'; ?>
 
 <main>
-    <a href="/orders-vendor/?tab=refunds" style="display:inline-block;font-size:0.875rem;color:#6b7280;text-decoration:none;margin-bottom:1.25rem;">← Refunds</a>
+    <a href="/orders-vendor/?tab=refunds" style="display:inline-block;font-size:0.875rem;color:#6b7280;text-decoration:none;margin-bottom:1.25rem;">← <?= $t['vendor_refunds'] ?></a>
 
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap;">
-        <h1 style="margin-bottom:0;"><?= $oid ?> — Refund</h1>
+        <h1 style="margin-bottom:0;"><?= $oid ?> — <?= $t['vorder_refund_word'] ?></h1>
         <span class="order-badge <?= $statusClass ?>"><?= $statusLabel ?></span>
     </div>
 
     <div class="popup-section">
-        <div class="popup-section-label">Order info</div>
-        <div class="popup-row"><span class="popup-row-label">Date</span><span class="popup-row-value"><?= date('M j, Y g:ia', strtotime($o['created_at'])) ?></span></div>
-        <div class="popup-row"><span class="popup-row-label">Customer</span><span class="popup-row-value"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span></div>
-        <div class="popup-row"><span class="popup-row-label">Business</span><span class="popup-row-value"><?= htmlspecialchars($o['business_name']) ?></span></div>
+        <div class="popup-section-label"><?= $t['order_info'] ?></div>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['order_date'] ?></span><span class="popup-row-value"><?= fmt_date('M j, Y g:ia', strtotime($o['created_at'])) ?></span></div>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['vorder_customer'] ?></span><span class="popup-row-value"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span></div>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['order_business'] ?></span><span class="popup-row-value"><?= htmlspecialchars($o['business_name']) ?></span></div>
     </div>
 
     <?php if (!empty($items)): ?>
     <div class="popup-section">
-        <div class="popup-section-label">Items</div>
+        <div class="popup-section-label"><?= $t['order_items'] ?></div>
         <table class="popup-items">
-            <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+            <thead><tr><th><?= $t['order_col_product'] ?></th><th><?= $t['order_col_qty'] ?></th><th><?= $t['order_col_price'] ?></th><th><?= $t['order_col_total'] ?></th></tr></thead>
             <tbody>
             <?php foreach ($items as $item): ?>
                 <tr>
@@ -114,37 +110,37 @@ $statusLabel = $statusLabels[$o['status']] ?? ucwords(str_replace('_', ' ', $o['
             <?php endforeach; ?>
             </tbody>
         </table>
-        <div class="popup-subtotal"><span>Subtotal</span><span>$<?= number_format($o['subtotal'], 2) ?></span></div>
+        <div class="popup-subtotal"><span><?= $t['checkout_subtotal'] ?></span><span>$<?= number_format($o['subtotal'], 2) ?></span></div>
         <?php if ($o['delivery_fee'] > 0): ?>
-        <div class="popup-subtotal"><span>Delivery (non-refundable)</span><span>$<?= number_format($o['delivery_fee'], 2) ?></span></div>
+        <div class="popup-subtotal"><span><?= $t['vorder_delivery_nonrefund'] ?></span><span>$<?= number_format($o['delivery_fee'], 2) ?></span></div>
         <?php endif; ?>
-        <div class="popup-total"><span>Refund to buyer</span><span>$<?= number_format($o['subtotal'], 2) ?></span></div>
+        <div class="popup-total"><span><?= $t['vorder_refund_to_buyer'] ?></span><span>$<?= number_format($o['subtotal'], 2) ?></span></div>
     </div>
     <?php endif; ?>
 
     <?php if ($o['refund_reason']): ?>
     <div class="popup-section">
-        <div class="popup-section-label">Buyer's reason</div>
+        <div class="popup-section-label"><?= $t['vorder_buyer_reason'] ?></div>
         <p style="font-size:0.875rem;color:#374151;font-style:italic;margin:0;">"<?= htmlspecialchars($o['refund_reason']) ?>"</p>
     </div>
     <?php endif; ?>
 
     <div class="popup-section">
-        <div class="popup-section-label">Refund status</div>
+        <div class="popup-section-label"><?= $t['vorder_refund_status'] ?></div>
         <?php $refundStatus = $o['status']; require __DIR__ . '/../refund-status/refund-status.php'; ?>
     </div>
 
     <?php if ($o['status'] === 'return_dispatched'): ?>
     <hr class="popup-divider">
-    <div class="popup-section-label" style="margin-bottom:0.5rem;">Return delivery</div>
+    <div class="popup-section-label" style="margin-bottom:0.5rem;"><?= $t['vorder_return_delivery'] ?></div>
     <?php if ($o['return_tracking_url']): ?>
-    <div class="popup-row" style="margin-bottom:0.75rem;"><span class="popup-row-label">Grab link</span><span class="popup-row-value"><a href="<?= htmlspecialchars($o['return_tracking_url']) ?>" target="_blank" rel="noopener">Track return ↗</a></span></div>
+    <div class="popup-row" style="margin-bottom:0.75rem;"><span class="popup-row-label"><?= $t['vorder_grab_link'] ?></span><span class="popup-row-value"><a href="<?= htmlspecialchars($o['return_tracking_url']) ?>" target="_blank" rel="noopener"><?= $t['vorder_track_return'] ?></a></span></div>
     <?php endif; ?>
-    <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Click below once you have received the item back.</p>
+    <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;"><?= $t['vorder_received_hint'] ?></p>
     <form method="POST" action="/products/return-received.php">
         <?= csrf_input() ?>
         <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
-        <button type="submit" class="btn-confirm">Confirm item received</button>
+        <button type="submit" class="btn-confirm"><?= $t['vorder_confirm_received'] ?></button>
     </form>
     <?php endif; ?>
 </main>

@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200..900;1,200..900&family=Pacifico&family=Metal&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200..900;1,200..900&family=Noto+Sans+Khmer:wght@400;500;600;700&family=Pacifico&family=Metal&display=swap");
 
 *,
 *::before,
@@ -59,7 +59,7 @@
 }
 
 body {
-  font-family: "Source Sans 3", "Optima", "Candara", sans-serif;
+  font-family: "Source Sans 3", "Noto Sans Khmer", "Optima", "Candara", sans-serif;
   font-size: 1rem;
   color: var(--text);
   background: var(--bg);

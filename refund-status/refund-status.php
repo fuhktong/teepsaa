@@ -1,18 +1,22 @@
 <?php
 // Expects $refundStatus (string) to be set before including.
+if (!isset($t)) {
+    $_rl = $_SESSION['lang'] ?? 'km';
+    $t = require __DIR__ . '/../lang/' . (in_array($_rl, ['en', 'km']) ? $_rl : 'en') . '.php';
+}
 $_rrejected = ($refundStatus === 'refund_rejected');
 $_rsteps = [
-    'refund_requested'  => 'Refund<br>Requested',
-    'return_approved'   => 'Return<br>Approved',
-    'return_dispatched' => 'Return<br>Sent',
-    'return_received'   => 'Item<br>Received',
-    'refunded'          => 'Refunded',
+    'refund_requested'  => $t['rstatus_requested'],
+    'return_approved'   => $t['rstatus_approved'],
+    'return_dispatched' => $t['rstatus_dispatched'],
+    'return_received'   => $t['rstatus_received'],
+    'refunded'          => $t['rstatus_refunded'],
 ];
 $_rkeys       = array_keys($_rsteps);
 $_rcurrentIdx = array_search($refundStatus, $_rkeys);
 ?>
 <?php if ($_rrejected): ?>
-<div class="ostatus-bar ostatus-cancelled">Refund rejected</div>
+<div class="ostatus-bar ostatus-cancelled"><?= $t['rstatus_rejected'] ?></div>
 <?php else: ?>
 <div class="ostatus-bar">
     <?php foreach ($_rkeys as $_ri => $_rkey): ?>

@@ -9,6 +9,11 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 }
 
 $userId  = $_SESSION['user_id'];
+
+// Translations loaded early — status badge label is built before the header.
+$lang = $_SESSION['lang'] ?? 'km';
+$t = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km']) ? $lang : 'en') . '.php';
+
 $orderId = (int)($_GET['id'] ?? 0);
 if (!$orderId) {
     header('Location: /orders-vendor/');
@@ -65,7 +70,7 @@ $statusClasses = [
     'cancelled'  => 'badge-red',
 ];
 $statusClass = $statusClasses[$o['status']] ?? 'badge-grey';
-$statusLabel = ucwords(str_replace('_', ' ', $o['status']));
+$statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' ', $o['status']));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -85,7 +90,7 @@ $statusLabel = ucwords(str_replace('_', ' ', $o['status']));
 <?php require __DIR__ . '/../header/header.php'; ?>
 
 <main>
-    <a href="/orders-vendor/" style="display:inline-block;font-size:0.875rem;color:#6b7280;text-decoration:none;margin-bottom:1.25rem;">← Orders</a>
+    <a href="/orders-vendor/" style="display:inline-block;font-size:0.875rem;color:#6b7280;text-decoration:none;margin-bottom:1.25rem;">← <?= $t['vendor_orders'] ?></a>
 
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap;">
         <h1 style="margin-bottom:0;"><?= $oid ?></h1>
@@ -93,35 +98,35 @@ $statusLabel = ucwords(str_replace('_', ' ', $o['status']));
     </div>
 
     <div class="popup-section">
-        <div class="popup-section-label">Order info</div>
-        <div class="popup-row"><span class="popup-row-label">Date</span><span class="popup-row-value"><?= date('M j, Y g:ia', strtotime($o['created_at'])) ?></span></div>
-        <div class="popup-row"><span class="popup-row-label">Customer</span><span class="popup-row-value"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span></div>
+        <div class="popup-section-label"><?= $t['order_info'] ?></div>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['order_date'] ?></span><span class="popup-row-value"><?= fmt_date('M j, Y g:ia', strtotime($o['created_at'])) ?></span></div>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['vorder_customer'] ?></span><span class="popup-row-value"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span></div>
         <?php if ($o['buyer_phone']): ?>
-        <div class="popup-row"><span class="popup-row-label">Phone</span><span class="popup-row-value"><?= htmlspecialchars($o['buyer_phone']) ?></span></div>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['settings_phone'] ?></span><span class="popup-row-value"><?= htmlspecialchars($o['buyer_phone']) ?></span></div>
         <?php endif; ?>
     </div>
 
     <div class="popup-section">
-        <div class="popup-section-label">Delivery address</div>
+        <div class="popup-section-label"><?= $t['settings_delivery_address'] ?></div>
         <?php if ($grabAddress && $grabAddress !== 'Phnom Penh'): ?>
-        <div class="popup-row"><span class="popup-row-label">Grab address</span><span class="popup-row-value"><?= htmlspecialchars($grabAddress) ?></span></div>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['vorder_grab_address'] ?></span><span class="popup-row-value"><?= htmlspecialchars($grabAddress) ?></span></div>
         <?php endif; ?>
         <?php if ($o['buyer_address_notes']): ?>
-        <div class="popup-row"><span class="popup-row-label">Floor / Unit</span><span class="popup-row-value"><?= htmlspecialchars($o['buyer_address_notes']) ?></span></div>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['vorder_floor_unit'] ?></span><span class="popup-row-value"><?= htmlspecialchars($o['buyer_address_notes']) ?></span></div>
         <?php endif; ?>
         <?php if ($o['buyer_notes']): ?>
-        <div class="popup-row" style="background:#fefce8"><span class="popup-row-label">Delivery note</span><span class="popup-row-value"><?= htmlspecialchars($o['buyer_notes']) ?></span></div>
+        <div class="popup-row" style="background:#fefce8"><span class="popup-row-label"><?= $t['vorder_delivery_note'] ?></span><span class="popup-row-value"><?= htmlspecialchars($o['buyer_notes']) ?></span></div>
         <?php endif; ?>
         <?php if (!$o['buyer_address'] && !$o['buyer_khan']): ?>
-        <p style="font-size:0.875rem;color:#9ca3af;margin:0;">No address set by buyer.</p>
+        <p style="font-size:0.875rem;color:#9ca3af;margin:0;"><?= $t['vorder_no_address'] ?></p>
         <?php endif; ?>
     </div>
 
     <?php if (!empty($items)): ?>
     <div class="popup-section">
-        <div class="popup-section-label">Items</div>
+        <div class="popup-section-label"><?= $t['order_items'] ?></div>
         <table class="popup-items">
-            <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+            <thead><tr><th><?= $t['order_col_product'] ?></th><th><?= $t['order_col_qty'] ?></th><th><?= $t['order_col_price'] ?></th><th><?= $t['order_col_total'] ?></th></tr></thead>
             <tbody>
             <?php foreach ($items as $item): ?>
                 <tr>
@@ -138,52 +143,52 @@ $statusLabel = ucwords(str_replace('_', ' ', $o['status']));
             <?php endforeach; ?>
             </tbody>
         </table>
-        <div class="popup-subtotal"><span>Subtotal</span><span>$<?= number_format($o['subtotal'], 2) ?></span></div>
+        <div class="popup-subtotal"><span><?= $t['checkout_subtotal'] ?></span><span>$<?= number_format($o['subtotal'], 2) ?></span></div>
         <?php if ($o['delivery_fee'] > 0): ?>
-        <div class="popup-subtotal"><span>Delivery</span><span>$<?= number_format($o['delivery_fee'], 2) ?></span></div>
+        <div class="popup-subtotal"><span><?= $t['order_delivery'] ?></span><span>$<?= number_format($o['delivery_fee'], 2) ?></span></div>
         <?php endif; ?>
-        <div class="popup-total"><span>Total</span><span>$<?= number_format($o['subtotal'] + $o['delivery_fee'], 2) ?></span></div>
+        <div class="popup-total"><span><?= $t['checkout_total'] ?></span><span>$<?= number_format($o['subtotal'] + $o['delivery_fee'], 2) ?></span></div>
 
         <div class="popup-payout-box">
             <?php if ($royaltyPct > 0): ?>
-            <div class="popup-subtotal"><span>Royalty fee (<?= $royaltyPct ?>%)</span><span>−$<?= number_format($royaltyAmt, 2) ?></span></div>
+            <div class="popup-subtotal"><span><?= $t['vorder_royalty_fee'] ?> (<?= $royaltyPct ?>%)</span><span>−$<?= number_format($royaltyAmt, 2) ?></span></div>
             <?php endif; ?>
             <?php if ($o['delivery_fee'] > 0): ?>
-            <div class="popup-subtotal"><span>Delivery reimbursement</span><span>+$<?= number_format($o['delivery_fee'], 2) ?></span></div>
+            <div class="popup-subtotal"><span><?= $t['vorder_delivery_reimburse'] ?></span><span>+$<?= number_format($o['delivery_fee'], 2) ?></span></div>
             <?php endif; ?>
             <?php if ($o['vendor_delivery_bonus'] > 0): ?>
-            <div class="popup-subtotal"><span>Delivery buffer</span><span>+$<?= number_format($o['vendor_delivery_bonus'], 2) ?></span></div>
+            <div class="popup-subtotal"><span><?= $t['vorder_delivery_buffer'] ?></span><span>+$<?= number_format($o['vendor_delivery_bonus'], 2) ?></span></div>
             <?php endif; ?>
-            <div class="popup-total popup-total--payout"><span>Your payout</span><span>$<?= number_format($vendorPayout, 2) ?></span></div>
+            <div class="popup-total popup-total--payout"><span><?= $t['vorder_your_payout'] ?></span><span>$<?= number_format($vendorPayout, 2) ?></span></div>
         </div>
     </div>
     <?php endif; ?>
 
     <?php if ($o['tracking_url'] && in_array($o['status'], ['dispatched', 'delivered', 'completed'])): ?>
     <div class="popup-section">
-        <div class="popup-section-label">Tracking link</div>
-        <div class="popup-row"><span class="popup-row-label">Grab</span><span class="popup-row-value"><a href="<?= htmlspecialchars($o['tracking_url']) ?>" target="_blank" rel="noopener">View tracking ↗</a></span></div>
+        <div class="popup-section-label"><?= $t['vorder_tracking_link'] ?></div>
+        <div class="popup-row"><span class="popup-row-label">Grab</span><span class="popup-row-value"><a href="<?= htmlspecialchars($o['tracking_url']) ?>" target="_blank" rel="noopener"><?= $t['vorder_view_tracking'] ?></a></span></div>
     </div>
     <?php endif; ?>
 
     <div class="popup-section">
-        <div class="popup-section-label">Status</div>
+        <div class="popup-section-label"><?= $t['order_status_heading'] ?></div>
         <?php $orderStatus = $o['status']; require __DIR__ . '/../order-status/order-status.php'; ?>
     </div>
 
     <?php if ($o['status'] === 'paid'): ?>
     <hr class="popup-divider">
-    <div class="popup-section-label" style="margin-bottom:0.5rem;">Dispatch</div>
+    <div class="popup-section-label" style="margin-bottom:0.5rem;"><?= $t['vorder_dispatch'] ?></div>
     <div class="dispatch-cod-warning">
-        <strong>Do not use Cash on Delivery (COD)</strong> when booking your Grab delivery. The buyer has already paid teepsaa. If you enable COD, the buyer will be charged a second time by the driver. This will result in an immediate ban from the platform.
+        <?= $t['vorder_cod_warning'] ?>
     </div>
-    <p style="font-size:0.85rem;color:#6b7280;margin:0 0 0.75rem;">Book the delivery in Grab, then paste the tracking link below.</p>
+    <p style="font-size:0.85rem;color:#6b7280;margin:0 0 0.75rem;"><?= $t['vorder_dispatch_hint'] ?></p>
     <form method="POST" action="/dashboard-vendor/dispatch.php" class="dispatch-form">
         <?= csrf_input() ?>
         <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
-        <input type="url" name="tracking_url" required placeholder="Paste Grab tracking URL…"
+        <input type="url" name="tracking_url" required placeholder="<?= htmlspecialchars($t['vorder_tracking_placeholder']) ?>"
                oninput="this.closest('form').querySelector('[type=submit]').disabled=!this.value.trim()">
-        <button type="submit" class="btn-dispatch" disabled>Mark dispatched</button>
+        <button type="submit" class="btn-dispatch" disabled><?= $t['vorder_mark_dispatched'] ?></button>
     </form>
     <?php endif; ?>
 </main>

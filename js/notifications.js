@@ -26,7 +26,7 @@
 
     function renderItems(items) {
         if (!items.length) {
-            bellItems.innerHTML = '<p class="bell-empty">No notifications yet</p>';
+            bellItems.innerHTML = '<p class="bell-empty">' + ((window.T && window.T.no_notifications) || 'No notifications yet') + '</p>';
             return;
         }
         bellItems.innerHTML = items.map(function (item) {
@@ -70,7 +70,7 @@
         bellDrop.classList.toggle('open', opening);
 
         if (opening) {
-            bellItems.innerHTML = '<p class="bell-empty">Loading…</p>';
+            bellItems.innerHTML = '<p class="bell-empty">' + ((window.T && window.T.loading) || 'Loading…') + '</p>';
             fetchNotifications(true);
             var avatarDrop = document.getElementById('user-dropdown');
             var langDrop   = document.getElementById('lang-dropdown');

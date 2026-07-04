@@ -23,7 +23,7 @@ $stmt->execute([$id]);
 $photos = $stmt->fetchAll();
 
 $stmt = $pdo->prepare('
-    SELECT p.id, p.name, p.description, p.price, p.sale_price, p.sale_ends_at, p.stock,
+    SELECT p.id, p.name, p.name_km, p.description, p.description_km, p.price, p.sale_price, p.sale_ends_at, p.stock,
            pp.filename AS photo,
            COALESCE(rv.avg_rating, 0) AS avg_rating,
            COALESCE(rv.review_count, 0) AS review_count
@@ -77,12 +77,12 @@ $bizRatingRow = $bizRating->fetch();
     <?php endif; ?>
 
     <div class="store-header">
-        <h1 class="store-name"><?= htmlspecialchars($business['name']) ?></h1>
+        <h1 class="store-name"><?= htmlspecialchars(lang_field($business, 'name')) ?></h1>
         <?php if ((int)$bizRatingRow['review_count'] > 0): ?>
-        <p class="store-rating">★ <?= number_format((float)$bizRatingRow['avg_rating'], 1) ?> <span class="store-rating-count">(<?= (int)$bizRatingRow['review_count'] ?> <?= (int)$bizRatingRow['review_count'] === 1 ? 'review' : 'reviews' ?>)</span></p>
+        <p class="store-rating">★ <?= number_format((float)$bizRatingRow['avg_rating'], 1) ?> <span class="store-rating-count">(<?= (int)$bizRatingRow['review_count'] ?> <?= (int)$bizRatingRow['review_count'] === 1 ? $t['store_review'] : $t['store_reviews'] ?>)</span></p>
         <?php endif; ?>
-        <?php if ($business['description']): ?>
-            <p class="store-desc"><?= htmlspecialchars($business['description']) ?></p>
+        <?php if (lang_field($business, 'description')): ?>
+            <p class="store-desc"><?= htmlspecialchars(lang_field($business, 'description')) ?></p>
         <?php endif; ?>
     </div>
 
@@ -96,7 +96,7 @@ $bizRatingRow = $bizRating->fetch();
 
     <?php if (!empty($products)): ?>
     <section class="products-section">
-        <h2>Products</h2>
+        <h2><?= $t['vendor_products'] ?></h2>
         <div class="product-grid">
             <?php foreach ($products as $p): ?>
             <a href="/product/?id=<?= $p['id'] ?>" class="product-card">
@@ -106,16 +106,16 @@ $bizRatingRow = $bizRating->fetch();
                     <div class="product-photo product-photo--empty"></div>
                 <?php endif; ?>
                 <div class="product-body">
-                    <strong class="product-name"><?= htmlspecialchars($p['name']) ?></strong>
-                    <?php if ($p['description']): ?>
-                        <p class="product-desc"><?= htmlspecialchars(mb_strimwidth($p['description'], 0, 100, '…')) ?></p>
+                    <strong class="product-name"><?= htmlspecialchars(lang_field($p, 'name')) ?></strong>
+                    <?php if (lang_field($p, 'description')): ?>
+                        <p class="product-desc"><?= htmlspecialchars(mb_strimwidth(lang_field($p, 'description'), 0, 100, '…')) ?></p>
                     <?php endif; ?>
                     <div class="product-footer">
                         <span class="product-price"><?= price_html($p) ?></span>
                         <?php if ($p['review_count'] > 0): ?>
                         <span class="product-rating">★ <?= number_format($p['avg_rating'], 1) ?> (<?= (int)$p['review_count'] ?>)</span>
                         <?php else: ?>
-                        <span class="product-stock"><?= $p['stock'] > 0 ? (int)$p['stock'] . ' in stock' : 'Out of stock' ?></span>
+                        <span class="product-stock"><?= $p['stock'] > 0 ? (int)$p['stock'] . ' ' . $t['store_in_stock'] : $t['product_out_of_stock'] ?></span>
                         <?php endif; ?>
                     </div>
                 </div>

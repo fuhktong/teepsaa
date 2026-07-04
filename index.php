@@ -12,9 +12,9 @@ function product_card(array $p): string {
     return '<a href="/product/?id=' . (int)$p['id'] . '" class="product-card">'
         . $photo
         . '<div class="card-body">'
-        . '<strong class="card-name">' . htmlspecialchars($p['name']) . '</strong>'
+        . '<strong class="card-name">' . htmlspecialchars(lang_field($p, 'name')) . '</strong>'
         . '<span class="card-price">' . price_html($p) . '</span>'
-        . '<span class="card-seller">' . htmlspecialchars($p['business_name']) . '</span>'
+        . '<span class="card-seller">' . htmlspecialchars(pick_lang($p['business_name'], $p['business_name_km'] ?? null)) . '</span>'
         . $rating
         . '</div></a>';
 }
@@ -24,7 +24,7 @@ $rv = 'LEFT JOIN (SELECT product_id, AVG(rating) AS avg_rating, COUNT(*) AS revi
 
 // ── Featured — random in-stock products ──────────────────────────
 $featured = $pdo->query(
-    "SELECT p.id, p.name, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name,
+    "SELECT p.id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             pp.filename AS photo,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
      FROM products p
@@ -37,7 +37,7 @@ $featured = $pdo->query(
 
 // ── Best sellers — most ordered all time ─────────────────────────
 $bestSellers = $pdo->query(
-    "SELECT p.id, p.name, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name,
+    "SELECT p.id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             (SELECT filename FROM product_photos WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS photo,
             SUM(oi.quantity) AS total_sold,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
@@ -53,7 +53,7 @@ $bestSellers = $pdo->query(
 
 // ── Trending this week — order volume last 7 days ─────────────────
 $trending = $pdo->query(
-    "SELECT p.id, p.name, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name,
+    "SELECT p.id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             (SELECT filename FROM product_photos WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS photo,
             SUM(oi.quantity) AS total_sold,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
@@ -72,7 +72,7 @@ $trending = $pdo->query(
 
 // ── New arrivals — most recently added ───────────────────────────
 $newArrivals = $pdo->query(
-    "SELECT p.id, p.name, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name,
+    "SELECT p.id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             pp.filename AS photo,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
      FROM products p
@@ -86,7 +86,7 @@ $newArrivals = $pdo->query(
 
 // ── Top rated — highest-reviewed products ────────────────────────
 $topRated = $pdo->query(
-    "SELECT p.id, p.name, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name,
+    "SELECT p.id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             (SELECT filename FROM product_photos WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS photo,
             AVG(r.rating) AS avg_rating, COUNT(r.id) AS review_count
      FROM reviews r
@@ -100,7 +100,7 @@ $topRated = $pdo->query(
 
 // ── Under $15 ────────────────────────────────────────────────────
 $underFifteen = $pdo->query(
-    "SELECT p.id, p.name, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name,
+    "SELECT p.id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             (SELECT filename FROM product_photos WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS photo,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
      FROM products p
@@ -113,7 +113,7 @@ $underFifteen = $pdo->query(
 
 // ── Category tiles ───────────────────────────────────────────────
 $catTiles = $pdo->query(
-    "SELECT c.id, c.name, COUNT(p.id) AS product_count,
+    "SELECT c.id, c.name, c.name_km, COUNT(p.id) AS product_count,
             (SELECT pp.filename
              FROM products pr
              JOIN product_photos pp ON pp.product_id = pr.id AND pp.is_primary = 1
@@ -148,7 +148,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
         $ph     = implode(',', array_fill(0, count($catIds), '?'));
         $params = array_merge($catIds, [$buyerId]);
         $stmt   = $pdo->prepare(
-            "SELECT p.id, p.name, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name,
+            "SELECT p.id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
                     pp.filename AS photo,
                     COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
              FROM products p
@@ -329,7 +329,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
     <?php if (!empty($catTiles)): ?>
     <section class="home-section">
         <div class="home-section-head">
-            <h2>Shop by category</h2>
+            <h2><?= $t['home_shop_by_category'] ?></h2>
         </div>
         <div class="home-scroll">
             <?php foreach ($catTiles as $cat): ?>
@@ -340,7 +340,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
                     <div class="cat-preview-placeholder"></div>
                 <?php endif; ?>
                 <div class="cat-preview-overlay"></div>
-                <span class="cat-preview-name"><?= htmlspecialchars($cat['name']) ?></span>
+                <span class="cat-preview-name"><?= htmlspecialchars(cat_name($cat)) ?></span>
             </a>
             <?php endforeach; ?>
         </div>
@@ -350,7 +350,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
     <?php if (!empty($featured)): ?>
     <section class="home-section">
         <div class="home-section-head">
-            <h2><a href="/search/">Featured products</a></h2>
+            <h2><a href="/search/"><?= $t['home_featured'] ?></a></h2>
         </div>
         <div class="home-scroll">
             <?php foreach ($featured as $p): echo product_card($p); endforeach; ?>
@@ -361,7 +361,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
     <?php if (!empty($bestSellers)): ?>
     <section class="home-section">
         <div class="home-section-head">
-            <h2><a href="/search/">Best sellers</a></h2>
+            <h2><a href="/search/"><?= $t['home_best_sellers'] ?></a></h2>
         </div>
         <div class="home-scroll">
             <?php foreach ($bestSellers as $p): echo product_card($p); endforeach; ?>
@@ -372,7 +372,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
     <?php if (!empty($trending)): ?>
     <section class="home-section">
         <div class="home-section-head">
-            <h2><a href="/search/">Trending this week</a></h2>
+            <h2><a href="/search/"><?= $t['home_trending'] ?></a></h2>
         </div>
         <div class="home-scroll">
             <?php foreach ($trending as $p): echo product_card($p); endforeach; ?>
@@ -383,7 +383,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
     <?php if (!empty($newArrivals)): ?>
     <section class="home-section">
         <div class="home-section-head">
-            <h2><a href="/search/">New arrivals</a></h2>
+            <h2><a href="/search/"><?= $t['home_new_arrivals'] ?></a></h2>
         </div>
         <div class="home-scroll">
             <?php foreach ($newArrivals as $p): echo product_card($p); endforeach; ?>
@@ -394,7 +394,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
     <?php if (!empty($topRated)): ?>
     <section class="home-section">
         <div class="home-section-head">
-            <h2><a href="/search/">Top rated</a></h2>
+            <h2><a href="/search/"><?= $t['home_top_rated'] ?></a></h2>
         </div>
         <div class="home-scroll">
             <?php foreach ($topRated as $p): echo product_card($p); endforeach; ?>
@@ -405,7 +405,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
     <?php if (!empty($underFifteen)): ?>
     <section class="home-section">
         <div class="home-section-head">
-            <h2><a href="/search/">Under $15</a></h2>
+            <h2><a href="/search/"><?= $t['home_under_15'] ?></a></h2>
         </div>
         <div class="home-scroll">
             <?php foreach ($underFifteen as $p): echo product_card($p); endforeach; ?>
@@ -416,7 +416,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
     <?php if (!empty($recommended)): ?>
     <section class="home-section">
         <div class="home-section-head">
-            <h2><a href="/search/">You might like</a></h2>
+            <h2><a href="/search/"><?= $t['home_you_might_like'] ?></a></h2>
         </div>
         <div class="home-scroll">
             <?php foreach ($recommended as $p): echo product_card($p); endforeach; ?>
@@ -426,7 +426,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
 
     <div id="recently-viewed-section" style="display:none" class="home-section">
         <div class="home-section-head">
-            <h2>Recently viewed</h2>
+            <h2><?= $t['home_recently_viewed'] ?></h2>
         </div>
         <div id="recently-viewed-scroll" class="home-scroll"></div>
     </div>

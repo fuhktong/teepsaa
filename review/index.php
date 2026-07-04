@@ -61,9 +61,9 @@ if ($check->fetch()) {
 <?php require __DIR__ . '/../header/header.php'; ?>
 
 <main>
-    <a href="/dashboard-buyer/order.php?id=<?= $item['order_id'] ?>" style="display:inline-block;font-size:0.875rem;color:#6b7280;text-decoration:none;margin-bottom:1.25rem;">← Back to order</a>
+    <a href="/dashboard-buyer/order.php?id=<?= $item['order_id'] ?>" style="display:inline-block;font-size:0.875rem;color:#6b7280;text-decoration:none;margin-bottom:1.25rem;">← <?= $t['review_back_order'] ?></a>
 
-    <h1 style="margin-bottom:0.25rem;">Leave a review</h1>
+    <h1 style="margin-bottom:0.25rem;"><?= $t['review_title'] ?></h1>
     <p style="color:#6b7280;font-size:0.875rem;margin-bottom:1.75rem;"><?= htmlspecialchars($item['product_name']) ?><?php if ($item['variant_label']): ?> — <?= htmlspecialchars($item['variant_label']) ?><?php endif; ?></p>
 
     <form method="POST" action="/review/submit.php" class="review-form">
@@ -83,12 +83,12 @@ if ($check->fetch()) {
             <input type="radio" name="rating" id="star1" value="1">
             <label for="star1">★</label>
         </div>
-        <p class="star-hint" id="starHint">Tap a star to rate</p>
+        <p class="star-hint" id="starHint"><?= $t['review_tap_star'] ?></p>
 
-        <textarea name="comment" rows="4" placeholder="Optional comment…" maxlength="1000" class="review-comment"></textarea>
+        <textarea name="comment" rows="4" placeholder="<?= htmlspecialchars($t['review_comment_ph']) ?>" maxlength="1000" class="review-comment"></textarea>
         <p style="font-size:0.75rem;color:#9ca3af;text-align:right;margin:0;" id="charCount"></p>
 
-        <button type="submit" class="btn-submit-review">Submit review</button>
+        <button type="submit" class="btn-submit-review"><?= $t['review_submit'] ?></button>
     </form>
 </main>
 
@@ -96,7 +96,7 @@ if ($check->fetch()) {
 
 <script>
 (function () {
-    var labels = { 1: 'Terrible', 2: 'Poor', 3: 'Average', 4: 'Good', 5: 'Excellent' };
+    var labels = { 1: '<?= $t['review_star_1'] ?>', 2: '<?= $t['review_star_2'] ?>', 3: '<?= $t['review_star_3'] ?>', 4: '<?= $t['review_star_4'] ?>', 5: '<?= $t['review_star_5'] ?>' };
     var hint     = document.getElementById('starHint');
     var counter  = document.getElementById('charCount');
     var textarea = document.querySelector('.review-comment');

@@ -11,8 +11,8 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
 $buyerId = (int)$_SESSION['user_id'];
 
 $stmt = $pdo->prepare('
-    SELECT p.id, p.name, p.price, p.sale_price, p.sale_ends_at, p.stock, p.active, p.archived,
-           b.id AS business_id, b.name AS business_name, b.approved,
+    SELECT p.id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, p.stock, p.active, p.archived,
+           b.id AS business_id, b.name AS business_name, b.name_km AS business_name_km, b.approved,
            pp.filename AS photo,
            COALESCE(rv.avg_rating, 0) AS avg_rating,
            COALESCE(rv.review_count, 0) AS review_count,
@@ -45,12 +45,12 @@ $items = $stmt->fetchAll();
 <?php require __DIR__ . '/../header/header.php'; ?>
 
 <main class="wishlist-main">
-    <h1 class="wishlist-title">Saved items</h1>
+    <h1 class="wishlist-title"><?= $t['wishlist_title'] ?></h1>
 
     <?php if (empty($items)): ?>
         <div class="wishlist-empty">
-            <p>Nothing saved yet.</p>
-            <a href="/search/" class="btn-browse">Browse products</a>
+            <p><?= $t['wishlist_empty'] ?></p>
+            <a href="/search/" class="btn-browse"><?= $t['wishlist_browse'] ?></a>
         </div>
     <?php else: ?>
         <div class="wishlist-grid">
@@ -68,12 +68,12 @@ $items = $stmt->fetchAll();
                     <a href="/product/?id=<?= (int)$p['id'] ?>" class="wl-card-inner">
                         <?= $photo ?>
                         <div class="wl-card-body">
-                            <strong class="wl-card-name"><?= htmlspecialchars($p['name']) ?></strong>
+                            <strong class="wl-card-name"><?= htmlspecialchars(lang_field($p, 'name')) ?></strong>
                             <span class="wl-card-price"><?= price_html($p) ?></span>
-                            <span class="wl-card-seller"><?= htmlspecialchars($p['business_name']) ?></span>
+                            <span class="wl-card-seller"><?= htmlspecialchars(pick_lang($p['business_name'], $p['business_name_km'] ?? null)) ?></span>
                             <?= $rating ?>
                             <?php if ($unavailable): ?>
-                                <span class="wl-card-unavail">Currently unavailable</span>
+                                <span class="wl-card-unavail"><?= $t['wishlist_unavailable'] ?></span>
                             <?php endif; ?>
                         </div>
                     </a>

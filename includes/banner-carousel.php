@@ -1,8 +1,9 @@
 <?php
 // Shared banner carousel — requires $pdo to be available
+$_bannerLang = $_SESSION['lang'] ?? 'km';
 try {
     $_banners = $pdo->query(
-        'SELECT id, title, subtitle, link_url, image_filename
+        'SELECT id, title, title_km, subtitle, subtitle_km, link_url, image_filename
          FROM banners WHERE active = 1 ORDER BY sort_order ASC, id ASC'
     )->fetchAll();
 } catch (PDOException $e) {
@@ -14,13 +15,19 @@ if (!empty($_banners)):
 <div class="banner-carousel" id="bannerCarousel">
     <div class="banner-slides">
         <?php foreach ($_banners as $i => $b): ?>
-        <?php $tag = $b['link_url'] ? 'a' : 'div'; $href = $b['link_url'] ? ' href="' . htmlspecialchars($b['link_url']) . '"' : ''; ?>
+        <?php
+            $tag  = $b['link_url'] ? 'a' : 'div';
+            $href = $b['link_url'] ? ' href="' . htmlspecialchars($b['link_url']) . '"' : '';
+            // Show Khmer copy when in Khmer and it's provided, else fall back to English.
+            $bTitle    = ($_bannerLang === 'km' && !empty($b['title_km']))    ? $b['title_km']    : $b['title'];
+            $bSubtitle = ($_bannerLang === 'km' && !empty($b['subtitle_km'])) ? $b['subtitle_km'] : $b['subtitle'];
+        ?>
         <<?= $tag . $href ?> class="banner-slide<?= $i === 0 ? ' active' : '' ?>"
              style="background-image:url('/uploads/<?= htmlspecialchars($b['image_filename']) ?>')">
-            <?php if ($b['title'] || $b['subtitle']): ?>
+            <?php if ($bTitle || $bSubtitle): ?>
             <div class="banner-text">
-                <?php if ($b['title']): ?><p class="banner-title"><?= htmlspecialchars($b['title']) ?></p><?php endif; ?>
-                <?php if ($b['subtitle']): ?><p class="banner-subtitle"><?= htmlspecialchars($b['subtitle']) ?></p><?php endif; ?>
+                <?php if ($bTitle): ?><p class="banner-title"><?= htmlspecialchars($bTitle) ?></p><?php endif; ?>
+                <?php if ($bSubtitle): ?><p class="banner-subtitle"><?= htmlspecialchars($bSubtitle) ?></p><?php endif; ?>
             </div>
             <?php endif; ?>
         </<?= $tag ?>>

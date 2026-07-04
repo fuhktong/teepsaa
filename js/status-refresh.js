@@ -1,27 +1,28 @@
+const T = window.T || {};
 const STATUS_STEPS = ['pending', 'paid', 'dispatched', 'delivered', 'completed'];
 const STATUS_LABELS = {
-    pending:    'Payment<br>submitted',
-    paid:       'Payment<br>confirmed',
-    dispatched: 'Dispatched',
-    delivered:  'Delivered',
-    completed:  'Completed',
+    pending:    T.st_pending    || 'Payment<br>submitted',
+    paid:       T.st_paid       || 'Payment<br>confirmed',
+    dispatched: T.st_dispatched || 'Dispatched',
+    delivered:  T.st_delivered  || 'Delivered',
+    completed:  T.st_completed  || 'Completed',
 };
 
 const REFUND_STEPS = ['refund_requested', 'return_approved', 'return_dispatched', 'return_received', 'refunded'];
 const REFUND_LABELS = {
-    refund_requested:  'Refund<br>Requested',
-    return_approved:   'Return<br>Approved',
-    return_dispatched: 'Return<br>Sent',
-    return_received:   'Item<br>Received',
-    refunded:          'Refunded',
+    refund_requested:  T.st_refund_requested  || 'Refund<br>Requested',
+    return_approved:   T.st_return_approved   || 'Return<br>Approved',
+    return_dispatched: T.st_return_dispatched || 'Return<br>Sent',
+    return_received:   T.st_return_received   || 'Item<br>Received',
+    refunded:          T.st_refunded          || 'Refunded',
 };
 
 function renderStatusBar(status) {
     if (status === 'cancelled') {
-        return '<div class="ostatus-bar ostatus-cancelled">Order cancelled</div>';
+        return '<div class="ostatus-bar ostatus-cancelled">' + (T.order_cancelled || 'Order cancelled') + '</div>';
     }
     if (status === 'refund_rejected') {
-        return '<div class="ostatus-bar ostatus-cancelled">Refund rejected</div>';
+        return '<div class="ostatus-bar ostatus-cancelled">' + (T.refund_rejected || 'Refund rejected') + '</div>';
     }
     if (REFUND_STEPS.includes(status)) {
         const idx = REFUND_STEPS.indexOf(status);
@@ -96,14 +97,14 @@ async function refreshCard(card, { loginUrl, isAdminFilter, popupBody }) {
         const res = await fetch(`/api/order-status.php?order_id=${encodeURIComponent(orderId)}`);
 
         if (res.status === 401) {
-            showToast(`Session expired — <a href="${loginUrl}">please log in again</a>`, true);
+            showToast(`${T.session_expired || 'Session expired —'} <a href="${loginUrl}">${T.login_again || 'please log in again'}</a>`, true);
             return;
         }
 
         const data = await res.json();
 
         if (data.error) {
-            showToast('Could not refresh — try again.', true);
+            showToast(T.refresh_error || 'Could not refresh — try again.', true);
             return;
         }
 
@@ -128,14 +129,14 @@ async function refreshCard(card, { loginUrl, isAdminFilter, popupBody }) {
                 }
             }
 
-            let toastMsg = `Order #${orderRef} updated: ${newStatus}`;
+            let toastMsg = (T.order_updated ? T.order_updated.replace('%s', orderRef) : `Order #${orderRef} updated`);
             if (isAdminFilter) {
                 toastMsg += ' — Reload page to remove from this filter';
             }
             showToast(toastMsg, false);
         }
     } catch {
-        showToast('Could not refresh — try again.', true);
+        showToast(T.refresh_error || 'Could not refresh — try again.', true);
     }
 }
 

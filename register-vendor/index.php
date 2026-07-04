@@ -33,32 +33,32 @@ unset($_SESSION['auth_error']);
 <main>
     <div class="auth-box">
         <?php if ($buyerBlocked): ?>
-        <h1>Want to sell on teepsaa?</h1>
-        <p class="auth-info">You're signed in with a <strong>buyer</strong> account. Vendor accounts are separate, so to start selling you'll need to register a vendor account with a different email address.</p>
-        <p class="auth-info">Log out first, then create your vendor account.</p>
-        <a class="auth-cta" href="/logout/logout.php?next=/register-vendor/">Log out &amp; register as a vendor</a>
-        <p class="auth-switch">Changed your mind? <a href="/dashboard-buyer/">Back to your account</a></p>
+        <h1><?= $t['sell_cta_title'] ?></h1>
+        <p class="auth-info"><?= $t['sell_cta_body1'] ?></p>
+        <p class="auth-info"><?= $t['sell_cta_body2'] ?></p>
+        <a class="auth-cta" href="/logout/logout.php?next=/register-vendor/"><?= $t['sell_cta_button'] ?></a>
+        <p class="auth-switch"><?= $t['sell_cta_back'] ?> <a href="/dashboard-buyer/"><?= $t['sell_cta_back_link'] ?></a></p>
         <?php else: ?>
-        <h1>Register as a vendor</h1>
+        <h1><?= $t['register_as_vendor'] ?></h1>
         <?php if ($error): ?>
             <p class="auth-error"><?= htmlspecialchars($error) ?></p>
         <?php endif; ?>
         <form method="POST" action="/register-vendor/register-vendor.php">
             <?= csrf_input() ?>
-            <label for="name">Full name</label>
+            <label for="name"><?= $t['register_name'] ?></label>
             <input type="text" id="name" name="name" required autofocus>
-            <label for="email">Email</label>
+            <label for="email"><?= $t['register_email'] ?></label>
             <input type="email" id="email" name="email" required>
-            <label for="password">Password</label>
+            <label for="password"><?= $t['register_password'] ?></label>
             <input type="password" id="password" name="password" required minlength="8">
-            <label for="password_confirm">Confirm password</label>
+            <label for="password_confirm"><?= $t['register_confirm'] ?></label>
             <input type="password" id="password_confirm" name="password_confirm" required minlength="8">
-            <label for="promo_code">Promo code <span style="font-weight:400;color:#6b7280">(optional)</span></label>
+            <label for="promo_code"><?= $t['register_promo'] ?> <span style="font-weight:400;color:#6b7280"><?= $t['form_optional'] ?></span></label>
             <input type="text" id="promo_code" name="promo_code" maxlength="50" placeholder="Enter code if you have one" style="text-transform:uppercase">
-            <button type="submit">Register</button>
+            <button type="submit"><?= $t['register_submit'] ?></button>
         </form>
-        <p class="auth-tos">By registering you agree to our <a href="/terms/">Terms of Service</a> and <a href="/privacy/">Privacy Policy</a>.</p>
-        <p class="auth-switch">Already have an account? <a href="/login-vendor/">Vendor log in</a></p>
+        <p class="auth-tos"><?= sprintf($t['auth_agree'], '<a href="/terms/">' . $t['footer_terms'] . '</a>', '<a href="/privacy/">' . $t['footer_privacy'] . '</a>') ?></p>
+        <p class="auth-switch"><?= $t['register_have_account'] ?> <a href="/login-vendor/"><?= $t['login_vendor_title'] ?></a></p>
         <?php endif; ?>
     </div>
 </main>

@@ -34,7 +34,7 @@ unset($_SESSION['auth_error'], $_SESSION['auth_success']);
 
 <main>
     <div class="auth-box">
-        <h1>Vendor log in</h1>
+        <h1><?= $t['login_vendor_title'] ?></h1>
         <?php if ($success): ?>
             <p class="auth-success"><?= htmlspecialchars($success) ?></p>
         <?php endif; ?>
@@ -43,14 +43,14 @@ unset($_SESSION['auth_error'], $_SESSION['auth_success']);
         <?php endif; ?>
         <form method="POST" action="/login-vendor/login-vendor.php">
             <?= csrf_input() ?>
-            <label for="email">Email</label>
+            <label for="email"><?= $t['login_email'] ?></label>
             <input type="email" id="email" name="email" required autofocus>
-            <label for="password">Password</label>
+            <label for="password"><?= $t['login_password'] ?></label>
             <input type="password" id="password" name="password" required>
-            <button type="submit">Log in</button>
+            <button type="submit"><?= $t['login_submit'] ?></button>
         </form>
-        <p class="auth-switch">No account? <a href="/register-vendor/">Register as a vendor</a></p>
-        <p class="auth-switch"><a href="/forgot-password-vendor/">Forgot password?</a></p>
+        <p class="auth-switch"><?= $t['login_no_account'] ?> <a href="/register-vendor/"><?= $t['register_as_vendor'] ?></a></p>
+        <p class="auth-switch"><a href="/forgot-password-vendor/"><?= $t['login_forgot'] ?></a></p>
     </div>
 </main>
 

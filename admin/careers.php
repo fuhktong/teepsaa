@@ -151,10 +151,22 @@ $adminTab     = 'careers';
                            placeholder="e.g. Customer Support Associate">
                 </div>
                 <div>
+                    <label class="upload-label">Title <span style="color:#9ca3af">(Khmer — optional)</span></label>
+                    <input type="text" name="title_km" class="upload-input" maxlength="150"
+                           value="<?= $editJob ? htmlspecialchars($editJob['title_km'] ?? '') : '' ?>"
+                           placeholder="ចំណងជើងការងារជាភាសាខ្មែរ">
+                </div>
+                <div>
                     <label class="upload-label">Location <span style="color:#9ca3af">(optional)</span></label>
                     <input type="text" name="location" class="upload-input" maxlength="120"
                            value="<?= $editJob ? htmlspecialchars($editJob['location'] ?? '') : '' ?>"
                            placeholder="e.g. Phnom Penh / Remote">
+                </div>
+                <div>
+                    <label class="upload-label">Location <span style="color:#9ca3af">(Khmer — optional)</span></label>
+                    <input type="text" name="location_km" class="upload-input" maxlength="120"
+                           value="<?= $editJob ? htmlspecialchars($editJob['location_km'] ?? '') : '' ?>"
+                           placeholder="ទីតាំងជាភាសាខ្មែរ">
                 </div>
                 <div>
                     <label class="upload-label">Employment type</label>
@@ -176,6 +188,11 @@ $adminTab     = 'careers';
                     <label class="upload-label">Description <span style="color:#9ca3af">(optional)</span></label>
                     <textarea name="description" class="upload-textarea" maxlength="5000"
                               placeholder="Role summary, responsibilities, requirements, how to apply…"><?= $editJob ? htmlspecialchars($editJob['description'] ?? '') : '' ?></textarea>
+                </div>
+                <div class="full">
+                    <label class="upload-label">Description <span style="color:#9ca3af">(Khmer — optional)</span></label>
+                    <textarea name="description_km" class="upload-textarea" maxlength="5000"
+                              placeholder="ការពិពណ៌នាការងារជាភាសាខ្មែរ…"><?= $editJob ? htmlspecialchars($editJob['description_km'] ?? '') : '' ?></textarea>
                 </div>
             </div>
             <div style="margin-top:1rem;display:flex;gap:0.5rem;">

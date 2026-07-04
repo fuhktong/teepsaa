@@ -17,7 +17,7 @@ $action = $_GET['action'] ?? '';
 $tab    = (!$action && ($_GET['tab'] ?? '') === 'archive') ? 'archive' : 'products';
 
 // Categories (always needed for add/edit form)
-$allCatsRaw = $pdo->query('SELECT id, parent_id, name, royalty_rate FROM categories ORDER BY name ASC')->fetchAll();
+$allCatsRaw = $pdo->query('SELECT id, parent_id, name, name_km, royalty_rate FROM categories ORDER BY name ASC')->fetchAll();
 
 function buildVendorCatTree(array $cats, $parentId = null): array {
     $branch = [];
@@ -86,7 +86,7 @@ if (!empty($bizIds)) {
     ");
     $stmt->execute(array_values($bizIds));
     foreach ($stmt->fetchAll() as $expired) {
-        $msg = 'Your royalty penalty of +' . number_format($expired['rate_increase'] * 100, 1) . '% expired on ' . date('M j, Y', strtotime($expired['end_date'])) . '. Your rate is back to normal.';
+        $msg = 'Your royalty penalty of +' . number_format($expired['rate_increase'] * 100, 1) . '% expired on ' . fmt_date('M j, Y', strtotime($expired['end_date'])) . '. Your rate is back to normal.';
         $pdo->prepare('INSERT INTO vendor_notifications (vendor_user_id, message) VALUES (?, ?)')->execute([$userId, $msg]);
         $pdo->prepare('UPDATE vendor_penalties SET notified_at = NOW() WHERE id = ?')->execute([$expired['id']]);
     }
@@ -154,7 +154,7 @@ if ($action === 'edit' && isset($_GET['id']) && !empty($businesses)) {
 }
 
 if ($editing) {
-    $vStmt = $pdo->prepare('SELECT id, label, stock, price_override FROM product_variants WHERE product_id = ? ORDER BY sort_order ASC, id ASC');
+    $vStmt = $pdo->prepare('SELECT id, label, label_km, stock, price_override FROM product_variants WHERE product_id = ? ORDER BY sort_order ASC, id ASC');
     $vStmt->execute([$editing['id']]);
     $editingVariants = $vStmt->fetchAll();
 }
@@ -162,11 +162,11 @@ if ($editing) {
 $editingOptionTypes = [];
 $editingCombos = [];
 if ($editing) {
-    $otStmt = $pdo->prepare('SELECT id, name, display_order FROM product_option_types WHERE product_id = ? ORDER BY display_order, id');
+    $otStmt = $pdo->prepare('SELECT id, name, name_km, display_order FROM product_option_types WHERE product_id = ? ORDER BY display_order, id');
     $otStmt->execute([$editing['id']]);
     $editingOptionTypes = $otStmt->fetchAll();
     foreach ($editingOptionTypes as &$ot) {
-        $ovStmt = $pdo->prepare('SELECT id, label, display_order FROM product_option_values WHERE option_type_id = ? ORDER BY display_order, id');
+        $ovStmt = $pdo->prepare('SELECT id, label, label_km, display_order FROM product_option_values WHERE option_type_id = ? ORDER BY display_order, id');
         $ovStmt->execute([$ot['id']]);
         $ot['values'] = $ovStmt->fetchAll();
     }
@@ -188,7 +188,7 @@ $useLegacyVariantUI = !empty($editing) && empty($editingOptionTypes) && !empty($
 $editCatName = '—';
 if ($editing) {
     foreach ($allFlat as $cat) {
-        if ($cat['id'] == $editing['category_id']) { $editCatName = $cat['name']; break; }
+        if ($cat['id'] == $editing['category_id']) { $editCatName = cat_name($cat); break; }
     }
 }
 
@@ -238,15 +238,15 @@ if ($editing) {
     <div class="vendor-penalty-notice">
         A royalty penalty of <strong>+<?= number_format($totalPenalty * 100, 1) ?>%</strong> is active on your account<?php
             if ($hasIndefinite) echo ' with no set expiry date';
-            elseif ($soonestExpiry) echo ', expiring ' . date('M j, Y', strtotime($soonestExpiry));
+            elseif ($soonestExpiry) echo ', expiring ' . fmt_date('M j, Y', strtotime($soonestExpiry));
         ?>.
     </div>
     <?php endif; ?>
 
     <?php if (!$action): ?>
     <nav class="products-subnav">
-        <a href="/products/" class="<?= $tab === 'products' ? 'active' : '' ?>">Products</a>
-        <a href="/products/?tab=archive" class="<?= $tab === 'archive' ? 'active' : '' ?>">Archive</a>
+        <a href="/products/" class="<?= $tab === 'products' ? 'active' : '' ?>"><?= $t['vendor_products'] ?></a>
+        <a href="/products/?tab=archive" class="<?= $tab === 'archive' ? 'active' : '' ?>"><?= $t['prod_archive'] ?></a>
     </nav>
     <?php endif; ?>
 
@@ -255,7 +255,7 @@ if ($editing) {
         <?php if ($action === 'edit' && $editing): ?>
 
         <div class="page-header" style="margin-bottom:1.25rem">
-            <a href="/products/" class="btn-back">← Products</a>
+            <a href="/products/" class="btn-back">← <?= $t['vendor_products'] ?></a>
         </div>
 
         <?php
@@ -281,24 +281,24 @@ if ($editing) {
                 <?php endif; ?>
             </div>
             <div class="product-preview-info">
-                <div class="product-preview-name"><?= htmlspecialchars($editing['name']) ?></div>
-                <div class="product-preview-row"><span>Category</span><span><?= htmlspecialchars($editCatName) ?></span></div>
+                <div class="product-preview-name"><?= htmlspecialchars(lang_field($editing, 'name')) ?></div>
+                <div class="product-preview-row"><span><?= $t['search_category'] ?></span><span><?= htmlspecialchars($editCatName) ?></span></div>
                 <div class="product-preview-row">
-                    <span>Price</span>
+                    <span><?= $t['vendor_col_price'] ?></span>
                     <span style="display:flex;align-items:center;gap:0.6rem;">
                         <?= price_html($editing) ?>
                         <?php if (active_sale($editing)): ?>
                         <form method="POST" action="/products/cancel-sale.php" style="margin:0">
                             <?= csrf_input() ?>
                             <input type="hidden" name="product_id" value="<?= $editing['id'] ?>">
-                            <button type="submit" class="btn-cancel-sale">Cancel sale</button>
+                            <button type="submit" class="btn-cancel-sale"><?= $t['prod_cancel_sale'] ?></button>
                         </form>
                         <?php endif; ?>
                     </span>
                 </div>
                 <?php if (!empty($editingVariants)): ?>
                 <div class="product-preview-row">
-                    <span>Variants</span>
+                    <span><?= $t['product_variants'] ?></span>
                     <span style="display:flex;flex-wrap:wrap;gap:0.3rem;">
                         <?php foreach ($editingVariants as $v): ?>
                         <span style="font-size:0.8rem;background:#f3f4f6;border-radius:4px;padding:0.15rem 0.5rem;white-space:nowrap;">
@@ -308,33 +308,33 @@ if ($editing) {
                     </span>
                 </div>
                 <?php else: ?>
-                <div class="product-preview-row"><span>Stock</span><span><?= (int)$editing['stock'] ?></span></div>
+                <div class="product-preview-row"><span><?= $t['vendor_col_stock'] ?></span><span><?= (int)$editing['stock'] ?></span></div>
                 <?php endif; ?>
-                <div class="product-preview-row"><span>Delivery</span><span><?= ($editing['delivery_method'] ?? 'bike') === 'tuktuk' ? 'Grab Tuk-Tuk' : 'Grab Bike' ?></span></div>
+                <div class="product-preview-row"><span><?= $t['order_delivery'] ?></span><span><?= ($editing['delivery_method'] ?? 'bike') === 'tuktuk' ? 'Grab Tuk-Tuk' : 'Grab Bike' ?></span></div>
                 <?php if ($editing['description']): ?>
-                <div class="product-preview-row"><span>Description</span><span><?= htmlspecialchars($editing['description']) ?></span></div>
+                <div class="product-preview-row"><span><?= $t['vendor_settings_description'] ?></span><span><?= htmlspecialchars($editing['description']) ?></span></div>
                 <?php endif; ?>
                 <div class="product-preview-row">
-                    <span>Status</span>
+                    <span><?= $t['vendor_col_status'] ?></span>
                     <span class="status-action-wrap">
-                        <span class="status <?= $editing['active'] ? 'status-active' : 'status-inactive' ?>"><?= $editing['active'] ? 'Active' : 'Inactive' ?></span>
+                        <span class="status <?= $editing['active'] ? 'status-active' : 'status-inactive' ?>"><?= $editing['active'] ? $t['vendor_status_active'] : $t['vendor_status_inactive'] ?></span>
                         <div class="status-dropdown-container">
-                            <button type="button" class="status-edit-btn" id="status-edit-btn">Edit</button>
+                            <button type="button" class="status-edit-btn" id="status-edit-btn"><?= $t['prod_edit'] ?></button>
                             <div class="status-dropdown" id="status-dropdown">
                                 <form method="POST" action="/products/toggle.php">
                                     <?= csrf_input() ?>
                                     <input type="hidden" name="product_id" value="<?= $editing['id'] ?>">
-                                    <button type="submit"><?= $editing['active'] ? 'Deactivate' : 'Activate' ?></button>
+                                    <button type="submit"><?= $editing['active'] ? $t['prod_deactivate'] : $t['prod_activate'] ?></button>
                                 </form>
                                 <form method="POST" action="/products/archive.php">
                                     <?= csrf_input() ?>
                                     <input type="hidden" name="product_id" value="<?= $editing['id'] ?>">
-                                    <button type="submit">Archive</button>
+                                    <button type="submit"><?= $t['prod_archive'] ?></button>
                                 </form>
                                 <form method="POST" action="/products/delete.php" id="preview-delete-form">
                                     <?= csrf_input() ?>
                                     <input type="hidden" name="product_id" value="<?= $editing['id'] ?>">
-                                    <button type="button" class="status-dropdown-danger" onclick="if(confirm('Permanently delete this product? This cannot be undone.')) document.getElementById('preview-delete-form').submit()">Delete</button>
+                                    <button type="button" class="status-dropdown-danger" onclick="if(confirm('Permanently delete this product? This cannot be undone.')) document.getElementById('preview-delete-form').submit()"><?= $t['prod_delete'] ?></button>
                                 </form>
                             </div>
                         </div>
@@ -342,8 +342,8 @@ if ($editing) {
                 </div>
             </div>
             <div class="product-preview-actions">
-                <button type="button" id="edit-toggle-btn" class="btn">Edit</button>
-                <a href="/product/?id=<?= $editing['id'] ?>" target="_blank" class="btn btn-secondary">Preview ↗</a>
+                <button type="button" id="edit-toggle-btn" class="btn"><?= $t['prod_edit'] ?></button>
+                <a href="/product/?id=<?= $editing['id'] ?>" target="_blank" class="btn btn-secondary"><?= $t['prod_preview'] ?></a>
             </div>
         </div>
         <script>
@@ -386,7 +386,7 @@ if ($editing) {
         <?php endif; ?>
 
         <?php if (empty($businesses)): ?>
-            <p class="notice">You need an approved business before adding products.</p>
+            <p class="notice"><?= $t['prod_need_business'] ?></p>
         <?php else: ?>
         <form method="POST" action="/products/save.php" enctype="multipart/form-data" class="product-form" id="product-edit-form">
             <?= csrf_input() ?>
@@ -396,7 +396,7 @@ if ($editing) {
             <?php endif; ?>
 
             <div class="field">
-                <label for="business_id">Business</label>
+                <label for="business_id"><?= $t['order_business'] ?></label>
                 <select id="business_id" name="business_id" required <?= $editing ? 'disabled' : '' ?>>
                     <?php foreach ($businesses as $b): ?>
                         <option value="<?= $b['id'] ?>"
@@ -411,36 +411,46 @@ if ($editing) {
             </div>
 
             <div class="field">
-                <label>Category</label>
+                <label><?= $t['search_category'] ?></label>
                 <div id="cat-cascade" class="cat-cascade"></div>
                 <input type="hidden" id="category_id" name="category_id" value="<?= htmlspecialchars((string)($editing['category_id'] ?? '')) ?>">
             </div>
 
             <div class="field">
-                <label for="name">Product name</label>
+                <label for="name"><?= $t['prod_name'] ?></label>
                 <input type="text" id="name" name="name" required value="<?= htmlspecialchars($editing['name'] ?? '') ?>">
             </div>
 
             <div class="field">
-                <label for="description">Description</label>
+                <label for="name_km"><?= $t['prod_name'] ?> <span class="hint"><?= $t['form_km_field'] ?></span></label>
+                <input type="text" id="name_km" name="name_km" value="<?= htmlspecialchars($editing['name_km'] ?? '') ?>" placeholder="ឈ្មោះផលិតផលជាភាសាខ្មែរ">
+            </div>
+
+            <div class="field">
+                <label for="description"><?= $t['vendor_settings_description'] ?></label>
                 <textarea id="description" name="description" rows="3"><?= htmlspecialchars($editing['description'] ?? '') ?></textarea>
+            </div>
+
+            <div class="field">
+                <label for="description_km"><?= $t['vendor_settings_description'] ?> <span class="hint"><?= $t['form_km_field'] ?></span></label>
+                <textarea id="description_km" name="description_km" rows="3" placeholder="ការពិពណ៌នាជាភាសាខ្មែរ"><?= htmlspecialchars($editing['description_km'] ?? '') ?></textarea>
             </div>
 
             <div class="field-row">
                 <div class="field">
-                    <label for="price">Price (USD)</label>
+                    <label for="price"><?= $t['search_price_usd'] ?></label>
                     <input type="number" id="price" name="price" required min="0" step="1"
                            value="<?= $editing ? number_format($editing['price'], 2, '.', '') : '' ?>">
                     <span class="hint" id="payout-preview"></span>
                 </div>
                 <div class="field" id="stock-field-wrap">
-                    <label for="stock">Stock</label>
+                    <label for="stock"><?= $t['vendor_col_stock'] ?></label>
                     <input type="number" id="stock" name="stock" required min="0"
                            value="<?= $editing['stock'] ?? 0 ?>">
-                    <span class="hint" id="stock-variant-hint" style="display:none;color:#9ca3af">Set per variant below</span>
+                    <span class="hint" id="stock-variant-hint" style="display:none;color:#9ca3af"><?= $t['prod_stock_variant_hint'] ?></span>
                 </div>
                 <div class="field">
-                    <label for="delivery_method">Delivery method</label>
+                    <label for="delivery_method"><?= $t['prod_delivery_method'] ?></label>
                     <select id="delivery_method" name="delivery_method">
                         <option value="bike"   <?= ($editing['delivery_method'] ?? 'bike') === 'bike'   ? 'selected' : '' ?>>Grab Bike</option>
                         <option value="tuktuk" <?= ($editing['delivery_method'] ?? 'bike') === 'tuktuk' ? 'selected' : '' ?>>Grab Tuk-Tuk</option>
@@ -450,21 +460,21 @@ if ($editing) {
 
             <div class="field-row">
                 <div class="field">
-                    <label for="sale_price">Sale price (USD) <span class="hint">Optional</span></label>
+                    <label for="sale_price"><?= $t['prod_sale_price'] ?> <span class="hint"><?= $t['prod_optional'] ?></span></label>
                     <input type="number" id="sale_price" name="sale_price" min="0" step="0.01" placeholder="e.g. 8.00"
                            value="<?= ($editing && $editing['sale_price'] !== null) ? number_format((float)$editing['sale_price'], 2, '.', '') : '' ?>">
                 </div>
                 <div class="field">
-                    <label for="sale_date">Sale end date</label>
+                    <label for="sale_date"><?= $t['prod_sale_date'] ?></label>
                     <input type="date" id="sale_date" name="sale_date"
                            value="<?= ($editing && $editing['sale_ends_at']) ? date('Y-m-d', strtotime($editing['sale_ends_at'])) : '' ?>">
                 </div>
                 <div class="field">
-                    <label for="sale_time">Sale end time</label>
+                    <label for="sale_time"><?= $t['prod_sale_time'] ?></label>
                     <select id="sale_time" name="sale_time">
-                        <option value="">— Time —</option>
+                        <option value=""><?= $t['prod_time_placeholder'] ?></option>
                         <?php
-                            $editSaleTime = ($editing && $editing['sale_ends_at']) ? date('H:i', strtotime($editing['sale_ends_at'])) : '';
+                            $editSaleTime = ($editing && $editing['sale_ends_at']) ? fmt_date('H:i', strtotime($editing['sale_ends_at'])) : '';
                             for ($h = 0; $h < 24; $h++) {
                                 foreach ([0, 30] as $m) {
                                     $val  = sprintf('%02d:%02d', $h, $m);
@@ -479,22 +489,22 @@ if ($editing) {
             </div>
 
             <div class="field" id="variant-field">
-                <label>Variants <span class="hint">Optional — add option types like Size or Color. Each combination gets its own stock.</span></label>
+                <label><?= $t['product_variants'] ?> <span class="hint"><?= $t['prod_variants_hint'] ?></span></label>
 
                 <?php if ($useLegacyVariantUI): ?>
                 <div id="variant-list"></div>
-                <button type="button" class="btn-add-variant" id="add-variant-btn">+ Add variant</button>
+                <button type="button" class="btn-add-variant" id="add-variant-btn"><?= $t['prod_add_variant'] ?></button>
                 <?php else: ?>
                 <div id="option-type-list"></div>
-                <button type="button" id="add-option-type-btn" class="btn-add-variant">+ Add option type (e.g. Size, Color)</button>
+                <button type="button" id="add-option-type-btn" class="btn-add-variant"><?= $t['prod_add_option_type'] ?></button>
                 <div id="combo-section" style="display:none;margin-top:1rem">
-                    <p class="combo-heading">Variant combinations — set stock for each</p>
+                    <p class="combo-heading"><?= $t['prod_variant_combos'] ?></p>
                     <table class="combo-table">
                         <thead>
                             <tr>
-                                <th class="combo-th">Combination</th>
-                                <th class="combo-th">Stock</th>
-                                <th class="combo-th">Price override <span class="hint">(optional)</span></th>
+                                <th class="combo-th"><?= $t['product_variants'] ?></th>
+                                <th class="combo-th"><?= $t['vendor_col_stock'] ?></th>
+                                <th class="combo-th"><?= $t['prod_price_override'] ?> <span class="hint"><?= $t['prod_optional'] ?></span></th>
                             </tr>
                         </thead>
                         <tbody id="combo-tbody"></tbody>
@@ -506,7 +516,7 @@ if ($editing) {
 
             <?php if ($action === 'add'): ?>
             <div class="field">
-                <label>Photos <span class="hint">jpg or png · max 2MB each · up to 9 · first photo becomes the main image</span></label>
+                <label><?= $t['submit_photos'] ?> <span class="hint"><?= $t['prod_photos_hint'] ?></span></label>
                 <input type="file" name="gallery_photos[]" multiple accept="image/jpeg,image/png">
             </div>
             <?php endif; ?>
@@ -517,21 +527,21 @@ if ($editing) {
 
             <?php if ($action === 'add'): ?>
             <div class="form-actions">
-                <button type="submit">Add product</button>
+                <button type="submit"><?= $t['prod_add_product'] ?></button>
             </div>
             <?php endif; ?>
         </form>
         <?php if ($action === 'edit' && $editing): ?>
 
         <div class="gallery-display-field">
-            <div class="gallery-display-label">Photos <span class="hint"><?= $totalPhotos ?>/9</span></div>
+            <div class="gallery-display-label"><?= $t['submit_photos'] ?> <span class="hint"><?= $totalPhotos ?>/9</span></div>
             <?php if (!empty($galleryPhotos)): ?>
             <div class="gallery-grid" id="gallery-grid">
                 <?php foreach ($galleryPhotos as $i => $gp): ?>
                 <div class="gallery-item" draggable="true" data-photo-id="<?= $gp['id'] ?>">
                     <img src="/uploads/<?= htmlspecialchars($gp['filename']) ?>" alt="" class="gallery-thumb-img">
                     <?php if ($i === 0): ?>
-                        <span class="gallery-primary-badge">Main</span>
+                        <span class="gallery-primary-badge"><?= $t['prod_main'] ?></span>
                     <?php endif; ?>
                     <form method="POST" action="/products/photo-delete.php">
                         <?= csrf_input() ?>
@@ -555,7 +565,7 @@ if ($editing) {
         <?php endif; ?>
 
         <div class="form-actions">
-            <button type="submit" form="product-edit-form" class="btn">Save changes</button>
+            <button type="submit" form="product-edit-form" class="btn"><?= $t['prod_save_changes'] ?></button>
         </div>
 
         </div>
@@ -579,7 +589,7 @@ if ($editing) {
                         if (!badge) {
                             badge = document.createElement('span');
                             badge.className = 'gallery-primary-badge';
-                            badge.textContent = 'Main';
+                            badge.textContent = '<?= $t['prod_main'] ?>';
                             item.appendChild(badge);
                         }
                     } else {
@@ -634,7 +644,7 @@ if ($editing) {
             btn.addEventListener('click', function () {
                 var open = wrap.style.display === 'none';
                 wrap.style.display = open ? 'block' : 'none';
-                btn.textContent = open ? 'Cancel' : 'Edit';
+                btn.textContent = open ? '<?= $t['prod_cancel'] ?>' : '<?= $t['prod_edit'] ?>';
             });
         })();
         </script>
@@ -642,6 +652,7 @@ if ($editing) {
         <script>
         (function () {
             var allCats      = <?= json_encode(array_values($allFlat)) ?>;
+            var CAT_LANG     = <?= json_encode($_SESSION['lang'] ?? 'km') ?>;
             var editLeafId   = <?= json_encode($editing ? (int)$editing['category_id'] : null) ?>;
 
             var byParent = {}, byId = {};
@@ -668,7 +679,7 @@ if ($editing) {
                 var total = catRate + COMPANY_ADDN + PRODUCT_ADDN;
                 var price = parseFloat(priceIn.value) || 0;
                 if (!price || !total) { preview.textContent = ''; return; }
-                preview.textContent = 'At ' + Math.round(total * 100) + '% fee → you receive ~$' + (price * (1 - total)).toFixed(2);
+                preview.textContent = '<?= $t['prod_payout_at'] ?> ' + Math.round(total * 100) + '<?= $t['prod_payout_mid'] ?>' + (price * (1 - total)).toFixed(2);
             }
 
             priceIn.addEventListener('input', updatePayout);
@@ -686,13 +697,13 @@ if ($editing) {
 
                 var ph = document.createElement('option');
                 ph.value = '';
-                ph.textContent = level === 0 ? '— Select a category —' : '— Select subcategory —';
+                ph.textContent = level === 0 ? '<?= $t['prod_select_category'] ?>' : '<?= $t['prod_select_subcategory'] ?>';
                 sel.appendChild(ph);
 
                 children.forEach(function (c) {
                     var opt = document.createElement('option');
                     opt.value = c.id;
-                    opt.textContent = c.name;
+                    opt.textContent = (CAT_LANG === 'km' && c.name_km) ? c.name_km : c.name;
                     if (preselectId && c.id == preselectId) opt.selected = true;
                     sel.appendChild(opt);
                 });
@@ -740,7 +751,7 @@ if ($editing) {
             document.querySelector('.product-form').addEventListener('submit', function (e) {
                 if (!hidden.value) {
                     e.preventDefault();
-                    alert('Please select a category.');
+                    alert('<?= $t['prod_please_select_category'] ?>');
                     container.querySelector('select').focus();
                 }
             });
@@ -766,14 +777,15 @@ if ($editing) {
                 return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
             }
 
-            function makeRow(id, label, stock, price) {
+            function makeRow(id, label, labelKm, stock, price) {
                 var row = document.createElement('div');
                 row.className = 'variant-row';
                 row.innerHTML =
                     '<input type="hidden" name="variant_id[]" value="' + (id || '') + '">' +
-                    '<input type="text" name="variant_label[]" placeholder="e.g. S, M, L, XL" value="' + escAttr(label || '') + '" required>' +
-                    '<input type="number" name="variant_stock[]" placeholder="Stock" min="0" value="' + (stock != null ? stock : '') + '" required>' +
-                    '<input type="number" name="variant_price[]" placeholder="Price override (optional)" min="0" step="0.01" value="' + (price != null ? price : '') + '">' +
+                    '<input type="text" name="variant_label[]" placeholder="<?= $t['prod_variant_label_placeholder'] ?>" value="' + escAttr(label || '') + '" required>' +
+                    '<input type="text" name="variant_label_km[]" placeholder="ខ្មែរ" value="' + escAttr(labelKm || '') + '">' +
+                    '<input type="number" name="variant_stock[]" placeholder="<?= $t['prod_stock_word'] ?>" min="0" value="' + (stock != null ? stock : '') + '" required>' +
+                    '<input type="number" name="variant_price[]" placeholder="<?= $t['prod_price_override_opt'] ?>" min="0" step="0.01" value="' + (price != null ? price : '') + '">' +
                     '<button type="button" class="variant-row-remove" title="Remove">&times;</button>';
                 row.querySelector('.variant-row-remove').addEventListener('click', function () {
                     row.remove(); updateStockField();
@@ -781,11 +793,11 @@ if ($editing) {
                 return row;
             }
 
-            EXISTING.forEach(function (v) { list.appendChild(makeRow(v.id, v.label, v.stock, v.price_override)); });
+            EXISTING.forEach(function (v) { list.appendChild(makeRow(v.id, v.label, v.label_km, v.stock, v.price_override)); });
             updateStockField();
 
             addBtn.addEventListener('click', function () {
-                list.appendChild(makeRow('', '', '', ''));
+                list.appendChild(makeRow('', '', '', '', ''));
                 updateStockField();
                 list.lastElementChild.querySelector('input[type="text"]').focus();
             });
@@ -795,6 +807,7 @@ if ($editing) {
         .variant-row { display:flex; gap:0.5rem; align-items:center; margin-bottom:0.4rem; }
         .variant-row input[type="text"] { flex:2; min-width:0; padding:0.45rem 0.6rem; border:1px solid var(--border-strong); border-radius: var(--radius-sm); font-size:0.875rem; font-family:inherit; }
         .variant-row input[type="number"] { flex:1; min-width:0; padding:0.45rem 0.6rem; border:1px solid var(--border-strong); border-radius: var(--radius-sm); font-size:0.875rem; font-family:inherit; }
+        .variant-row input[name="variant_label_km[]"] { background:#fafafa; }
         .variant-row-remove { background:none; border:none; color:#9ca3af; font-size:1.1rem; cursor:pointer; padding:0 0.25rem; line-height:1; }
         .variant-row-remove:hover { color:var(--error-fg); }
         .btn-add-variant { margin-top:0.35rem; padding:0.35rem 0.85rem; font-size:0.85rem; border:1px dashed var(--border-strong); border-radius: var(--radius-sm); background:#fff; color:var(--text-muted); cursor:pointer; font-family:inherit; }
@@ -817,8 +830,8 @@ if ($editing) {
             var comboData   = {};   // comboKey → {variantId, stock, price}
 
             var INIT_TYPES  = <?= json_encode(array_map(function($ot) {
-                return ['id' => (int)$ot['id'], 'name' => $ot['name'],
-                        'values' => array_map(function($v){ return ['id'=>(int)$v['id'],'label'=>$v['label']]; }, $ot['values'])];
+                return ['id' => (int)$ot['id'], 'name' => $ot['name'], 'name_km' => $ot['name_km'] ?? '',
+                        'values' => array_map(function($v){ return ['id'=>(int)$v['id'],'label'=>$v['label'],'label_km'=>$v['label_km'] ?? '']; }, $ot['values'])];
             }, $editingOptionTypes)) ?>;
             var INIT_COMBOS = <?= json_encode(array_map(function($c) {
                 return ['id'=>(int)$c['id'],'stock'=>$c['stock'],'price_override'=>$c['price_override'],'value_ids'=>$c['value_ids']];
@@ -865,7 +878,7 @@ if ($editing) {
                     tr.innerHTML =
                         '<td class="combo-td">' + escHtml(label) + '</td>' +
                         '<td class="combo-td"><input type="number" class="combo-stock" min="0" placeholder="0" value="' + esc(d.stock) + '"></td>' +
-                        '<td class="combo-td"><input type="number" class="combo-price" min="0" step="0.01" placeholder="Base price" value="' + esc(d.price) + '"></td>';
+                        '<td class="combo-td"><input type="number" class="combo-price" min="0" step="0.01" placeholder="<?= $t['prod_base_price'] ?>" value="' + esc(d.price) + '"></td>';
                     (function(k){ // capture key per row
                         if (!comboData[k]) comboData[k] = {variantId:0, stock:'', price:''};
                         tr.querySelector('.combo-stock').addEventListener('input', function(){ comboData[k].stock = this.value; });
@@ -885,13 +898,18 @@ if ($editing) {
                     header.className = 'option-type-header';
                     var nameInput = document.createElement('input');
                     nameInput.type = 'text'; nameInput.className = 'option-type-name';
-                    nameInput.placeholder = 'Option name (e.g. Size, Color)';
+                    nameInput.placeholder = '<?= $t['prod_option_name_ph'] ?>';
                     nameInput.value = ot.name;
                     (function(idx){ nameInput.addEventListener('input', function(){ optionTypes[idx].name = this.value; }); })(otIdx);
+                    var nameKmInput = document.createElement('input');
+                    nameKmInput.type = 'text'; nameKmInput.className = 'option-type-name option-type-name-km';
+                    nameKmInput.placeholder = 'ខ្មែរ';
+                    nameKmInput.value = ot.name_km || '';
+                    (function(idx){ nameKmInput.addEventListener('input', function(){ optionTypes[idx].name_km = this.value; }); })(otIdx);
                     var removeBtn = document.createElement('button');
-                    removeBtn.type = 'button'; removeBtn.className = 'option-type-remove'; removeBtn.textContent = 'Remove';
+                    removeBtn.type = 'button'; removeBtn.className = 'option-type-remove'; removeBtn.textContent = '<?= $t['prod_remove'] ?>';
                     (function(idx){ removeBtn.addEventListener('click', function(){ optionTypes.splice(idx,1); renderAll(); }); })(otIdx);
-                    header.appendChild(nameInput); header.appendChild(removeBtn);
+                    header.appendChild(nameInput); header.appendChild(nameKmInput); header.appendChild(removeBtn);
 
                     var valList = document.createElement('div');
                     valList.className = 'option-value-list';
@@ -900,20 +918,24 @@ if ($editing) {
                         row.className = 'option-value-row';
                         var valInput = document.createElement('input');
                         valInput.type = 'text'; valInput.className = 'option-value-input';
-                        valInput.placeholder = 'Value (e.g. S, Red)'; valInput.value = val.label;
+                        valInput.placeholder = '<?= $t['prod_value_ph'] ?>'; valInput.value = val.label;
                         (function(oi,vi){ valInput.addEventListener('input', function(){ optionTypes[oi].values[vi].label = this.value; regenerateCombos(); }); })(otIdx,vIdx);
+                        var valKmInput = document.createElement('input');
+                        valKmInput.type = 'text'; valKmInput.className = 'option-value-input option-value-input-km';
+                        valKmInput.placeholder = 'ខ្មែរ'; valKmInput.value = val.label_km || '';
+                        (function(oi,vi){ valKmInput.addEventListener('input', function(){ optionTypes[oi].values[vi].label_km = this.value; }); })(otIdx,vIdx);
                         var valRemove = document.createElement('button');
                         valRemove.type = 'button'; valRemove.className = 'option-value-remove'; valRemove.textContent = '×';
                         (function(oi,vi){ valRemove.addEventListener('click', function(){ optionTypes[oi].values.splice(vi,1); renderAll(); }); })(otIdx,vIdx);
-                        row.appendChild(valInput); row.appendChild(valRemove);
+                        row.appendChild(valInput); row.appendChild(valKmInput); row.appendChild(valRemove);
                         valList.appendChild(row);
                     });
 
                     var addValBtn = document.createElement('button');
-                    addValBtn.type = 'button'; addValBtn.className = 'btn-add-value'; addValBtn.textContent = '+ Add value';
+                    addValBtn.type = 'button'; addValBtn.className = 'btn-add-value'; addValBtn.textContent = '<?= $t['prod_add_value'] ?>';
                     (function(idx){
                         addValBtn.addEventListener('click', function(){
-                            optionTypes[idx].values.push({id:0, tid:nextTid(), label:''});
+                            optionTypes[idx].values.push({id:0, tid:nextTid(), label:'', label_km:''});
                             renderAll();
                             var lists = optTypeList.querySelectorAll('.option-value-list');
                             if (lists[idx]) { var ins = lists[idx].querySelectorAll('.option-value-input'); if (ins.length) ins[ins.length-1].focus(); }
@@ -933,7 +955,7 @@ if ($editing) {
                 });
                 var payload = {
                     optionTypes: validTypes.map(function(ot){
-                        return { id: ot.id, name: ot.name.trim(), values: ot.values.filter(function(v){ return v.label.trim(); }).map(function(v){ return {id:v.id,tid:v.tid,label:v.label.trim()}; }) };
+                        return { id: ot.id, name: ot.name.trim(), name_km: (ot.name_km || '').trim(), values: ot.values.filter(function(v){ return v.label.trim(); }).map(function(v){ return {id:v.id,tid:v.tid,label:v.label.trim(),label_km:(v.label_km || '').trim()}; }) };
                     }),
                     variants: []
                 };
@@ -954,8 +976,8 @@ if ($editing) {
 
             // Initialize from PHP editing data
             INIT_TYPES.forEach(function(ot) {
-                var type = {id: ot.id, name: ot.name, values: []};
-                (ot.values || []).forEach(function(v){ type.values.push({id:v.id, tid:nextTid(), label:v.label}); });
+                var type = {id: ot.id, name: ot.name, name_km: ot.name_km || '', values: []};
+                (ot.values || []).forEach(function(v){ type.values.push({id:v.id, tid:nextTid(), label:v.label, label_km: v.label_km || ''}); });
                 optionTypes.push(type);
             });
 
@@ -972,7 +994,7 @@ if ($editing) {
             });
 
             addOptBtn.addEventListener('click', function(){
-                optionTypes.push({id:0, name:'', values:[]});
+                optionTypes.push({id:0, name:'', name_km:'', values:[]});
                 renderAll();
                 var inputs = optTypeList.querySelectorAll('.option-type-name');
                 if (inputs.length) inputs[inputs.length-1].focus();
@@ -992,6 +1014,7 @@ if ($editing) {
         .option-value-list { display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.5rem; }
         .option-value-row { display:flex; gap:0.3rem; align-items:center; }
         .option-value-input { height:32px; padding:0 0.55rem; border:1px solid var(--border-strong); border-radius: var(--radius-sm); font-size:0.875rem; font-family:inherit; width:110px; }
+        .option-type-name-km, .option-value-input-km { background:#fafafa; }
         .option-value-remove { background:none; border:none; color:#9ca3af; font-size:1.1rem; cursor:pointer; padding:0 0.2rem; line-height:1; }
         .option-value-remove:hover { color:var(--error-fg); }
         .btn-add-value { padding:0.25rem 0.6rem; border:1px dashed var(--border-strong); border-radius: var(--radius-sm); background:#fff; color:var(--text-muted); font-size:0.8rem; cursor:pointer; font-family:inherit; }
@@ -1008,19 +1031,19 @@ if ($editing) {
     <?php elseif ($tab === 'archive'): ?>
 
         <div class="page-header">
-            <h1>Archive</h1>
+            <h1><?= $t['prod_archive'] ?></h1>
         </div>
 
         <?php if (empty($archivedProducts)): ?>
-            <p class="notice">No archived products.</p>
+            <p class="notice"><?= $t['prod_no_archived'] ?></p>
         <?php else: ?>
         <table class="product-table">
             <thead>
                 <tr>
-                    <th>Photo</th>
-                    <th>Name</th>
-                    <th>Price</th>
-                    <th>Stock</th>
+                    <th><?= $t['prod_col_photo'] ?></th>
+                    <th><?= $t['vendor_col_name'] ?></th>
+                    <th><?= $t['vendor_col_price'] ?></th>
+                    <th><?= $t['vendor_col_stock'] ?></th>
                     <th></th>
                 </tr>
             </thead>
@@ -1034,21 +1057,21 @@ if ($editing) {
                             <div class="thumb thumb--empty"></div>
                         <?php endif; ?>
                     </td>
-                    <td><?= htmlspecialchars($p['name']) ?></td>
+                    <td><?= htmlspecialchars(lang_field($p, 'name')) ?></td>
                     <td>$<?= number_format($p['price'], 2) ?></td>
                     <td><?= (int)$p['stock'] ?></td>
                     <td class="actions">
                         <form method="POST" action="/products/unarchive.php" style="display:inline">
                             <?= csrf_input() ?>
                             <input type="hidden" name="product_id" value="<?= $p['id'] ?>">
-                            <button type="submit" class="btn-link">Unarchive</button>
+                            <button type="submit" class="btn-link"><?= $t['prod_unarchive'] ?></button>
                         </form>
                         <form method="POST" action="/products/delete.php" style="display:inline">
                             <?= csrf_input() ?>
                             <input type="hidden" name="product_id" value="<?= $p['id'] ?>">
                             <input type="hidden" name="from" value="archive">
                             <button type="button" class="btn-link btn-link--danger"
-                                    onclick="if(confirm('Permanently delete this product? This cannot be undone.')) this.closest('form').submit()">Delete</button>
+                                    onclick="if(confirm('Permanently delete this product? This cannot be undone.')) this.closest('form').submit()"><?= $t['prod_delete'] ?></button>
                         </form>
                     </td>
                 </tr>
@@ -1060,9 +1083,9 @@ if ($editing) {
     <?php else: ?>
 
         <div class="page-header">
-            <h1>My Products</h1>
+            <h1><?= $t['prod_my_products'] ?></h1>
             <?php if (!empty($businesses)): ?>
-                <a href="/products/?action=add" class="btn">+ Add product</a>
+                <a href="/products/?action=add" class="btn"><?= $t['prod_add_product'] ?></a>
             <?php endif; ?>
         </div>
 
@@ -1074,20 +1097,20 @@ if ($editing) {
         <?php endif; ?>
 
         <?php if (empty($businesses)): ?>
-            <p class="notice">You need an approved business before adding products. <a href="/submit/">Submit a business</a>.</p>
+            <p class="notice"><?= $t['prod_need_business'] ?> <a href="/submit/"><?= $t['prod_submit_business'] ?></a>.</p>
         <?php elseif (empty($products)): ?>
-            <p class="notice">No products yet. <a href="/products/?action=add">Add your first product</a>.</p>
+            <p class="notice"><?= $t['vendor_no_products'] ?> <a href="/products/?action=add"><?= $t['vendor_add_product'] ?></a>.</p>
         <?php else: ?>
             <table class="product-table">
                 <thead>
                     <tr>
-                        <th>Photo</th>
-                        <th class="sortable" data-col="1" data-type="text">Name</th>
-                        <th class="sortable" data-col="2" data-type="text">Category</th>
-                        <th class="sortable" data-col="3" data-type="num">Price</th>
-                        <th class="sortable" data-col="4" data-type="num">Stock</th>
-                        <th class="sortable" data-col="5" data-type="text">Status</th>
-                        <th>Rating</th>
+                        <th><?= $t['prod_col_photo'] ?></th>
+                        <th class="sortable" data-col="1" data-type="text"><?= $t['vendor_col_name'] ?></th>
+                        <th class="sortable" data-col="2" data-type="text"><?= $t['search_category'] ?></th>
+                        <th class="sortable" data-col="3" data-type="num"><?= $t['vendor_col_price'] ?></th>
+                        <th class="sortable" data-col="4" data-type="num"><?= $t['vendor_col_stock'] ?></th>
+                        <th class="sortable" data-col="5" data-type="text"><?= $t['vendor_col_status'] ?></th>
+                        <th><?= $t['prod_col_rating'] ?></th>
                     </tr>
                 </thead>
                 <tbody id="product-tbody">
@@ -1100,11 +1123,11 @@ if ($editing) {
                                 <div class="thumb thumb--empty"></div>
                             <?php endif; ?>
                         </td>
-                        <td><?= htmlspecialchars($p['name']) ?></td>
+                        <td><?= htmlspecialchars(lang_field($p, 'name')) ?></td>
                         <td><?= htmlspecialchars($p['category_name'] ?? '—') ?></td>
                         <td>$<?= number_format($p['price'], 2) ?></td>
-                        <td><?= (int)$p['variant_count'] > 0 ? (int)$p['variant_count'] . ' variants' : (int)$p['stock'] ?></td>
-                        <td><span class="status <?= $p['active'] ? 'status-active' : 'status-inactive' ?>"><?= $p['active'] ? 'Active' : 'Inactive' ?></span></td>
+                        <td><?= (int)$p['variant_count'] > 0 ? (int)$p['variant_count'] . ' ' . $t['prod_variants_suffix'] : (int)$p['stock'] ?></td>
+                        <td><span class="status <?= $p['active'] ? 'status-active' : 'status-inactive' ?>"><?= $p['active'] ? $t['vendor_status_active'] : $t['vendor_status_inactive'] ?></span></td>
                         <td style="color:#f59e0b;font-size:0.85rem;"><?= $p['review_count'] > 0 ? '★ ' . number_format($p['avg_rating'], 1) . ' (' . (int)$p['review_count'] . ')' : '—' ?></td>
                     </tr>
                 <?php endforeach; ?>

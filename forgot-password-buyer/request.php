@@ -3,7 +3,7 @@ session_start();
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/app.php';
-require __DIR__ . '/../config/mail.php';
+require __DIR__ . '/../config/notify.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: /forgot-password-buyer/');
@@ -34,14 +34,12 @@ if ($buyer) {
 
     $link = SITE_URL . '/reset-password-buyer/?token=' . urlencode($token);
     $name = htmlspecialchars($buyer['name'] ?? '', ENT_QUOTES);
-    send_email(
-        $email,
-        "Reset your Teepsaa password",
-        "<p>Hi {$name},</p>"
-        . "<p>Click the link below to reset your password. This link is valid for 1 hour.</p>"
-        . "<p><a href=\"{$link}\">{$link}</a></p>"
-        . "<p>If you didn't request a password reset, you can ignore this email.</p>"
-    );
+    $linkHtml = "<p><a href=\"{$link}\">{$link}</a></p>";
+    [$subj, $html] = render_email_template($pdo, 'reset_password', [
+        'name' => $name,
+        'link' => $linkHtml,
+    ]);
+    if ($html !== '') send_email($email, $subj, $html);
 }
 
 // Always show the same message to prevent email enumeration

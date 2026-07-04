@@ -34,17 +34,13 @@ if ($stmt->rowCount() > 0) {
     if ($vendor) {
         $oid = order_display_id((int)$vendor['order_id'], $vendor['created_at']);
         $msg = 'Your payout for order #' . $oid . ' has been sent to your ABA account.';
-        notify($pdo, 'vendor', (int)$vendor['vendor_id'], 'payout_sent', $msg, '/orders-vendor/order.php?id=' . $orderId);
-        send_email(
-            $vendor['email'],
-            'Your payout has been sent',
-            notification_email_html(
-                'Payout sent',
-                'Hi ' . htmlspecialchars($vendor['name']) . ', your payout for order <strong>#' . $oid . '</strong> has been sent to your ABA account.',
-                'View order',
-                'https://teepsaa.com/orders-vendor/order.php?id=' . $orderId
-            )
-        );
+        notify($pdo, 'vendor', (int)$vendor['vendor_id'], 'payout_sent', $msg, '/orders-vendor/order.php?id=' . $orderId, ['ref' => $oid]);
+        [$subj, $html] = render_email_template($pdo, 'payout_sent', [
+            'name'    => htmlspecialchars($vendor['name']),
+            'order'   => $oid,
+            'cta_url' => 'https://teepsaa.com/orders-vendor/order.php?id=' . $orderId,
+        ]);
+        if ($html !== '') send_email($vendor['email'], $subj, $html);
     }
 }
 

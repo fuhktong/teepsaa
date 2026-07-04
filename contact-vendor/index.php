@@ -49,13 +49,13 @@ $orders = $orders->fetchAll();
 
 <main>
     <div class="contact-header">
-        <h1>Contact Support</h1>
-        <p class="contact-lead">Fill in the details below and our team will get back to you.</p>
+        <h1><?= $t['messages_contact'] ?></h1>
+        <p class="contact-lead"><?= $t['contact_support_lead'] ?></p>
     </div>
 
     <?php if ($hasPending): ?>
-        <p class="contact-blocked">You already have a request pending review. Please wait for our team to respond before submitting another.</p>
-        <p><a href="/messages-vendor/">View your messages →</a></p>
+        <p class="contact-blocked"><?= $t['contact_pending'] ?></p>
+        <p><a href="/messages-vendor/"><?= $t['contact_view_messages'] ?></a></p>
     <?php else: ?>
 
     <?php if ($error): ?>
@@ -66,21 +66,21 @@ $orders = $orders->fetchAll();
         <?= csrf_input() ?>
 
         <div class="contact-field">
-            <label for="issue_type">Issue type <span class="contact-req">*</span></label>
+            <label for="issue_type"><?= $t['contact_issue_type'] ?> <span class="contact-req">*</span></label>
             <select id="issue_type" name="issue_type" required>
-                <option value="">— Select an issue —</option>
-                <?php foreach (['Order dispute', 'Payout issue', 'Product/listing issue', 'Account issue', 'Other'] as $type): ?>
-                    <option value="<?= $type ?>" <?= ($old['issue_type'] ?? '') === $type ? 'selected' : '' ?>>
-                        <?= $type ?>
+                <option value=""><?= $t['contact_select_issue'] ?></option>
+                <?php foreach (['Order dispute' => $t['contact_issue_dispute'], 'Payout issue' => $t['contact_issue_payout'], 'Product/listing issue' => $t['contact_issue_listing'], 'Account issue' => $t['contact_issue_account'], 'Other' => $t['contact_issue_other']] as $val => $lbl): ?>
+                    <option value="<?= $val ?>" <?= ($old['issue_type'] ?? '') === $val ? 'selected' : '' ?>>
+                        <?= $lbl ?>
                     </option>
                 <?php endforeach; ?>
             </select>
         </div>
 
         <div class="contact-field">
-            <label for="order_id">Related order <span class="contact-hint">(optional)</span></label>
+            <label for="order_id"><?= $t['contact_related_order'] ?> <span class="contact-hint"><?= $t['form_optional'] ?></span></label>
             <select id="order_id" name="order_id">
-                <option value="">— No specific order —</option>
+                <option value=""><?= $t['contact_no_order'] ?></option>
                 <?php foreach ($orders as $o):
                     $ref   = date('ymd', strtotime($o['created_at'])) . '-' . str_pad($o['id'], 4, '0', STR_PAD_LEFT);
                     $label = '#' . $ref . ' — ' . mb_strimwidth($o['items'], 0, 60, '…');
@@ -93,22 +93,22 @@ $orders = $orders->fetchAll();
         </div>
 
         <div class="contact-field">
-            <label for="subject">Subject <span class="contact-req">*</span></label>
+            <label for="subject"><?= $t['contact_subject'] ?> <span class="contact-req">*</span></label>
             <input type="text" id="subject" name="subject" maxlength="255" required
-                   placeholder="Brief summary of your issue"
+                   placeholder="<?= htmlspecialchars($t['contact_subject_ph']) ?>"
                    value="<?= htmlspecialchars($old['subject'] ?? '') ?>">
         </div>
 
         <div class="contact-field">
-            <label for="body">Message <span class="contact-req">*</span></label>
+            <label for="body"><?= $t['contact_message'] ?> <span class="contact-req">*</span></label>
             <textarea id="body" name="body" rows="6" maxlength="2000" required
-                      placeholder="Describe your issue in detail…"><?= htmlspecialchars($old['body'] ?? '') ?></textarea>
-            <span class="contact-hint-text">Max 2000 characters</span>
+                      placeholder="<?= htmlspecialchars($t['contact_message_ph']) ?>"><?= htmlspecialchars($old['body'] ?? '') ?></textarea>
+            <span class="contact-hint-text"><?= $t['contact_max_chars'] ?></span>
         </div>
 
         <div class="contact-actions">
-            <button type="submit" class="contact-btn">Submit request</button>
-            <a href="/messages-vendor/" class="contact-btn contact-btn--secondary">Cancel</a>
+            <button type="submit" class="contact-btn"><?= $t['contact_submit'] ?></button>
+            <a href="/messages-vendor/" class="contact-btn contact-btn--secondary"><?= $t['btn_cancel'] ?></a>
         </div>
     </form>
     <?php endif; ?>

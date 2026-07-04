@@ -100,6 +100,7 @@ $adminTab     = '';
         <a href="<?= msgUrl('buyer', $statusFilter) ?>" class="amsg-role-tab <?= $roleFilter === 'buyer' ? 'active' : '' ?>">Buyers</a>
         <a href="<?= msgUrl('vendor', $statusFilter) ?>" class="amsg-role-tab <?= $roleFilter === 'vendor' ? 'active' : '' ?>">Vendors</a>
         <a href="<?= msgUrl('guest', $statusFilter) ?>" class="amsg-role-tab <?= $roleFilter === 'guest' ? 'active' : '' ?>">Contact Form</a>
+        <a href="/admin/messages/emails.php" class="amsg-role-tab">Email templates</a>
     </div>
 
     <div class="order-filters" style="margin-bottom:1.25rem;">

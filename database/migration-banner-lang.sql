@@ -1,0 +1,2 @@
+ALTER TABLE banners ADD COLUMN title_km    VARCHAR(150) NULL AFTER title;
+ALTER TABLE banners ADD COLUMN subtitle_km VARCHAR(255) NULL AFTER subtitle;

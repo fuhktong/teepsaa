@@ -8,6 +8,10 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     exit;
 }
 
+// Translations loaded early — the status badge label is built before the header.
+$lang = $_SESSION['lang'] ?? 'km';
+$t = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km']) ? $lang : 'en') . '.php';
+
 $userId  = $_SESSION['user_id'];
 $orderId = (int)($_GET['id'] ?? 0);
 if (!$orderId) {
@@ -52,7 +56,7 @@ if (in_array($o['status'], ['delivered', 'completed']) && !empty($items)) {
 $oid        = date('ymd', strtotime($o['created_at'])) . '-' . str_pad($o['id'], 4, '0', STR_PAD_LEFT);
 $isRefund   = in_array($o['status'], ['refund_requested','return_approved','return_dispatched','return_received','refunded','refund_rejected']);
 $windowOpen = (bool)$o['refund_window_open'];
-$deadline   = $o['refund_deadline'] ? date('M j, g:ia', strtotime($o['refund_deadline'])) : null;
+$deadline   = $o['refund_deadline'] ? fmt_date('M j, g:ia', strtotime($o['refund_deadline'])) : null;
 
 $statusClasses = [
     'pending'           => 'badge-grey',
@@ -69,7 +73,7 @@ $statusClasses = [
     'refund_rejected'   => 'badge-grey',
 ];
 $statusClass = $statusClasses[$o['status']] ?? 'badge-grey';
-$statusLabel = ucwords(str_replace('_', ' ', $o['status']));
+$statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' ', $o['status']));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -103,20 +107,20 @@ $statusLabel = ucwords(str_replace('_', ' ', $o['status']));
     </div>
 
     <div class="popup-section">
-        <div class="popup-section-label">Order info</div>
-        <div class="popup-row"><span class="popup-row-label">Date</span><span class="popup-row-value"><?= date('M j, Y g:ia', strtotime($o['created_at'])) ?></span></div>
-        <div class="popup-row"><span class="popup-row-label">Business</span><span class="popup-row-value"><?= htmlspecialchars($o['business_name']) ?></span></div>
-        <div class="popup-row"><span class="popup-row-label">Vendor</span><span class="popup-row-value"><?= htmlspecialchars($o['vendor_name'] ?: $o['vendor_email']) ?></span></div>
+        <div class="popup-section-label"><?= $t['order_info'] ?></div>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['order_date'] ?></span><span class="popup-row-value"><?= fmt_date('M j, Y g:ia', strtotime($o['created_at'])) ?></span></div>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['order_business'] ?></span><span class="popup-row-value"><?= htmlspecialchars($o['business_name']) ?></span></div>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['order_vendor'] ?></span><span class="popup-row-value"><?= htmlspecialchars($o['vendor_name'] ?: $o['vendor_email']) ?></span></div>
         <?php if ($o['tracking_url'] && $o['status'] === 'dispatched'): ?>
-        <div class="popup-row"><span class="popup-row-label">Tracking</span><span class="popup-row-value"><a href="<?= htmlspecialchars($o['tracking_url']) ?>" target="_blank" rel="noopener">Track delivery ↗</a></span></div>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['order_tracking'] ?></span><span class="popup-row-value"><a href="<?= htmlspecialchars($o['tracking_url']) ?>" target="_blank" rel="noopener"><?= $t['order_track_delivery'] ?></a></span></div>
         <?php endif; ?>
     </div>
 
     <?php if (!empty($items)): ?>
     <div class="popup-section">
-        <div class="popup-section-label">Items</div>
+        <div class="popup-section-label"><?= $t['order_items'] ?></div>
         <table class="popup-items">
-            <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+            <thead><tr><th><?= $t['order_col_product'] ?></th><th><?= $t['order_col_qty'] ?></th><th><?= $t['order_col_price'] ?></th><th><?= $t['order_col_total'] ?></th></tr></thead>
             <tbody>
             <?php foreach ($items as $item): ?>
                 <tr>
@@ -133,17 +137,17 @@ $statusLabel = ucwords(str_replace('_', ' ', $o['status']));
             <?php endforeach; ?>
             </tbody>
         </table>
-        <div class="popup-subtotal"><span>Subtotal</span><span>$<?= number_format($o['subtotal'], 2) ?></span></div>
+        <div class="popup-subtotal"><span><?= $t['checkout_subtotal'] ?></span><span>$<?= number_format($o['subtotal'], 2) ?></span></div>
         <?php if ($o['delivery_fee'] > 0): ?>
-        <div class="popup-subtotal"><span>Delivery</span><span>$<?= number_format($o['delivery_fee'], 2) ?></span></div>
+        <div class="popup-subtotal"><span><?= $t['order_delivery'] ?></span><span>$<?= number_format($o['delivery_fee'], 2) ?></span></div>
         <?php endif; ?>
-        <div class="popup-total"><span>Total</span><span>$<?= number_format($o['subtotal'] + $o['delivery_fee'], 2) ?></span></div>
+        <div class="popup-total"><span><?= $t['checkout_total'] ?></span><span>$<?= number_format($o['subtotal'] + $o['delivery_fee'], 2) ?></span></div>
     </div>
     <?php endif; ?>
 
     <?php if (in_array($o['status'], ['delivered', 'completed']) && !empty($items)): ?>
     <div class="popup-section">
-        <div class="popup-section-label">Reviews</div>
+        <div class="popup-section-label"><?= $t['product_reviews'] ?></div>
         <?php foreach ($items as $item): ?>
         <div class="review-item-row">
             <span class="review-item-name">
@@ -153,9 +157,9 @@ $statusLabel = ucwords(str_replace('_', ' ', $o['status']));
                 <?php endif; ?>
             </span>
             <?php if (in_array($item['id'], $reviewedItemIds)): ?>
-            <span class="reviewed-badge">Reviewed ✓</span>
+            <span class="reviewed-badge"><?= $t['order_reviewed'] ?></span>
             <?php else: ?>
-            <a href="/review/?item=<?= $item['id'] ?>" class="btn-leave-review">Leave a review</a>
+            <a href="/review/?item=<?= $item['id'] ?>" class="btn-leave-review"><?= $t['order_leave_review'] ?></a>
             <?php endif; ?>
         </div>
         <?php endforeach; ?>
@@ -163,12 +167,12 @@ $statusLabel = ucwords(str_replace('_', ' ', $o['status']));
     <?php endif; ?>
 
     <div class="popup-section">
-        <div class="popup-section-label">Status</div>
+        <div class="popup-section-label"><?= $t['order_status_heading'] ?></div>
         <?php $orderStatus = $o['status']; require __DIR__ . '/../order-status/order-status.php'; ?>
     </div>
 
     <?php if ($o['status'] === 'pending'): ?>
-    <p class="order-pending-note">Awaiting payment confirmation — usually within 1 hour.</p>
+    <p class="order-pending-note"><?= $t['orders_awaiting_payment'] ?></p>
 
     <?php elseif ($o['status'] === 'dispatched'): ?>
     <hr class="popup-divider">
@@ -176,45 +180,45 @@ $statusLabel = ucwords(str_replace('_', ' ', $o['status']));
         <form method="POST" action="/dashboard-buyer/confirm-delivery.php">
             <?= csrf_input() ?>
             <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
-            <button type="submit" class="btn-confirm">Confirm delivery</button>
+            <button type="submit" class="btn-confirm"><?= $t['order_confirm_delivery'] ?></button>
         </form>
         <?php if ($o['tracking_url']): ?>
-        <a href="<?= htmlspecialchars($o['tracking_url']) ?>" target="_blank" rel="noopener" class="btn-secondary">Track delivery ↗</a>
+        <a href="<?= htmlspecialchars($o['tracking_url']) ?>" target="_blank" rel="noopener" class="btn-secondary"><?= $t['order_track_delivery'] ?></a>
         <?php endif; ?>
     </div>
 
     <?php elseif ($o['status'] === 'delivered'): ?>
     <hr class="popup-divider">
     <details class="order-options">
-        <summary class="order-options-toggle">Options</summary>
+        <summary class="order-options-toggle"><?= $t['order_options'] ?></summary>
         <div class="order-options-body">
-            <div class="popup-section-label">Issue with order?</div>
+            <div class="popup-section-label"><?= $t['order_issue'] ?></div>
             <?php if ($windowOpen): ?>
-            <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.75rem;">You will need to return the item via Grab at your own cost. Your refund will be <strong>$<?= number_format($o['subtotal'], 2) ?></strong> (delivery fee is non-refundable).<?php if ($deadline): ?> <strong>Available until <?= $deadline ?>.</strong><?php endif; ?></p>
+            <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.75rem;"><?= sprintf($t['order_refund_info'], '<strong>$' . number_format($o['subtotal'], 2) . '</strong>') ?><?php if ($deadline): ?> <strong><?= sprintf($t['order_available_until'], htmlspecialchars($deadline)) ?></strong><?php endif; ?></p>
             <form method="POST" action="/dashboard-buyer/refund-request.php" class="refund-request-form">
                 <?= csrf_input() ?>
                 <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
                 <select name="reason_preset" class="refund-reason-input refund-reason-select" required>
-                    <option value="">— Select a reason —</option>
-                    <option>Item not as described</option>
-                    <option>Wrong item received</option>
-                    <option>Item arrived damaged</option>
-                    <option>Missing parts or accessories</option>
-                    <option>Quality not as expected</option>
-                    <option value="other">Other…</option>
+                    <option value=""><?= $t['order_select_reason'] ?></option>
+                    <option value="Item not as described"><?= $t['order_reason_1'] ?></option>
+                    <option value="Wrong item received"><?= $t['order_reason_2'] ?></option>
+                    <option value="Item arrived damaged"><?= $t['order_reason_3'] ?></option>
+                    <option value="Missing parts or accessories"><?= $t['order_reason_4'] ?></option>
+                    <option value="Quality not as expected"><?= $t['order_reason_5'] ?></option>
+                    <option value="other"><?= $t['order_reason_other'] ?></option>
                 </select>
-                <textarea name="reason_other" rows="2" class="refund-reason-input refund-reason-other" placeholder="Describe the issue…" style="display:none;margin-top:0.4rem;"></textarea>
-                <button type="submit" class="btn-refund-request">Request Refund</button>
+                <textarea name="reason_other" rows="2" class="refund-reason-input refund-reason-other" placeholder="<?= htmlspecialchars($t['order_describe_issue']) ?>" style="display:none;margin-top:0.4rem;"></textarea>
+                <button type="submit" class="btn-refund-request"><?= $t['order_request_refund'] ?></button>
             </form>
             <?php else: ?>
-            <p class="order-refund-window order-refund-window--closed" style="margin-top:0.5rem;">Refund window has closed.</p>
+            <p class="order-refund-window order-refund-window--closed" style="margin-top:0.5rem;"><?= $t['order_refund_closed'] ?></p>
             <?php endif; ?>
         </div>
     </details>
 
     <?php elseif ($o['status'] === 'return_approved'): ?>
     <hr class="popup-divider">
-    <div class="popup-section-label">Send item back</div>
+    <div class="popup-section-label"><?= $t['order_send_back'] ?></div>
     <?php
     $retParts = array_filter([
         trim(($o['biz_house_number'] ?? '') . ' ' . ($o['biz_address'] ?? '')),
@@ -225,14 +229,14 @@ $statusLabel = ucwords(str_replace('_', ' ', $o['status']));
     $retAddress = implode(', ', $retParts);
     ?>
     <?php if ($retAddress && $retAddress !== 'Phnom Penh'): ?>
-    <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.25rem;">Send to: <strong><?= htmlspecialchars($retAddress) ?></strong><?php if ($o['biz_address_notes']): ?> — <?= htmlspecialchars($o['biz_address_notes']) ?><?php endif; ?></p>
+    <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.25rem;"><?= $t['order_send_to'] ?> <strong><?= htmlspecialchars($retAddress) ?></strong><?php if ($o['biz_address_notes']): ?> — <?= htmlspecialchars($o['biz_address_notes']) ?><?php endif; ?></p>
     <?php endif; ?>
-    <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.75rem;">Pack the item and send it back via Grab at your cost. Paste the Grab tracking link below once dispatched.</p>
+    <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.75rem;"><?= $t['order_return_instructions'] ?></p>
     <form method="POST" action="/dashboard-buyer/return-dispatch.php" class="refund-request-form">
         <?= csrf_input() ?>
         <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
-        <input type="url" name="return_tracking_url" required placeholder="Paste Grab return tracking URL…" class="refund-reason-input" style="resize:none;height:auto;padding:0.5rem 0.65rem;">
-        <button type="submit" class="btn-confirm">Mark return dispatched</button>
+        <input type="url" name="return_tracking_url" required placeholder="<?= htmlspecialchars($t['order_return_url_placeholder']) ?>" class="refund-reason-input" style="resize:none;height:auto;padding:0.5rem 0.65rem;">
+        <button type="submit" class="btn-confirm"><?= $t['order_mark_dispatched'] ?></button>
     </form>
     <?php endif; ?>
 </main>

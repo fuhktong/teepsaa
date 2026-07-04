@@ -47,17 +47,13 @@ if ($action === 'confirm') {
     if ($buyer) {
         $oid = order_display_id((int)$buyer['order_id'], $buyer['created_at']);
         $msg = 'Your payment has been confirmed — order #' . $oid . ' is being prepared.';
-        notify($pdo, 'buyer', (int)$buyer['buyer_id'], 'payment_confirmed', $msg, '/dashboard-buyer/order.php?id=' . $buyer['order_id']);
-        send_email(
-            $buyer['email'],
-            'Your payment has been confirmed',
-            notification_email_html(
-                'Payment confirmed',
-                'Hi ' . htmlspecialchars($buyer['name']) . ', your payment for order <strong>#' . $oid . '</strong> has been confirmed. The vendor is now preparing your order.',
-                'View order',
-                'https://teepsaa.com/dashboard-buyer/order.php?id=' . $buyer['order_id']
-            )
-        );
+        notify($pdo, 'buyer', (int)$buyer['buyer_id'], 'payment_confirmed', $msg, '/dashboard-buyer/order.php?id=' . $buyer['order_id'], ['ref' => $oid]);
+        [$subj, $html] = render_email_template($pdo, 'payment_confirmed', [
+            'name'    => htmlspecialchars($buyer['name']),
+            'order'   => $oid,
+            'cta_url' => 'https://teepsaa.com/dashboard-buyer/order.php?id=' . $buyer['order_id'],
+        ]);
+        if ($html !== '') send_email($buyer['email'], $subj, $html);
     }
 
     $_SESSION['admin_success'] = 'Payment confirmed. Vendors have been notified.';
