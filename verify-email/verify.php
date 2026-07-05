@@ -1,7 +1,13 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
+require __DIR__ . '/../config/rate-limit.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: /login-buyer/');
@@ -20,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 csrf_verify();
+check_rate_limit($pdo);
 
 $submitted = preg_replace('/\D/', '', $_POST['code'] ?? '');
 $userId    = $_SESSION['user_id'];
@@ -60,6 +67,7 @@ if (new DateTime() > new DateTime($user['verify_code_expires'])) {
 }
 
 if (!hash_equals($user['verify_token'], $submitted)) {
+    record_failed_attempt($pdo);
     $_SESSION['verify_error'] = 'Incorrect code. Please try again.';
     header('Location: /verify-email/');
     exit;

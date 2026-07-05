@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 
@@ -57,7 +62,9 @@ $stmt = $pdo->prepare('INSERT INTO buyers (email, name, password, verify_token, 
 $stmt->execute([$email, $name, password_hash($password, PASSWORD_DEFAULT), $code, $expires]);
 $newId = $pdo->lastInsertId();
 
-$_SESSION['dev_otp'] = $code;
+if (DEV_MODE) {
+    $_SESSION['dev_otp'] = $code;
+}
 
 $codeHtml = '<div style="font-size:2rem;font-weight:bold;letter-spacing:0.3em;font-family:monospace;margin:12px 0;color:#111">' . $code . '</div>';
 [$subj, $html] = render_email_template($pdo, 'verify_code', [

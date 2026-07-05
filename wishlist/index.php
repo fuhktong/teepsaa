@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/seo.php';
 
@@ -11,7 +16,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
 $buyerId = (int)$_SESSION['user_id'];
 
 $stmt = $pdo->prepare('
-    SELECT p.id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, p.stock, p.active, p.archived,
+    SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, p.stock, p.active, p.archived,
            b.id AS business_id, b.name AS business_name, b.name_km AS business_name_km, b.approved,
            pp.filename AS photo,
            COALESCE(rv.avg_rating, 0) AS avg_rating,
@@ -35,6 +40,8 @@ $items = $stmt->fetchAll();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wishlist — teepsaa</title>
     <?= seo_meta('Wishlist — teepsaa', '', '', 'https://teepsaa.com/wishlist/') ?>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -65,7 +72,7 @@ $items = $stmt->fetchAll();
                         : '';
                 ?>
                 <div class="wl-card<?= $unavailable ? ' wl-card--unavailable' : '' ?>">
-                    <a href="/product/?id=<?= (int)$p['id'] ?>" class="wl-card-inner">
+                    <a href="/product/?id=<?= htmlspecialchars($p['public_id']) ?>" class="wl-card-inner">
                         <?= $photo ?>
                         <div class="wl-card-body">
                             <strong class="wl-card-name"><?= htmlspecialchars(lang_field($p, 'name')) ?></strong>

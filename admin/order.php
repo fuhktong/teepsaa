@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 
@@ -17,6 +22,7 @@ if (!$orderId) {
 $stmt = $pdo->prepare('
     SELECT o.id, o.subtotal, o.delivery_fee, o.vendor_delivery_bonus,
            o.royalty_rate, o.royalty_amount, o.vendor_payout,
+           o.coupon_code, o.discount_amount,
            o.delivery_distance_km,
            o.status, o.created_at, o.delivered_at, o.tracking_url,
            o.refund_reason, o.return_tracking_url, o.admin_note, o.buyer_notes,
@@ -53,7 +59,11 @@ $oid = date('ymd', strtotime($o['created_at'])) . '-' . str_pad($o['id'], 4, '0'
 
 $royaltyAmt   = round((float)($o['royalty_amount'] ?? ($o['subtotal'] * ($o['royalty_rate'] ?? 0))), 2);
 $royaltyPct   = round(($o['royalty_rate'] ?? 0) * 100, 1);
-$vendorPayout = round($o['subtotal'] - $royaltyAmt + $o['delivery_fee'] + $o['vendor_delivery_bonus'], 2);
+// A vendor-owned coupon is deducted from vendor_payout at checkout (a sitewide/admin
+// coupon isn't — the platform absorbs that one). Derive the vendor-funded portion from
+// the stored numbers so this recomputed breakdown stays correct either way.
+$vendorCouponDiscount = max(0, round($o['subtotal'] - $royaltyAmt - (float)$o['vendor_payout'], 2));
+$vendorPayout = round($o['subtotal'] - $royaltyAmt - $vendorCouponDiscount + $o['delivery_fee'] + $o['vendor_delivery_bonus'], 2);
 $windowPassed = $o['delivered_at'] && (time() - strtotime($o['delivered_at'])) >= PAYOUT_WINDOW_SECONDS;
 $windowTime   = $o['delivered_at'] ? date('M j, g:ia', strtotime($o['delivered_at']) + PAYOUT_WINDOW_SECONDS) : null;
 
@@ -94,6 +104,8 @@ $adminTab     = 'orders';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order <?= $oid ?> — Admin</title>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -144,6 +156,12 @@ $adminTab     = 'orders';
                         <span>Subtotal</span>
                         <span>$<?= number_format($o['subtotal'], 2) ?></span>
                     </div>
+                    <?php if ($o['discount_amount'] > 0): ?>
+                    <div class="od-total-row">
+                        <span>Coupon (<?= htmlspecialchars($o['coupon_code']) ?>)</span>
+                        <span>−$<?= number_format($o['discount_amount'], 2) ?></span>
+                    </div>
+                    <?php endif; ?>
                     <div class="od-total-row od-total-row--note">
                         <span>Grab delivery</span>
                         <span>Buyer pays driver on arrival</span>
@@ -156,7 +174,7 @@ $adminTab     = 'orders';
                     <?php endif; ?>
                     <div class="od-total-row od-total-row--bold">
                         <span>Total charged</span>
-                        <span>$<?= number_format($o['subtotal'], 2) ?></span>
+                        <span>$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></span>
                     </div>
                 </div>
             </div>
@@ -231,7 +249,7 @@ $adminTab     = 'orders';
             <?php if ($o['payment_status'] === 'pending_confirmation'): ?>
             <div class="od-card">
                 <div class="od-card-title">Payment confirmation</div>
-                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Verify <strong>$<?= number_format($o['subtotal'] + $o['delivery_fee'], 2) ?></strong> received in ABA before confirming ($<?= number_format($o['subtotal'], 2) ?> + $<?= number_format($o['delivery_fee'], 2) ?> delivery).</p>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Verify <strong>$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></strong> received in ABA before confirming ($<?= number_format($o['subtotal'], 2) ?><?= $o['discount_amount'] > 0 ? ' − $' . number_format($o['discount_amount'], 2) . ' coupon' : '' ?> + $<?= number_format($o['delivery_fee'], 2) ?> delivery).</p>
                 <div class="popup-actions">
                     <form method="POST" action="/admin/payments-action.php">
                         <?= csrf_input() ?>
@@ -254,6 +272,9 @@ $adminTab     = 'orders';
                 <div class="od-card-title">Vendor payout</div>
                 <div class="od-row"><span>Subtotal</span><span>$<?= number_format($o['subtotal'], 2) ?></span></div>
                 <div class="od-row"><span>Royalty (<?= $royaltyPct ?>%)</span><span>−$<?= number_format($royaltyAmt, 2) ?></span></div>
+                <?php if ($vendorCouponDiscount > 0): ?>
+                <div class="od-row"><span>Coupon (<?= htmlspecialchars($o['coupon_code']) ?>)</span><span>−$<?= number_format($vendorCouponDiscount, 2) ?></span></div>
+                <?php endif; ?>
                 <?php if ($o['delivery_fee'] > 0): ?>
                 <div class="od-row"><span>Delivery</span><span>+$<?= number_format($o['delivery_fee'], 2) ?></span></div>
                 <?php endif; ?>

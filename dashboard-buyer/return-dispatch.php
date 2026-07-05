@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 
@@ -19,8 +24,12 @@ $userId      = $_SESSION['user_id'];
 $orderId     = (int)($_POST['order_id'] ?? 0);
 $trackingUrl = trim($_POST['return_tracking_url'] ?? '');
 
+$pidStmt = $pdo->prepare('SELECT public_id FROM orders WHERE id = ? AND buyer_user_id = ?');
+$pidStmt->execute([$orderId, $userId]);
+$orderPublicId = $pidStmt->fetchColumn() ?: '';
+
 if (!$orderId || !$trackingUrl) {
-    header($orderId ? 'Location: /dashboard-buyer/order.php?id=' . $orderId : 'Location: /dashboard-buyer/');
+    header($orderId ? 'Location: /dashboard-buyer/order.php?id=' . $orderPublicId : 'Location: /dashboard-buyer/');
     exit;
 }
 
@@ -31,5 +40,5 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$trackingUrl, $orderId, $userId]);
 
-header('Location: /dashboard-buyer/order.php?id=' . $orderId);
+header('Location: /dashboard-buyer/order.php?id=' . $orderPublicId);
 exit;

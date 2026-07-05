@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/db.php';
 
 // Load translations early — sort labels/chips are built before the header.
@@ -120,7 +125,7 @@ $count = (int)$countStmt->fetchColumn();
 
 // ── First 20 results ─────────────────────────────────────────────────
 $dataStmt = $pdo->prepare("
-    SELECT p.id, p.name, p.name_km, p.description, p.description_km, p.price, p.sale_price, p.sale_ends_at,
+    SELECT p.id, p.public_id, p.name, p.name_km, p.description, p.description_km, p.price, p.sale_price, p.sale_ends_at,
            pp.filename AS photo,
            b.id AS business_id, b.name AS business_name, b.name_km AS business_name_km,
            COALESCE(rv.avg_rating, 0) AS avg_rating,
@@ -245,6 +250,8 @@ foreach ($selectedValueIds as $vid) {
             : 'Browse all products on teepsaa — local Phnom Penh businesses, fast Grab delivery.';
         echo seo_meta($title, $searchDesc);
     ?>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -367,7 +374,7 @@ foreach ($selectedValueIds as $vid) {
             <?php else: ?>
             <div class="product-grid" id="product-grid">
                 <?php foreach ($products as $p): ?>
-                <a href="/product/?id=<?= $p['id'] ?>" class="product-card">
+                <a href="/product/?id=<?= htmlspecialchars($p['public_id']) ?>" class="product-card">
                     <?php if ($p['photo']): ?>
                         <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="" class="card-photo">
                     <?php else: ?>
@@ -410,7 +417,7 @@ foreach ($selectedValueIds as $vid) {
     <?php else: ?>
     <div class="product-grid" id="product-grid">
         <?php foreach ($products as $p): ?>
-        <a href="/product/?id=<?= $p['id'] ?>" class="product-card">
+        <a href="/product/?id=<?= htmlspecialchars($p['public_id']) ?>" class="product-card">
             <?php if ($p['photo']): ?>
                 <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="" class="card-photo">
             <?php else: ?>

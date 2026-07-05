@@ -1,0 +1,1 @@
+ALTER TABLE businesses ADD COLUMN royalty_waived TINYINT(1) NOT NULL DEFAULT 0;

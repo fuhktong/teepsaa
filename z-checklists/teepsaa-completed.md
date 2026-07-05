@@ -170,10 +170,28 @@
 
 - [x] Brute force protection — `login_attempts` table + `config/rate-limit.php`; 5 failures per IP in 15 min triggers 15 min lockout on all three login portals
 - [x] XSS in map popups — `escHtml()` in `map.js` escapes all vendor-supplied strings before DOM injection
-- [x] File upload hardening — `config/upload.php` validates magic bytes in all 8 upload handlers; `uploads/.htaccess` blocks PHP execution in `/uploads/`
+- [x] File upload hardening — `config/upload.php` validates magic bytes (JPEG/PNG) in all 8 upload handlers; `uploads/.htaccess` blocks PHP execution in `/uploads/` (also closes off disguised-PHP-shell-via-upload and raw DB access via a web shell)
 - [x] `/dev/` folder deleted
+- [x] HTTPS enforcement — root `.htaccess` redirects `teepsaa.com`/`www.teepsaa.com` to HTTPS via `mod_rewrite`; `session.cookie_secure` set dynamically per-request (true only when the request is actually HTTPS), so local MAMP HTTP dev is unaffected
+- [x] IDOR audit on orders — every buyer/vendor-facing file accepting a user-suppliable ID (`dashboard-buyer/`, `dashboard-vendor/`, `orders-vendor/`, `messages-*`, `review/`, `cart/`, `api/`, `products/`, `contact-*`, `wishlist/`, `checkout/`) scopes its query to the authenticated user (`buyer_user_id=?`, `b.user_id=?` vendor→business join, or `sender_id=?`/`role=?`)
 - [x] Stock race condition — `checkout/confirm.php` checks `rowCount()` after stock decrement; rolls back if stock ran out mid-checkout
-- [x] Session cookie hardening — root `.htaccess` sets `HttpOnly` and `SameSite=Strict` on all session cookies
+- [x] Session cookie hardening — all `session_start()` call sites (165+) pass `cookie_httponly`/`cookie_samesite=Strict`/`cookie_secure` directly, so it works under PHP-FPM/MAMP with no `php.ini`/`.htaccess` dependency
+- [x] `config/db.php` exposure — `config/.htaccess` has `Deny from all`, blocking any request into `/config/` regardless of PHP misconfiguration
+- [x] Sequential IDs → UUIDs — random `public_id` (UUID v4) column added to `businesses`, `products`, `orders` (`database/migration-public-ids.sql`), generated via `uuid_v4()` in `config/db.php`. All buyer/vendor-facing URLs, outgoing links, canonical/SEO URLs, sitemap entries, and notification/email links use `public_id` instead of the sequential int `id`; the int `id` stays as the internal PK for joins/FKs and ownership-scoped POST actions. Admin pages intentionally keep the int `id` (admin is fully trusted)
+- [x] SQL injection — PDO prepared statements on all queries
+- [x] CSRF — `csrf_verify()` on all POST forms
+- [x] Password storage — bcrypt via `password_hash()`
+- [x] Session fixation — `session_regenerate_id(true)` on every login
+- [x] Role enforcement — hard walls between buyer, vendor, and admin logins
+- [x] Ownership checks — vendors can only edit their own products and businesses
+
+### Found & Fixed (2026-07-04 review)
+- [x] Verification OTP leaked to browser in production — `$_SESSION['dev_otp']` set unconditionally in `register-buyer.php`/`register-vendor.php`/`resend-verification/resend.php`, echoed via `console.log()` in `verify-email/index.php` regardless of environment; gated behind `DEV_MODE` at both the set and display sites
+- [x] Cart/checkout missing buyer-role check — `cart/add.php`, `cart/index.php`, `cart/update.php`, `checkout/index.php`, `checkout/confirm.php` only checked `isset($_SESSION['user_id'])`, not `role === 'buyer'`; a logged-in vendor could hit another user's cart/address/order data on an id collision between the separate `buyers`/`vendors` tables. Added the `role !== 'buyer'` guard used everywhere else
+- [x] Dead legacy auth cluster (`/login/`, `/register/`, `/dashboard/`) — pre-role-split pages querying a `users` table that no longer exists; `footer/footer.php`'s logged-out links pointed here instead of `/login-buyer/`/`/register-buyer/`. Footer links fixed, dead folders removed
+- [x] No throttling on email-verification code guesses — `verify-email/verify.php` wired into the existing `config/rate-limit.php` (5-per-15-min IP limiter)
+- [x] No throttling on password-reset / resend-verification / job applications — added `check_rate_limit()`/`record_failed_attempt()` to `forgot-password-buyer/request.php`, `forgot-password-vendor/request.php`, `resend-verification/resend.php`, `careers/apply.php`
+- [x] Open redirect via `redirect` POST param / `HTTP_REFERER` — `cart/add.php` echoed `$_POST['redirect']` straight into `header('Location: ...')`; `lang/set.php`/`currency/set.php` did the same with the raw referer. `cart/add.php` now requires a same-site relative path (rejects `//host` too); the other two verify the referer's host matches `HTTP_HOST`
 
 ---
 
@@ -419,3 +437,80 @@ One review per order item (enforced by UNIQUE on `order_item_id`). Only availabl
 - [x] `cart/add.php`, `cart/update.php`, `cart/index.php` — variant-aware cart
 - [x] `checkout/index.php`, `checkout/confirm.php` — variant stock decrement at checkout
 - [x] `dashboard-buyer/index.php`, `dashboard-buyer/order.php`, `orders-vendor/` — variant display in order views
+
+---
+
+## Khmer / English Localization (bilingual site) — completed 2026-07-04
+
+Full EN/KM language toggle across the whole app. A header flag toggle sets `$_SESSION['lang']` (default `km`); every page loads `$t` from `lang/en.php` / `lang/km.php` (~581 keys, EN/KM parity maintained). Admin dashboard stays English by design.
+
+### Infrastructure
+- [x] `lang/en.php` + `lang/km.php` — keyed string dictionaries (real Khmer, not machine placeholders); `header/header.php` loads `$t` per session lang; `footer/footer.php` has its own `$t` guard-load
+- [x] Toggle `lang/set.php`; **persistence** — writes choice to the `buyers`/`vendors` `lang` column, restored into the session at login (`login-buyer.php`/`login-vendor.php`); column default aligned to `km` (`migration-lang-default-km.sql`)
+- [x] Khmer web font — **Noto Sans Khmer** in `style.css` `@import` + body font stack (per-glyph fallback)
+- [x] Brand renders uniformly as **`ទីផ្សារ`** in Khmer; per-language footer tagline (Pacifico EN / Metal KM)
+- [x] Shared display helpers in `config/db.php`: `lang_field($row,$field)` (for `field`/`field_km` rows) and `pick_lang($base,$km)` (for aliased columns) — Khmer optional, English fallback
+- [x] Date localization — `config/i18n.php` `fmt_date($fmt,$when)` + `km_num()` (Khmer month/weekday names, am/pm, Khmer numerals); swept 12 non-admin display files (`date(` → `fmt_date(`), data/input `date('Y-m-d…')` left untouched
+- [x] Global JS strings — `header/header.php` emits `window.T` (per-language `js_*` keys); `js/status-refresh.js` (status-bar labels, toasts) + `js/notifications.js` ("No notifications yet"/"Loading…") read it with English fallbacks
+
+### UI wired to `$t` (every user-facing page)
+- [x] Header, footer, homepage, search (+ sort labels/chips), product page (+ inline JS), cart, checkout
+- [x] Login/register — all portals (`login/`, `login-buyer/`, `login-vendor/`, `register/`, `register-buyer/`, `register-vendor/`); auth recovery (`forgot-password-*`, `reset-password-*`, `verify-email/`, `resend-verification/`)
+- [x] Buyer dashboard — wishlist, orders, settings (all tabs + address JS), messages, order detail + full refund/return flow; shared `order-status`/`refund-status` bars
+- [x] Vendor dashboard — dashboard, orders-vendor (list/detail/refund), settings (all tabs), submit, messages, and the 1156-line `products/index.php` product manager (+ inline JS)
+- [x] Contact forms (`contact/`, `contact-buyer/`, `contact-vendor/` — issue-type value→label maps), `business/` storefront, `review/` form (+ JS star labels)
+- [x] Static content pages — `about/`, and `privacy/`, `terms/`, `shipping/`, `returns/`, `help/` (FAQ) as per-page bilingual `$lang` blocks (one block per page for native Khmer review)
+
+### Bilingual content (vendor/admin-entered, KM optional + EN fallback)
+- [x] Bilingual **banners** — `title_km`/`subtitle_km`; admin edit form with EN+KM fields
+- [x] **Category names** — `categories.name_km`; admin editor; displayed on homepage tiles, search filter, vendor cascades
+- [x] **Product name + description** — `products.name_km`/`description_km`; vendor form + save; displayed on product page, cards (homepage/search/`api/search`), storefront, wishlist, cart, checkout, product manager
+- [x] **Business name + description** — `businesses.name_km`/`description_km`; vendor settings; storefront + all buyer-facing seller-name displays (incl. `api/recently-viewed` — added missing `session_start()`)
+- [x] **Variant / option labels** — `product_option_types.name_km`, `product_option_values.label_km`, `product_variants.label_km`; KM box beside each EN box in both variant builders; composed variant `label_km` auto-built from values
+- [x] **Job postings / careers** — `job_postings.title_km`/`location_km`/`description_km`; `employment_type` via `$t` map; admin form + public `careers/`/`apply.php`
+- [x] **Order-item snapshots** — `order_items.product_name_km`/`variant_label_km` captured at checkout (`checkout/confirm.php`); order-detail/history/review pages show the language-correct snapshot (`dashboard-buyer/order.php`, `orders-vendor/order.php` + `refund.php`, `review/index.php`), old rows fall back to English
+
+### Bilingual emails + notifications
+- [x] **All user-facing emails are bilingual** — Khmer on top, English below. `notification_email_html_bi()` + `email_subject_bi()` in `config/notify.php`; covers order received, payment/dispatch/payout/delivery, low stock, abandoned cart, review reminder, verification code, password reset (job-application email → admin stays English)
+- [x] **In-app notifications** render in the current toggle language — `notifications.data` JSON column stores params; `notification_text($row,$t)` translates by `type` (`notif_*` keys); `api/notifications/` translates message + time-ago; old rows fall back to stored English
+- [x] **Staff-editable email templates** — `email_templates` table + `config/email-templates.php` defaults/fallback + `database/seed-email-templates.php` (10 templates); `render_email_template($pdo,$key,$data)` substitutes `{tokens}`; admin UI under `admin/messages/` (`emails.php` list → `email-edit.php` bilingual editor with live preview → `email-save.php` with required-token protection), tab in the messages role-tab bar
+
+### Intentionally left English
+- `<title>` tags (browser-tab text, brand convention); `/admin/*` dashboard; user-authored content (reviews, support messages, refund-reason free text, buyer addresses)
+
+---
+
+## Vendor Promo Trial
+
+Early vendors get a 0% royalty trial via a promo code from vendor pitches; trial ends once BOTH 3 months have passed AND the vendor exceeds $100 in completed sales.
+
+- [x] `promo_codes` table + `businesses.promo_code_id`/`trial_starts_at`/`trial_ends_at`/`royalty_free_threshold` — `database/migration-vendorpromo.sql`
+- [x] `admin/promo-codes.php` — create/list codes, uses_count/uses_limit, active toggle
+- [x] Vendor registration — optional promo code field, validated and captured
+- [x] Trial starts on approval (not registration) — `admin/action.php`
+- [x] Checkout royalty override — `checkout/confirm.php` sets `$effectiveRate = 0` while trial active
+- [x] Vendor dashboard trial banner — progress toward $100/3-month trial end
+
+---
+
+## Notifications (Resend)
+
+Transactional email via Resend — `config/mail.php`.
+
+- [x] All 4 original trigger points — payment confirmed → buyer, order dispatched → buyer, delivery confirmed → vendor, payout sent → vendor
+- [x] Plus more added since — abandoned cart, review reminders, low stock alerts (see their own sections above)
+
+---
+
+## Discount Codes / Coupons
+
+Buyers apply a code at checkout for a percent/fixed discount, capped by min order and max uses. Discount is a platform-absorbed marketing cost — vendor royalty/payout stays on the pre-discount subtotal.
+
+- [x] `coupons` + `coupon_uses` tables, `orders.coupon_id`/`coupon_code`/`discount_amount` — `database/migration-coupons.sql`
+- [x] `config/coupon.php` — shared `validate_coupon()` (active/date-window/max-uses/min-order/one-use-per-buyer), used by checkout preview, confirm.php, and the API endpoint alike
+- [x] `admin/coupons.php` + `admin/coupon-action.php` — inline-editable list (create/edit/toggle/delete); expired codes read-only; delete blocked once a code has been used
+- [x] `api/coupon/validate.php` — JSON validation endpoint
+- [x] `checkout/apply-coupon.php` + `checkout/index.php` — session-based apply/remove UX, live discount line on summary
+- [x] `checkout/confirm.php` — re-validates server-side, atomic race-safe `used_count` increment, proportional discount allocation across multi-vendor order groups, `coupon_uses` row per order, discount line in confirmation email
+- [x] Refund/total displays corrected for discount everywhere `orders.subtotal` was shown as the buyer-paid amount — `dashboard-buyer/order.php`, `orders-vendor/refund.php`, `admin/refunds.php`, `admin/refund.php`, `admin/order.php`
+- [x] Bilingual UI strings — `lang/en.php` / `lang/km.php`

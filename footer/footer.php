@@ -10,8 +10,8 @@ if (!isset($t)) {
 // "Your Account" column mirrors each role's avatar dropdown.
 if (empty($_SESSION['user_id'])) {
     $accountLinks = [
-        ['/login/',    $t['footer_sign_in']],
-        ['/register/', $t['footer_create_account']],
+        ['/login-buyer/',    $t['footer_sign_in']],
+        ['/register-buyer/', $t['footer_create_account']],
     ];
 } elseif (($_SESSION['role'] ?? '') === 'vendor') {
     $accountLinks = [

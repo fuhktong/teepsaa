@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 
@@ -18,7 +23,7 @@ $refundStatuses = ['refund_requested','return_approved','return_dispatched','ret
 $statusIn = implode(',', array_map([$pdo, 'quote'], $refundStatuses));
 
 $stmt = $pdo->prepare("
-    SELECT o.id, o.subtotal, o.delivery_fee, o.status, o.created_at,
+    SELECT o.id, o.subtotal, o.delivery_fee, o.coupon_code, o.discount_amount, o.status, o.created_at,
            o.refund_reason, o.refund_requested_at, o.return_tracking_url,
            b.name AS business_name,
            bu.name AS buyer_name, bu.email AS buyer_email,
@@ -73,6 +78,8 @@ $adminTab     = 'refunds';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $oid ?> — Refund — Admin</title>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -111,9 +118,12 @@ $adminTab     = 'refunds';
 
             <div class="detail-card">
                 <div class="detail-card-title">Refund amount</div>
-                <div class="detail-row"><span class="detail-row-label">Order total</span><span class="detail-row-value">$<?= number_format($o['subtotal'] + $o['delivery_fee'], 2) ?></span></div>
+                <div class="detail-row"><span class="detail-row-label">Order total</span><span class="detail-row-value">$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span></div>
+                <?php if ($o['discount_amount'] > 0): ?>
+                <div class="detail-row"><span class="detail-row-label">Coupon (<?= htmlspecialchars($o['coupon_code']) ?>)</span><span class="detail-row-value">−$<?= number_format($o['discount_amount'], 2) ?></span></div>
+                <?php endif; ?>
                 <div class="detail-row"><span class="detail-row-label">Delivery (non-refundable)</span><span class="detail-row-value">−$<?= number_format($o['delivery_fee'], 2) ?></span></div>
-                <div class="detail-row"><span class="detail-row-label" style="font-weight:700;">Refund to buyer</span><span class="detail-row-value" style="font-weight:700;">$<?= number_format($o['subtotal'], 2) ?></span></div>
+                <div class="detail-row"><span class="detail-row-label" style="font-weight:700;">Refund to buyer</span><span class="detail-row-value" style="font-weight:700;">$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></span></div>
             </div>
         </div>
 
@@ -158,7 +168,7 @@ $adminTab     = 'refunds';
                 <p style="font-size:0.875rem;color:#6b7280;margin:0;">Buyer has dispatched the return. Waiting for vendor to confirm receipt.</p>
 
                 <?php elseif ($o['status'] === 'return_received'): ?>
-                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Vendor confirmed receipt. Send <strong>$<?= number_format($o['subtotal'], 2) ?></strong> to the buyer via ABA, then mark as refunded.</p>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Vendor confirmed receipt. Send <strong>$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></strong> to the buyer via ABA, then mark as refunded.</p>
                 <div class="detail-row" style="margin-bottom:0.75rem;"><span class="detail-row-label">Buyer email</span><span class="detail-row-value"><?= htmlspecialchars($o['buyer_email']) ?></span></div>
                 <?php if ($o['vendor_aba_qr']): ?>
                 <p style="font-size:0.8rem;color:#6b7280;margin:0 0 0.4rem;">Buyer's refund — scan to pay</p>

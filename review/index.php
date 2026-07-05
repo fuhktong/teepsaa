@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 
@@ -17,8 +22,8 @@ if (!$itemId) {
 }
 
 $stmt = $pdo->prepare('
-    SELECT oi.id, oi.product_name, oi.variant_label, oi.product_id,
-           o.id AS order_id, o.status,
+    SELECT oi.id, oi.product_name, oi.product_name_km, oi.variant_label, oi.variant_label_km, oi.product_id,
+           o.id AS order_id, o.public_id AS order_public_id, o.status,
            b.id AS business_id
     FROM order_items oi
     JOIN orders o ON o.id = oi.order_id
@@ -34,14 +39,14 @@ if (!$item) {
 }
 
 if (!in_array($item['status'], ['delivered', 'completed'])) {
-    header('Location: /dashboard-buyer/order.php?id=' . $item['order_id']);
+    header('Location: /dashboard-buyer/order.php?id=' . $item['order_public_id']);
     exit;
 }
 
 $check = $pdo->prepare('SELECT id FROM reviews WHERE order_item_id = ?');
 $check->execute([$itemId]);
 if ($check->fetch()) {
-    header('Location: /dashboard-buyer/order.php?id=' . $item['order_id']);
+    header('Location: /dashboard-buyer/order.php?id=' . $item['order_public_id']);
     exit;
 }
 ?>
@@ -51,6 +56,8 @@ if ($check->fetch()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leave a Review — teepsaa</title>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -61,10 +68,10 @@ if ($check->fetch()) {
 <?php require __DIR__ . '/../header/header.php'; ?>
 
 <main>
-    <a href="/dashboard-buyer/order.php?id=<?= $item['order_id'] ?>" style="display:inline-block;font-size:0.875rem;color:#6b7280;text-decoration:none;margin-bottom:1.25rem;">← <?= $t['review_back_order'] ?></a>
+    <a href="/dashboard-buyer/order.php?id=<?= $item['order_public_id'] ?>" style="display:inline-block;font-size:0.875rem;color:#6b7280;text-decoration:none;margin-bottom:1.25rem;">← <?= $t['review_back_order'] ?></a>
 
     <h1 style="margin-bottom:0.25rem;"><?= $t['review_title'] ?></h1>
-    <p style="color:#6b7280;font-size:0.875rem;margin-bottom:1.75rem;"><?= htmlspecialchars($item['product_name']) ?><?php if ($item['variant_label']): ?> — <?= htmlspecialchars($item['variant_label']) ?><?php endif; ?></p>
+    <p style="color:#6b7280;font-size:0.875rem;margin-bottom:1.75rem;"><?= htmlspecialchars(pick_lang($item['product_name'], $item['product_name_km'] ?? null)) ?><?php if ($item['variant_label']): ?> — <?= htmlspecialchars(pick_lang($item['variant_label'], $item['variant_label_km'] ?? null)) ?><?php endif; ?></p>
 
     <form method="POST" action="/review/submit.php" class="review-form">
         <?= csrf_input() ?>

@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 
@@ -20,23 +25,24 @@ $orderId = (int)($_POST['order_id'] ?? 0);
 $preset  = trim($_POST['reason_preset'] ?? '');
 $reason  = $preset === 'other' ? trim($_POST['reason_other'] ?? '') : $preset;
 
+$pidStmt = $pdo->prepare("SELECT public_id, delivered_at FROM orders WHERE id = ? AND buyer_user_id = ? AND status = 'delivered'");
+$pidStmt->execute([$orderId, $userId]);
+$existing = $pidStmt->fetch();
+$orderPublicId = $existing['public_id'] ?? '';
+
 if (!$orderId || !$reason) {
-    header($orderId ? 'Location: /dashboard-buyer/order.php?id=' . $orderId : 'Location: /dashboard-buyer/');
+    header($orderId ? 'Location: /dashboard-buyer/order.php?id=' . $orderPublicId : 'Location: /dashboard-buyer/');
     exit;
 }
 
-$check = $pdo->prepare("SELECT delivered_at FROM orders WHERE id = ? AND buyer_user_id = ? AND status = 'delivered'");
-$check->execute([$orderId, $userId]);
-$existing = $check->fetch();
-
 if (!$existing) {
-    header('Location: /dashboard-buyer/order.php?id=' . $orderId);
+    header('Location: /dashboard-buyer/order.php?id=' . $orderPublicId);
     exit;
 }
 
 // 24-hour refund window — only enforced when delivered_at is set
 if ($existing['delivered_at'] && (time() - strtotime($existing['delivered_at'])) >= PAYOUT_WINDOW_SECONDS) {
-    header('Location: /dashboard-buyer/order.php?id=' . $orderId);
+    header('Location: /dashboard-buyer/order.php?id=' . $orderPublicId);
     exit;
 }
 
@@ -47,5 +53,5 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$reason, $orderId, $userId]);
 
-header('Location: /dashboard-buyer/order.php?id=' . $orderId);
+header('Location: /dashboard-buyer/order.php?id=' . $orderPublicId);
 exit;

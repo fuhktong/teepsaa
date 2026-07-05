@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 
@@ -46,7 +51,7 @@ if ($to   !== '') { $owhere[] = 'o.created_at <= ?'; $oparams[] = $to   . ' 23:5
 
 $sql = '
     SELECT o.id, o.subtotal, o.delivery_fee, o.vendor_delivery_bonus,
-           o.royalty_rate, o.royalty_amount, o.vendor_payout,
+           o.royalty_rate, o.royalty_amount, o.vendor_payout, o.discount_amount,
            o.status, o.created_at, o.delivered_at,
            b.name AS business_name,
            v.name AS vendor_name, v.email AS vendor_email, v.aba_qr AS vendor_aba_qr,
@@ -82,6 +87,8 @@ $adminTab     = 'orders';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin — Orders</title>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -152,7 +159,7 @@ $adminTab     = 'orders';
                 <span class="order-row-id"><?= $oid ?></span>
                 <span class="order-row-biz"><?= htmlspecialchars($o['business_name']) ?></span>
                 <span class="order-row-customer"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span>
-                <span class="order-row-total">$<?= number_format($o['subtotal'] + $o['delivery_fee'], 2) ?></span>
+                <span class="order-row-total">$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span>
             </div>
             <div class="order-row-bar" data-status-bar>
                 <?php $orderStatus = $o['status']; require __DIR__ . '/../order-status/order-status.php'; ?>

@@ -1,27 +1,34 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 
-$id = (int)($_GET['id'] ?? 0);
-if (!$id) {
+$publicId = $_GET['id'] ?? '';
+if ($publicId === '') {
     header('Location: /search/');
     exit;
 }
 
 $stmt = $pdo->prepare('
-    SELECT p.*, b.id AS business_id, b.name AS business_name, b.name_km AS business_name_km
+    SELECT p.*, b.id AS business_id, b.public_id AS business_public_id, b.name AS business_name, b.name_km AS business_name_km
     FROM products p
     JOIN businesses b ON b.id = p.business_id
-    WHERE p.id = ? AND p.active = 1 AND p.archived = 0 AND b.approved = 1
+    WHERE p.public_id = ? AND p.active = 1 AND p.archived = 0 AND b.approved = 1
 ');
-$stmt->execute([$id]);
+$stmt->execute([$publicId]);
 $product = $stmt->fetch();
 
 if (!$product) {
     header('Location: /search/');
     exit;
 }
+
+$id = (int)$product['id'];
 
 $galleryStmt = $pdo->prepare('SELECT filename FROM product_photos WHERE product_id = ? ORDER BY is_primary DESC, sort_order ASC, id ASC');
 $galleryStmt->execute([$id]);
@@ -95,9 +102,11 @@ $reviews = $rStmt->fetchAll();
             $product['name'] . ' — teepsaa',
             $product['description'] ?? '',
             $seoImg,
-            'https://teepsaa.com/product/?id=' . $product['id']
+            'https://teepsaa.com/product/?id=' . $product['public_id']
         );
     ?>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -166,7 +175,7 @@ $reviews = $rStmt->fetchAll();
         </div>
 
         <div class="product-info">
-            <p class="product-seller"><?= $t['product_sold_by'] ?> <a href="/business/?id=<?= $product['business_id'] ?>"><?= htmlspecialchars(pick_lang($product['business_name'], $product['business_name_km'] ?? null)) ?></a></p>
+            <p class="product-seller"><?= $t['product_sold_by'] ?> <a href="/business/?id=<?= $product['business_public_id'] ?>"><?= htmlspecialchars(pick_lang($product['business_name'], $product['business_name_km'] ?? null)) ?></a></p>
             <h1 class="product-name"><?= htmlspecialchars(lang_field($product, 'name')) ?></h1>
             <p class="product-price" id="product-price"><?= price_html($product) ?></p>
 
@@ -186,7 +195,7 @@ $reviews = $rStmt->fetchAll();
             <form method="POST" action="/cart/add.php" class="cart-form" id="cart-form">
                 <?= csrf_input() ?>
                 <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
-                <input type="hidden" name="redirect" value="/product/?id=<?= $product['id'] ?>">
+                <input type="hidden" name="redirect" value="/product/?id=<?= $product['public_id'] ?>">
 
                 <?php if (!empty($variants)): ?>
                 <?php if ($hasOptionTypes): ?>
@@ -539,7 +548,7 @@ $reviews = $rStmt->fetchAll();
 <?php endif; ?>
 <script>
 (function () {
-    var id = <?= $product['id'] ?>;
+    var id = <?= json_encode($product['public_id']) ?>;
     try {
         var key  = 'teepsaa_rv';
         var list = JSON.parse(localStorage.getItem(key) || '[]');

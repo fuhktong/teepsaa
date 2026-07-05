@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 
@@ -17,7 +22,7 @@ $stmt = $pdo->prepare('
            b.id AS business_id, b.name AS business_name, b.category, b.description,
            b.address, b.house_number, b.khan, b.sangkat,
            b.approved, b.created_at AS submitted_at,
-           b.royalty_add_on AS company_royalty_add_on
+           b.royalty_add_on AS company_royalty_add_on, b.royalty_waived
     FROM vendors v
     LEFT JOIN businesses b ON b.user_id = v.id
     WHERE v.id = ?
@@ -94,6 +99,8 @@ $adminTab     = 'vendors';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin — <?= htmlspecialchars($v['business_name'] ?: $v['email']) ?></title>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -165,6 +172,23 @@ $adminTab     = 'vendors';
 
         <div>
             <?php if ($v['business_id'] && $v['approved'] === 1): ?>
+            <!-- Royalty waiver -->
+            <div class="detail-card">
+                <div class="detail-card-title">Royalty waiver</div>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem">When on, this vendor pays 0% royalty on every order — overrides the category rate, company add-on, and any penalties.</p>
+                <form method="POST" action="/admin/vendor-action.php" style="display:flex;align-items:center;gap:0.6rem">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="action" value="set_royalty_waived">
+                    <input type="hidden" name="vendor_id" value="<?= $v['id'] ?>">
+                    <input type="hidden" name="business_id" value="<?= $v['business_id'] ?>">
+                    <label class="switch">
+                        <input type="checkbox" name="royalty_waived" value="1" <?= $v['royalty_waived'] ? 'checked' : '' ?> onchange="this.form.submit()">
+                        <span class="switch-slider"></span>
+                    </label>
+                    <span><?= $v['royalty_waived'] ? 'Waived — vendor pays no royalty' : 'Not waived' ?></span>
+                </form>
+            </div>
+
             <!-- Company royalty add-on -->
             <div class="detail-card">
                 <div class="detail-card-title">Company royalty add-on</div>

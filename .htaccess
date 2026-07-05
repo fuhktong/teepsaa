@@ -1,5 +1,11 @@
 # php_flag / php_value directives require mod_php and do not work with PHP-FPM (MAMP).
-# Session cookie hardening (HttpOnly, SameSite) is handled at the PHP level in production.
+# Session cookie hardening (HttpOnly, SameSite, Secure) is handled at the PHP level (session_start() options).
+
+# Force HTTPS on the production host only — local dev (MAMP/localhost) is unaffected.
+RewriteEngine On
+RewriteCond %{HTTP_HOST} ^(www\.)?teepsaa\.com$ [NC]
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [L,R=301]
 
 # Block direct access to sensitive files
 <FilesMatch "^\.env|\.gitignore|\.log$">

@@ -1,11 +1,17 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/delivery-calc.php';
 require __DIR__ . '/../config/notify.php';
+require __DIR__ . '/../config/coupon.php';
 
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
     exit;
 }
@@ -41,10 +47,10 @@ if ($buyerLat === null || $buyerLng === null) {
 
 $stmt = $pdo->prepare('
     SELECT ci.id AS cart_item_id, ci.quantity, ci.variant_id,
-           p.id AS product_id, p.name AS product_name, p.price, p.stock, p.delivery_method,
+           p.id AS product_id, p.name AS product_name, p.name_km AS product_name_km, p.price, p.stock, p.delivery_method,
            COALESCE(pv.price_override, IF(p.sale_ends_at IS NOT NULL AND p.sale_ends_at > NOW(), p.sale_price, NULL), p.price) AS effective_price,
            COALESCE(pv.stock, p.stock) AS effective_stock,
-           pv.label AS variant_label,
+           pv.label AS variant_label, pv.label_km AS variant_label_km,
            b.id AS business_id, b.lat AS biz_lat, b.lng AS biz_lng,
            COALESCE(cat.royalty_rate, 0) AS royalty_rate,
            COALESCE(b.royalty_add_on, 0) AS business_royalty_add_on,
@@ -136,7 +142,7 @@ foreach ($grouped as $bid => &$group) {
 
     // Check vendor promo trial — zero out royalty if trial still active
     $trialStmt = $pdo->prepare('
-        SELECT b.trial_starts_at, b.trial_ends_at, b.royalty_free_threshold,
+        SELECT b.trial_starts_at, b.trial_ends_at, b.royalty_free_threshold, b.royalty_waived,
                COALESCE(SUM(o2.subtotal), 0) AS completed_sales
         FROM businesses b
         LEFT JOIN orders o2 ON o2.business_id = b.id AND o2.status IN (\'delivered\', \'completed\')
@@ -145,6 +151,12 @@ foreach ($grouped as $bid => &$group) {
     ');
     $trialStmt->execute([$bid]);
     $trial = $trialStmt->fetch();
+    if ($trial && $trial['royalty_waived']) {
+        $group['royalty_amount'] = 0.0;
+        $group['royalty_rate']   = 0.0;
+        $group['vendor_payout']  = round($group['subtotal'], 2);
+        continue;
+    }
     if ($trial && $trial['trial_starts_at']) {
         $withinTime     = strtotime($trial['trial_ends_at']) > time();
         $belowThreshold = (float)$trial['completed_sales'] < (float)$trial['royalty_free_threshold'];
@@ -165,22 +177,82 @@ foreach ($grouped as $bid => &$group) {
 }
 unset($group);
 
-$grandTotal  = $subtotal;
 $buyerNotes  = trim(mb_substr($_POST['buyer_notes'] ?? '', 0, 500));
+
+// Coupon — re-validated here against the final subtotal regardless of what
+// the checkout page showed. If it's no longer valid (cart changed, race on
+// max_uses, etc.) the order simply proceeds at full price rather than erroring.
+$subtotalsByBusiness = array_map(fn($g) => $g['subtotal'], $grouped);
+
+$couponCode       = $_SESSION['checkout_coupon_code'] ?? '';
+$couponId         = null;
+$couponBusinessId = null;
+$discount         = 0.0;
+if ($couponCode !== '') {
+    $couponResult = validate_coupon($pdo, $couponCode, $subtotalsByBusiness, $userId);
+    if ($couponResult['valid']) {
+        $couponId         = (int)$couponResult['coupon']['id'];
+        $couponBusinessId = $couponResult['business_id'];
+        $discount         = $couponResult['discount'];
+    }
+}
 
 try {
     $pdo->beginTransaction();
+
+    if ($couponId) {
+        // Atomic re-check under the transaction — closes the race where two
+        // buyers spend a coupon's last remaining use at the same time.
+        $incStmt = $pdo->prepare('UPDATE coupons SET used_count = used_count + 1 WHERE id = ? AND (max_uses IS NULL OR used_count < max_uses)');
+        $incStmt->execute([$couponId]);
+        if ($incStmt->rowCount() === 0) {
+            $couponId         = null;
+            $couponBusinessId = null;
+            $discount         = 0.0;
+            $couponCode       = '';
+        }
+    }
+
+    $grandTotal = max(0, $subtotal - $discount);
+    // Sitewide coupons (couponBusinessId === null) split proportionally across every
+    // vendor's order and are absorbed by the platform — royalty/vendor_payout above
+    // are already computed on the pre-discount subtotal, so vendor pay is unaffected.
+    // Vendor-owned coupons apply entirely to that one vendor's order instead, and are
+    // deducted from that vendor's own payout further down — the vendor funds their own discount.
+    $discountRemaining = $discount;
+    $groupKeys         = array_keys($grouped);
+    $lastGroupKey      = end($groupKeys);
 
     $stmt = $pdo->prepare('INSERT INTO payments (buyer_user_id, total, status) VALUES (?, ?, ?)');
     $stmt->execute([$userId, $grandTotal, 'pending_confirmation']);
     $paymentId = $pdo->lastInsertId();
 
     foreach ($grouped as $businessId => $group) {
+        $groupDiscount = 0.0;
+        if ($discount > 0) {
+            if ($couponBusinessId !== null) {
+                // Vendor-owned coupon — the full discount applies only to that vendor's order.
+                $groupDiscount = ($businessId === $couponBusinessId) ? $discount : 0.0;
+            } else {
+                $groupDiscount = ($businessId === $lastGroupKey)
+                    ? $discountRemaining
+                    : round($discount * $group['subtotal'] / $subtotal, 2);
+                $discountRemaining -= $groupDiscount;
+            }
+        }
+
+        // Vendor-owned coupons come out of that vendor's own payout; sitewide
+        // coupons are platform-absorbed, so vendor_payout is untouched.
+        $vendorPayout = ($couponBusinessId !== null && $businessId === $couponBusinessId)
+            ? round($group['vendor_payout'] - $groupDiscount, 2)
+            : $group['vendor_payout'];
+
         $stmt = $pdo->prepare('
             INSERT INTO orders
                 (payment_id, buyer_user_id, business_id, subtotal, delivery_fee, vendor_delivery_bonus,
-                 delivery_distance_km, delivery_weight_g, royalty_rate, royalty_amount, vendor_payout, buyer_notes, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 delivery_distance_km, delivery_weight_g, royalty_rate, royalty_amount, vendor_payout, buyer_notes,
+                 coupon_id, coupon_code, discount_amount, status, public_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $stmt->execute([
             $paymentId, $userId, $businessId,
@@ -191,15 +263,24 @@ try {
             $group['delivery_weight_g'],
             $group['royalty_rate'],
             $group['royalty_amount'],
-            $group['vendor_payout'],
+            $vendorPayout,
             $buyerNotes ?: null,
+            $couponId,
+            $couponId ? $couponCode : null,
+            $groupDiscount,
             'pending',
+            uuid_v4(),
         ]);
         $orderId = $pdo->lastInsertId();
 
+        if ($couponId) {
+            $pdo->prepare('INSERT INTO coupon_uses (coupon_id, buyer_id, order_id, discount_amount) VALUES (?, ?, ?, ?)')
+                ->execute([$couponId, $userId, $orderId, $groupDiscount]);
+        }
+
         foreach ($group['items'] as $item) {
-            $stmt = $pdo->prepare('INSERT INTO order_items (order_id, product_id, variant_id, variant_label, product_name, price_at_purchase, quantity) VALUES (?, ?, ?, ?, ?, ?, ?)');
-            $stmt->execute([$orderId, $item['product_id'], $item['variant_id'], $item['variant_label'], $item['product_name'], $item['effective_price'], $item['quantity']]);
+            $stmt = $pdo->prepare('INSERT INTO order_items (order_id, product_id, variant_id, variant_label, variant_label_km, product_name, product_name_km, price_at_purchase, quantity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            $stmt->execute([$orderId, $item['product_id'], $item['variant_id'], $item['variant_label'], $item['variant_label_km'] ?: null, $item['product_name'], $item['product_name_km'] ?: null, $item['effective_price'], $item['quantity']]);
 
             if ($item['variant_id']) {
                 $stmt = $pdo->prepare('UPDATE product_variants SET stock = stock - ? WHERE id = ? AND stock >= ?');
@@ -226,12 +307,13 @@ try {
     $pdo->prepare('UPDATE buyers SET abandoned_cart_notified_at = NULL WHERE id = ?')->execute([$userId]);
 
     $pdo->commit();
+    unset($_SESSION['checkout_coupon_code']);
 
     // Low stock alerts — best-effort, run after commit
     foreach ($grouped as $group) {
         foreach ($group['items'] as $item) {
             $lowStmt = $pdo->prepare('
-                SELECT p.id, p.name, p.stock, p.low_stock_threshold,
+                SELECT p.id, p.public_id, p.name, p.stock, p.low_stock_threshold,
                        v.id AS vendor_id, v.email AS vendor_email, v.name AS vendor_name
                 FROM products p
                 JOIN businesses b ON b.id = p.business_id
@@ -248,14 +330,14 @@ try {
                 $unitWord = $units !== 1 ? 'units' : 'unit';
                 notify($pdo, 'vendor', (int)$lp['vendor_id'], 'low_stock',
                     'Low stock: "' . $lp['name'] . '" — ' . $units . ' ' . $unitWord . ' remaining.',
-                    '/products/?action=edit&id=' . $lp['id'],
+                    '/products/?action=edit&id=' . $lp['public_id'],
                     ['name' => $lp['name'], 'units' => $units]
                 );
                 [$subj, $html] = render_email_template($pdo, 'low_stock', [
                     'name'    => htmlspecialchars($lp['vendor_name']),
                     'product' => htmlspecialchars($lp['name']),
                     'units'   => $units,
-                    'cta_url' => 'https://teepsaa.com/products/?action=edit&id=' . $lp['id'],
+                    'cta_url' => 'https://teepsaa.com/products/?action=edit&id=' . $lp['public_id'],
                 ]);
                 if ($html !== '') send_email($lp['vendor_email'], $subj, $html);
                 $pdo->prepare('UPDATE products SET low_stock_notified_at = NOW() WHERE id = ?')
@@ -282,9 +364,13 @@ try {
     $notesRow = $buyerNotes
         ? '<p style="margin:16px 0 0;font-size:0.85rem;color:#555"><strong>កំណត់ចំណាំដឹកជញ្ជូន · Delivery note:</strong> ' . htmlspecialchars($buyerNotes) . '</p>'
         : '';
+    $discountRow = $discount > 0
+        ? '<p style="margin:4px 0 0;font-size:0.9rem;color:#555">Discount (' . htmlspecialchars($couponCode) . '): &minus;$' . number_format($discount, 2) . '</p>'
+        : '';
     // Shared order summary (item names + prices) — shown once, under the Khmer block.
     $emailSummary = '<table style="width:100%;border-collapse:collapse">' . $itemLines . '</table>'
         . '<hr style="border:none;border-top:1px solid #eee;margin:16px 0">'
+        . $discountRow
         . '<p style="margin:0;font-size:0.95rem"><strong>សរុប · Total: $' . number_format($grandTotal, 2) . '</strong></p>'
         . $notesRow;
     [$subj, $html] = render_email_template($pdo, 'order_received', [

@@ -175,7 +175,7 @@ header nav a.active {
   color: #4a4a4a;
 }
 
-.admin-msg-badge {
+.nav-msg-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -347,7 +347,7 @@ header nav a.active {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0;
+  padding: 3px 0 0 0;
   color: #444;
   line-height: 0;
 }
@@ -472,12 +472,17 @@ header nav a.active {
   margin: 0;
 }
 
-/* Admin: collapse nav earlier to prevent overflow at mid-range viewports */
+/* Admin, vendor & buyer: all have top-level nav links + bell now, so collapse
+   into the hamburger flyout earlier to prevent overflow at mid-range viewports. */
 @media (max-width: 800px) {
-  .admin-header .hamburger-btn {
+  .admin-header .hamburger-btn,
+  .vendor-header .hamburger-btn,
+  .buyer-header .hamburger-btn {
     display: flex;
   }
-  .admin-header nav {
+  .admin-header nav,
+  .vendor-header nav,
+  .buyer-header nav {
     display: none;
   }
 }
@@ -491,5 +496,24 @@ header nav a.active {
   }
   .header-search {
     margin: 0 0.75rem;
+  }
+}
+
+.vendor-header nav {
+  gap: 1rem;
+}
+
+.vendor-header .header-search {
+  min-width: 0;
+  margin: 0 1rem;
+}
+
+.vendor-header .header-search input[type="search"] {
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .vendor-header .header-search {
+    margin: 0 0.5rem;
   }
 }

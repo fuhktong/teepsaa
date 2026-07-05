@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 
@@ -14,8 +19,8 @@ $userId  = $_SESSION['user_id'];
 $lang = $_SESSION['lang'] ?? 'km';
 $t = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km']) ? $lang : 'en') . '.php';
 
-$orderId = (int)($_GET['id'] ?? 0);
-if (!$orderId) {
+$publicId = $_GET['id'] ?? '';
+if ($publicId === '') {
     header('Location: /orders-vendor/');
     exit;
 }
@@ -23,6 +28,7 @@ if (!$orderId) {
 $stmt = $pdo->prepare('
     SELECT o.id, o.subtotal, o.delivery_fee, o.vendor_delivery_bonus,
            o.royalty_rate, o.royalty_amount, o.vendor_payout,
+           o.coupon_code, o.discount_amount,
            o.status, o.created_at, o.tracking_url, o.buyer_notes,
            b.name AS business_name,
            u.name AS buyer_name, u.email AS buyer_email, u.phone AS buyer_phone,
@@ -32,26 +38,42 @@ $stmt = $pdo->prepare('
     FROM orders o
     JOIN businesses b ON b.id = o.business_id
     JOIN buyers u ON u.id = o.buyer_user_id
-    WHERE o.id = ? AND b.user_id = ?
+    WHERE o.public_id = ? AND b.user_id = ?
       AND o.status IN (\'pending\', \'paid\', \'dispatched\', \'delivered\', \'completed\')
 ');
-$stmt->execute([$orderId, $userId]);
+$stmt->execute([$publicId, $userId]);
 $o = $stmt->fetch();
 
 if (!$o) {
     header('Location: /orders-vendor/');
     exit;
 }
+$orderId = (int)$o['id'];
 
-$stmt = $pdo->prepare('SELECT product_name, variant_label, quantity, price_at_purchase FROM order_items WHERE order_id = ? ORDER BY id');
+$stmt = $pdo->prepare('SELECT product_name, product_name_km, variant_label, variant_label_km, quantity, price_at_purchase FROM order_items WHERE order_id = ? ORDER BY id');
 $stmt->execute([$orderId]);
 $items = $stmt->fetchAll();
+
+$bizStmt = $pdo->prepare('SELECT id FROM businesses WHERE user_id = ? AND approved = 1');
+$bizStmt->execute([$userId]);
+$bizIds = array_column($bizStmt->fetchAll(), 'id');
+$vendorRefundCount = 0;
+if (!empty($bizIds)) {
+    $ph = implode(',', array_fill(0, count($bizIds), '?'));
+    $cntStmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE business_id IN ($ph) AND status IN ('return_dispatched')");
+    $cntStmt->execute(array_values($bizIds));
+    $vendorRefundCount = (int)$cntStmt->fetchColumn();
+}
 
 $oid = date('ymd', strtotime($o['created_at'])) . '-' . str_pad($o['id'], 4, '0', STR_PAD_LEFT);
 
 $royaltyAmt   = round((float)($o['royalty_amount'] ?? ($o['subtotal'] * ($o['royalty_rate'] ?? 0))), 2);
 $royaltyPct   = round(($o['royalty_rate'] ?? 0) * 100, 1);
-$vendorPayout = round($o['subtotal'] - $royaltyAmt + $o['delivery_fee'] + $o['vendor_delivery_bonus'], 2);
+// A vendor-owned coupon is deducted from vendor_payout at checkout (a sitewide/admin
+// coupon isn't — the platform absorbs that one). Derive the vendor-funded portion from
+// the stored numbers so this recomputed breakdown stays correct either way.
+$vendorCouponDiscount = max(0, round($o['subtotal'] - $royaltyAmt - (float)$o['vendor_payout'], 2));
+$vendorPayout = round($o['subtotal'] - $royaltyAmt - $vendorCouponDiscount + $o['delivery_fee'] + $o['vendor_delivery_bonus'], 2);
 
 $grabParts = array_filter([
     trim(($o['buyer_house_number'] ?? '') . ' ' . ($o['buyer_address'] ?? '')),
@@ -78,19 +100,25 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $oid ?> — Orders — teepsaa</title>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
     <link rel="stylesheet" href="/order-status/order-status.css">
     <link rel="stylesheet" href="/popup/popup.css">
     <link rel="stylesheet" href="/dashboard-vendor/dashboard-vendor.css">
+    <link rel="stylesheet" href="/products/products.css">
 </head>
 <body>
 
 <?php require __DIR__ . '/../header/header.php'; ?>
 
 <main>
-    <a href="/orders-vendor/" style="display:inline-block;font-size:0.875rem;color:#6b7280;text-decoration:none;margin-bottom:1.25rem;">← <?= $t['vendor_orders'] ?></a>
+    <nav class="products-subnav">
+        <a href="/orders-vendor/" class="active"><?= $t['vendor_orders'] ?></a>
+        <a href="/orders-vendor/?tab=refunds"><?= $t['vendor_refunds'] ?><?php if ($vendorRefundCount > 0): ?> <span class="admin-tab-badge"><?= $vendorRefundCount ?></span><?php endif; ?></a>
+    </nav>
 
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap;">
         <h1 style="margin-bottom:0;"><?= $oid ?></h1>
@@ -131,9 +159,9 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
             <?php foreach ($items as $item): ?>
                 <tr>
                     <td>
-                        <?= htmlspecialchars($item['product_name']) ?>
+                        <?= htmlspecialchars(pick_lang($item['product_name'], $item['product_name_km'] ?? null)) ?>
                         <?php if ($item['variant_label']): ?>
-                            <br><small style="color:#9ca3af"><?= htmlspecialchars($item['variant_label']) ?></small>
+                            <br><small style="color:#9ca3af"><?= htmlspecialchars(pick_lang($item['variant_label'], $item['variant_label_km'] ?? null)) ?></small>
                         <?php endif; ?>
                     </td>
                     <td><?= (int)$item['quantity'] ?></td>
@@ -144,14 +172,20 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
             </tbody>
         </table>
         <div class="popup-subtotal"><span><?= $t['checkout_subtotal'] ?></span><span>$<?= number_format($o['subtotal'], 2) ?></span></div>
+        <?php if ($o['discount_amount'] > 0): ?>
+        <div class="popup-subtotal"><span><?= $t['checkout_coupon_applied'] ?> <?= htmlspecialchars($o['coupon_code']) ?></span><span>&minus;$<?= number_format($o['discount_amount'], 2) ?></span></div>
+        <?php endif; ?>
         <?php if ($o['delivery_fee'] > 0): ?>
         <div class="popup-subtotal"><span><?= $t['order_delivery'] ?></span><span>$<?= number_format($o['delivery_fee'], 2) ?></span></div>
         <?php endif; ?>
-        <div class="popup-total"><span><?= $t['checkout_total'] ?></span><span>$<?= number_format($o['subtotal'] + $o['delivery_fee'], 2) ?></span></div>
+        <div class="popup-total"><span><?= $t['checkout_total'] ?></span><span>$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span></div>
 
         <div class="popup-payout-box">
             <?php if ($royaltyPct > 0): ?>
             <div class="popup-subtotal"><span><?= $t['vorder_royalty_fee'] ?> (<?= $royaltyPct ?>%)</span><span>−$<?= number_format($royaltyAmt, 2) ?></span></div>
+            <?php endif; ?>
+            <?php if ($vendorCouponDiscount > 0): ?>
+            <div class="popup-subtotal"><span><?= $t['checkout_coupon_applied'] ?> <?= htmlspecialchars($o['coupon_code']) ?></span><span>−$<?= number_format($vendorCouponDiscount, 2) ?></span></div>
             <?php endif; ?>
             <?php if ($o['delivery_fee'] > 0): ?>
             <div class="popup-subtotal"><span><?= $t['vorder_delivery_reimburse'] ?></span><span>+$<?= number_format($o['delivery_fee'], 2) ?></span></div>

@@ -1,9 +1,15 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/app.php';
 require __DIR__ . '/../config/notify.php'; // pulls in mail.php (send_email)
+require __DIR__ . '/../config/rate-limit.php';
 
 // Résumé validation by magic bytes — pdf / doc / docx, max 5 MB.
 function resume_ext_from_magic(string $tmp): string|false {
@@ -27,6 +33,8 @@ $error = '';
 
 if (!$notFound && $_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
+    check_rate_limit($pdo);
+    record_failed_attempt($pdo);
 
     $name    = trim($_POST['name'] ?? '');
     $email   = trim($_POST['email'] ?? '');
@@ -90,6 +98,8 @@ if (!$notFound && $_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $job ? htmlspecialchars($job['title']) . ' — Apply' : 'Apply' ?> — teepsaa</title>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">

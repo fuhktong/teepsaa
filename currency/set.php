@@ -1,6 +1,19 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 $c = $_POST['currency'] ?? 'USD';
 $_SESSION['currency'] = in_array($c, ['USD', 'KHR']) ? $c : 'USD';
-header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? '/'));
+$referer = $_SERVER['HTTP_REFERER'] ?? '';
+$back    = '/';
+if ($referer) {
+    $refHost = parse_url($referer, PHP_URL_HOST);
+    if ($refHost !== null && $refHost === ($_SERVER['HTTP_HOST'] ?? null)) {
+        $back = $referer;
+    }
+}
+header('Location: ' . $back);
 exit;

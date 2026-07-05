@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 
@@ -46,6 +51,17 @@ if ($action === 'suspend') {
     $pdo->prepare('UPDATE vendors SET admin_note = ? WHERE id = ?')
         ->execute([$note ?: null, $vendorId]);
     $_SESSION['admin_success'] = 'Note saved.';
+
+} elseif ($action === 'set_royalty_waived') {
+    $businessId = (int)($_POST['business_id'] ?? 0);
+    if (!$businessId) {
+        header('Location: ' . $returnUrl);
+        exit;
+    }
+    $waived = isset($_POST['royalty_waived']) ? 1 : 0;
+    $pdo->prepare('UPDATE businesses SET royalty_waived = ? WHERE id = ?')
+        ->execute([$waived, $businessId]);
+    $_SESSION['admin_success'] = $waived ? 'Royalty waived for this vendor.' : 'Royalty waiver removed.';
 
 } elseif ($action === 'set_company_royalty_add_on') {
     $businessId = (int)($_POST['business_id'] ?? 0);

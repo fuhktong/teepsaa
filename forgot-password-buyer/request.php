@@ -1,9 +1,15 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/app.php';
 require __DIR__ . '/../config/notify.php';
+require __DIR__ . '/../config/rate-limit.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: /forgot-password-buyer/');
@@ -11,6 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 csrf_verify();
+check_rate_limit($pdo);
+record_failed_attempt($pdo);
 
 $email = trim($_POST['email'] ?? '');
 

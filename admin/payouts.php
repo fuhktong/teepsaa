@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 
@@ -13,6 +18,8 @@ unset($_SESSION['admin_success']);
 
 $stmt = $pdo->query('
     SELECT o.id, o.subtotal, o.delivery_fee, o.vendor_delivery_bonus, o.created_at,
+           o.coupon_code,
+           CASE WHEN c.business_id = o.business_id THEN o.discount_amount ELSE 0 END AS vendor_coupon_discount,
            b.name AS business_name,
            v.id AS vendor_id, v.email AS vendor_email, v.aba_qr,
            bu.email AS buyer_email
@@ -20,6 +27,7 @@ $stmt = $pdo->query('
     JOIN businesses b ON b.id = o.business_id
     JOIN vendors v ON v.id = b.user_id
     JOIN buyers bu ON bu.id = o.buyer_user_id
+    LEFT JOIN coupons c ON c.id = o.coupon_id
     WHERE o.status = \'delivered\'
     ORDER BY o.created_at ASC
 ');
@@ -33,6 +41,8 @@ $adminTab     = 'payouts';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin — Payouts</title>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -56,7 +66,7 @@ $adminTab     = 'payouts';
     <?php else: ?>
         <div class="admin-list">
             <?php foreach ($payouts as $p): ?>
-            <?php $payout = $p['subtotal'] + $p['vendor_delivery_bonus']; ?>
+            <?php $payout = $p['subtotal'] - $p['vendor_coupon_discount'] + $p['vendor_delivery_bonus']; ?>
             <div class="admin-card payout-card">
                 <div class="admin-card-info">
                     <h2>$<?= number_format($payout, 2) ?> → <?= htmlspecialchars($p['vendor_email']) ?></h2>
@@ -68,6 +78,9 @@ $adminTab     = 'payouts';
                     </p>
                     <p class="meta payout-note">
                         Products: <strong>$<?= number_format($p['subtotal'], 2) ?></strong>
+                        <?php if ($p['vendor_coupon_discount'] > 0): ?>
+                        − Coupon (<?= htmlspecialchars($p['coupon_code']) ?>): <strong>$<?= number_format($p['vendor_coupon_discount'], 2) ?></strong>
+                        <?php endif; ?>
                         <?php if ($p['vendor_delivery_bonus'] > 0): ?>
                         + Delivery buffer: <strong>$<?= number_format($p['vendor_delivery_bonus'], 2) ?></strong>
                         <?php endif; ?>

@@ -7,7 +7,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
 $base = 'https://teepsaa.com';
 
 $products = $pdo->query('
-    SELECT p.id, p.updated_at
+    SELECT p.public_id, p.updated_at
     FROM products p
     JOIN businesses b ON b.id = p.business_id
     WHERE p.active = 1 AND p.archived = 0 AND b.approved = 1
@@ -15,7 +15,7 @@ $products = $pdo->query('
 ')->fetchAll();
 
 $businesses = $pdo->query('
-    SELECT id, updated_at FROM businesses WHERE approved = 1 ORDER BY id ASC
+    SELECT public_id, updated_at FROM businesses WHERE approved = 1 ORDER BY id ASC
 ')->fetchAll();
 
 ?>
@@ -52,7 +52,7 @@ $businesses = $pdo->query('
     </url>
     <?php foreach ($businesses as $b): ?>
     <url>
-        <loc><?= $base ?>/business/?id=<?= (int)$b['id'] ?></loc>
+        <loc><?= $base ?>/business/?id=<?= $b['public_id'] ?></loc>
         <?php if ($b['updated_at']): ?><lastmod><?= date('Y-m-d', strtotime($b['updated_at'])) ?></lastmod><?php endif; ?>
         <changefreq>weekly</changefreq>
         <priority>0.7</priority>
@@ -60,7 +60,7 @@ $businesses = $pdo->query('
     <?php endforeach; ?>
     <?php foreach ($products as $p): ?>
     <url>
-        <loc><?= $base ?>/product/?id=<?= (int)$p['id'] ?></loc>
+        <loc><?= $base ?>/product/?id=<?= $p['public_id'] ?></loc>
         <?php if ($p['updated_at']): ?><lastmod><?= date('Y-m-d', strtotime($p['updated_at'])) ?></lastmod><?php endif; ?>
         <changefreq>weekly</changefreq>
         <priority>0.6</priority>

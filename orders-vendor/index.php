@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 
@@ -47,7 +52,7 @@ if (!empty($bizIds)) {
 $orders = [];
 if ($tab === 'orders') {
     $stmt = $pdo->prepare('
-        SELECT o.id, o.subtotal, o.delivery_fee,
+        SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.discount_amount,
                o.status, o.created_at,
                b.name AS business_name,
                u.name AS buyer_name, u.email AS buyer_email,
@@ -68,7 +73,7 @@ $refundOrders = [];
 if ($tab === 'refunds' && !empty($bizIds)) {
     $ph2  = implode(',', array_fill(0, count($bizIds), '?'));
     $stmt = $pdo->prepare("
-        SELECT o.id, o.subtotal, o.delivery_fee,
+        SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.discount_amount,
                o.status, o.created_at, o.refund_reason,
                b.name AS business_name,
                u.name AS buyer_name, u.email AS buyer_email,
@@ -92,6 +97,8 @@ if ($tab === 'refunds' && !empty($bizIds)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $tab === 'refunds' ? 'Refunds' : 'Orders' ?> — teepsaa</title>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -153,14 +160,14 @@ if ($tab === 'refunds' && !empty($bizIds)) {
         <div class="order-cards">
             <?php foreach ($orders as $o): ?>
             <?php $oid = date('ymd', strtotime($o['created_at'])) . '-' . str_pad($o['id'], 4, '0', STR_PAD_LEFT); ?>
-            <a href="/orders-vendor/order.php?id=<?= $o['id'] ?>" style="text-decoration:none;color:inherit;">
+            <a href="/orders-vendor/order.php?id=<?= $o['public_id'] ?>" style="text-decoration:none;color:inherit;">
             <div class="order-card" data-order-id="<?= $o['id'] ?>" data-order-ref="<?= $oid ?>" data-status="<?= $o['status'] ?>">
                 <div class="order-card-head">
                     <span class="order-card-id"><?= $oid ?></span>
                     <span class="order-card-items"><?= htmlspecialchars($o['items']) ?></span>
                     <span class="order-card-meta"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span>
                     <span class="order-card-date"><?= fmt_date('M j, g:ia', strtotime($o['created_at'])) ?></span>
-                    <span class="order-card-total">$<?= number_format($o['subtotal'] + $o['delivery_fee'], 2) ?></span>
+                    <span class="order-card-total">$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span>
                 </div>
                 <div class="order-card-status" data-status-bar>
                     <?php $orderStatus = $o['status']; require __DIR__ . '/../order-status/order-status.php'; ?>
@@ -183,14 +190,14 @@ if ($tab === 'refunds' && !empty($bizIds)) {
         <div class="order-cards">
             <?php foreach ($refundOrders as $o): ?>
             <?php $oid = date('ymd', strtotime($o['created_at'])) . '-' . str_pad($o['id'], 4, '0', STR_PAD_LEFT); ?>
-            <a href="/orders-vendor/refund.php?id=<?= $o['id'] ?>" style="text-decoration:none;color:inherit;">
+            <a href="/orders-vendor/refund.php?id=<?= $o['public_id'] ?>" style="text-decoration:none;color:inherit;">
             <div class="order-card">
                 <div class="order-card-head">
                     <span class="order-card-id"><?= $oid ?> <span class="refund-dot" title="Refund in progress"></span></span>
                     <span class="order-card-items"><?= htmlspecialchars($o['items']) ?></span>
                     <span class="order-card-meta"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span>
                     <span class="order-card-date"><?= fmt_date('M j, g:ia', strtotime($o['created_at'])) ?></span>
-                    <span class="order-card-total">$<?= number_format($o['subtotal'], 2) ?> refund</span>
+                    <span class="order-card-total">$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?> refund</span>
                 </div>
                 <div class="order-card-status">
                     <?php $refundStatus = $o['status']; require __DIR__ . '/../refund-status/refund-status.php'; ?>

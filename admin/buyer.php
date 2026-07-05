@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 
@@ -15,7 +20,7 @@ $stmt = $pdo->prepare('
     SELECT b.id, b.name, b.email, b.phone, b.house_number, b.address, b.khan, b.sangkat,
            b.created_at, b.banned, b.ban_reason, b.banned_at, b.admin_note,
            COUNT(DISTINCT o.id) AS order_count,
-           COALESCE(SUM(CASE WHEN o.status NOT IN (\'cancelled\') THEN o.subtotal END), 0) AS total_spent,
+           COALESCE(SUM(CASE WHEN o.status NOT IN (\'cancelled\') THEN o.subtotal - o.discount_amount END), 0) AS total_spent,
            SUM(CASE WHEN o.status = \'refund_requested\' OR o.status LIKE \'refund%\' OR o.status LIKE \'return%\' THEN 1 ELSE 0 END) AS refund_count
     FROM buyers b
     LEFT JOIN orders o ON o.buyer_user_id = b.id
@@ -27,7 +32,7 @@ $b = $stmt->fetch();
 if (!$b) { header('Location: /admin/buyers.php'); exit; }
 
 $stmt = $pdo->prepare('
-    SELECT o.id, o.buyer_user_id, o.subtotal, o.status, o.created_at,
+    SELECT o.id, o.buyer_user_id, o.subtotal, o.discount_amount, o.status, o.created_at,
            bus.name AS business_name
     FROM orders o
     JOIN businesses bus ON bus.id = o.business_id
@@ -56,6 +61,8 @@ $adminTab     = 'buyers';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin — <?= htmlspecialchars($b['name'] ?: $b['email']) ?></title>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -177,7 +184,7 @@ $adminTab     = 'buyers';
             <tr>
                 <td><a href="/admin/order.php?id=<?= $o['id'] ?>"><?= $oref ?></a></td>
                 <td><?= htmlspecialchars($o['business_name']) ?></td>
-                <td>$<?= number_format($o['subtotal'], 2) ?></td>
+                <td>$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></td>
                 <td><?= htmlspecialchars($o['status']) ?></td>
                 <td><?= date('M j, Y', strtotime($o['created_at'])) ?></td>
             </tr>

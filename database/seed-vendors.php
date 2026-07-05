@@ -159,16 +159,16 @@ if (!$alreadySeeded && !empty($leafCats)) {
             ->execute([$v['name'], $v['email'], $password, $v['phone']]);
         $vendorId = (int)$pdo->lastInsertId();
 
-        $pdo->prepare('INSERT INTO businesses (user_id, name, category, description, address, lat, lng, approved) VALUES (?, ?, ?, ?, ?, ?, ?, 1)')
-            ->execute([$vendorId, $b['name'], $b['category'], $b['description'], $b['address'], $b['lat'], $b['lng']]);
+        $pdo->prepare('INSERT INTO businesses (user_id, name, category, description, address, lat, lng, approved, public_id) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)')
+            ->execute([$vendorId, $b['name'], $b['category'], $b['description'], $b['address'], $b['lat'], $b['lng'], uuid_v4()]);
         $bizId = (int)$pdo->lastInsertId();
 
         $catId    = pick_cat($leafCats, $vd['cat_keyword']);
         $products = [];
 
         foreach ($vd['products'] as $p) {
-            $pdo->prepare('INSERT INTO products (business_id, category_id, name, description, price, stock, active, delivery_method) VALUES (?, ?, ?, ?, ?, ?, 1, \'bike\')')
-                ->execute([$bizId, $catId, $p['name'], $p['desc'], $p['price'], $p['stock']]);
+            $pdo->prepare('INSERT INTO products (business_id, category_id, name, description, price, stock, active, delivery_method, public_id) VALUES (?, ?, ?, ?, ?, ?, 1, \'bike\', ?)')
+                ->execute([$bizId, $catId, $p['name'], $p['desc'], $p['price'], $p['stock'], uuid_v4()]);
             $prodId = (int)$pdo->lastInsertId();
 
             $fn = dl_img($p['img'], $uploadDir);

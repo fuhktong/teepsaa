@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/notify.php';
@@ -38,7 +43,7 @@ if ($action === 'confirm') {
     $pdo->commit();
 
     $buyerStmt = $pdo->prepare(
-        'SELECT bu.id AS buyer_id, bu.email, bu.name, o.id AS order_id, o.created_at
+        'SELECT bu.id AS buyer_id, bu.email, bu.name, o.id AS order_id, o.public_id AS order_public_id, o.created_at
          FROM orders o JOIN buyers bu ON bu.id = o.buyer_user_id
          WHERE o.payment_id = ? LIMIT 1'
     );
@@ -47,11 +52,11 @@ if ($action === 'confirm') {
     if ($buyer) {
         $oid = order_display_id((int)$buyer['order_id'], $buyer['created_at']);
         $msg = 'Your payment has been confirmed — order #' . $oid . ' is being prepared.';
-        notify($pdo, 'buyer', (int)$buyer['buyer_id'], 'payment_confirmed', $msg, '/dashboard-buyer/order.php?id=' . $buyer['order_id'], ['ref' => $oid]);
+        notify($pdo, 'buyer', (int)$buyer['buyer_id'], 'payment_confirmed', $msg, '/dashboard-buyer/order.php?id=' . $buyer['order_public_id'], ['ref' => $oid]);
         [$subj, $html] = render_email_template($pdo, 'payment_confirmed', [
             'name'    => htmlspecialchars($buyer['name']),
             'order'   => $oid,
-            'cta_url' => 'https://teepsaa.com/dashboard-buyer/order.php?id=' . $buyer['order_id'],
+            'cta_url' => 'https://teepsaa.com/dashboard-buyer/order.php?id=' . $buyer['order_public_id'],
         ]);
         if ($html !== '') send_email($buyer['email'], $subj, $html);
     }

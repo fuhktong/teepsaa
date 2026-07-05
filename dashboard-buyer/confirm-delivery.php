@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/notify.php';
@@ -25,9 +30,10 @@ $stmt = $pdo->prepare('
 ');
 $stmt->execute(['delivered', $orderId, $userId, 'dispatched']);
 
+$orderPublicId = null;
 if ($stmt->rowCount() > 0) {
     $vendorStmt = $pdo->prepare(
-        'SELECT v.id AS vendor_id, v.email, v.name, o.id AS order_id, o.created_at
+        'SELECT v.id AS vendor_id, v.email, v.name, o.id AS order_id, o.public_id AS order_public_id, o.created_at
          FROM orders o
          JOIN businesses b ON b.id = o.business_id
          JOIN vendors v ON v.id = b.user_id
@@ -36,17 +42,24 @@ if ($stmt->rowCount() > 0) {
     $vendorStmt->execute([$orderId, $userId]);
     $vendor = $vendorStmt->fetch();
     if ($vendor) {
+        $orderPublicId = $vendor['order_public_id'];
         $oid = order_display_id((int)$vendor['order_id'], $vendor['created_at']);
         $msg = 'Delivery confirmed for order #' . $oid . ' — payout incoming.';
-        notify($pdo, 'vendor', (int)$vendor['vendor_id'], 'delivery_confirmed', $msg, '/orders-vendor/order.php?id=' . $orderId, ['ref' => $oid]);
+        notify($pdo, 'vendor', (int)$vendor['vendor_id'], 'delivery_confirmed', $msg, '/orders-vendor/order.php?id=' . $orderPublicId, ['ref' => $oid]);
         [$subj, $html] = render_email_template($pdo, 'delivery_confirmed', [
             'name'    => htmlspecialchars($vendor['name']),
             'order'   => $oid,
-            'cta_url' => 'https://teepsaa.com/orders-vendor/order.php?id=' . $orderId,
+            'cta_url' => 'https://teepsaa.com/orders-vendor/order.php?id=' . $orderPublicId,
         ]);
         if ($html !== '') send_email($vendor['email'], $subj, $html);
     }
 }
 
-header('Location: /dashboard-buyer/order.php?id=' . $orderId);
+if ($orderPublicId === null) {
+    $pidStmt = $pdo->prepare('SELECT public_id FROM orders WHERE id = ? AND buyer_user_id = ?');
+    $pidStmt->execute([$orderId, $userId]);
+    $orderPublicId = $pidStmt->fetchColumn() ?: '';
+}
+
+header('Location: /dashboard-buyer/order.php?id=' . $orderPublicId);
 exit;

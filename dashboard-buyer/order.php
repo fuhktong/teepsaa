@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 
@@ -12,16 +17,16 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
 $lang = $_SESSION['lang'] ?? 'km';
 $t = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km']) ? $lang : 'en') . '.php';
 
-$userId  = $_SESSION['user_id'];
-$orderId = (int)($_GET['id'] ?? 0);
-if (!$orderId) {
+$userId   = $_SESSION['user_id'];
+$publicId = $_GET['id'] ?? '';
+if ($publicId === '') {
     header('Location: /dashboard-buyer/');
     exit;
 }
 
 $stmt = $pdo->prepare('
     SELECT o.id, o.subtotal, o.delivery_fee, o.status, o.created_at, o.tracking_url,
-           o.refund_reason, o.return_tracking_url,
+           o.refund_reason, o.return_tracking_url, o.coupon_code, o.discount_amount,
            CASE WHEN o.delivered_at IS NULL OR TIMESTAMPDIFF(SECOND, o.delivered_at, NOW()) < ' . PAYOUT_WINDOW_SECONDS . ' THEN 1 ELSE 0 END AS refund_window_open,
            DATE_ADD(o.delivered_at, INTERVAL ' . PAYOUT_WINDOW_SECONDS . ' SECOND) AS refund_deadline,
            b.name AS business_name,
@@ -31,17 +36,18 @@ $stmt = $pdo->prepare('
     FROM orders o
     JOIN businesses b ON b.id = o.business_id
     JOIN vendors v ON v.id = b.user_id
-    WHERE o.id = ? AND o.buyer_user_id = ?
+    WHERE o.public_id = ? AND o.buyer_user_id = ?
 ');
-$stmt->execute([$orderId, $userId]);
+$stmt->execute([$publicId, $userId]);
 $o = $stmt->fetch();
 
 if (!$o) {
     header('Location: /dashboard-buyer/');
     exit;
 }
+$orderId = (int)$o['id'];
 
-$stmt = $pdo->prepare('SELECT id, product_name, variant_label, quantity, price_at_purchase FROM order_items WHERE order_id = ? ORDER BY id');
+$stmt = $pdo->prepare('SELECT id, product_name, product_name_km, variant_label, variant_label_km, quantity, price_at_purchase FROM order_items WHERE order_id = ? ORDER BY id');
 $stmt->execute([$orderId]);
 $items = $stmt->fetchAll();
 
@@ -81,6 +87,8 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $oid ?> — My Orders — teepsaa</title>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -125,9 +133,9 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
             <?php foreach ($items as $item): ?>
                 <tr>
                     <td>
-                        <?= htmlspecialchars($item['product_name']) ?>
+                        <?= htmlspecialchars(pick_lang($item['product_name'], $item['product_name_km'] ?? null)) ?>
                         <?php if ($item['variant_label']): ?>
-                            <br><small style="color:#9ca3af"><?= htmlspecialchars($item['variant_label']) ?></small>
+                            <br><small style="color:#9ca3af"><?= htmlspecialchars(pick_lang($item['variant_label'], $item['variant_label_km'] ?? null)) ?></small>
                         <?php endif; ?>
                     </td>
                     <td><?= (int)$item['quantity'] ?></td>
@@ -138,10 +146,13 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
             </tbody>
         </table>
         <div class="popup-subtotal"><span><?= $t['checkout_subtotal'] ?></span><span>$<?= number_format($o['subtotal'], 2) ?></span></div>
+        <?php if ($o['discount_amount'] > 0): ?>
+        <div class="popup-subtotal"><span><?= $t['checkout_coupon_applied'] ?> <?= htmlspecialchars($o['coupon_code']) ?></span><span>&minus;$<?= number_format($o['discount_amount'], 2) ?></span></div>
+        <?php endif; ?>
         <?php if ($o['delivery_fee'] > 0): ?>
         <div class="popup-subtotal"><span><?= $t['order_delivery'] ?></span><span>$<?= number_format($o['delivery_fee'], 2) ?></span></div>
         <?php endif; ?>
-        <div class="popup-total"><span><?= $t['checkout_total'] ?></span><span>$<?= number_format($o['subtotal'] + $o['delivery_fee'], 2) ?></span></div>
+        <div class="popup-total"><span><?= $t['checkout_total'] ?></span><span>$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span></div>
     </div>
     <?php endif; ?>
 
@@ -151,9 +162,9 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
         <?php foreach ($items as $item): ?>
         <div class="review-item-row">
             <span class="review-item-name">
-                <?= htmlspecialchars($item['product_name']) ?>
+                <?= htmlspecialchars(pick_lang($item['product_name'], $item['product_name_km'] ?? null)) ?>
                 <?php if ($item['variant_label']): ?>
-                <span class="review-item-variant">(<?= htmlspecialchars($item['variant_label']) ?>)</span>
+                <span class="review-item-variant">(<?= htmlspecialchars(pick_lang($item['variant_label'], $item['variant_label_km'] ?? null)) ?>)</span>
                 <?php endif; ?>
             </span>
             <?php if (in_array($item['id'], $reviewedItemIds)): ?>
@@ -194,7 +205,7 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
         <div class="order-options-body">
             <div class="popup-section-label"><?= $t['order_issue'] ?></div>
             <?php if ($windowOpen): ?>
-            <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.75rem;"><?= sprintf($t['order_refund_info'], '<strong>$' . number_format($o['subtotal'], 2) . '</strong>') ?><?php if ($deadline): ?> <strong><?= sprintf($t['order_available_until'], htmlspecialchars($deadline)) ?></strong><?php endif; ?></p>
+            <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.75rem;"><?= sprintf($t['order_refund_info'], '<strong>$' . number_format($o['subtotal'] - $o['discount_amount'], 2) . '</strong>') ?><?php if ($deadline): ?> <strong><?= sprintf($t['order_available_until'], htmlspecialchars($deadline)) ?></strong><?php endif; ?></p>
             <form method="POST" action="/dashboard-buyer/refund-request.php" class="refund-request-form">
                 <?= csrf_input() ?>
                 <input type="hidden" name="order_id" value="<?= $o['id'] ?>">

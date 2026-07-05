@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 
@@ -165,166 +170,43 @@ function save_variants(PDO $pdo, int $productId): void {
     }
 }
 
-function save_option_types_and_variants(PDO $pdo, int $productId): void {
-    $json = $_POST['options_json'] ?? '';
-    $data = json_decode($json, true);
-
-    $submittedTypeIds    = [];
-    $submittedVariantIds = [];
-    $tidToDbId           = [];
-    $valueLabelMap       = [];
-    $valueLabelKmMap     = [];
-
-    if ($data && !empty($data['optionTypes'])) {
-        foreach ($data['optionTypes'] as $order => $typeData) {
-            $typeName = trim($typeData['name'] ?? '');
-            if (!$typeName) continue;
-            $typeNameKm = trim($typeData['name_km'] ?? '') ?: null;
-            $typeDbId = (int)($typeData['id'] ?? 0);
-
-            if ($typeDbId) {
-                $pdo->prepare('UPDATE product_option_types SET name=?, name_km=?, display_order=? WHERE id=? AND product_id=?')
-                    ->execute([$typeName, $typeNameKm, $order, $typeDbId, $productId]);
-                $savedTypeId = $typeDbId;
-            } else {
-                $pdo->prepare('INSERT INTO product_option_types (product_id, name, name_km, display_order) VALUES (?,?,?,?)')
-                    ->execute([$productId, $typeName, $typeNameKm, $order]);
-                $savedTypeId = (int)$pdo->lastInsertId();
-            }
-            $submittedTypeIds[] = $savedTypeId;
-
-            foreach (($typeData['values'] ?? []) as $vOrder => $valData) {
-                $valLabel = trim($valData['label'] ?? '');
-                if (!$valLabel) continue;
-                $valLabelKm = trim($valData['label_km'] ?? '') ?: null;
-                $valDbId = (int)($valData['id'] ?? 0);
-                $valTid  = (int)($valData['tid'] ?? 0);
-
-                if ($valDbId) {
-                    $pdo->prepare('UPDATE product_option_values SET label=?, label_km=?, display_order=? WHERE id=? AND option_type_id=?')
-                        ->execute([$valLabel, $valLabelKm, $vOrder, $valDbId, $savedTypeId]);
-                    $savedValId = $valDbId;
-                } else {
-                    $pdo->prepare('INSERT INTO product_option_values (option_type_id, label, label_km, display_order) VALUES (?,?,?,?)')
-                        ->execute([$savedTypeId, $valLabel, $valLabelKm, $vOrder]);
-                    $savedValId = (int)$pdo->lastInsertId();
-                }
-                if ($valTid) $tidToDbId[$valTid] = $savedValId;
-                $valueLabelMap[$savedValId]   = $valLabel;
-                // For the composed Khmer variant label, fall back to the English
-                // value label when this value has no Khmer translation.
-                $valueLabelKmMap[$savedValId] = $valLabelKm ?: $valLabel;
-            }
-        }
-    }
-
-    // Delete removed option types (cascades to values and product_variant_options)
-    if ($submittedTypeIds) {
-        $ph = implode(',', array_fill(0, count($submittedTypeIds), '?'));
-        $pdo->prepare("DELETE FROM product_option_types WHERE product_id=? AND id NOT IN ($ph)")
-            ->execute(array_merge([$productId], $submittedTypeIds));
-    } else {
-        $pdo->prepare('DELETE FROM product_option_types WHERE product_id=?')->execute([$productId]);
-    }
-
-    // Save variant combinations
-    foreach (($data['variants'] ?? []) as $variantData) {
-        $varDbId = (int)($variantData['variantId'] ?? 0);
-        $stock   = max(0, (int)($variantData['stock'] ?? 0));
-        $rawPrice = $variantData['price'] ?? null;
-        $price   = ($rawPrice !== null && $rawPrice !== '' && is_numeric($rawPrice)) ? (float)$rawPrice : null;
-
-        $valueIds     = [];
-        $labelParts   = [];
-        $labelKmParts = [];
-        foreach (($variantData['valueRefs'] ?? []) as $ref) {
-            $tid      = (int)($ref['tid']  ?? 0);
-            $refDbId  = (int)($ref['dbId'] ?? 0);
-            $resolved = $tidToDbId[$tid] ?? ($refDbId ?: 0);
-            if ($resolved) {
-                $valueIds[]     = $resolved;
-                $labelParts[]   = $valueLabelMap[$resolved] ?? '';
-                $labelKmParts[] = $valueLabelKmMap[$resolved] ?? ($valueLabelMap[$resolved] ?? '');
-            }
-        }
-        if (empty($valueIds)) continue;
-
-        $label   = implode(' / ', array_filter($labelParts));
-        // Compose the Khmer label from the values; store NULL if it ends up
-        // identical to the English label (no real translation → fall back).
-        $labelKm = implode(' / ', array_filter($labelKmParts));
-        $labelKm = ($labelKm !== '' && $labelKm !== $label) ? $labelKm : null;
-        if ($varDbId) {
-            $check = $pdo->prepare('SELECT id FROM product_variants WHERE id=? AND product_id=?');
-            $check->execute([$varDbId, $productId]);
-            if (!$check->fetch()) continue;
-            $pdo->prepare('UPDATE product_variants SET label=?, label_km=?, stock=?, price_override=? WHERE id=?')
-                ->execute([$label, $labelKm, $stock, $price, $varDbId]);
-            $savedVarId = $varDbId;
-        } else {
-            $pdo->prepare('INSERT INTO product_variants (product_id, label, label_km, stock, price_override, sort_order) VALUES (?,?,?,?,?,0)')
-                ->execute([$productId, $label, $labelKm, $stock, $price]);
-            $savedVarId = (int)$pdo->lastInsertId();
-        }
-
-        $pdo->prepare('DELETE FROM product_variant_options WHERE variant_id=?')->execute([$savedVarId]);
-        foreach ($valueIds as $vid) {
-            $pdo->prepare('INSERT INTO product_variant_options (variant_id, option_value_id) VALUES (?,?)')
-                ->execute([$savedVarId, $vid]);
-        }
-        $submittedVariantIds[] = $savedVarId;
-    }
-
-    if ($submittedVariantIds) {
-        $ph = implode(',', array_fill(0, count($submittedVariantIds), '?'));
-        $pdo->prepare("DELETE FROM product_variants WHERE product_id=? AND id NOT IN ($ph)")
-            ->execute(array_merge([$productId], $submittedVariantIds));
-        // Sync product stock to sum of variant stocks
-        $pdo->prepare('UPDATE products SET stock=(SELECT COALESCE(SUM(v.stock),0) FROM product_variants v WHERE v.product_id=products.id) WHERE id=?')
-            ->execute([$productId]);
-    } else {
-        $pdo->prepare('DELETE FROM product_variants WHERE product_id=?')->execute([$productId]);
-        // No variants — product stock stays as set by the main stock field
-    }
-}
-
 if ($action === 'gallery_upload') {
     $productId    = (int)($_POST['product_id'] ?? 0);
     $placeholders = implode(',', array_fill(0, count($ownedIds), '?'));
-    $stmt = $pdo->prepare("SELECT id FROM products WHERE id = ? AND business_id IN ($placeholders)");
+    $stmt = $pdo->prepare("SELECT id, public_id FROM products WHERE id = ? AND business_id IN ($placeholders)");
     $stmt->execute(array_merge([$productId], array_map('intval', $ownedIds)));
-    if (!$stmt->fetch()) { header('Location: /products/'); exit; }
+    $galleryProduct = $stmt->fetch();
+    if (!$galleryProduct) { header('Location: /products/'); exit; }
     save_gallery_photos($pdo, $uploadDir, $allowed, $productId);
-    header('Location: /products/?action=edit&id=' . $productId);
+    header('Location: /products/?action=edit&id=' . $galleryProduct['public_id']);
     exit;
 }
 
 if ($action === 'add') {
-    $stmt = $pdo->prepare('INSERT INTO products (business_id, category_id, name, name_km, description, description_km, price, stock, delivery_method, sale_price, sale_ends_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-    $stmt->execute([$businessId, $categoryId, $name, $nameKm ?: null, $description, $descriptionKm ?: null, $price, $stock, $deliveryMethod, $salePrice, $saleEndsAt]);
+    $newPublicId = uuid_v4();
+    $stmt = $pdo->prepare('INSERT INTO products (business_id, category_id, name, name_km, description, description_km, price, stock, delivery_method, sale_price, sale_ends_at, public_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $stmt->execute([$businessId, $categoryId, $name, $nameKm ?: null, $description, $descriptionKm ?: null, $price, $stock, $deliveryMethod, $salePrice, $saleEndsAt, $newPublicId]);
     $newId = (int)$pdo->lastInsertId();
     if ($photo) {
         $pdo->prepare('INSERT INTO product_photos (product_id, filename, sort_order, is_primary) VALUES (?, ?, 0, 1)')
             ->execute([$newId, $photo]);
     }
     save_gallery_photos($pdo, $uploadDir, $allowed, $newId);
-    if (isset($_POST['options_json'])) {
-        save_option_types_and_variants($pdo, $newId);
-    } else {
-        save_variants($pdo, $newId);
-    }
+    save_variants($pdo, $newId);
     $_SESSION['product_success'] = 'Product added.';
 
 } elseif ($action === 'edit') {
     $productId    = (int)($_POST['product_id'] ?? 0);
     $placeholders = implode(',', array_fill(0, count($ownedIds), '?'));
-    $stmt = $pdo->prepare("SELECT id FROM products WHERE id = ? AND business_id IN ($placeholders)");
+    $stmt = $pdo->prepare("SELECT id, public_id FROM products WHERE id = ? AND business_id IN ($placeholders)");
     $stmt->execute(array_merge([$productId], array_map('intval', $ownedIds)));
+    $ownedProduct = $stmt->fetch();
 
-    if (!$stmt->fetch()) {
+    if (!$ownedProduct) {
         header('Location: /products/');
         exit;
     }
+    $productPublicId = $ownedProduct['public_id'];
 
     $active = ($_POST['active'] ?? '0') === '1' ? 1 : 0;
 
@@ -334,13 +216,9 @@ if ($action === 'add') {
     $pdo->prepare('UPDATE products SET low_stock_notified_at = NULL WHERE id = ? AND stock > low_stock_threshold')
         ->execute([$productId]);
     save_gallery_photos($pdo, $uploadDir, $allowed, $productId);
-    if (isset($_POST['options_json'])) {
-        save_option_types_and_variants($pdo, $productId);
-    } else {
-        save_variants($pdo, $productId);
-    }
+    save_variants($pdo, $productId);
     $_SESSION['product_success'] = 'Product updated.';
 }
 
-header('Location: /products/?action=edit&id=' . ($productId ?? $newId));
+header('Location: /products/?action=edit&id=' . ($productPublicId ?? $newPublicId));
 exit;

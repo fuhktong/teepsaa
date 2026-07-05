@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 
@@ -20,7 +25,7 @@ $statusIn = '\'refund_requested\',\'return_approved\',\'return_dispatched\',\'re
 $filterClause = $filter !== 'all' ? ' AND o.status = ' . $pdo->quote($filter) : '';
 
 $sql = "
-    SELECT o.id, o.subtotal, o.delivery_fee, o.status, o.created_at,
+    SELECT o.id, o.subtotal, o.delivery_fee, o.discount_amount, o.status, o.created_at,
            o.refund_reason, o.refund_requested_at, o.return_tracking_url,
            b.name AS business_name,
            bu.name AS buyer_name, bu.email AS buyer_email,
@@ -78,6 +83,8 @@ $adminTab     = 'refunds';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin — Refunds</title>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -122,7 +129,7 @@ $adminTab     = 'refunds';
                 <span class="order-row-id"><?= $oid ?></span>
                 <span class="order-row-biz"><?= htmlspecialchars($o['business_name']) ?></span>
                 <span class="order-row-customer"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span>
-                <span class="order-row-total">$<?= number_format($o['subtotal'], 2) ?> refund</span>
+                <span class="order-row-total">$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?> refund</span>
                 <span class="order-badge <?= $statusClasses[$o['status']] ?>"><?= $statusLabels[$o['status']] ?></span>
             </div>
             <?php if ($o['items']): ?>

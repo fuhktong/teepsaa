@@ -24,6 +24,7 @@ $_atPendingPayout = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status =
 <?php elseif ($_atSection === 'marketing'): ?>
 <nav class="admin-tabs">
     <a href="/admin/promo-codes.php" class="admin-tab <?= $_atTab === 'promo-codes' ? 'active' : '' ?>">Promo Codes</a>
+    <a href="/admin/coupons.php"     class="admin-tab <?= $_atTab === 'coupons'     ? 'active' : '' ?>">Coupons</a>
     <a href="/admin/banners.php"     class="admin-tab <?= $_atTab === 'banners'     ? 'active' : '' ?>">Banners</a>
     <a href="/admin/careers.php"     class="admin-tab <?= $_atTab === 'careers'     ? 'active' : '' ?>">Careers</a>
     <a href="/admin/vendor-map.php"  class="admin-tab <?= $_atTab === 'vendor-map'  ? 'active' : '' ?>">Vendor Map</a>

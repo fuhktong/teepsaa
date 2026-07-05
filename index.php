@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/config/db.php';
 
 function product_card(array $p): string {
@@ -9,7 +14,7 @@ function product_card(array $p): string {
     $rating = (!empty($p['review_count']) && $p['review_count'] > 0)
         ? '<span class="card-rating">★ ' . number_format((float)$p['avg_rating'], 1) . ' (' . (int)$p['review_count'] . ')</span>'
         : '';
-    return '<a href="/product/?id=' . (int)$p['id'] . '" class="product-card">'
+    return '<a href="/product/?id=' . htmlspecialchars($p['public_id']) . '" class="product-card">'
         . $photo
         . '<div class="card-body">'
         . '<strong class="card-name">' . htmlspecialchars(lang_field($p, 'name')) . '</strong>'
@@ -24,7 +29,7 @@ $rv = 'LEFT JOIN (SELECT product_id, AVG(rating) AS avg_rating, COUNT(*) AS revi
 
 // ── Featured — random in-stock products ──────────────────────────
 $featured = $pdo->query(
-    "SELECT p.id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
+    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             pp.filename AS photo,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
      FROM products p
@@ -37,7 +42,7 @@ $featured = $pdo->query(
 
 // ── Best sellers — most ordered all time ─────────────────────────
 $bestSellers = $pdo->query(
-    "SELECT p.id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
+    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             (SELECT filename FROM product_photos WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS photo,
             SUM(oi.quantity) AS total_sold,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
@@ -53,7 +58,7 @@ $bestSellers = $pdo->query(
 
 // ── Trending this week — order volume last 7 days ─────────────────
 $trending = $pdo->query(
-    "SELECT p.id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
+    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             (SELECT filename FROM product_photos WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS photo,
             SUM(oi.quantity) AS total_sold,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
@@ -72,7 +77,7 @@ $trending = $pdo->query(
 
 // ── New arrivals — most recently added ───────────────────────────
 $newArrivals = $pdo->query(
-    "SELECT p.id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
+    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             pp.filename AS photo,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
      FROM products p
@@ -86,7 +91,7 @@ $newArrivals = $pdo->query(
 
 // ── Top rated — highest-reviewed products ────────────────────────
 $topRated = $pdo->query(
-    "SELECT p.id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
+    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             (SELECT filename FROM product_photos WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS photo,
             AVG(r.rating) AS avg_rating, COUNT(r.id) AS review_count
      FROM reviews r
@@ -100,7 +105,7 @@ $topRated = $pdo->query(
 
 // ── Under $15 ────────────────────────────────────────────────────
 $underFifteen = $pdo->query(
-    "SELECT p.id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
+    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             (SELECT filename FROM product_photos WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS photo,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
      FROM products p
@@ -148,7 +153,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
         $ph     = implode(',', array_fill(0, count($catIds), '?'));
         $params = array_merge($catIds, [$buyerId]);
         $stmt   = $pdo->prepare(
-            "SELECT p.id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
+            "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
                     pp.filename AS photo,
                     COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
              FROM products p
@@ -184,6 +189,8 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
             'https://teepsaa.com/'
         );
     ?>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">

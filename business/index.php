@@ -1,16 +1,21 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 
-$id = (int)($_GET['id'] ?? 0);
-if (!$id) {
+$publicId = $_GET['id'] ?? '';
+if ($publicId === '') {
     header('Location: /search/');
     exit;
 }
 
-$stmt = $pdo->prepare('SELECT * FROM businesses WHERE id = ? AND approved = 1');
-$stmt->execute([$id]);
+$stmt = $pdo->prepare('SELECT * FROM businesses WHERE public_id = ? AND approved = 1');
+$stmt->execute([$publicId]);
 $business = $stmt->fetch();
 
 if (!$business) {
@@ -18,12 +23,14 @@ if (!$business) {
     exit;
 }
 
+$id = (int)$business['id'];
+
 $stmt = $pdo->prepare('SELECT id, filename FROM photos WHERE business_id = ? ORDER BY id ASC');
 $stmt->execute([$id]);
 $photos = $stmt->fetchAll();
 
 $stmt = $pdo->prepare('
-    SELECT p.id, p.name, p.name_km, p.description, p.description_km, p.price, p.sale_price, p.sale_ends_at, p.stock,
+    SELECT p.id, p.public_id, p.name, p.name_km, p.description, p.description_km, p.price, p.sale_price, p.sale_ends_at, p.stock,
            pp.filename AS photo,
            COALESCE(rv.avg_rating, 0) AS avg_rating,
            COALESCE(rv.review_count, 0) AS review_count
@@ -57,9 +64,11 @@ $bizRatingRow = $bizRating->fetch();
             $business['name'] . ' — teepsaa',
             $bizDesc,
             $bizPhoto,
-            'https://teepsaa.com/business/?id=' . $business['id']
+            'https://teepsaa.com/business/?id=' . $business['public_id']
         );
     ?>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -99,7 +108,7 @@ $bizRatingRow = $bizRating->fetch();
         <h2><?= $t['vendor_products'] ?></h2>
         <div class="product-grid">
             <?php foreach ($products as $p): ?>
-            <a href="/product/?id=<?= $p['id'] ?>" class="product-card">
+            <a href="/product/?id=<?= $p['public_id'] ?>" class="product-card">
                 <?php if ($p['photo']): ?>
                     <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="" class="product-photo">
                 <?php else: ?>

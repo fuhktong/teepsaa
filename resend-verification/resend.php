@@ -1,9 +1,15 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/app.php';
 require __DIR__ . '/../config/notify.php';
+require __DIR__ . '/../config/rate-limit.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: /login-buyer/');
@@ -22,6 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 csrf_verify();
+check_rate_limit($pdo);
+record_failed_attempt($pdo);
 
 $userId = $_SESSION['user_id'];
 $table  = $role === 'buyer' ? 'buyers' : 'vendors';
@@ -46,7 +54,9 @@ $expires = date('Y-m-d H:i:s', strtotime('+15 minutes'));
 $pdo->prepare("UPDATE {$table} SET verify_token = ?, verify_code_expires = ? WHERE id = ?")
     ->execute([$code, $expires, $userId]);
 
-$_SESSION['dev_otp'] = $code;
+if (DEV_MODE) {
+    $_SESSION['dev_otp'] = $code;
+}
 
 $name = htmlspecialchars($user['name'] ?? '', ENT_QUOTES);
 $codeHtml = '<div style="font-size:2rem;font-weight:bold;letter-spacing:0.3em;font-family:monospace;margin:12px 0;color:#111">' . $code . '</div>';

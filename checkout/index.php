@@ -1,16 +1,24 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/delivery-calc.php';
+require __DIR__ . '/../config/coupon.php';
 
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
     exit;
 }
 
-$success = $_SESSION['checkout_success'] ?? '';
-unset($_SESSION['checkout_success']);
+$success  = $_SESSION['checkout_success'] ?? '';
+$cartMsg  = $_SESSION['cart_success'] ?? '';
+$cartErr  = $_SESSION['cart_error']   ?? '';
+unset($_SESSION['checkout_success'], $_SESSION['cart_success'], $_SESSION['cart_error']);
 
 $userId = $_SESSION['user_id'];
 
@@ -87,7 +95,26 @@ foreach ($grouped as $bid => &$group) {
 }
 unset($group);
 
-$grandTotal  = $subtotal;
+$subtotalsByBusiness = array_combine(array_keys($grouped), array_column($grouped, 'subtotal'));
+
+$couponCode       = $_SESSION['checkout_coupon_code'] ?? '';
+$discount         = 0.0;
+$couponMsg        = '';
+$couponBusinessId = null;
+if ($couponCode !== '') {
+    $couponResult = validate_coupon($pdo, $couponCode, $subtotalsByBusiness, $userId);
+    if ($couponResult['valid']) {
+        $discount         = $couponResult['discount'];
+        $couponBusinessId = $couponResult['business_id'];
+    } else {
+        // Cart changed since the code was applied (e.g. an item was removed) — drop it silently.
+        unset($_SESSION['checkout_coupon_code']);
+        $couponCode = '';
+        $couponMsg  = $couponResult['message'];
+    }
+}
+
+$grandTotal  = max(0, $subtotal - $discount);
 $canCheckout = empty($outOfRange) && !empty($grouped);
 $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
 ?>
@@ -97,6 +124,8 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout — teepsaa</title>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -119,6 +148,13 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
     <p class="checkout-empty"><?= $t['checkout_empty'] ?> <a href="/search/"><?= $t['cart_browse'] ?></a></p>
 
 <?php else: ?>
+    <?php if ($cartMsg): ?>
+    <div class="checkout-coupon-flash checkout-coupon-flash--ok"><?= htmlspecialchars($cartMsg) ?></div>
+    <?php endif; ?>
+    <?php if ($cartErr || $couponMsg): ?>
+    <div class="checkout-coupon-flash checkout-coupon-flash--error"><?= htmlspecialchars($cartErr ?: $couponMsg) ?></div>
+    <?php endif; ?>
+
     <?php if (!empty($outOfRange)): ?>
     <div class="checkout-alert">
         <?= $t['checkout_oos_pre'] ?> <strong><?= htmlspecialchars(implode(', ', $outOfRange)) ?></strong> <?= $t['checkout_oos_post'] ?>
@@ -204,7 +240,34 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
             </div>
             <?php endforeach; ?>
 
+            <div class="checkout-coupon-row">
+                <?php if ($couponCode !== ''): ?>
+                <div class="checkout-line checkout-line--sub">
+                    <span><?= $t['checkout_coupon_applied'] ?> <strong><?= htmlspecialchars($couponCode) ?></strong><?php if ($couponBusinessId !== null && isset($grouped[$couponBusinessId])): ?> <span style="color:#9ca3af;font-size:0.85em">(<?= htmlspecialchars($grouped[$couponBusinessId]['name']) ?> only)</span><?php endif; ?></span>
+                    <span>&minus;<?= format_price($discount) ?></span>
+                </div>
+                <form method="POST" action="/checkout/apply-coupon.php" class="checkout-coupon-form">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="action" value="remove">
+                    <button type="submit" class="checkout-coupon-remove"><?= $t['checkout_coupon_remove'] ?></button>
+                </form>
+                <?php else: ?>
+                <form method="POST" action="/checkout/apply-coupon.php" class="checkout-coupon-form">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="action" value="apply">
+                    <input type="text" name="code" maxlength="32" placeholder="<?= htmlspecialchars($t['checkout_coupon_placeholder']) ?>" class="checkout-coupon-input" style="text-transform:uppercase">
+                    <button type="submit" class="btn-addr-use"><?= $t['checkout_coupon_apply'] ?></button>
+                </form>
+                <?php endif; ?>
+            </div>
+
             <div class="checkout-total-block">
+                <?php if ($discount > 0): ?>
+                <div class="checkout-line checkout-line--sub">
+                    <span><?= $t['checkout_subtotal'] ?></span>
+                    <span><?= format_price($subtotal) ?></span>
+                </div>
+                <?php endif; ?>
                 <div class="checkout-total">
                     <span><?= $t['checkout_total'] ?></span>
                     <strong><?= format_price($grandTotal) ?></strong>

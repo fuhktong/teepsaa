@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 
@@ -11,7 +16,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
 $userId = $_SESSION['user_id'];
 
 $stmt = $pdo->prepare('
-    SELECT o.id, o.subtotal, o.delivery_fee, o.status, o.created_at, o.tracking_url, o.refund_reason, o.return_tracking_url,
+    SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.discount_amount, o.status, o.created_at, o.tracking_url, o.refund_reason, o.return_tracking_url,
            CASE WHEN o.delivered_at IS NULL OR TIMESTAMPDIFF(SECOND, o.delivered_at, NOW()) < ' . PAYOUT_WINDOW_SECONDS . ' THEN 1 ELSE 0 END AS refund_window_open,
            DATE_ADD(o.delivered_at, INTERVAL ' . PAYOUT_WINDOW_SECONDS . ' SECOND) AS refund_deadline,
            b.name AS business_name,
@@ -40,6 +45,8 @@ $orders = $stmt->fetchAll();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Orders — teepsaa</title>
+    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -66,14 +73,14 @@ $orders = $stmt->fetchAll();
         <?php foreach ($orders as $o): ?>
         <?php $oid = date('ymd', strtotime($o['created_at'])) . '-' . str_pad($o['id'], 4, '0', STR_PAD_LEFT); ?>
         <?php $isRefund = in_array($o['status'], ['refund_requested','return_approved','return_dispatched','return_received','refunded','refund_rejected']); ?>
-        <a href="/dashboard-buyer/order.php?id=<?= $o['id'] ?>" style="text-decoration:none;color:inherit;">
+        <a href="/dashboard-buyer/order.php?id=<?= $o['public_id'] ?>" style="text-decoration:none;color:inherit;">
         <div class="order-card" data-order-id="<?= $o['id'] ?>" data-order-ref="<?= $oid ?>" data-status="<?= $o['status'] ?>">
             <div class="order-card-head">
                 <span class="order-card-id"><?= $oid ?><?php if ($isRefund): ?> <span class="refund-dot"></span><?php endif; ?></span>
                 <span class="order-card-items"><?= htmlspecialchars($o['items']) ?></span>
                 <span class="order-card-meta"><?= htmlspecialchars($o['business_name']) ?></span>
                 <span class="order-card-date"><?= fmt_date('M j, g:ia', strtotime($o['created_at'])) ?></span>
-                <span class="order-card-total">$<?= number_format($o['subtotal'] + $o['delivery_fee'], 2) ?></span>
+                <span class="order-card-total">$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span>
             </div>
             <div class="order-card-status" data-status-bar>
                 <?php $orderStatus = $o['status']; require __DIR__ . '/../order-status/order-status.php'; ?>

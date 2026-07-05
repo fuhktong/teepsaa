@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 
@@ -79,8 +84,8 @@ if ($vendorPromoCode) {
     }
 }
 
-$stmt = $pdo->prepare('INSERT INTO businesses (user_id, name, category, description, house_number, address, khan, sangkat, lat, lng, promo_code_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-$stmt->execute([$_SESSION['user_id'], $name, $categoryName, $description, $house_number, $address, $khan, $sangkat, $lat, $lng, $promoCodeId]);
+$stmt = $pdo->prepare('INSERT INTO businesses (user_id, name, category, description, house_number, address, khan, sangkat, lat, lng, promo_code_id, public_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+$stmt->execute([$_SESSION['user_id'], $name, $categoryName, $description, $house_number, $address, $khan, $sangkat, $lat, $lng, $promoCodeId, uuid_v4()]);
 $business_id = $pdo->lastInsertId();
 
 $allowed_types = ['image/jpeg', 'image/png'];

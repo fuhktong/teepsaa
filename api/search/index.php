@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../../config/db.php';
 
 header('Content-Type: application/json');
@@ -81,7 +86,7 @@ $orderBy = match($sort) {
 $fetchParams = array_merge($params, [$limit + 1, $offset]);
 
 $stmt = $pdo->prepare("
-    SELECT p.id, p.name, p.name_km, p.description, p.description_km, p.price, p.sale_price, p.sale_ends_at,
+    SELECT p.id, p.public_id, p.name, p.name_km, p.description, p.description_km, p.price, p.sale_price, p.sale_ends_at,
            pp.filename AS photo,
            b.id AS business_id, b.name AS business_name, b.name_km AS business_name_km,
            COALESCE(rv.avg_rating, 0) AS avg_rating,
@@ -106,7 +111,8 @@ foreach ($products as &$p) {
     $p['description']   = lang_field($p, 'description');
     $p['business_name'] = pick_lang($p['business_name'], $p['business_name_km'] ?? null);
     unset($p['name_km'], $p['description_km'], $p['business_name_km']);
-    $p['id']           = (int)$p['id'];
+    $p['id']           = $p['public_id'];
+    unset($p['public_id']);
     $p['business_id']  = (int)$p['business_id'];
     $p['price']        = (float)$p['price'];
     $p['sale_price']   = $p['sale_price'] !== null ? (float)$p['sale_price'] : null;

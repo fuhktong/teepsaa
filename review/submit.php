@@ -1,5 +1,10 @@
 <?php
-session_start();
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 
@@ -31,7 +36,7 @@ if (mb_strlen($comment) > 1000) {
 
 $stmt = $pdo->prepare('
     SELECT oi.id, oi.product_id,
-           o.id AS order_id, o.status, o.business_id
+           o.id AS order_id, o.public_id AS order_public_id, o.status, o.business_id
     FROM order_items oi
     JOIN orders o ON o.id = oi.order_id
     WHERE oi.id = ? AND o.buyer_user_id = ?
@@ -45,14 +50,14 @@ if (!$item) {
 }
 
 if (!in_array($item['status'], ['delivered', 'completed'])) {
-    header('Location: /dashboard-buyer/order.php?id=' . $item['order_id']);
+    header('Location: /dashboard-buyer/order.php?id=' . $item['order_public_id']);
     exit;
 }
 
 $check = $pdo->prepare('SELECT id FROM reviews WHERE order_item_id = ?');
 $check->execute([$itemId]);
 if ($check->fetch()) {
-    header('Location: /dashboard-buyer/order.php?id=' . $item['order_id']);
+    header('Location: /dashboard-buyer/order.php?id=' . $item['order_public_id']);
     exit;
 }
 
@@ -70,5 +75,5 @@ $insert->execute([
 ]);
 
 $_SESSION['flash_success'] = 'Review submitted. Thank you!';
-header('Location: /dashboard-buyer/order.php?id=' . $item['order_id']);
+header('Location: /dashboard-buyer/order.php?id=' . $item['order_public_id']);
 exit;

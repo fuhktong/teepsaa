@@ -59,7 +59,11 @@ $activeFlag = $lang === 'km'
     'no_notifications'     => $t['js_no_notifications'],
     'loading'              => $t['js_loading'],
 ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
-<header<?= ($_SESSION['role'] ?? '') === 'admin' ? ' class="admin-header"' : '' ?>>
+<?php
+$isVendorHeader = ($_SESSION['role'] ?? '') === 'vendor';
+$isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer';
+?>
+<header<?= ($_SESSION['role'] ?? '') === 'admin' ? ' class="admin-header"' : ($isVendorHeader ? ' class="vendor-header"' : ($isBuyerHeader ? ' class="buyer-header"' : '')) ?>>
     <div class="header-inner">
         <a href="/" class="site-name"><img src="/images/<?= $lang === 'km' ? 'teepsaa_logo_khm.png' : 'teepsaa_logo_eng_myriad.png' ?>" alt="teepsaa"></a>
         <form class="header-search" method="GET" action="/search/">
@@ -88,7 +92,7 @@ $activeFlag = $lang === 'km'
                     <a href="/admin/" <?= $adminSection === 'admin' ? 'class="active"' : '' ?>><?= $t['nav_admin'] ?></a>
                     <a href="/admin/orders.php" <?= $adminSection === 'orders' ? 'class="active"' : '' ?>><?= $t['nav_orders'] ?></a>
                     <a href="/admin/promo-codes.php" <?= $adminSection === 'marketing' ? 'class="active"' : '' ?>><?= $t['nav_marketing'] ?></a>
-                    <a href="/admin/messages/" <?= $adminSection === 'messages' ? 'class="active"' : '' ?>><?= $adminUnread ? $t['nav_messages'] . '&nbsp;<span class="admin-msg-badge">' . $adminUnread . '</span>' : $t['nav_messages'] ?></a>
+                    <a href="/admin/messages/" <?= $adminSection === 'messages' ? 'class="active"' : '' ?>><?= $adminUnread ? $t['nav_messages'] . '&nbsp;<span class="nav-msg-badge">' . $adminUnread . '</span>' : $t['nav_messages'] ?></a>
                     <div class="user-menu">
                         <button class="user-avatar" id="user-avatar-btn" type="button" aria-label="Account menu">
                             <?php if ($adminAvatarFile): ?>
@@ -109,10 +113,20 @@ $activeFlag = $lang === 'km'
                         $vmStmt = $pdo->prepare('SELECT COUNT(*) FROM support_messages sm JOIN support_threads t ON t.id = sm.thread_id WHERE t.sender_id = ? AND t.sender_role = \'vendor\' AND sm.sender = \'admin\' AND sm.read_at IS NULL');
                         $vmStmt->execute([$_SESSION['user_id']]);
                         $vendorUnread = (int)$vmStmt->fetchColumn();
+                        $vendorPath    = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+                        $vendorSection = '';
+                        if (strpos($vendorPath, '/orders-vendor/') === 0)        $vendorSection = 'orders';
+                        elseif (strpos($vendorPath, '/products/') === 0)        $vendorSection = 'products';
+                        elseif (strpos($vendorPath, '/messages-vendor/') === 0) $vendorSection = 'messages';
+                        elseif (strpos($vendorPath, '/dashboard-vendor/') === 0) $vendorSection = 'analytics';
                         $vNotifStmt = $pdo->prepare('SELECT COUNT(*) FROM notifications WHERE role = ? AND user_id = ? AND read_at IS NULL');
                         $vNotifStmt->execute(['vendor', $_SESSION['user_id']]);
                         $vNotifCount = (int)$vNotifStmt->fetchColumn();
                     ?>
+                    <a href="/orders-vendor/" class="<?= $vendorSection === 'orders' ? 'active' : '' ?>"><?= $t['nav_orders'] ?></a>
+                    <a href="/products/" class="<?= $vendorSection === 'products' ? 'active' : '' ?>"><?= $t['nav_products'] ?></a>
+                    <a href="/messages-vendor/" class="<?= $vendorSection === 'messages' ? 'active' : '' ?>"><?= $vendorUnread ? $t['nav_messages'] . '&nbsp;<span class="nav-msg-badge">' . $vendorUnread . '</span>' : $t['nav_messages'] ?></a>
+                    <a href="/dashboard-vendor/" class="<?= $vendorSection === 'analytics' ? 'active' : '' ?>"><?= $t['nav_vendor'] ?></a>
                     <div class="bell-wrap">
                         <button class="bell-btn" id="bell-btn" type="button" aria-label="Notifications">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -135,10 +149,6 @@ $activeFlag = $lang === 'km'
                             <?php endif; ?>
                         </button>
                         <div class="user-dropdown" id="user-dropdown">
-                            <a href="/orders-vendor/"><?= $t['nav_orders'] ?></a>
-                            <a href="/products/"><?= $t['nav_products'] ?></a>
-                            <a href="/messages-vendor/"><?= $vendorUnread ? $t['nav_messages'] . ' (' . $vendorUnread . ')' : $t['nav_messages'] ?></a>
-                            <a href="/dashboard-vendor/"><?= $t['nav_vendor'] ?></a>
                             <a href="/dashboard-vendor/settings/"><?= $t['nav_settings'] ?></a>
                             <a href="/logout/logout.php"><?= $t['nav_logout'] ?></a>
                         </div>
@@ -157,7 +167,15 @@ $activeFlag = $lang === 'km'
                         $bNotifStmt = $pdo->prepare('SELECT COUNT(*) FROM notifications WHERE role = ? AND user_id = ? AND read_at IS NULL');
                         $bNotifStmt->execute(['buyer', $_SESSION['user_id']]);
                         $bNotifCount = (int)$bNotifStmt->fetchColumn();
+                        $buyerPath    = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+                        $buyerSection = '';
+                        if (strpos($buyerPath, '/dashboard-buyer/') === 0)   $buyerSection = 'orders';
+                        elseif (strpos($buyerPath, '/wishlist/') === 0)     $buyerSection = 'wishlist';
+                        elseif (strpos($buyerPath, '/messages-buyer/') === 0) $buyerSection = 'messages';
                     ?>
+                    <a href="/dashboard-buyer/" class="<?= $buyerSection === 'orders' ? 'active' : '' ?>"><?= $t['nav_orders'] ?></a>
+                    <a href="/wishlist/" class="<?= $buyerSection === 'wishlist' ? 'active' : '' ?>"><?= $t['nav_wishlist'] ?></a>
+                    <a href="/messages-buyer/" class="<?= $buyerSection === 'messages' ? 'active' : '' ?>"><?= $buyerUnread ? $t['nav_messages'] . '&nbsp;<span class="nav-msg-badge">' . $buyerUnread . '</span>' : $t['nav_messages'] ?></a>
                     <div class="bell-wrap">
                         <button class="bell-btn" id="bell-btn" type="button" aria-label="Notifications">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -186,9 +204,6 @@ $activeFlag = $lang === 'km'
                             <?php endif; ?>
                         </button>
                         <div class="user-dropdown" id="user-dropdown">
-                            <a href="/dashboard-buyer/"><?= $t['nav_orders'] ?></a>
-                            <a href="/wishlist/"><?= $t['nav_wishlist'] ?></a>
-                            <a href="/messages-buyer/"><?= $buyerUnread ? $t['nav_messages'] . ' (' . $buyerUnread . ')' : $t['nav_messages'] ?></a>
                             <a href="/dashboard-buyer/settings/"><?= $t['nav_settings'] ?></a>
                             <a href="/logout/logout.php"><?= $t['nav_logout'] ?></a>
                         </div>
@@ -232,16 +247,17 @@ $activeFlag = $lang === 'km'
                 <a href="/admin/settings.php" class="mobile-nav-link"><?= $t['nav_settings'] ?></a>
                 <a href="/logout/logout.php" class="mobile-nav-link"><?= $t['nav_logout'] ?></a>
             <?php elseif (($_SESSION['role'] ?? '') === 'vendor'): ?>
-                <a href="/orders-vendor/" class="mobile-nav-link"><?= $t['nav_orders'] ?></a>
-                <a href="/products/" class="mobile-nav-link"><?= $t['nav_products'] ?></a>
-                <a href="/messages-vendor/" class="mobile-nav-link"><?= ($vendorUnread ?? 0) > 0 ? $t['nav_messages'] . ' (' . $vendorUnread . ')' : $t['nav_messages'] ?></a>
-                <a href="/dashboard-vendor/" class="mobile-nav-link"><?= $t['nav_vendor'] ?></a>
-                <a href="/dashboard-vendor/settings/" class="mobile-nav-link"><?= $t['nav_settings'] ?><?= ($vNotifCount ?? 0) > 0 ? ' (' . ($vNotifCount ?? 0) . ')' : '' ?></a>
+                <a href="/orders-vendor/" class="mobile-nav-link <?= $vendorSection === 'orders' ? 'active' : '' ?>"><?= $t['nav_orders'] ?></a>
+                <a href="/products/" class="mobile-nav-link <?= $vendorSection === 'products' ? 'active' : '' ?>"><?= $t['nav_products'] ?></a>
+                <a href="/messages-vendor/" class="mobile-nav-link <?= $vendorSection === 'messages' ? 'active' : '' ?>"><?= $vendorUnread ? $t['nav_messages'] . ' (' . $vendorUnread . ')' : $t['nav_messages'] ?></a>
+                <a href="/dashboard-vendor/" class="mobile-nav-link <?= $vendorSection === 'analytics' ? 'active' : '' ?>"><?= $t['nav_vendor'] ?></a>
+                <a href="/dashboard-vendor/settings/" class="mobile-nav-link"><?= $t['nav_settings'] ?></a>
                 <a href="/logout/logout.php" class="mobile-nav-link"><?= $t['nav_logout'] ?></a>
             <?php else: ?>
                 <a href="/cart/" class="mobile-nav-link"><?= $t['nav_cart'] ?><?= ($cartBadge ?? '') !== '' ? ' (' . $cartBadge . ')' : '' ?></a>
-                <a href="/dashboard-buyer/" class="mobile-nav-link"><?= $t['nav_orders'] ?></a>
-                <a href="/messages-buyer/" class="mobile-nav-link"><?= ($buyerUnread ?? 0) > 0 ? $t['nav_messages'] . ' (' . $buyerUnread . ')' : $t['nav_messages'] ?></a>
+                <a href="/dashboard-buyer/" class="mobile-nav-link <?= ($buyerSection ?? '') === 'orders' ? 'active' : '' ?>"><?= $t['nav_orders'] ?></a>
+                <a href="/wishlist/" class="mobile-nav-link <?= ($buyerSection ?? '') === 'wishlist' ? 'active' : '' ?>"><?= $t['nav_wishlist'] ?></a>
+                <a href="/messages-buyer/" class="mobile-nav-link <?= ($buyerSection ?? '') === 'messages' ? 'active' : '' ?>"><?= ($buyerUnread ?? 0) > 0 ? $t['nav_messages'] . ' (' . $buyerUnread . ')' : $t['nav_messages'] ?></a>
                 <a href="/dashboard-buyer/settings/" class="mobile-nav-link"><?= $t['nav_settings'] ?><?= ($bNotifCount ?? 0) > 0 ? ' (' . ($bNotifCount ?? 0) . ')' : '' ?></a>
                 <a href="/logout/logout.php" class="mobile-nav-link"><?= $t['nav_logout'] ?></a>
             <?php endif; ?>
