@@ -14,6 +14,7 @@ return [
     'nav_cart'           => 'Cart',
     'nav_admin'          => 'Admin',
     'nav_marketing'      => 'Marketing',
+    'nav_content'        => 'Content',
     'nav_notifications'  => 'Notifications',
     'nav_mark_all_read'  => 'Mark all read',
     'lang_label'         => 'Language',

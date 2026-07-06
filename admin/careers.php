@@ -6,12 +6,15 @@ session_start([
 ]);
 
 require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/csrf.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin' || !($_SESSION['is_admin'] ?? false)) {
     header('Location: /login-admin/');
     exit;
 }
+
+admin_require('careers');
 
 try {
     $jobs = $pdo->query('SELECT j.*, (SELECT COUNT(*) FROM job_applications a WHERE a.job_id = j.id) AS app_count

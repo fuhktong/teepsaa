@@ -14,6 +14,7 @@ return [
     'nav_cart'           => 'រទេះ',
     'nav_admin'          => 'អ្នកគ្រប់គ្រង',
     'nav_marketing'      => 'ផ្សព្វផ្សាយ',
+    'nav_content'        => 'មាតិកា',
     'nav_notifications'  => 'ការជូនដំណឹង',
     'nav_mark_all_read'  => 'សម្គាល់ថាបានអានទាំងអស់',
     'lang_label'         => 'ភាសា',

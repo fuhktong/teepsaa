@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS content_pages (
+    id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    slug       VARCHAR(50) NOT NULL UNIQUE,
+    title_en   VARCHAR(150) NOT NULL,
+    title_km   VARCHAR(150) NOT NULL,
+    body_en    MEDIUMTEXT NOT NULL,
+    body_km    MEDIUMTEXT NOT NULL,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by INT UNSIGNED NULL
+);
+
+CREATE TABLE IF NOT EXISTS faq_items (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    section_en  VARCHAR(100) NOT NULL,
+    section_km  VARCHAR(100) NOT NULL,
+    question_en VARCHAR(255) NOT NULL,
+    question_km VARCHAR(255) NOT NULL,
+    answer_en   TEXT NOT NULL,
+    answer_km   TEXT NOT NULL,
+    sort_order  SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    active      TINYINT(1) NOT NULL DEFAULT 1
+);

@@ -6,12 +6,15 @@ session_start([
 ]);
 
 require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/mapbox.php';
 
 if (!isset($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
     header('Location: /login-admin/');
     exit;
 }
+
+admin_require('vendor-map');
 
 $pendingVendorCount = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 0")->fetchColumn();
 $refundCount        = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn();

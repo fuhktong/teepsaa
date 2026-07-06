@@ -6,12 +6,15 @@ session_start([
 ]);
 
 require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/csrf.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin' || !($_SESSION['is_admin'] ?? false)) {
     header('Location: /login-admin/');
     exit;
 }
+
+admin_require('banners');
 
 $pendingVendorCount = (int) $pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 0")->fetchColumn();
 $pendingPayoutCount = (int) $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();

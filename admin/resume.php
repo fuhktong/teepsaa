@@ -6,12 +6,15 @@ session_start([
 ]);
 
 require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/app.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin' || !($_SESSION['is_admin'] ?? false)) {
     header('Location: /login-admin/');
     exit;
 }
+
+admin_require('careers');
 
 $appId = (int) ($_GET['id'] ?? 0);
 

@@ -7,6 +7,7 @@ session_start([
 
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/admin-auth.php';
 
 if (!isset($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
     header('Location: /login-admin/');

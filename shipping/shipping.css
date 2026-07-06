@@ -9,18 +9,18 @@
     margin-bottom: 2rem;
 }
 
-.shipping-section {
-    margin-bottom: 2rem;
-}
-
-.shipping-section h2 {
+.shipping-wrap h2 {
     font-size: 1.1rem;
     font-weight: 700;
-    margin-bottom: 0.5rem;
+    margin: 2rem 0 0.5rem;
     color: #111;
 }
+.shipping-wrap h2:first-of-type {
+    margin-top: 0;
+}
 
-.shipping-section p {
+.shipping-wrap p {
     color: #555;
     line-height: 1.7;
+    margin-bottom: 0.75rem;
 }

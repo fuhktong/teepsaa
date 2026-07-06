@@ -514,3 +514,32 @@ Buyers apply a code at checkout for a percent/fixed discount, capped by min orde
 - [x] `checkout/confirm.php` — re-validates server-side, atomic race-safe `used_count` increment, proportional discount allocation across multi-vendor order groups, `coupon_uses` row per order, discount line in confirmation email
 - [x] Refund/total displays corrected for discount everywhere `orders.subtotal` was shown as the buyer-paid amount — `dashboard-buyer/order.php`, `orders-vendor/refund.php`, `admin/refunds.php`, `admin/refund.php`, `admin/order.php`
 - [x] Bilingual UI strings — `lang/en.php` / `lang/km.php`
+
+---
+
+## Granular Admin RBAC
+
+Replaced the all-or-nothing admin (`is_admin=1` → full access) with a **super + granular per-section** model: one bypass-all role, plus custom admins scoped to exactly the sections they're granted.
+
+- [x] `database/migration-admin-roles.sql` — `admins.admin_role ENUM('super','custom')`; `admin_permissions` join table (`admin_id`, `section`, FK ON DELETE CASCADE)
+- [x] `config/admin-auth.php` — `admin_can()`/`admin_require()`/`admin_is_super()`/`admin_home_url()`; `ADMIN_SECTION_GROUPS` (Admin/Orders/Marketing/Messages); `'admins'` section hardcoded super-only so a super can never hand out the ability to create more supers
+- [x] Guard threaded into every `/admin/*.php` page (redirect to home section with `?denied=1`) and every `*-action.php` handler (enforcement is server-side, not just hidden nav — a scoped admin can't bypass by POSTing directly)
+- [x] Nav filtered by granted sections — `admin/admin-tabs.php` + header admin nav, desktop and mobile
+- [x] `admin/admins.php` + `admin/admins-action.php` — super-only management screen: clickable admin rows expand into an inline edit form (shared `admin_form_fields()` renders both create and edit); real CSS toggle switches per section plus a per-group toggle that grants/revokes a whole group at once; "Clear all"; "Add new admin" section at the bottom; "Reset password" field on existing admins (labeled to reflect there's no separate admin forgot-password flow — it's the only account-recovery path)
+- [x] Guards — last active super admin can't be deleted/deactivated/demoted; an admin can't delete or deactivate themselves
+- [x] `is_owner` flag on `admins` — settable only via direct DB write, never exposed in any form; `do_delete()`/`do_toggle_active()` hard-block deletion/deactivation of an owner account regardless of who's requesting it or how many other supers exist; roster shows a green "Owner" badge and hides Delete/Reactivate on that row for everyone
+
+---
+
+## Content CMS (Static Pages + FAQ)
+
+Moved the hardcoded static content pages (Privacy, Terms, Shipping, Returns) and the Help Center FAQ out of code and into the database so admins can edit them (bilingual EN + KM) without a deploy. Body text is Markdown, rendered server-side by a small dependency-free renderer. About page intentionally stays on `$t` translation keys (not migrated).
+
+- [x] `database/migration-content-pages.sql` — `content_pages` (slug, title_en/km, body_en/km MEDIUMTEXT, updated_at, updated_by) + `faq_items` (section_en/km, question_en/km, answer_en/km, sort_order, active)
+- [x] `database/seed-content.php` — idempotent PDO seed; migrated existing hand-written EN/KM prose (privacy/terms/shipping/returns) into Markdown, and the Help page's hardcoded FAQ arrays into `faq_items` (23 items across 6 sections)
+- [x] `config/markdown.php` — `render_markdown()`: escapes all HTML first, then parses `## headings`, `- lists`, blank-line paragraphs, `**bold**`, `*italic*`, `[text](url)` (scheme-allowlisted against `javascript:` links). No third-party library needed
+- [x] RBAC — new `'Content' => ['content' => 'Pages', 'faq' => 'FAQ']` group in `config/admin-auth.php`'s `ADMIN_SECTION_GROUPS`/`ADMIN_SECTION_HOME`; own top-level nav group (desktop + mobile + admin tab bar), not folded into Marketing
+- [x] `admin/content.php` + `admin/content-action.php` — accordion list of the 4 fixed-slug pages; clicking a row (native `<details>`/`<summary>`, no JS) expands its edit form inline — English fields (Title, Body) grouped under an "English" heading, Khmer fields under a "ខ្មែរ" heading; no separate Edit button/page
+- [x] `admin/faq.php` + `admin/faq-action.php` — same accordion-per-row pattern for FAQ items, grouped by section; per-row controls (reorder ▲▼, Hide/Show, Delete) stay in the clickable row header via `event.stopPropagation()` on their forms; "Add FAQ item" is its own dropdown styled as a plain button (no card chrome); redirects reopen the correct row/add-panel on validation error or after save
+- [x] Public pages rewritten to read from DB with `pick_lang()` bilingual fallback — `privacy/`, `terms/`, `shipping/`, `returns/index.php` (+ preserved original CSS look via `:has()`-based structural selectors since the generic renderer no longer emits page-specific classes), `help/index.php` (FAQ grouped by resolved section name, `WHERE active = 1`)
+- [x] Verified: migration + seed run against dev DB (4 content_pages rows, 23 faq_items rows across the expected 6 sections), all touched files pass `php -l`, admin screens and public pages checked in-browser

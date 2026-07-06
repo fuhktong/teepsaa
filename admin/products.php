@@ -7,11 +7,14 @@ session_start([
 
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/admin-auth.php';
 
 if (!isset($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
     header('Location: /login-admin/');
     exit;
 }
+
+admin_require('products');
 
 $refundCount        = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn();
 $pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();

@@ -8,7 +8,8 @@
     margin-bottom: 0.4rem;
 }
 
-.legal-effective {
+.legal-effective,
+.legal-wrap p:first-of-type:has(> em:only-child) {
     font-size: 0.85rem;
     color: #9ca3af;
     margin-bottom: 2rem;
@@ -44,7 +45,8 @@
     color: var(--primary);
 }
 
-.legal-note {
+.legal-note,
+.legal-wrap p:last-of-type:has(> em:only-child) {
     margin-top: 2.5rem;
     padding: 0.85rem 1rem;
     background: #fff7e6;
@@ -52,4 +54,8 @@
     border-radius: var(--radius-sm);
     font-size: 0.82rem !important;
     color: #92400e !important;
+}
+
+.legal-wrap p:last-of-type:has(> em:only-child) em {
+    font-style: normal;
 }

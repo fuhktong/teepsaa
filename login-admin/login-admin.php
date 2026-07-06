@@ -20,7 +20,7 @@ check_rate_limit($pdo);
 $email    = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
 
-$stmt = $pdo->prepare('SELECT id, password FROM admins WHERE email = ?');
+$stmt = $pdo->prepare('SELECT id, password, admin_role, is_active FROM admins WHERE email = ?');
 $stmt->execute([$email]);
 $user = $stmt->fetch();
 
@@ -31,9 +31,24 @@ if (!$user || !password_verify($password, $user['password'])) {
     exit;
 }
 
+if (!$user['is_active']) {
+    $_SESSION['auth_error'] = 'This admin account has been deactivated.';
+    header('Location: /login-admin/');
+    exit;
+}
+
+$permissions = [];
+if ($user['admin_role'] !== 'super') {
+    $permStmt = $pdo->prepare('SELECT section FROM admin_permissions WHERE admin_id = ?');
+    $permStmt->execute([$user['id']]);
+    $permissions = $permStmt->fetchAll(PDO::FETCH_COLUMN);
+}
+
 session_regenerate_id(true);
-$_SESSION['user_id']  = $user['id'];
-$_SESSION['role']     = 'admin';
-$_SESSION['is_admin'] = true;
+$_SESSION['user_id']          = $user['id'];
+$_SESSION['role']             = 'admin';
+$_SESSION['is_admin']         = true;
+$_SESSION['admin_role']       = $user['admin_role'];
+$_SESSION['admin_permissions'] = $permissions;
 header('Location: /admin/');
 exit;

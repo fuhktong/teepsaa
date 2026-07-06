@@ -6,6 +6,7 @@ session_start([
 ]);
 
 require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/app.php';
 
@@ -13,6 +14,8 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin' || !($
     header('Location: /login-admin/');
     exit;
 }
+
+admin_require('careers');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: /admin/careers.php');

@@ -32,13 +32,13 @@ For buyer acquisition campaigns. Full spec in `z-checklists/discount-codes.md`. 
 - "Browse by category" visual grid — categories table already exists, front-end only
 
 ### ABA PayWay API
-Blocked externally — requires business registration + merchant account. Can't build until API docs are in hand. See `z-checklists/teepsaa-checklist-payway-api.md`.
+Blocked externally — requires business registration + merchant account. Can't build until API docs are in hand. See `z-checklists/teepsaa-afterlaunch-payway-api.md`.
 
 ### Khmer language toggle
 Logo swap is done. Translating every UI string is a large effort. Deferred. See `z-checklists/teepsaa-checklist-language.md`.
 
 ### Subdomains
-Not a functional requirement. Role separation works without it. See `z-checklists/teepsaa-checklist-subdomains.md`.
+Not a functional requirement. Role separation works without it. See `z-checklists/teepsaa-afterlaunch-subdomains.md`.
 
 ---
 

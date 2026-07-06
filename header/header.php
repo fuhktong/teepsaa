@@ -13,6 +13,9 @@ if (!isset($t)) {
 if (!isset($pdo) && !empty($_SESSION['user_id'])) {
     require_once __DIR__ . '/../config/db.php';
 }
+if (!function_exists('admin_can') && ($_SESSION['role'] ?? '') === 'admin') {
+    require_once __DIR__ . '/../config/admin-auth.php';
+}
 
 if (!function_exists('_avatar_svg')) {
     function _avatar_svg(int $uid, ?int $colorIdx = null, int $size = 26): string {
@@ -89,10 +92,11 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                         $adminAvatarColor = isset($aAvRow['avatar_color']) ? (int)$aAvRow['avatar_color'] : null;
                         $adminSection = $adminSection ?? '';
                     ?>
-                    <a href="/admin/" <?= $adminSection === 'admin' ? 'class="active"' : '' ?>><?= $t['nav_admin'] ?></a>
-                    <a href="/admin/orders.php" <?= $adminSection === 'orders' ? 'class="active"' : '' ?>><?= $t['nav_orders'] ?></a>
-                    <a href="/admin/promo-codes.php" <?= $adminSection === 'marketing' ? 'class="active"' : '' ?>><?= $t['nav_marketing'] ?></a>
-                    <a href="/admin/messages/" <?= $adminSection === 'messages' ? 'class="active"' : '' ?>><?= $adminUnread ? $t['nav_messages'] . '&nbsp;<span class="nav-msg-badge">' . $adminUnread . '</span>' : $t['nav_messages'] ?></a>
+                    <?php if (admin_can('vendors')): ?><a href="/admin/" <?= $adminSection === 'admin' ? 'class="active"' : '' ?>><?= $t['nav_admin'] ?></a><?php endif; ?>
+                    <?php if (admin_can('orders')): ?><a href="/admin/orders.php" <?= $adminSection === 'orders' ? 'class="active"' : '' ?>><?= $t['nav_orders'] ?></a><?php endif; ?>
+                    <?php if (admin_can('promo-codes')): ?><a href="/admin/promo-codes.php" <?= $adminSection === 'marketing' ? 'class="active"' : '' ?>><?= $t['nav_marketing'] ?></a><?php endif; ?>
+                    <?php if (admin_can('content')): ?><a href="/admin/content.php" <?= $adminSection === 'content' ? 'class="active"' : '' ?>><?= $t['nav_content'] ?></a><?php endif; ?>
+                    <?php if (admin_can('messages')): ?><a href="/admin/messages/" <?= $adminSection === 'messages' ? 'class="active"' : '' ?>><?= $adminUnread ? $t['nav_messages'] . '&nbsp;<span class="nav-msg-badge">' . $adminUnread . '</span>' : $t['nav_messages'] ?></a><?php endif; ?>
                     <div class="user-menu">
                         <button class="user-avatar" id="user-avatar-btn" type="button" aria-label="Account menu">
                             <?php if ($adminAvatarFile): ?>
@@ -102,6 +106,7 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                             <?php endif; ?>
                         </button>
                         <div class="user-dropdown" id="user-dropdown">
+                            <?php if (admin_can('admins')): ?><a href="/admin/admins.php">Manage Admins</a><?php endif; ?>
                             <a href="/admin/settings.php"><?= $t['nav_settings'] ?></a>
                             <a href="/logout/logout.php"><?= $t['nav_logout'] ?></a>
                         </div>
@@ -240,10 +245,12 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
     <div class="mobile-nav" id="mobile-nav">
         <?php if (isset($_SESSION['user_id']) && isset($_SESSION['role'])): ?>
             <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
-                <a href="/admin/" class="mobile-nav-link <?= ($adminSection ?? '') === 'admin' ? 'active' : '' ?>"><?= $t['nav_admin'] ?></a>
-                <a href="/admin/orders.php" class="mobile-nav-link <?= ($adminSection ?? '') === 'orders' ? 'active' : '' ?>"><?= $t['nav_orders'] ?></a>
-                <a href="/admin/promo-codes.php" class="mobile-nav-link <?= ($adminSection ?? '') === 'marketing' ? 'active' : '' ?>"><?= $t['nav_marketing'] ?></a>
-                <a href="/admin/messages/" class="mobile-nav-link <?= ($adminSection ?? '') === 'messages' ? 'active' : '' ?>"><?= ($adminUnread ?? 0) > 0 ? $t['nav_messages'] . ' (' . ($adminUnread ?? 0) . ')' : $t['nav_messages'] ?></a>
+                <?php if (admin_can('vendors')): ?><a href="/admin/" class="mobile-nav-link <?= ($adminSection ?? '') === 'admin' ? 'active' : '' ?>"><?= $t['nav_admin'] ?></a><?php endif; ?>
+                <?php if (admin_can('orders')): ?><a href="/admin/orders.php" class="mobile-nav-link <?= ($adminSection ?? '') === 'orders' ? 'active' : '' ?>"><?= $t['nav_orders'] ?></a><?php endif; ?>
+                <?php if (admin_can('promo-codes')): ?><a href="/admin/promo-codes.php" class="mobile-nav-link <?= ($adminSection ?? '') === 'marketing' ? 'active' : '' ?>"><?= $t['nav_marketing'] ?></a><?php endif; ?>
+                <?php if (admin_can('content')): ?><a href="/admin/content.php" class="mobile-nav-link <?= ($adminSection ?? '') === 'content' ? 'active' : '' ?>"><?= $t['nav_content'] ?></a><?php endif; ?>
+                <?php if (admin_can('messages')): ?><a href="/admin/messages/" class="mobile-nav-link <?= ($adminSection ?? '') === 'messages' ? 'active' : '' ?>"><?= ($adminUnread ?? 0) > 0 ? $t['nav_messages'] . ' (' . ($adminUnread ?? 0) . ')' : $t['nav_messages'] ?></a><?php endif; ?>
+                <?php if (admin_can('admins')): ?><a href="/admin/admins.php" class="mobile-nav-link">Manage Admins</a><?php endif; ?>
                 <a href="/admin/settings.php" class="mobile-nav-link"><?= $t['nav_settings'] ?></a>
                 <a href="/logout/logout.php" class="mobile-nav-link"><?= $t['nav_logout'] ?></a>
             <?php elseif (($_SESSION['role'] ?? '') === 'vendor'): ?>

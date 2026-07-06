@@ -50,4 +50,4 @@ This is the current payment flow using a static ABA QR code and manual admin con
 - Each vendor uploads their ABA QR code when submitting their business
 - Manual confirmation adds delay — buyer expectation should be set at under 1 hour
 - Vendor payout SLA: 2–3 business days after delivery confirmation
-- See `teepsaa-checklist-payway-api.md` to upgrade this flow with the ABA PayWay API later
+- See `teepsaa-afterlaunch-payway-api.md` to upgrade this flow with the ABA PayWay API later
