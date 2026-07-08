@@ -4,50 +4,53 @@ The site cannot launch without working email: buyers must verify their email
 to check out, and password resets / order confirmations all go through
 `send_email()` in `config/mail.php`.
 
-With no key/password configured, emails are silently written to `mail.log`
+With no password configured, emails are silently written to `mail.log`
 instead of being sent (fine for local dev, useless in production).
 
 ## Decide
 
-- [ ] Pick ONE option below. Both end with the same test.
-
-| | Option A: Hostinger SMTP | Option B: Resend |
-| --- | --- | --- |
-| New accounts needed | None — included in hosting plan | Sign up at resend.com |
-| Code changes | Yes — rewrite `send_email()` (Claude does this) | None — already built |
-| Sending limit | A few hundred/day (shared hosting) | Free tier: 100/day, 3,000/month |
-| Deliverability | Good (DNS already at Hostinger) | Better, with delivery dashboard/logs |
+- [x] Pick ONE option. DECIDED: Option A — Hostinger SMTP (in-house, no
+      external services). Resend option removed; `config/resend.php` deleted.
 
 ## Option A — Hostinger SMTP (no new signups)
 
 - [ ] hPanel → Emails → create mailbox `contact@teepsaa.com`, note the password
-- [ ] Have Claude rewrite `send_email()` in `config/mail.php` to send via
-      `smtp.hostinger.com` (port 465, SSL) instead of the Resend API
-      - keeps the same function signature — no other file changes
+- [x] `send_email()` in `config/mail.php` rewritten to send via
+      `smtp.hostinger.com` (port 465, SSL) — pure PHP, no libraries, no
+      external API
+      - same function signature — no other file changes
       - keeps the mail.log fallback when no password is configured, so local
         dev behavior is unchanged
-- [ ] Config on the SERVER becomes the mailbox password instead of a Resend
-      key (exact file contents provided with the code change)
-- [ ] Deploy the updated `config/mail.php` via deploycode.txt
+      - failed sends are logged to mail.log with the SMTP error
+- [ ] On the SERVER, create `config/smtp.php` (replaces the server's old
+      `config/resend.php`, which can be deleted) with:
 
-## Option B — Resend (better deliverability, one more account)
+      ```php
+      <?php
+      define('SMTP_HOST', 'smtp.hostinger.com');
+      define('SMTP_PORT', 465);
+      define('SMTP_USER', 'contact@teepsaa.com');
+      define('SMTP_PASS', 'the-mailbox-password-from-hPanel');
+      define('MAIL_FROM',      'contact@teepsaa.com');
+      define('MAIL_FROM_NAME', "teepsaa");
+      ```
 
-- [ ] Sign up at resend.com (free tier)
-- [ ] Resend → Domains → add `teepsaa.com` — it shows 3–4 DNS records
-- [ ] hPanel → Domains → DNS → add those records, then click Verify in Resend
-- [ ] Resend → API Keys → Create API Key (starts with `re_`)
-- [ ] On the SERVER, edit `config/resend.php`:
-      `define('RESEND_API_KEY', 're_xxxxxxxx');`
-- [ ] No code changes and no deploy needed — the Resend path is already built
+- [ ] Deploy the updated `config/mail.php` via deploycode.txt (the deploy
+      script now excludes `config/smtp.php` instead of `config/resend.php`,
+      so the server's password is never overwritten)
 
-## Test (either option)
+## Test
 
 - [ ] Register a new buyer on the live site using a real personal email
 - [ ] Verification code arrives in the inbox (check spam folder too)
 - [ ] Complete verification, then do a password reset — that email arrives too
 - [ ] Place a test order — order confirmation email arrives
-- [ ] If anything landed in spam: confirm the DNS records (Option B) or that
-      the mailbox exists and the password is right (Option A)
+- [ ] If anything landed in spam: hPanel → Emails → confirm the mailbox
+      exists and that the domain's SPF/DKIM records are set (Hostinger adds
+      these automatically when DNS is hosted with them, but verify in
+      hPanel → Emails → DNS settings)
+- [ ] If sends fail outright: check `mail.log` on the server — SMTP errors
+      are logged there with the server's reply
 
 ## Related launch items (from teepsaa-todos-audit.md)
 
