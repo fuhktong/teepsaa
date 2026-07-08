@@ -8,7 +8,21 @@ RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [L,R=301]
 
 # Block direct access to sensitive files
-<FilesMatch "^\.env|\.gitignore|\.log$">
+<FilesMatch "^\.env|\.gitignore|\.htpasswd|\.user\.ini|\.log$">
     Order allow,deny
     Deny from all
 </FilesMatch>
+
+# ── Pre-launch gate ──────────────────────────────────────────────────
+# Password-protects the whole site until launch. DELETE THIS BLOCK (and
+# the .htpasswd file) TO GO LIVE.
+#
+# (Local dev is bypassed via LOCAL_DEV below, so MAMP is unaffected.)
+SetEnvIf Host "^(localhost|127\.0\.0\.1)(:|$)" LOCAL_DEV
+AuthType Basic
+AuthName "teepsaa — coming soon"
+AuthUserFile /home/u767733958/domains/teepsaa.com/public_html/.htpasswd
+<RequireAny>
+    Require env LOCAL_DEV
+    Require valid-user
+</RequireAny>

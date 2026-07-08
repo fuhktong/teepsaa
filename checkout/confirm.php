@@ -51,7 +51,7 @@ $stmt = $pdo->prepare('
            COALESCE(pv.price_override, IF(p.sale_ends_at IS NOT NULL AND p.sale_ends_at > NOW(), p.sale_price, NULL), p.price) AS effective_price,
            COALESCE(pv.stock, p.stock) AS effective_stock,
            pv.label AS variant_label, pv.label_km AS variant_label_km,
-           b.id AS business_id, b.lat AS biz_lat, b.lng AS biz_lng,
+           b.id AS business_id, b.name AS business_name, b.lat AS biz_lat, b.lng AS biz_lng,
            COALESCE(cat.royalty_rate, 0) AS royalty_rate,
            COALESCE(b.royalty_add_on, 0) AS business_royalty_add_on,
            COALESCE(p.royalty_add_on, 0) AS product_royalty_add_on
@@ -64,6 +64,16 @@ $stmt = $pdo->prepare('
 ');
 $stmt->execute([$userId]);
 $items = $stmt->fetchAll();
+
+// The joins above filter out deactivated products and unapproved businesses —
+// if that dropped anything, send the buyer back rather than silently ordering less.
+$cartCountStmt = $pdo->prepare('SELECT COUNT(*) FROM cart_items WHERE buyer_user_id = ?');
+$cartCountStmt->execute([$userId]);
+if (count($items) < (int)$cartCountStmt->fetchColumn()) {
+    $_SESSION['cart_error'] = 'Some items in your cart are no longer available. Please update your cart.';
+    header('Location: /cart/');
+    exit;
+}
 
 if (empty($items)) {
     header('Location: /cart/');

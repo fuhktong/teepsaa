@@ -1,4 +1,8 @@
 <?php
+// Subdomain routing loads here so every page gets it through db.php —
+// db.php itself is unmanaged on the server, so it can't hold the require.
+require_once __DIR__ . '/subdomain.php';
+
 // Localised date formatting. fmt_date() mirrors PHP's date() signature
 // (format first, then the timestamp/date string) so a display `date(...)`
 // call can be swapped to `fmt_date(...)` verbatim. In Khmer it translates

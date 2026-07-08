@@ -169,11 +169,6 @@
   color: #111;
 }
 
-.order-card-business {
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
 .order-card-date {
   font-size: 0.8rem;
   color: var(--text-muted);
@@ -197,59 +192,6 @@
 
 .order-card-status {
   margin-bottom: 0.75rem;
-}
-
-.order-card-action {
-  padding-top: 0.5rem;
-  border-top: 1px solid #f3f4f6;
-}
-
-.aba-section {
-  margin-bottom: 2.5rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid #eee;
-}
-
-.aba-section h2 {
-  font-size: 1.1rem;
-  margin-bottom: 0.75rem;
-}
-
-.aba-inner {
-  display: flex;
-  align-items: flex-start;
-  gap: 2rem;
-  flex-wrap: wrap;
-}
-
-.aba-qr-preview {
-  width: 120px;
-  height: 120px;
-  object-fit: contain;
-  border: 1px solid #e0e0e0;
-  border-radius: var(--radius-sm);
-}
-
-.aba-missing {
-  font-size: 0.9rem;
-  color: var(--error-fg);
-  margin-bottom: 0.5rem;
-}
-
-.aba-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.aba-form label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #555;
-}
-
-.aba-form input[type="file"] {
-  font-size: 0.85rem;
 }
 
 .dispatch-form {
