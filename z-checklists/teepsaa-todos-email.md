@@ -14,7 +14,7 @@ instead of being sent (fine for local dev, useless in production).
 
 ## Option A — Hostinger SMTP (no new signups)
 
-- [ ] hPanel → Emails → create mailbox `contact@teepsaa.com`, note the password
+- [x] hPanel → Emails → create mailbox `contact@teepsaa.com`, note the password
 - [x] `send_email()` in `config/mail.php` rewritten to send via
       `smtp.hostinger.com` (port 465, SSL) — pure PHP, no libraries, no
       external API
@@ -22,8 +22,8 @@ instead of being sent (fine for local dev, useless in production).
       - keeps the mail.log fallback when no password is configured, so local
         dev behavior is unchanged
       - failed sends are logged to mail.log with the SMTP error
-- [ ] On the SERVER, create `config/smtp.php` (replaces the server's old
-      `config/resend.php`, which can be deleted) with:
+- [x] On the SERVER, create `config/smtp.php` (replaces the server's old
+      `config/resend.php`, which was deleted) with:
 
       ```php
       <?php
@@ -35,14 +35,15 @@ instead of being sent (fine for local dev, useless in production).
       define('MAIL_FROM_NAME', "teepsaa");
       ```
 
-- [ ] Deploy the updated `config/mail.php` via deploycode.txt (the deploy
-      script now excludes `config/smtp.php` instead of `config/resend.php`,
-      so the server's password is never overwritten)
+- [x] Deploy the updated `config/mail.php` (uploaded directly 2026-07-08; the
+      deploy script now excludes `config/smtp.php` instead of
+      `config/resend.php`, so the server's password is never overwritten)
 
 ## Test
 
-- [ ] Register a new buyer on the live site using a real personal email
-- [ ] Verification code arrives in the inbox (check spam folder too)
+- [x] Register on the live site using a real personal email (tested via
+      vendor registration, 2026-07-08)
+- [x] Verification code arrives in the inbox — WORKS
 - [ ] Complete verification, then do a password reset — that email arrives too
 - [ ] Place a test order — order confirmation email arrives
 - [ ] If anything landed in spam: hPanel → Emails → confirm the mailbox

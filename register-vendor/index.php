@@ -53,13 +53,13 @@ unset($_SESSION['auth_error']);
         <form method="POST" action="/register-vendor/register-vendor.php">
             <?= csrf_input() ?>
             <label for="name"><?= $t['register_name'] ?></label>
-            <input type="text" id="name" name="name" required autofocus>
+            <input type="text" id="name" name="name" required autofocus autocomplete="name">
             <label for="email"><?= $t['register_email'] ?></label>
-            <input type="email" id="email" name="email" required>
+            <input type="email" id="email" name="email" required autocomplete="email">
             <label for="password"><?= $t['register_password'] ?></label>
-            <input type="password" id="password" name="password" required minlength="8">
+            <input type="password" id="password" name="password" required minlength="8" autocomplete="new-password">
             <label for="password_confirm"><?= $t['register_confirm'] ?></label>
-            <input type="password" id="password_confirm" name="password_confirm" required minlength="8">
+            <input type="password" id="password_confirm" name="password_confirm" required minlength="8" autocomplete="new-password">
             <label for="promo_code"><?= $t['register_promo'] ?> <span style="font-weight:400;color:#6b7280"><?= $t['form_optional'] ?></span></label>
             <input type="text" id="promo_code" name="promo_code" maxlength="50" placeholder="Enter code if you have one" style="text-transform:uppercase">
             <button type="submit"><?= $t['register_submit'] ?></button>

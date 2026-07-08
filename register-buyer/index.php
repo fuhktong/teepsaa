@@ -42,13 +42,13 @@ unset($_SESSION['auth_error']);
         <form method="POST" action="/register-buyer/register-buyer.php">
             <?= csrf_input() ?>
             <label for="name"><?= $t['register_name'] ?></label>
-            <input type="text" id="name" name="name" required autofocus>
+            <input type="text" id="name" name="name" required autofocus autocomplete="name">
             <label for="email"><?= $t['register_email'] ?></label>
-            <input type="email" id="email" name="email" required>
+            <input type="email" id="email" name="email" required autocomplete="email">
             <label for="password"><?= $t['register_password'] ?></label>
-            <input type="password" id="password" name="password" required minlength="8">
+            <input type="password" id="password" name="password" required minlength="8" autocomplete="new-password">
             <label for="password_confirm"><?= $t['register_confirm'] ?></label>
-            <input type="password" id="password_confirm" name="password_confirm" required minlength="8">
+            <input type="password" id="password_confirm" name="password_confirm" required minlength="8" autocomplete="new-password">
             <button type="submit"><?= $t['register_submit'] ?></button>
         </form>
         <p class="auth-tos"><?= sprintf($t['auth_agree'], '<a href="/terms/">' . $t['footer_terms'] . '</a>', '<a href="/privacy/">' . $t['footer_privacy'] . '</a>') ?></p>

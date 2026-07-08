@@ -51,9 +51,9 @@ unset($_SESSION['auth_error'], $_SESSION['auth_success']);
         <form method="POST" action="/login-buyer/login-buyer.php">
             <?= csrf_input() ?>
             <label for="email"><?= $t['login_email'] ?></label>
-            <input type="email" id="email" name="email" required autofocus>
+            <input type="email" id="email" name="email" required autofocus autocomplete="username">
             <label for="password"><?= $t['login_password'] ?></label>
-            <input type="password" id="password" name="password" required>
+            <input type="password" id="password" name="password" required autocomplete="current-password">
             <button type="submit"><?= $t['login_submit'] ?></button>
         </form>
         <p class="auth-switch"><?= $t['login_no_account'] ?> <a href="/register-buyer/"><?= $t['login_register'] ?></a></p>

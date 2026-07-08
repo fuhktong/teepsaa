@@ -60,9 +60,9 @@ unset($_SESSION['auth_error']);
                 <?= csrf_input() ?>
                 <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
                 <label for="password"><?= $t['settings_new_pw'] ?></label>
-                <input type="password" id="password" name="password" required minlength="8" autofocus>
+                <input type="password" id="password" name="password" required minlength="8" autofocus autocomplete="new-password">
                 <label for="password_confirm"><?= $t['settings_confirm_pw'] ?></label>
-                <input type="password" id="password_confirm" name="password_confirm" required minlength="8">
+                <input type="password" id="password_confirm" name="password_confirm" required minlength="8" autocomplete="new-password">
                 <button type="submit"><?= $t['rp_title'] ?></button>
             </form>
         <?php endif; ?>

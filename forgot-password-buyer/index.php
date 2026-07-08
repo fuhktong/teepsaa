@@ -47,7 +47,7 @@ unset($_SESSION['auth_error'], $_SESSION['auth_success']);
             <form method="POST" action="/forgot-password-buyer/request.php">
                 <?= csrf_input() ?>
                 <label for="email"><?= $t['login_email'] ?></label>
-                <input type="email" id="email" name="email" required autofocus>
+                <input type="email" id="email" name="email" required autofocus autocomplete="email">
                 <button type="submit"><?= $t['fp_send'] ?></button>
             </form>
             <p class="auth-switch"><a href="/login-buyer/">&larr; <?= $t['auth_back_login'] ?></a></p>

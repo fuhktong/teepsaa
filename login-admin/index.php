@@ -41,9 +41,9 @@ unset($_SESSION['auth_error']);
         <form method="POST" action="/login-admin/login-admin.php">
             <?= csrf_input() ?>
             <label for="email">Email</label>
-            <input type="email" id="email" name="email" required autofocus>
+            <input type="email" id="email" name="email" required autofocus autocomplete="username">
             <label for="password">Password</label>
-            <input type="password" id="password" name="password" required>
+            <input type="password" id="password" name="password" required autocomplete="current-password">
             <button type="submit">Log in</button>
         </form>
     </div>
