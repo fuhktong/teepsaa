@@ -559,4 +559,22 @@ Same codebase, same `public_html`, same database — a host check routes which p
 - [x] `.htaccess` — `.user.ini` added to the blocked-files pattern (harmless belt-and-braces)
 - [x] Live tests passed (curl, all three hosts): routing redirects/404s exactly per the map above; `Set-Cookie: PHPSESSID=…; domain=.teepsaa.com; secure; HttpOnly; SameSite=Strict` issued on all three hosts; `/style.css` + `/js/*` load 200 on all three; localhost unaffected
 - [x] Found & fixed during review: (1) `/login-admin/` returned 200 on main/vendor hosts because 14 pages never load db.php — fixed via the csrf.php hook + 5 direct requires; (2) session cookie had no `domain=` because Hostinger ignores `.user.ini` — fixed with the 171-file `cookie_domain` insert
-- [x] Deferred (optional): link-audit polish — cross-domain links currently work by bounce (relative link → enforcement redirect); emails/hot links could use the `BASE_URL_*` constants to skip the hop. Extra Basic Auth on `admin.teepsaa.com` moved to the security checklist
+- [x] Deferred (optional): link-audit polish — cross-domain links currently work by bounce (relative link → enforcement redirect); emails/hot links could use the `BASE_URL_*` constants to skip the hop. Extra Basic Auth on `admin.teepsaa.com` moved to `teepsaa-launch-priorities.md`
+
+---
+
+## Production Security Review — completed 2026-07-09 (live-verified)
+
+Closed out `teepsaa-afterlaunch-security.md` by auditing the live server with a one-shot probe (uploaded via FTP, read once, deleted, confirmed 404 — reported booleans/lengths only, never secrets).
+
+### Found & fixed
+- [x] **`DEV_MODE` was `true` in production** — `config/app.php` is deployed by the mirror (unlike db.php), so the dev value shipped live, leaving the OTP-leak gate open: registration echoed the email verification code to the browser console on the live site. Fixed permanently by making it host-derived — `DEV_MODE` is now `true` only on `localhost`/`127.0.0.1`, so a deploy can never switch it on in production. Deployed and probe-verified: `false` live, `true` on MAMP
+
+### Verified already done (server-side, via probe + curl)
+- [x] Server `config/db.php` — non-root MySQL user (18 chars), 14-char password (not `root`, not reused from dev), `PAYOUT_WINDOW_SECONDS = 86400` — the "dev values on server" flag was already resolved when the server copy was hand-created
+- [x] `database/migration-public-ids.sql` ran on the live DB — `public_id` present on `products`, `businesses`, `orders`
+- [x] Admin account email obscurity — neither of the 2 admin accounts uses a guessable local part (admin@/info@/support@ etc.)
+- [x] phpMyAdmin exposure — nothing DB-admin-shaped answers on the domain (`/phpmyadmin/`, `/pma/`, `/adminer.php` all 404); Hostinger's phpMyAdmin sits behind the hPanel login, not a public URL
+
+### Moved, not lost
+- [x] Three hosting-level decisions moved to `teepsaa-launch-priorities.md`: SSH key auth, shared-hosting→VPS consideration (accepted risk for launch), and the optional extra Basic Auth on `admin.teepsaa.com` (best added at launch when the pre-launch gate comes off)

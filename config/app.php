@@ -2,7 +2,10 @@
 define('ADMIN_EMAIL', 'dustint505@gmail.com');
 define('FROM_EMAIL',  'orders@teepsaa.com');
 define('SITE_URL',    'https://teepsaa.com');
-define('DEV_MODE',    true);
+// True only on local dev (MAMP/localhost/CLI has no teepsaa host) — gates
+// dev-only output like the OTP echoed at registration, which must never
+// reach production. Host-derived so a deploy can't ship it switched on.
+define('DEV_MODE', in_array(strtok($_SERVER['HTTP_HOST'] ?? '', ':'), ['localhost', '127.0.0.1'], true));
 
 // Private file storage — lives OUTSIDE the web root (a sibling of the
 // project folder), so files here are never directly reachable by URL.

@@ -11,14 +11,8 @@ Verified built end-to-end (2026-06-25): `database/migration-vendorpromo.sql`, `a
 
 Full spec: `z-checklists/teepsaa-checklist-vendorpromo.md`
 
-### 2. Session cookie hardening — still outstanding, fix location below is wrong
-`.htaccess` cookie flags only work with mod_php. Production likely runs PHP-FPM so the flags are silently ignored.
-
-The doc previously said to fix this in `config/db.php` before `session_start()` — that doesn't work: all ~161 files call `session_start()` as their first line, before `config/db.php` is even required (confirmed in `login-buyer/login-buyer.php`), so an `ini_set()` there would run too late.
-
-Correct fix for PHP-FPM: add a `.user.ini` file (the FPM equivalent of `.htaccess`) at the project root, or call `session_set_cookie_params()` ahead of every `session_start()`.
-
-- [ ] Add `.user.ini` with `session.cookie_httponly = 1` and `session.cookie_samesite = Strict`
+### 2. Session cookie hardening — ✅ DONE
+Fixed in code: every `session_start()` call passes `cookie_httponly` / `cookie_samesite=Strict` / `cookie_secure` / `cookie_domain` directly in its options array (see `teepsaa-completed.md`, Security + Three-Subdomain sections). Do NOT use `.user.ini` — Hostinger disables it entirely (`user_ini.filename` is empty).
 
 ---
 
@@ -37,8 +31,13 @@ Blocked externally — requires business registration + merchant account. Can't 
 ### Khmer language toggle
 Logo swap is done. Translating every UI string is a large effort. Deferred. See `z-checklists/teepsaa-checklist-language.md`.
 
-### Subdomains
-Not a functional requirement. Role separation works without it. See `z-checklists/teepsaa-afterlaunch-subdomains.md`.
+### Subdomains — ✅ DONE (live 2026-07-06)
+teepsaa.com / vendor.teepsaa.com / admin.teepsaa.com routing live and verified. See `teepsaa-completed.md`, Three-Subdomain Layout section.
+
+### Security — hosting-level decisions (moved from the retired security checklist, 2026-07-09)
+- [ ] **SSH key authentication** — in hPanel, if SSH access is enabled, switch it to key-based auth (or keep SSH disabled); a weak SSH password is full-account access
+- [ ] **Shared hosting risk** — on shared hosting a breach of a neighboring site can expose your database; revisit moving to a VPS once the site has real revenue (accepted risk for launch)
+- [ ] **Extra Basic Auth on `admin.teepsaa.com`** — second lock on the admin door: same `.htpasswd` technique as the pre-launch gate but scoped by host (`SetEnvIf Host ^admin\.teepsaa\.com ADMIN_HOST`). Best added AT launch, when the site-wide pre-launch gate comes off — doing it earlier means two password prompts on admin
 
 ---
 
