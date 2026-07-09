@@ -1,4 +1,7 @@
 <?php
+// Subdomain routing must also load on pages that use csrf.php without
+// db.php (login/register/forgot-password portals, incl. login-admin).
+require_once __DIR__ . '/subdomain.php';
 
 function csrf_token(): string {
     if (empty($_SESSION['csrf_token'])) {

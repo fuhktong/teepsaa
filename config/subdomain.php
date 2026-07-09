@@ -9,10 +9,10 @@
 // Flip to true ONLY after vendor.teepsaa.com and admin.teepsaa.com exist in
 // hPanel and point at this same public_html folder. While false (and always
 // on localhost/CLI) everything below is inert and the site behaves as a
-// single domain. Session cookie sharing across subdomains is configured on
-// the server, not here: a .user.ini in public_html with
-//   session.cookie_domain = ".teepsaa.com"
-// (see z-checklists/teepsaa-afterlaunch-subdomains.md).
+// single domain. Session cookie sharing across subdomains is NOT here
+// either — Hostinger disables .user.ini (user_ini.filename is empty), so
+// every session_start() options block sets 'cookie_domain' to
+// '.teepsaa.com' on *.teepsaa.com hosts (empty on localhost).
 define('SUBDOMAINS_ENABLED', true);
 
 $sdHost  = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));

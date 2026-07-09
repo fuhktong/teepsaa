@@ -3,6 +3,7 @@
 ## Lower Priority
 
 - [ ] **Admin account email obscurity** — avoid using an obvious email like `admin@teepsaa.com`. A hard-to-guess email is a first layer of protection against targeted brute force
+- [ ] **Extra Basic Auth on `admin.teepsaa.com`** — second lock on the admin door only: same `.htpasswd` technique as the pre-launch gate, but scoped by host (`SetEnvIf Host ^admin\.teepsaa\.com ADMIN_HOST` + require valid-user only when set). Carried over from the completed subdomains build
 
 ## Database Attack Vectors
 
