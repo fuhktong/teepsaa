@@ -7,8 +7,9 @@ RewriteCond %{HTTP_HOST} ^(www\.)?teepsaa\.com$ [NC]
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [L,R=301]
 
-# Block direct access to sensitive files
-<FilesMatch "^\.env|\.gitignore|\.htpasswd|\.user\.ini|\.log$">
+# Block direct access to sensitive files (.md/.sql: checklists and DB
+# schema are never meant to be served, even if a stray copy deploys)
+<FilesMatch "^\.env|\.gitignore|\.htpasswd|\.user\.ini|\.log$|\.md$|\.sql$">
     Order allow,deny
     Deny from all
 </FilesMatch>

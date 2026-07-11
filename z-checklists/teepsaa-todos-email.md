@@ -17,11 +17,8 @@ instead of being sent (fine for local dev, useless in production).
 - [x] hPanel → Emails → create mailbox `contact@teepsaa.com`, note the password
 - [x] `send_email()` in `config/mail.php` rewritten to send via
       `smtp.hostinger.com` (port 465, SSL) — pure PHP, no libraries, no
-      external API
-      - same function signature — no other file changes
-      - keeps the mail.log fallback when no password is configured, so local
-        dev behavior is unchanged
-      - failed sends are logged to mail.log with the SMTP error
+      external API - same function signature — no other file changes - keeps the mail.log fallback when no password is configured, so local
+      dev behavior is unchanged - failed sends are logged to mail.log with the SMTP error
 - [x] On the SERVER, create `config/smtp.php` (replaces the server's old
       `config/resend.php`, which was deleted) with:
 

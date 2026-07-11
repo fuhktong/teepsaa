@@ -18,6 +18,9 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
 $refundCount        = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn();
 $pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();
 $unreadMsgCount     = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM support_messages WHERE sender IN ('buyer','vendor') AND read_at IS NULL")->fetchColumn();
+$stmt = $pdo->prepare('SELECT email FROM admins WHERE id = ?');
+$stmt->execute([$_SESSION['user_id']]);
+$adminEmail = $stmt->fetchColumn() ?: '';
 $success = $_SESSION['settings_success'] ?? '';
 $error   = $_SESSION['settings_error']   ?? '';
 unset($_SESSION['settings_success'], $_SESSION['settings_error']);
@@ -108,6 +111,7 @@ $adminTab     = '';
         <h2>Change password</h2>
         <form method="POST" action="/admin/settings-password-action.php">
             <?= csrf_input() ?>
+            <input type="text" name="username" value="<?= htmlspecialchars($adminEmail) ?>" autocomplete="username" hidden readonly>
             <div class="settings-field">
                 <label for="current_password">Current password</label>
                 <input type="password" id="current_password" name="current_password" required autocomplete="current-password">

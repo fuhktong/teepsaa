@@ -323,6 +323,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <h2><?= $t['settings_password_heading'] ?></h2>
                 <form method="POST" action="/dashboard-buyer/settings/password-action.php">
                     <?= csrf_input() ?>
+                    <input type="text" name="username" value="<?= htmlspecialchars($buyer['email']) ?>" autocomplete="username" hidden readonly>
                     <div class="settings-field">
                         <label for="current_password"><?= $t['settings_current_pw'] ?></label>
                         <input type="password" id="current_password" name="current_password" required autocomplete="current-password">

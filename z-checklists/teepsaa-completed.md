@@ -319,7 +319,7 @@ One review per order item (enforced by UNIQUE on `order_item_id`). Only availabl
 
 ## Refunds & Returns
 
-- [x] `database/migration-refunds.sql` — `refunds` table with status enum, reason, admin note
+- [x] `database/migration-refunds.sql` + `migration-refund-status-enum.sql` + `migration-return-steps.sql` — no separate refunds table: refund columns (`refund_reason`, `refund_requested_at`, `refunded_at`, `return_tracking_url`) and refund/return statuses added to `orders`
 - [x] `/dashboard-buyer/refund-request.php` — buyer submits refund request on delivered/completed orders
 - [x] `/dashboard-buyer/return-dispatch.php` — buyer marks return item dispatched with tracking URL
 - [x] `/orders-vendor/refund.php` — vendor view of refund requests
@@ -577,4 +577,48 @@ Closed out `teepsaa-afterlaunch-security.md` by auditing the live server with a 
 - [x] phpMyAdmin exposure — nothing DB-admin-shaped answers on the domain (`/phpmyadmin/`, `/pma/`, `/adminer.php` all 404); Hostinger's phpMyAdmin sits behind the hPanel login, not a public URL
 
 ### Moved, not lost
-- [x] Three hosting-level decisions moved to `teepsaa-launch-priorities.md`: SSH key auth, shared-hosting→VPS consideration (accepted risk for launch), and the optional extra Basic Auth on `admin.teepsaa.com` (best added at launch when the pre-launch gate comes off)
+- [x] Three hosting-level decisions moved to `teepsaa-launch-priorities.md`: SSH key auth, shared-hosting→VPS consideration (accepted risk for launch), and the optional extra Basic Auth on `admin.teepsaa.com` (best added at launch when the pre-launch gate comes off). (They now live in `teepsaa-open-questions.md` after launch-priorities was retired on 2026-07-10)
+
+---
+
+## Launch Priorities Checklist — closed out 2026-07-10
+
+Retired `teepsaa-launch-priorities.md`. Its development items were already archived in their own sections above (vendor promo trial, session cookie hardening, coupons, Khmer localization, subdomains); still-open items moved to `teepsaa-open-questions.md` (buy-again row, payment-license question, hosting-level security decisions) and `teepsaa-production-deploy.md` (cron registration — the ONE deployment task left). What's newly recorded here is the deployment verification and server fixes from the 2026-07-09 review:
+
+- [x] "Browse by category" homepage grid — done ("Shop by category" section, bilingual category tiles); was listed as a post-launch build but had already been built
+- [x] Server `config/db.php` — live credentials (non-root user, 14-char password), `PAYOUT_WINDOW_SECONDS = 86400` — probe-verified
+- [x] `config/app.php` — `SITE_URL = 'https://teepsaa.com'`, `FROM_EMAIL = orders@teepsaa.com`; `DEV_MODE` host-derived (see Production Security Review above)
+- [x] Server `config/mapbox.php` — exists with a `pk.` production token — probe-verified
+- [x] `display_errors = Off` in production — probe-verified
+- [x] All migrations applied to the production DB — probe-verified: all 31 tables the code references exist; spot-checked columns (sale_price, refund/return columns, coupon_id, admin_role, trial dates) and the full 12-value orders status enum
+- [x] Admin accounts live (2), HTTPS 301 redirect working, valid SSL on all three subdomains
+- [x] **Found & fixed: `/uploads/` did not exist on the server** — the deploy mirror excludes it and nothing ever created it, so every avatar/product-photo/QR upload on live would have failed, and photo paths in the production DB (imported from the dev dump) pointed at missing files. Created 755 on 2026-07-09, seeded with local uploads incl. the PHP-blocking `.htaccess`; live-tested: images serve 200, a `.php` file in `/uploads/` returns 403
+- [x] `uploads/aba-qr.png` serves 200 on live (came in with the uploads seed) — known fake filler QR; real one gets uploaded during live testing
+
+---
+
+## Production Deployment Checklist — completed items (2026-07-10)
+
+Completed portion of `teepsaa-production-deploy.md` (that file now holds only the open pre-launch tasks). Most server/config verification is recorded in the Launch Priorities section above; new here:
+
+- [x] Full codebase deployed to `public_html` via the `deploycode.txt` lftp mirror; site live behind the pre-launch Basic Auth gate
+- [x] Production database created in hPanel with a strong-password non-root user; schema imported via phpMyAdmin (full dump incl. all migrations)
+- [x] Sensitive folder protection live-verified — `/config/db.php` → 403, `/cron/auto-confirm.php` → 403 (both `.htaccess` files deployed and working)
+- [x] PHP 8.3.30 (LiteSpeed LSAPI) — well above the 8.0 minimum
+- [x] Email — in-house Hostinger SMTP via the server's hand-managed `config/smtp.php`, live-verified (the checklist's Resend plan was superseded; Resend is not used)
+- [x] Domain & DNS — resolves to Hostinger, HTTPS with valid SSL on teepsaa.com + vendor/admin subdomains, SPF/DKIM handled with the Hostinger email setup
+
+### Cron jobs registered (2026-07-10)
+All four registered in hPanel → Advanced → Cron Jobs under teepsaa.com only (all three subdomains share the same folder/DB, so once is correct). Screenshot-verified: every command uses `/usr/bin/php` + the full script path.
+- [x] `cron/auto-confirm.php` — hourly (`0 * * * *`)
+- [x] `cron/abandoned-cart.php` — daily at midnight (`0 0 * * *`)
+- [x] `cron/review-reminder.php` — daily at midnight (`0 0 * * *`)
+- [x] `cron/purge-password-resets.php` — monthly, 2am on the 1st (`0 2 1 * *`) — weekly was suggested, monthly is fine for token housekeeping
+- [x] Leftover cron from an old website (`send-subscription-reminders.php`) deleted
+- Note: execution gets confirmed during the live order-flow test (auto-confirm is triggered manually there)
+
+### Found & fixed (2026-07-10): z-checklists/ and database/ were publicly served
+The deploy mirror shipped both folders, and `https://teepsaa.com/database/migration.sql` + `https://teepsaa.com/z-checklists/teepsaa-notes-test-accounts.md` returned 200 — only the pre-launch Basic Auth gate hid them; at launch this would have been schema + test-account disclosure. Fixed three ways, all live-verified (both URLs now 404, homepage unaffected):
+- [x] `--exclude 'z-checklists/'` and `--exclude 'database/'` added to the mirror command in `deploycode.txt`
+- [x] Both folders deleted from the server
+- [x] Root `.htaccess` FilesMatch extended to deny `.md` and `.sql` (belt-and-braces if a stray copy ever deploys)
