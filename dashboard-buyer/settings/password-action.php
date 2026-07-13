@@ -8,6 +8,7 @@ session_start([
 
 require __DIR__ . '/../../config/db.php';
 require __DIR__ . '/../../config/csrf.php';
+require __DIR__ . '/../../config/notify.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -26,7 +27,7 @@ $current = $_POST['current_password'] ?? '';
 $new     = $_POST['new_password']     ?? '';
 $confirm = $_POST['confirm_password'] ?? '';
 
-$stmt = $pdo->prepare('SELECT password FROM buyers WHERE id = ?');
+$stmt = $pdo->prepare('SELECT name, email, password FROM buyers WHERE id = ?');
 $stmt->execute([$userId]);
 $row = $stmt->fetch();
 
@@ -50,6 +51,11 @@ if ($new !== $confirm) {
 
 $stmt = $pdo->prepare('UPDATE buyers SET password = ? WHERE id = ?');
 $stmt->execute([password_hash($new, PASSWORD_DEFAULT), $userId]);
+
+[$subj, $html] = render_email_template($pdo, 'password_changed', [
+    'name' => htmlspecialchars($row['name']),
+]);
+if ($html !== '') send_email($row['email'], $subj, $html);
 
 $_SESSION['settings_success'] = 'Password updated.';
 header('Location: /dashboard-buyer/settings/?tab=password');

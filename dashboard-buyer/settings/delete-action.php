@@ -8,6 +8,7 @@ session_start([
 
 require __DIR__ . '/../../config/db.php';
 require __DIR__ . '/../../config/csrf.php';
+require __DIR__ . '/../../config/notify.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -24,7 +25,7 @@ csrf_verify();
 $userId   = $_SESSION['user_id'];
 $password = $_POST['password'] ?? '';
 
-$stmt = $pdo->prepare('SELECT password FROM buyers WHERE id = ?');
+$stmt = $pdo->prepare('SELECT name, email, password FROM buyers WHERE id = ?');
 $stmt->execute([$userId]);
 $row = $stmt->fetch();
 
@@ -36,6 +37,11 @@ if (!password_verify($password, $row['password'])) {
 
 $stmt = $pdo->prepare('DELETE FROM buyers WHERE id = ?');
 $stmt->execute([$userId]);
+
+[$subj, $html] = render_email_template($pdo, 'account_deleted', [
+    'name' => htmlspecialchars($row['name']),
+]);
+if ($html !== '') send_email($row['email'], $subj, $html);
 
 session_destroy();
 header('Location: /');

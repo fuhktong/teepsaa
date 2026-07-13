@@ -9,6 +9,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
+require __DIR__ . '/../config/notify.php';
 
 if (!isset($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
     header('Location: /login-admin/');
@@ -61,6 +62,23 @@ if ($action === 'save_note') {
         WHERE oi.order_id = ?
     ')->execute([$orderId]);
     $pdo->commit();
+
+    $bStmt = $pdo->prepare(
+        'SELECT o.public_id, o.created_at, bu.name, bu.email
+         FROM orders o JOIN buyers bu ON bu.id = o.buyer_user_id
+         WHERE o.id = ?'
+    );
+    $bStmt->execute([$orderId]);
+    if ($buyer = $bStmt->fetch()) {
+        $oid = order_display_id($orderId, $buyer['created_at']);
+        [$subj, $html] = render_email_template($pdo, 'order_cancelled', [
+            'name'    => htmlspecialchars($buyer['name']),
+            'order'   => $oid,
+            'cta_url' => 'https://teepsaa.com/dashboard-buyer/order.php?id=' . $buyer['public_id'],
+        ]);
+        if ($html !== '') send_email($buyer['email'], $subj, $html);
+    }
+
     $_SESSION['admin_success'] = 'Order cancelled and stock restored.';
 }
 

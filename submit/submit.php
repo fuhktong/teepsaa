@@ -8,6 +8,7 @@ session_start([
 
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/notify.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -21,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 csrf_verify();
 
-$stmt = $pdo->prepare('SELECT email_verified_at FROM vendors WHERE id = ?');
+$stmt = $pdo->prepare('SELECT name, email, email_verified_at FROM vendors WHERE id = ?');
 $stmt->execute([$_SESSION['user_id']]);
 $vendor = $stmt->fetch();
 if (!$vendor || !$vendor['email_verified_at']) {
@@ -131,6 +132,14 @@ if (!empty($_FILES['banner']['name']) && $_FILES['banner']['error'] === UPLOAD_E
         }
     }
 }
+
+// "We received your submission" receipt
+[$subj, $html] = render_email_template($pdo, 'business_submitted', [
+    'name'     => htmlspecialchars($vendor['name']),
+    'business' => htmlspecialchars($name),
+    'cta_url'  => 'https://teepsaa.com/dashboard-vendor/',
+]);
+if ($html !== '') send_email($vendor['email'], $subj, $html);
 
 $_SESSION['submit_success'] = 'Business submitted! It will appear on the map once approved.';
 header('Location: /dashboard-vendor/');

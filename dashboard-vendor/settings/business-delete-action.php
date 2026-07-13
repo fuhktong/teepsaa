@@ -8,6 +8,7 @@ session_start([
 
 require __DIR__ . '/../../config/db.php';
 require __DIR__ . '/../../config/csrf.php';
+require __DIR__ . '/../../config/notify.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -34,7 +35,7 @@ if (!password_verify($password, $row['password'])) {
     exit;
 }
 
-$stmt = $pdo->prepare('SELECT id, banner FROM businesses WHERE user_id = ? AND deleted_at IS NULL LIMIT 1');
+$stmt = $pdo->prepare('SELECT id, name, banner FROM businesses WHERE user_id = ? AND deleted_at IS NULL LIMIT 1');
 $stmt->execute([$userId]);
 $business = $stmt->fetch();
 
@@ -75,6 +76,16 @@ if ($business['banner'] && file_exists($uploadDir . $business['banner'])) {
 // Soft delete: the row (and its orders, reviews, coupons, penalties) is kept for accounting
 $pdo->prepare('UPDATE businesses SET deleted_at = NOW(), approved = -1, banner = NULL WHERE id = ?')
     ->execute([$business['id']]);
+
+$vStmt = $pdo->prepare('SELECT name, email FROM vendors WHERE id = ?');
+$vStmt->execute([$userId]);
+if ($owner = $vStmt->fetch()) {
+    [$subj, $html] = render_email_template($pdo, 'business_deleted', [
+        'name'     => htmlspecialchars($owner['name']),
+        'business' => htmlspecialchars($business['name']),
+    ]);
+    if ($html !== '') send_email($owner['email'], $subj, $html);
+}
 
 $_SESSION['settings_success'] = 'Your business has been deleted.';
 header('Location: /dashboard-vendor/settings/?tab=danger');

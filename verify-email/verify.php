@@ -9,6 +9,7 @@ session_start([
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/rate-limit.php';
+require __DIR__ . '/../config/notify.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: /login-buyer/');
@@ -77,9 +78,19 @@ if (!hash_equals($user['verify_token'], $submitted)) {
 $pdo->prepare("UPDATE {$table} SET email_verified_at = NOW(), verify_token = NULL, verify_code_expires = NULL WHERE id = ?")
     ->execute([$userId]);
 
-$stmt = $pdo->prepare("SELECT name, avatar FROM {$table} WHERE id = ?");
+$stmt = $pdo->prepare("SELECT name, avatar, email FROM {$table} WHERE id = ?");
 $stmt->execute([$userId]);
 $profile = $stmt->fetch();
+
+if ($profile && $profile['email']) {
+    $welcomeKey = $role === 'vendor' ? 'welcome_vendor' : 'welcome_buyer';
+    $ctaUrl     = $role === 'vendor' ? 'https://teepsaa.com/submit/' : 'https://teepsaa.com/';
+    [$subj, $html] = render_email_template($pdo, $welcomeKey, [
+        'name'    => htmlspecialchars($profile['name'] ?? ''),
+        'cta_url' => $ctaUrl,
+    ]);
+    if ($html !== '') send_email($profile['email'], $subj, $html);
+}
 
 unset($_SESSION['pending_role']);
 $_SESSION['role']        = $role;

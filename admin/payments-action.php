@@ -65,6 +65,25 @@ if ($action === 'confirm') {
         if ($html !== '') send_email($buyer['email'], $subj, $html);
     }
 
+    // Email each vendor about their new paid order
+    $vendStmt = $pdo->prepare(
+        'SELECT o.id AS order_id, o.public_id, o.created_at, v.name AS vendor_name, v.email
+         FROM orders o
+         JOIN businesses b ON b.id = o.business_id
+         JOIN vendors v ON v.id = b.user_id
+         WHERE o.payment_id = ?'
+    );
+    $vendStmt->execute([$paymentId]);
+    foreach ($vendStmt->fetchAll() as $row) {
+        $oid = order_display_id((int)$row['order_id'], $row['created_at']);
+        [$subj, $html] = render_email_template($pdo, 'vendor_new_order', [
+            'name'    => htmlspecialchars($row['vendor_name']),
+            'order'   => $oid,
+            'cta_url' => 'https://teepsaa.com/orders-vendor/order.php?id=' . $row['public_id'],
+        ]);
+        if ($html !== '') send_email($row['email'], $subj, $html);
+    }
+
     $_SESSION['admin_success'] = 'Payment confirmed. Vendors have been notified.';
 
 } elseif ($action === 'reject') {
@@ -82,6 +101,24 @@ if ($action === 'confirm') {
         WHERE o.payment_id = ?
     ')->execute([$paymentId]);
     $pdo->commit();
+
+    // Email the buyer that their order(s) were cancelled
+    $cancelStmt = $pdo->prepare(
+        'SELECT o.id AS order_id, o.public_id, o.created_at, bu.name, bu.email
+         FROM orders o JOIN buyers bu ON bu.id = o.buyer_user_id
+         WHERE o.payment_id = ?'
+    );
+    $cancelStmt->execute([$paymentId]);
+    foreach ($cancelStmt->fetchAll() as $row) {
+        $oid = order_display_id((int)$row['order_id'], $row['created_at']);
+        [$subj, $html] = render_email_template($pdo, 'order_cancelled', [
+            'name'    => htmlspecialchars($row['name']),
+            'order'   => $oid,
+            'cta_url' => 'https://teepsaa.com/dashboard-buyer/order.php?id=' . $row['public_id'],
+        ]);
+        if ($html !== '') send_email($row['email'], $subj, $html);
+    }
+
     $_SESSION['admin_success'] = 'Payment rejected.';
 }
 

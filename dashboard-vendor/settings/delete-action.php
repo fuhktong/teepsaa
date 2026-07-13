@@ -8,6 +8,7 @@ session_start([
 
 require __DIR__ . '/../../config/db.php';
 require __DIR__ . '/../../config/csrf.php';
+require __DIR__ . '/../../config/notify.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -24,7 +25,7 @@ csrf_verify();
 $userId   = $_SESSION['user_id'];
 $password = $_POST['password'] ?? '';
 
-$stmt = $pdo->prepare('SELECT password FROM vendors WHERE id = ?');
+$stmt = $pdo->prepare('SELECT name, email, password FROM vendors WHERE id = ?');
 $stmt->execute([$userId]);
 $row = $stmt->fetch();
 
@@ -48,6 +49,11 @@ if ($stmt->fetchColumn() > 0) {
 
 $stmt = $pdo->prepare('DELETE FROM vendors WHERE id = ?');
 $stmt->execute([$userId]);
+
+[$subj, $html] = render_email_template($pdo, 'account_deleted', [
+    'name' => htmlspecialchars($row['name']),
+]);
+if ($html !== '') send_email($row['email'], $subj, $html);
 
 session_destroy();
 header('Location: /');

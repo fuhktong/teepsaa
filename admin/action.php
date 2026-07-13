@@ -9,6 +9,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
+require __DIR__ . '/../config/notify.php';
 
 if (!isset($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
     header('Location: /login-admin/');
@@ -49,6 +50,27 @@ if ($action === 'approve') {
         $pdo->prepare('UPDATE businesses SET trial_starts_at = ?, trial_ends_at = ?, royalty_free_threshold = 100.00 WHERE id = ?')
             ->execute([$trialStart, $trialEnd, $id]);
     }
+}
+
+// Email the vendor about the decision
+$vStmt = $pdo->prepare(
+    'SELECT v.name AS vendor_name, v.email, b.name AS business_name
+     FROM businesses b JOIN vendors v ON v.id = b.user_id
+     WHERE b.id = ?'
+);
+$vStmt->execute([$id]);
+$owner = $vStmt->fetch();
+if ($owner && $owner['email']) {
+    $templateKey = $action === 'approve' ? 'business_approved' : 'business_rejected';
+    $ctaUrl      = $action === 'approve'
+        ? 'https://teepsaa.com/products/'
+        : 'https://teepsaa.com/dashboard-vendor/settings/';
+    [$subj, $html] = render_email_template($pdo, $templateKey, [
+        'name'     => htmlspecialchars($owner['vendor_name']),
+        'business' => htmlspecialchars($owner['business_name']),
+        'cta_url'  => $ctaUrl,
+    ]);
+    if ($html !== '') send_email($owner['email'], $subj, $html);
 }
 
 $redirect = $vendorId ? '/admin/vendor.php?id=' . $vendorId : '/admin/';

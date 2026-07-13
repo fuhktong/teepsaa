@@ -9,6 +9,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
+require __DIR__ . '/../config/notify.php';
 
 if (!isset($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
     header('Location: /login-admin/');
@@ -86,7 +87,7 @@ if ($action === 'suspend') {
 } elseif ($action === 'delete_business') {
     $businessId = (int)($_POST['business_id'] ?? 0);
 
-    $stmt = $pdo->prepare('SELECT id, banner FROM businesses WHERE id = ? AND user_id = ? AND deleted_at IS NULL');
+    $stmt = $pdo->prepare('SELECT id, name, banner FROM businesses WHERE id = ? AND user_id = ? AND deleted_at IS NULL');
     $stmt->execute([$businessId, $vendorId]);
     $business = $stmt->fetch();
     if (!$business) {
@@ -127,6 +128,17 @@ if ($action === 'suspend') {
     // Soft delete: the row (and its orders, reviews, coupons, penalties) is kept for accounting
     $pdo->prepare('UPDATE businesses SET deleted_at = NOW(), approved = -1, banner = NULL WHERE id = ?')
         ->execute([$businessId]);
+
+    $vStmt = $pdo->prepare('SELECT name, email FROM vendors WHERE id = ?');
+    $vStmt->execute([$vendorId]);
+    if ($owner = $vStmt->fetch()) {
+        [$subj, $html] = render_email_template($pdo, 'business_deleted', [
+            'name'     => htmlspecialchars($owner['name']),
+            'business' => htmlspecialchars($business['name']),
+        ]);
+        if ($html !== '') send_email($owner['email'], $subj, $html);
+    }
+
     $_SESSION['admin_success'] = 'Business deleted. Order history is kept for accounting; the vendor account is still active.';
 }
 

@@ -622,3 +622,11 @@ The deploy mirror shipped both folders, and `https://teepsaa.com/database/migrat
 - [x] `--exclude 'z-checklists/'` and `--exclude 'database/'` added to the mirror command in `deploycode.txt`
 - [x] Both folders deleted from the server
 - [x] Root `.htaccess` FilesMatch extended to deny `.md` and `.sql` (belt-and-braces if a stray copy ever deploys)
+
+### Email sending — Hostinger SMTP setup (2026-07-08, moved from teepsaa-todos-email.md 2026-07-13)
+Decision: Option A — in-house Hostinger SMTP, no external services. Resend option removed; `config/resend.php` deleted.
+- [x] hPanel → Emails → mailbox `contact@teepsaa.com` created, password noted
+- [x] `send_email()` in `config/mail.php` rewritten to send via `smtp.hostinger.com` (port 465, SSL) — pure PHP, no libraries, same function signature, keeps the mail.log fallback when no password is configured (local dev unchanged), failed sends logged to mail.log with the SMTP error
+- [x] On the SERVER, `config/smtp.php` created (replaces the server's old `config/resend.php`) with SMTP_HOST/PORT/USER/PASS + MAIL_FROM/MAIL_FROM_NAME — the real password lives only on the server
+- [x] Updated `config/mail.php` deployed (uploaded directly 2026-07-08; deploy script excludes `config/smtp.php` so the server's password is never overwritten)
+- [x] Live test: registered on the live site with a real personal email via vendor registration (2026-07-08) — verification code arrived in the inbox, WORKS
