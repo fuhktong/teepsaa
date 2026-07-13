@@ -136,6 +136,11 @@ unset($_SESSION['submit_error'], $_SESSION['submit_success']);
         </div>
 
         <div class="field">
+            <label for="banner"><?= $t['submit_banner'] ?> <span class="hint"><?= $t['submit_banner_hint'] ?></span></label>
+            <input type="file" id="banner" name="banner" accept="image/jpeg,image/png">
+        </div>
+
+        <div class="field">
             <label for="photos"><?= $t['submit_photos'] ?> <span class="hint"><?= $t['submit_photos_hint'] ?></span></label>
             <input type="file" id="photos" name="photos[]" accept="image/jpeg,image/png" multiple>
         </div>

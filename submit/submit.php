@@ -116,6 +116,20 @@ if (!empty($_FILES['photos']['name'][0])) {
     }
 }
 
+if (!empty($_FILES['banner']['name']) && $_FILES['banner']['error'] === UPLOAD_ERR_OK) {
+    $tmp  = $_FILES['banner']['tmp_name'];
+    $size = $_FILES['banner']['size'];
+    $type = image_type_from_magic($tmp);
+
+    if (in_array($type, $allowed_types, true) && $size <= 4 * 1024 * 1024) {
+        $ext      = $type === 'image/png' ? 'png' : 'jpg';
+        $filename = 'banner_' . $_SESSION['user_id'] . '_' . time() . '.' . $ext;
+        if (move_uploaded_file($tmp, $upload_dir . $filename)) {
+            $pdo->prepare('UPDATE businesses SET banner = ? WHERE id = ?')->execute([$filename, $business_id]);
+        }
+    }
+}
+
 $_SESSION['submit_success'] = 'Business submitted! It will appear on the map once approved.';
 header('Location: /dashboard-vendor/');
 exit;

@@ -430,8 +430,10 @@ return [
     'submit_location'      => 'Location',
     'submit_location_hint' => 'Click the map to pin your business',
     'submit_no_location'   => 'No location selected',
-    'submit_photos'        => 'Photos',
-    'submit_photos_hint'   => 'Up to 5 — jpg or png, max 2MB each',
+    'submit_photos'        => 'Gallery photos',
+    'submit_photos_hint'   => 'General photos of your store and what you sell — shown in the gallery on your store page. Up to 5, JPG or PNG, max 2MB each. You can add more later in Settings.',
+    'submit_banner'        => 'Banner photo (optional)',
+    'submit_banner_hint'   => 'Shown full-width at the top of your store page. JPG or PNG, max 4MB. Recommended size: 1200×400px (landscape) — tall or portrait images will be cropped at the top and bottom. You can add or change it later in Settings.',
     'submit_for_review'    => 'Submit for review',
     // Product manager (products/index.php)
     'prod_my_products'     => 'My Products',
