@@ -82,6 +82,52 @@ if ($action === 'suspend') {
     $pdo->prepare('UPDATE businesses SET royalty_add_on = ? WHERE id = ?')
         ->execute([$rate, $businessId]);
     $_SESSION['admin_success'] = 'Company royalty add-on saved.';
+
+} elseif ($action === 'delete_business') {
+    $businessId = (int)($_POST['business_id'] ?? 0);
+
+    $stmt = $pdo->prepare('SELECT id, banner FROM businesses WHERE id = ? AND user_id = ? AND deleted_at IS NULL');
+    $stmt->execute([$businessId, $vendorId]);
+    $business = $stmt->fetch();
+    if (!$business) {
+        $_SESSION['admin_error'] = 'Business not found.';
+        header('Location: ' . $returnUrl);
+        exit;
+    }
+
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE business_id = ? AND status NOT IN ('completed','cancelled','refunded','refund_rejected')");
+    $stmt->execute([$businessId]);
+    if ($stmt->fetchColumn() > 0) {
+        $_SESSION['admin_error'] = 'Cannot delete business — it has open orders. All orders must be completed, cancelled, or refunded first.';
+        header('Location: ' . $returnUrl);
+        exit;
+    }
+
+    $uploadDir = __DIR__ . '/../uploads/';
+
+    $stmt = $pdo->prepare('SELECT pp.filename FROM product_photos pp JOIN products p ON p.id = pp.product_id WHERE p.business_id = ?');
+    $stmt->execute([$businessId]);
+    foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $filename) {
+        if ($filename && file_exists($uploadDir . $filename)) @unlink($uploadDir . $filename);
+    }
+    // order_items.product_id is set NULL by FK; product_photos and cart_items cascade
+    $pdo->prepare('DELETE FROM products WHERE business_id = ?')->execute([$businessId]);
+
+    $stmt = $pdo->prepare('SELECT filename FROM photos WHERE business_id = ?');
+    $stmt->execute([$businessId]);
+    foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $filename) {
+        if ($filename && file_exists($uploadDir . $filename)) @unlink($uploadDir . $filename);
+    }
+    $pdo->prepare('DELETE FROM photos WHERE business_id = ?')->execute([$businessId]);
+
+    if ($business['banner'] && file_exists($uploadDir . $business['banner'])) {
+        @unlink($uploadDir . $business['banner']);
+    }
+
+    // Soft delete: the row (and its orders, reviews, coupons, penalties) is kept for accounting
+    $pdo->prepare('UPDATE businesses SET deleted_at = NOW(), approved = -1, banner = NULL WHERE id = ?')
+        ->execute([$businessId]);
+    $_SESSION['admin_success'] = 'Business deleted. Order history is kept for accounting; the vendor account is still active.';
 }
 
 header('Location: ' . $returnUrl);

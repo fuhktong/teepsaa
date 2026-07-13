@@ -419,6 +419,13 @@ return [
     'vendor_qr_hint'       => '— JPG or PNG, max 2MB',
     'vendor_upload'        => 'Upload',
     'vendor_delete_warning' => 'Deleting your account also removes your business and all associated products. This cannot be undone. Accounts with open orders cannot be deleted.',
+    'settings_delete_business'        => 'Delete business',
+    'settings_delete_biz_explain'     => 'Before your business can be deleted, you must first delete all of your products — this prevents any new orders — and every existing order must be completed, cancelled, or refunded.',
+    'settings_delete_biz_products'    => '%d product(s) still listed. Delete them in My Products, including archived ones.',
+    'settings_delete_biz_orders'      => '%d order(s) still open. All orders must be completed, cancelled, or refunded first.',
+    'settings_delete_biz_warning'     => 'This permanently removes your store page, gallery photos, reviews, coupons, and order history. It cannot be undone. Your vendor account will stay active, and you can set up a new business afterwards.',
+    'settings_delete_biz_confirm'     => 'Delete my business',
+    'settings_delete_biz_goto_products' => 'Go to My Products',
     'vendor_banner_upload_hint' => 'JPG or PNG, max 4MB. Recommended size: 1200×400px (landscape). The image is cropped to a wide strip — tall or portrait images will be cut off at the top and bottom.',
     'vendor_gallery_upload_hint' => 'JPG or PNG, max 4MB. Recommended size: 1200×675px (landscape, 16:9). Portrait or square images will be cropped at the sides. %s/10 used.',
     // Submit a business (submit/index.php)

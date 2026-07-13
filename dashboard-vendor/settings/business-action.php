@@ -38,7 +38,7 @@ $allParentNames = $pdo->query('SELECT name FROM categories WHERE parent_id IS NU
 $safeCats = array_values(array_filter($rawCats, fn($c) => in_array($c, $allParentNames, true)));
 $category = implode(', ', $safeCats);
 
-$stmt = $pdo->prepare('UPDATE businesses SET name = ?, name_km = ?, description = ?, description_km = ?, category = ? WHERE user_id = ?');
+$stmt = $pdo->prepare('UPDATE businesses SET name = ?, name_km = ?, description = ?, description_km = ?, category = ? WHERE user_id = ? AND deleted_at IS NULL');
 $stmt->execute([$name, $nameKm ?: null, $description, $descriptionKm ?: null, $category, $userId]);
 
 $_SESSION['settings_success'] = 'Business info updated.';

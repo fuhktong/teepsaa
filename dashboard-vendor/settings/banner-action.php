@@ -44,14 +44,14 @@ $ext      = $mime === 'image/png' ? 'png' : 'jpg';
 $filename = 'banner_' . $userId . '_' . time() . '.' . $ext;
 
 if (move_uploaded_file($tmp, $uploadDir . $filename)) {
-    $stmt = $pdo->prepare('SELECT banner FROM businesses WHERE user_id = ?');
+    $stmt = $pdo->prepare('SELECT banner FROM businesses WHERE user_id = ? AND deleted_at IS NULL');
     $stmt->execute([$userId]);
     $old = $stmt->fetchColumn();
     if ($old && file_exists($uploadDir . $old)) {
         @unlink($uploadDir . $old);
     }
 
-    $stmt = $pdo->prepare('UPDATE businesses SET banner = ? WHERE user_id = ?');
+    $stmt = $pdo->prepare('UPDATE businesses SET banner = ? WHERE user_id = ? AND deleted_at IS NULL');
     $stmt->execute([$filename, $userId]);
     $_SESSION['settings_success'] = 'Banner updated.';
 } else {

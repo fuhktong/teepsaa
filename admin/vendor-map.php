@@ -25,7 +25,7 @@ $vendors = $pdo->query("
     SELECT v.name AS vendor_name, v.email,
            b.name AS business_name, b.lat, b.lng, b.approved, b.address
     FROM vendors v
-    JOIN businesses b ON b.user_id = v.id
+    JOIN businesses b ON b.user_id = v.id AND b.deleted_at IS NULL
     WHERE NOT (b.lat = 0 AND b.lng = 0)
     ORDER BY b.approved DESC, v.created_at DESC
 ")->fetchAll(PDO::FETCH_ASSOC);

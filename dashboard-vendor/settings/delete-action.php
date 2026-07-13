@@ -37,7 +37,7 @@ if (!password_verify($password, $row['password'])) {
 $stmt = $pdo->prepare('
     SELECT COUNT(*) FROM orders o
     JOIN businesses b ON b.id = o.business_id
-    WHERE b.user_id = ? AND o.status NOT IN (\'completed\', \'cancelled\')
+    WHERE b.user_id = ? AND o.status NOT IN (\'completed\', \'cancelled\', \'refunded\', \'refund_rejected\')
 ');
 $stmt->execute([$userId]);
 if ($stmt->fetchColumn() > 0) {

@@ -30,7 +30,7 @@ if (!$vendor || !$vendor['email_verified_at']) {
     exit;
 }
 
-$stmt = $pdo->prepare('SELECT COUNT(*) FROM businesses WHERE user_id = ?');
+$stmt = $pdo->prepare('SELECT COUNT(*) FROM businesses WHERE user_id = ? AND deleted_at IS NULL');
 $stmt->execute([$_SESSION['user_id']]);
 if ($stmt->fetchColumn() > 0) {
     $_SESSION['submit_error'] = 'Your account already has a business.';
@@ -38,8 +38,10 @@ if ($stmt->fetchColumn() > 0) {
     exit;
 }
 
-$name         = trim($_POST['name'] ?? '');
-$description  = trim($_POST['description'] ?? '');
+$name           = trim($_POST['name'] ?? '');
+$name_km        = trim($_POST['name_km'] ?? '');
+$description    = trim($_POST['description'] ?? '');
+$description_km = trim($_POST['description_km'] ?? '');
 $category_id  = (int)($_POST['category_id'] ?? 0);
 $house_number = trim($_POST['house_number'] ?? '');
 $address      = trim($_POST['address'] ?? '');
@@ -85,8 +87,8 @@ if ($vendorPromoCode) {
     }
 }
 
-$stmt = $pdo->prepare('INSERT INTO businesses (user_id, name, category, description, house_number, address, khan, sangkat, lat, lng, promo_code_id, public_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-$stmt->execute([$_SESSION['user_id'], $name, $categoryName, $description, $house_number, $address, $khan, $sangkat, $lat, $lng, $promoCodeId, uuid_v4()]);
+$stmt = $pdo->prepare('INSERT INTO businesses (user_id, name, name_km, category, description, description_km, house_number, address, khan, sangkat, lat, lng, promo_code_id, public_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+$stmt->execute([$_SESSION['user_id'], $name, $name_km !== '' ? $name_km : null, $categoryName, $description, $description_km !== '' ? $description_km : null, $house_number, $address, $khan, $sangkat, $lat, $lng, $promoCodeId, uuid_v4()]);
 $business_id = $pdo->lastInsertId();
 
 $allowed_types = ['image/jpeg', 'image/png'];

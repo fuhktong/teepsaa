@@ -28,7 +28,7 @@ $stmt = $pdo->prepare('
            b.approved, b.created_at AS submitted_at,
            b.royalty_add_on AS company_royalty_add_on, b.royalty_waived
     FROM vendors v
-    LEFT JOIN businesses b ON b.user_id = v.id
+    LEFT JOIN businesses b ON b.user_id = v.id AND b.deleted_at IS NULL
     WHERE v.id = ?
 ');
 $stmt->execute([$id]);
@@ -82,6 +82,17 @@ if ($v['business_id']) {
 }
 $productCount = count($products);
 
+$openOrderCount = 0;
+if ($v['business_id']) {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE business_id = ? AND status NOT IN ('completed','cancelled','refunded','refund_rejected')");
+    $stmt->execute([$v['business_id']]);
+    $openOrderCount = (int)$stmt->fetchColumn();
+}
+
+$stmt = $pdo->prepare('SELECT COUNT(*) FROM businesses WHERE user_id = ? AND deleted_at IS NOT NULL');
+$stmt->execute([$v['id']]);
+$deletedBizCount = (int)$stmt->fetchColumn();
+
 $success = $_SESSION['admin_success'] ?? '';
 $error   = $_SESSION['admin_error']   ?? '';
 unset($_SESSION['admin_success'], $_SESSION['admin_error']);
@@ -90,7 +101,7 @@ $refundCount        = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status
 $pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();
 $pendingVendorCount = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 0")->fetchColumn();
 
-if (!$v['business_id'])        { $statusLabel = 'No business'; $statusClass = 'badge-grey'; }
+if (!$v['business_id'])        { $statusLabel = $deletedBizCount > 0 ? 'Business deleted' : 'No business'; $statusClass = 'badge-grey'; }
 elseif ($v['approved'] === 1)  { $statusLabel = 'Approved';    $statusClass = 'badge-green'; }
 elseif ($v['approved'] === -1) { $statusLabel = 'Rejected';    $statusClass = 'badge-red'; }
 else                           { $statusLabel = 'Pending';     $statusClass = 'badge-yellow'; }
@@ -342,6 +353,25 @@ $adminTab     = 'vendors';
                 </form>
                 <?php endif; ?>
             </div>
+
+            <?php if ($v['business_id']): ?>
+            <!-- Delete business -->
+            <div class="detail-card">
+                <div class="detail-card-title">Delete business</div>
+                <?php if ($openOrderCount > 0): ?>
+                <p style="font-size:0.85rem;color:#6b7280;">Cannot delete — <?= $openOrderCount ?> open order<?= $openOrderCount === 1 ? '' : 's' ?>. All orders must be completed, cancelled, or refunded first.</p>
+                <?php else: ?>
+                <p style="font-size:0.85rem;color:#6b7280;">Permanently removes the store page and gallery photos<?= $productCount > 0 ? ", plus its $productCount product" . ($productCount === 1 ? '' : 's') : '' ?>. Order history is kept for accounting. The vendor account stays active. This cannot be undone.</p>
+                <form method="POST" action="/admin/vendor-action.php" onsubmit="return confirm('Delete this business permanently? This cannot be undone.');" style="margin-top:0.5rem;">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="action" value="delete_business">
+                    <input type="hidden" name="vendor_id" value="<?= $v['id'] ?>">
+                    <input type="hidden" name="business_id" value="<?= $v['business_id'] ?>">
+                    <button type="submit" class="btn-reject" style="width:100%;">Delete business</button>
+                </form>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 

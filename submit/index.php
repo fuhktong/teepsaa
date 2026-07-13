@@ -40,7 +40,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     exit;
 }
 
-$stmt = $pdo->prepare('SELECT COUNT(*) FROM businesses WHERE user_id = ?');
+$stmt = $pdo->prepare('SELECT COUNT(*) FROM businesses WHERE user_id = ? AND deleted_at IS NULL');
 $stmt->execute([$_SESSION['user_id']]);
 $hasShop = $stmt->fetchColumn() > 0;
 
@@ -90,8 +90,18 @@ unset($_SESSION['submit_error'], $_SESSION['submit_success']);
         </div>
 
         <div class="field">
+            <label for="name_km"><?= $t['vendor_settings_biz_name'] ?> <span class="hint"><?= $t['form_km_field'] ?></span></label>
+            <input type="text" id="name_km" name="name_km" placeholder="ឈ្មោះហាងជាភាសាខ្មែរ">
+        </div>
+
+        <div class="field">
             <label for="description"><?= $t['vendor_settings_description'] ?></label>
             <textarea id="description" name="description" rows="4"></textarea>
+        </div>
+
+        <div class="field">
+            <label for="description_km"><?= $t['vendor_settings_description'] ?> <span class="hint"><?= $t['form_km_field'] ?></span></label>
+            <textarea id="description_km" name="description_km" rows="4" placeholder="ការពិពណ៌នាហាងជាភាសាខ្មែរ"></textarea>
         </div>
 
         <div class="field">

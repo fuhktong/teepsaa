@@ -20,7 +20,7 @@ $userId = $_SESSION['user_id'];
 $lang = $_SESSION['lang'] ?? 'km';
 $t = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km']) ? $lang : 'en') . '.php';
 
-$stmt = $pdo->prepare('SELECT id, name, category, approved, trial_starts_at, trial_ends_at, royalty_free_threshold FROM businesses WHERE user_id = ? ORDER BY created_at DESC LIMIT 1');
+$stmt = $pdo->prepare('SELECT id, name, category, approved, trial_starts_at, trial_ends_at, royalty_free_threshold FROM businesses WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1');
 $stmt->execute([$userId]);
 $business = $stmt->fetch();
 

@@ -76,7 +76,7 @@ $vsql = '
            b.category, b.description, b.address, b.lat, b.lng,
            b.approved, b.created_at AS submitted_at
     FROM vendors v
-    LEFT JOIN businesses b ON b.user_id = v.id'
+    LEFT JOIN businesses b ON b.user_id = v.id AND b.deleted_at IS NULL'
     . (!empty($vwhere) ? ' WHERE ' . implode(' AND ', $vwhere) : '')
     . ' ORDER BY CASE WHEN b.approved = 0 AND b.id IS NOT NULL THEN 0 ELSE 1 END ASC, v.created_at DESC';
 
@@ -90,7 +90,7 @@ $vcounts = $pdo->query("
            SUM(CASE WHEN b.approved = 0 AND b.id IS NOT NULL THEN 1 ELSE 0 END) AS pending,
            SUM(CASE WHEN b.approved = 1 THEN 1 ELSE 0 END) AS approved,
            SUM(CASE WHEN b.approved = -1 THEN 1 ELSE 0 END) AS rejected
-    FROM vendors v LEFT JOIN businesses b ON b.user_id = v.id
+    FROM vendors v LEFT JOIN businesses b ON b.user_id = v.id AND b.deleted_at IS NULL
 ")->fetch();
 
 

@@ -23,7 +23,7 @@ $stmt = $pdo->prepare('SELECT name, email, phone, avatar, avatar_color, aba_qr F
 $stmt->execute([$userId]);
 $vendor = $stmt->fetch();
 
-$stmt = $pdo->prepare('SELECT id, name, name_km, description, description_km, house_number, address, address_notes, khan, sangkat, lat, lng, banner FROM businesses WHERE user_id = ? LIMIT 1');
+$stmt = $pdo->prepare('SELECT id, name, name_km, description, description_km, house_number, address, address_notes, khan, sangkat, lat, lng, banner FROM businesses WHERE user_id = ? AND deleted_at IS NULL LIMIT 1');
 $stmt->execute([$userId]);
 $business = $stmt->fetch();
 
@@ -40,6 +40,18 @@ if ($tab === 'business' && $business) {
 }
 
 $locations = ($tab === 'address') ? require __DIR__ . '/../../config/phnom-penh-locations.php' : [];
+
+$bizProductCount = 0;
+$bizOpenOrders   = 0;
+if ($tab === 'danger' && $business) {
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM products WHERE business_id = ?');
+    $stmt->execute([$business['id']]);
+    $bizProductCount = (int)$stmt->fetchColumn();
+
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE business_id = ? AND status NOT IN ('completed','cancelled','refunded','refund_rejected')");
+    $stmt->execute([$business['id']]);
+    $bizOpenOrders = (int)$stmt->fetchColumn();
+}
 
 $success = $_SESSION['settings_success'] ?? '';
 $error   = $_SESSION['settings_error']   ?? '';
@@ -381,6 +393,31 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 
             <?php elseif ($tab === 'danger'): ?>
             <div class="settings-section">
+                <?php if ($business): ?>
+                <h2><?= $t['settings_delete_business'] ?></h2>
+                <div class="danger-zone" style="margin-bottom:2rem">
+                    <p><?= $t['settings_delete_biz_explain'] ?></p>
+                    <?php if ($bizProductCount > 0 || $bizOpenOrders > 0): ?>
+                        <?php if ($bizProductCount > 0): ?>
+                        <p><?= sprintf($t['settings_delete_biz_products'], $bizProductCount) ?> <a href="/products/"><?= $t['settings_delete_biz_goto_products'] ?></a></p>
+                        <?php endif; ?>
+                        <?php if ($bizOpenOrders > 0): ?>
+                        <p><?= sprintf($t['settings_delete_biz_orders'], $bizOpenOrders) ?></p>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <p><?= $t['settings_delete_biz_warning'] ?></p>
+                        <form method="POST" action="/dashboard-vendor/settings/business-delete-action.php">
+                            <?= csrf_input() ?>
+                            <div class="settings-field">
+                                <label for="delete_biz_password"><?= $t['settings_confirm_pw_label'] ?></label>
+                                <input type="password" id="delete_biz_password" name="password" required autocomplete="current-password">
+                            </div>
+                            <button type="submit" class="btn-danger"><?= $t['settings_delete_biz_confirm'] ?></button>
+                        </form>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
+
                 <h2><?= $t['settings_delete_account'] ?></h2>
                 <div class="danger-zone">
                     <p><?= $t['vendor_delete_warning'] ?></p>

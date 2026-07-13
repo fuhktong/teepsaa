@@ -25,7 +25,7 @@ $userId    = $_SESSION['user_id'];
 $uploadDir = __DIR__ . '/../../uploads/';
 $allowed   = ['image/jpeg', 'image/png'];
 
-$stmt = $pdo->prepare('SELECT id FROM businesses WHERE user_id = ? LIMIT 1');
+$stmt = $pdo->prepare('SELECT id FROM businesses WHERE user_id = ? AND deleted_at IS NULL LIMIT 1');
 $stmt->execute([$userId]);
 $businessId = $stmt->fetchColumn();
 

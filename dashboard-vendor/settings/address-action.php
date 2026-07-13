@@ -36,7 +36,7 @@ $lngVal = $lng !== '' ? filter_var($lng, FILTER_VALIDATE_FLOAT) : null;
 $stmt = $pdo->prepare('
     UPDATE businesses
     SET house_number = ?, address = ?, address_notes = ?, khan = ?, sangkat = ?, lat = ?, lng = ?
-    WHERE user_id = ?
+    WHERE user_id = ? AND deleted_at IS NULL
 ');
 $stmt->execute([
     $houseNumber ?: null,
