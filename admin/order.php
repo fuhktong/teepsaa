@@ -17,6 +17,10 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
 
 admin_require('orders');
 
+$success = $_SESSION['admin_success'] ?? '';
+$error   = $_SESSION['admin_error']   ?? '';
+unset($_SESSION['admin_success'], $_SESSION['admin_error']);
+
 $orderId = (int)($_GET['id'] ?? 0);
 if (!$orderId) {
     header('Location: /admin/orders.php');
@@ -130,6 +134,13 @@ $adminTab     = 'orders';
         <span class="order-badge <?= $statusClass ?>"><?= $statusLabel ?></span>
 
     </div>
+
+    <?php if ($success): ?>
+        <p class="admin-success"><?= htmlspecialchars($success) ?></p>
+    <?php endif; ?>
+    <?php if ($error): ?>
+        <p class="admin-error"><?= htmlspecialchars($error) ?></p>
+    <?php endif; ?>
 
     <div class="od-grid">
 

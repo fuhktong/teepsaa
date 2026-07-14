@@ -20,20 +20,21 @@ admin_require('payouts');
 $success = $_SESSION['admin_success'] ?? '';
 unset($_SESSION['admin_success']);
 
+// One row per delivered order, rendered like the Orders page — clicking a row
+// opens the order, where the payout QR, refund-window check and "Mark
+// completed" button live
 $stmt = $pdo->query('
     SELECT o.id, o.subtotal, o.delivery_fee, o.vendor_delivery_bonus, o.created_at,
-           o.coupon_code,
+           o.delivered_at,
            CASE WHEN c.business_id = o.business_id THEN o.discount_amount ELSE 0 END AS vendor_coupon_discount,
            b.name AS business_name,
-           v.id AS vendor_id, v.email AS vendor_email, v.aba_qr,
-           bu.email AS buyer_email
+           v.email AS vendor_email
     FROM orders o
     JOIN businesses b ON b.id = o.business_id
     JOIN vendors v ON v.id = b.user_id
-    JOIN buyers bu ON bu.id = o.buyer_user_id
     LEFT JOIN coupons c ON c.id = o.coupon_id
     WHERE o.status = \'delivered\'
-    ORDER BY o.created_at ASC
+    ORDER BY o.delivered_at ASC
 ');
 $payouts = $stmt->fetchAll();
 $adminSection = 'orders';
@@ -50,6 +51,7 @@ $adminTab     = 'payouts';
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
+    <link rel="stylesheet" href="/order-status/order-status.css">
     <link rel="stylesheet" href="/admin/admin.css">
 </head>
 <body>
@@ -68,44 +70,34 @@ $adminTab     = 'payouts';
     <?php if (empty($payouts)): ?>
         <p class="empty">No payouts pending.</p>
     <?php else: ?>
-        <div class="admin-list">
-            <?php foreach ($payouts as $p): ?>
-            <?php $payout = $p['subtotal'] - $p['vendor_coupon_discount'] + $p['vendor_delivery_bonus']; ?>
-            <div class="admin-card payout-card">
-                <div class="admin-card-info">
-                    <h2>$<?= number_format($payout, 2) ?> → <?= htmlspecialchars($p['vendor_email']) ?></h2>
-                    <p class="meta">
-                        Order #<?= $p['id'] ?>
-                        &middot; <?= htmlspecialchars($p['business_name']) ?>
-                        &middot; Buyer: <?= htmlspecialchars($p['buyer_email']) ?>
-                        &middot; <?= date('M j, Y g:ia', strtotime($p['created_at'])) ?>
-                    </p>
-                    <p class="meta payout-note">
-                        Products: <strong>$<?= number_format($p['subtotal'], 2) ?></strong>
-                        <?php if ($p['vendor_coupon_discount'] > 0): ?>
-                        − Coupon (<?= htmlspecialchars($p['coupon_code']) ?>): <strong>$<?= number_format($p['vendor_coupon_discount'], 2) ?></strong>
-                        <?php endif; ?>
-                        <?php if ($p['vendor_delivery_bonus'] > 0): ?>
-                        + Delivery buffer: <strong>$<?= number_format($p['vendor_delivery_bonus'], 2) ?></strong>
-                        <?php endif; ?>
-                        = Send <strong>$<?= number_format($payout, 2) ?></strong> (minus your commission), then mark as completed.
-                    </p>
-                    <?php if ($p['aba_qr']): ?>
-                        <img src="/uploads/<?= htmlspecialchars($p['aba_qr']) ?>" alt="Vendor ABA QR" class="payout-qr">
-                    <?php else: ?>
-                        <p class="payout-no-qr">⚠️ Vendor has not uploaded an ABA QR code yet.</p>
-                    <?php endif; ?>
-                </div>
-                <div class="admin-card-actions">
-                    <form method="POST" action="/admin/payouts-action.php">
-                        <?= csrf_input() ?>
-                        <input type="hidden" name="order_id" value="<?= $p['id'] ?>">
-                        <button type="submit" class="btn-approve">Mark completed</button>
-                    </form>
-                </div>
+    <div class="order-list">
+        <?php foreach ($payouts as $p): ?>
+        <?php
+        $payout       = $p['subtotal'] - $p['vendor_coupon_discount'] + $p['vendor_delivery_bonus'];
+        $oid          = date('ymd', strtotime($p['created_at'])) . '-' . str_pad($p['id'], 4, '0', STR_PAD_LEFT);
+        $windowPassed = $p['delivered_at'] && (time() - strtotime($p['delivered_at'])) >= PAYOUT_WINDOW_SECONDS;
+        $windowTime   = $p['delivered_at'] ? date('M j, g:ia', strtotime($p['delivered_at']) + PAYOUT_WINDOW_SECONDS) : null;
+        ?>
+        <a href="/admin/order.php?id=<?= $p['id'] ?>" style="text-decoration:none;color:inherit;">
+        <div class="order-row">
+            <div class="order-row-top">
+                <span class="order-row-id"><?= $oid ?></span>
+                <span class="order-row-biz"><?= htmlspecialchars($p['business_name']) ?></span>
+                <span class="order-row-customer"><?= htmlspecialchars($p['vendor_email']) ?></span>
+                <?php if ($windowPassed): ?>
+                <span class="order-badge badge-green">Ready to pay</span>
+                <?php elseif ($windowTime): ?>
+                <span class="order-badge badge-yellow">Refund window closes <?= $windowTime ?></span>
+                <?php endif; ?>
+                <span class="order-row-total">$<?= number_format($payout, 2) ?></span>
             </div>
-            <?php endforeach; ?>
+            <div class="order-row-bar">
+                <?php $orderStatus = 'delivered'; require __DIR__ . '/../order-status/order-status.php'; ?>
+            </div>
         </div>
+        </a>
+        <?php endforeach; ?>
+    </div>
     <?php endif; ?>
 </main>
 

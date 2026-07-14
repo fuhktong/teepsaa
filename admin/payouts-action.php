@@ -27,6 +27,19 @@ csrf_verify();
 
 $orderId = (int)($_POST['order_id'] ?? 0);
 
+// Hard guard: the buyer's refund window must close before the vendor is paid.
+// The UI already discourages this, but a misclick shouldn't cut the window short.
+$wStmt = $pdo->prepare("SELECT delivered_at FROM orders WHERE id = ? AND status = 'delivered'");
+$wStmt->execute([$orderId]);
+$deliveredAt = $wStmt->fetchColumn();
+if ($deliveredAt && (time() - strtotime($deliveredAt)) < PAYOUT_WINDOW_SECONDS) {
+    $_SESSION['admin_error'] = 'Refund window still open until '
+        . date('M j, g:ia', strtotime($deliveredAt) + PAYOUT_WINDOW_SECONDS)
+        . ' — the payout can\'t be completed before then.';
+    header('Location: /admin/order.php?id=' . $orderId);
+    exit;
+}
+
 $stmt = $pdo->prepare('UPDATE orders SET status = ? WHERE id = ? AND status = ?');
 $stmt->execute(['completed', $orderId, 'delivered']);
 
