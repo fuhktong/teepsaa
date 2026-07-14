@@ -793,7 +793,10 @@ main h1 {
   min-width: 16px;
   height: 16px;
   border-radius: var(--radius-pill);
-  padding: 0 3px;
+  /* top-only padding compensates for digits having no descenders;
+     tabular-nums gives every digit the same width so all center alike */
+  padding: 2px 3px 0;
+  font-variant-numeric: tabular-nums;
   margin-left: 3px;
   vertical-align: middle;
   line-height: 1;

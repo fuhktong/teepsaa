@@ -181,11 +181,15 @@ header nav a.active {
   justify-content: center;
   min-width: 16px;
   height: 16px;
-  padding: 0 4px;
+  /* top-only padding nudges digits down: they have no descenders, so true
+     flex centering makes them sit optically high in the circle */
+  padding: 2px 4px 0;
   background: #e53935;
   color: #fff;
   font-size: 0.6rem;
   font-weight: 700;
+  /* every digit gets the same fixed width, so 1 centers exactly like 5 */
+  font-variant-numeric: tabular-nums;
   border-radius: var(--radius);
   line-height: 1;
   vertical-align: middle;
