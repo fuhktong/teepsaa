@@ -136,8 +136,13 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                         $vNotifStmt = $pdo->prepare('SELECT COUNT(*) FROM notifications WHERE role = ? AND user_id = ? AND read_at IS NULL');
                         $vNotifStmt->execute(['vendor', $_SESSION['user_id']]);
                         $vNotifCount = (int)$vNotifStmt->fetchColumn();
+                        // Orders waiting on the vendor: paid = pack & dispatch,
+                        // return_dispatched = buyer shipped a return, mark it received
+                        $vOrdStmt = $pdo->prepare("SELECT COUNT(*) FROM orders o JOIN businesses b ON b.id = o.business_id WHERE b.user_id = ? AND o.status IN ('paid','return_dispatched')");
+                        $vOrdStmt->execute([$_SESSION['user_id']]);
+                        $vendorOrdersTodo = (int)$vOrdStmt->fetchColumn();
                     ?>
-                    <a href="/orders-vendor/" class="<?= $vendorSection === 'orders' ? 'active' : '' ?>"><?= $t['nav_orders'] ?></a>
+                    <a href="/orders-vendor/" class="<?= $vendorSection === 'orders' ? 'active' : '' ?>"><?= $vendorOrdersTodo ? $t['nav_orders'] . '&nbsp;<span class="nav-msg-badge">' . $vendorOrdersTodo . '</span>' : $t['nav_orders'] ?></a>
                     <a href="/products/" class="<?= $vendorSection === 'products' ? 'active' : '' ?>"><?= $t['nav_products'] ?></a>
                     <a href="/messages-vendor/" class="<?= $vendorSection === 'messages' ? 'active' : '' ?>"><?= $vendorUnread ? $t['nav_messages'] . '&nbsp;<span class="nav-msg-badge">' . $vendorUnread . '</span>' : $t['nav_messages'] ?></a>
                     <a href="/dashboard-vendor/" class="<?= $vendorSection === 'analytics' ? 'active' : '' ?>"><?= $t['nav_vendor'] ?></a>
@@ -263,7 +268,7 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                 <a href="/admin/settings.php" class="mobile-nav-link"><?= $t['nav_settings'] ?></a>
                 <a href="/logout/logout.php" class="mobile-nav-link"><?= $t['nav_logout'] ?></a>
             <?php elseif (($_SESSION['role'] ?? '') === 'vendor'): ?>
-                <a href="/orders-vendor/" class="mobile-nav-link <?= $vendorSection === 'orders' ? 'active' : '' ?>"><?= $t['nav_orders'] ?></a>
+                <a href="/orders-vendor/" class="mobile-nav-link <?= $vendorSection === 'orders' ? 'active' : '' ?>"><?= ($vendorOrdersTodo ?? 0) > 0 ? $t['nav_orders'] . ' (' . $vendorOrdersTodo . ')' : $t['nav_orders'] ?></a>
                 <a href="/products/" class="mobile-nav-link <?= $vendorSection === 'products' ? 'active' : '' ?>"><?= $t['nav_products'] ?></a>
                 <a href="/messages-vendor/" class="mobile-nav-link <?= $vendorSection === 'messages' ? 'active' : '' ?>"><?= $vendorUnread ? $t['nav_messages'] . ' (' . $vendorUnread . ')' : $t['nav_messages'] ?></a>
                 <a href="/dashboard-vendor/" class="mobile-nav-link <?= $vendorSection === 'analytics' ? 'active' : '' ?>"><?= $t['nav_vendor'] ?></a>

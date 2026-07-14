@@ -20,18 +20,27 @@ admin_require('payments');
 $success = $_SESSION['admin_success'] ?? '';
 unset($_SESSION['admin_success']);
 
+// One row per order so each pending payment can list its orders as links —
+// confirmation itself happens on the order page
 $stmt = $pdo->query('
-    SELECT p.id, p.total, p.status, p.created_at,
+    SELECT p.id, p.total, p.created_at,
            u.email AS buyer_email,
-           COUNT(o.id) AS order_count
+           o.id AS order_id, o.created_at AS order_created_at,
+           b.name AS business_name
     FROM payments p
     JOIN buyers u ON u.id = p.buyer_user_id
-    LEFT JOIN orders o ON o.payment_id = p.id
+    JOIN orders o ON o.payment_id = p.id
+    JOIN businesses b ON b.id = o.business_id
     WHERE p.status = \'pending_confirmation\'
-    GROUP BY p.id
-    ORDER BY p.created_at ASC
+    ORDER BY p.created_at ASC, o.id ASC
 ');
-$payments = $stmt->fetchAll();
+$payments = [];
+foreach ($stmt->fetchAll() as $row) {
+    $payments[$row['id']]['total']       = $row['total'];
+    $payments[$row['id']]['created_at']  = $row['created_at'];
+    $payments[$row['id']]['buyer_email'] = $row['buyer_email'];
+    $payments[$row['id']]['orders'][]    = $row;
+}
 $adminSection = 'orders';
 $adminTab     = 'payments';
 ?>
@@ -65,24 +74,24 @@ $adminTab     = 'payments';
         <p class="empty">No payments awaiting confirmation.</p>
     <?php else: ?>
         <div class="admin-list">
-            <?php foreach ($payments as $p): ?>
+            <?php foreach ($payments as $pid => $p): ?>
             <div class="admin-card">
                 <div class="admin-card-info">
                     <h2>$<?= number_format($p['total'], 2) ?></h2>
                     <p class="meta">
                         Buyer: <?= htmlspecialchars($p['buyer_email']) ?>
-                        &middot; <?= (int)$p['order_count'] ?> vendor<?= $p['order_count'] != 1 ? 's' : '' ?>
+                        &middot; <?= count($p['orders']) ?> vendor<?= count($p['orders']) !== 1 ? 's' : '' ?>
                         &middot; <?= date('M j, Y g:ia', strtotime($p['created_at'])) ?>
                     </p>
-                    <p class="meta">Payment #<?= $p['id'] ?> — verify this amount in your ABA app before confirming</p>
+                    <p class="meta">Payment #<?= $pid ?> — open the order to verify and confirm the payment</p>
                 </div>
                 <div class="admin-card-actions">
-                    <form method="POST" action="/admin/payments-action.php">
-                        <?= csrf_input() ?>
-                        <input type="hidden" name="payment_id" value="<?= $p['id'] ?>">
-                        <button type="submit" name="action" value="confirm" class="btn-approve">Confirm Payment</button>
-                        <button type="submit" name="action" value="reject" class="btn-reject">Reject</button>
-                    </form>
+                    <?php foreach ($p['orders'] as $ord):
+                          $ordId = date('ymd', strtotime($ord['order_created_at'])) . '-' . str_pad($ord['order_id'], 4, '0', STR_PAD_LEFT); ?>
+                    <a href="/admin/order.php?id=<?= $ord['order_id'] ?>" class="btn-approve" style="text-decoration:none;display:inline-block;">
+                        <?= $ordId ?> — <?= htmlspecialchars($ord['business_name']) ?> →
+                    </a>
+                    <?php endforeach; ?>
                 </div>
             </div>
             <?php endforeach; ?>

@@ -286,4 +286,5 @@ select.refund-reason-input {
   border-radius: var(--radius-sm);
   padding: 0.4rem 0.75rem;
   margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
 }

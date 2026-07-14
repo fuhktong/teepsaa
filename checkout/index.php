@@ -115,6 +115,23 @@ if ($couponCode !== '') {
     }
 }
 
+// Show the coupon input only when a code this cart could actually use exists —
+// sitewide, or owned by one of the shops in the cart
+$couponAvailable = false;
+if (!empty($grouped)) {
+    $cavPh   = implode(',', array_fill(0, count($grouped), '?'));
+    $cavStmt = $pdo->prepare(
+        "SELECT COUNT(*) FROM coupons
+         WHERE active = 1
+           AND (business_id IS NULL OR business_id IN ($cavPh))
+           AND (starts_at IS NULL OR starts_at <= NOW())
+           AND (expires_at IS NULL OR expires_at >= NOW())
+           AND (max_uses IS NULL OR used_count < max_uses)"
+    );
+    $cavStmt->execute(array_keys($grouped));
+    $couponAvailable = (int)$cavStmt->fetchColumn() > 0;
+}
+
 $grandTotal  = max(0, $subtotal - $discount);
 $canCheckout = empty($outOfRange) && !empty($grouped);
 $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
@@ -241,6 +258,7 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
             </div>
             <?php endforeach; ?>
 
+            <?php if ($couponCode !== '' || $couponAvailable): ?>
             <div class="checkout-coupon-row">
                 <?php if ($couponCode !== ''): ?>
                 <div class="checkout-line checkout-line--sub">
@@ -261,6 +279,7 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
                 </form>
                 <?php endif; ?>
             </div>
+            <?php endif; ?>
 
             <div class="checkout-total-block">
                 <?php if ($discount > 0): ?>

@@ -125,8 +125,6 @@ $adminTab     = 'orders';
     <?php if (!isset($pendingVendorCount)) { $pendingVendorCount = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 0")->fetchColumn(); } ?>
     <?php require __DIR__ . '/admin-tabs.php'; ?>
 
-    <a href="/admin/orders.php" class="detail-back">← Orders</a>
-
     <div class="od-header">
                 <h1><?= $oid ?></h1>
         <span class="order-badge <?= $statusClass ?>"><?= $statusLabel ?></span>
@@ -251,9 +249,14 @@ $adminTab     = 'orders';
             <?php endif; ?>
 
             <?php if ($o['payment_status'] === 'pending_confirmation'): ?>
+            <?php // Confirming applies to the whole payment, which can span several
+                  // vendors' orders from one cart — so verify the payment total
+                  $payCountStmt = $pdo->prepare('SELECT COUNT(*) FROM orders WHERE payment_id = ?');
+                  $payCountStmt->execute([$o['payment_id']]);
+                  $payOrderCount = (int)$payCountStmt->fetchColumn(); ?>
             <div class="od-card">
                 <div class="od-card-title">Payment confirmation</div>
-                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Verify <strong>$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></strong> received in ABA before confirming ($<?= number_format($o['subtotal'], 2) ?><?= $o['discount_amount'] > 0 ? ' − $' . number_format($o['discount_amount'], 2) . ' coupon' : '' ?> + $<?= number_format($o['delivery_fee'], 2) ?> delivery).</p>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Verify <strong>$<?= number_format($o['payment_total'], 2) ?></strong> received in ABA before confirming.<?= $payOrderCount > 1 ? ' This payment covers <strong>' . $payOrderCount . ' orders</strong> from one cart — confirming marks all of them paid.' : '' ?></p>
                 <div class="popup-actions">
                     <form method="POST" action="/admin/payments-action.php">
                         <?= csrf_input() ?>
