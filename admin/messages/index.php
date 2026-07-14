@@ -69,6 +69,12 @@ $countStmt = $pdo->prepare("
 $countStmt->execute([$roleFilter]);
 $counts = $countStmt->fetch();
 
+// Per-role badge counts for the role tabs (threads still needing attention)
+$roleCounts = ['buyer' => 0, 'vendor' => 0, 'guest' => 0];
+foreach ($pdo->query("SELECT sender_role, COUNT(*) AS c FROM support_threads WHERE status IN ('pending','open') GROUP BY sender_role") as $rc) {
+    $roleCounts[$rc['sender_role']] = (int)$rc['c'];
+}
+
 function msgUrl(string $role, string $status): string {
     return '/admin/messages/?role=' . urlencode($role) . '&status=' . urlencode($status);
 }
@@ -101,19 +107,19 @@ $adminTab     = '';
     <?php if ($success): ?><p class="admin-success"><?= htmlspecialchars($success) ?></p><?php endif; ?>
 
     <div class="amsg-role-tabs">
-        <a href="<?= msgUrl('buyer', $statusFilter) ?>" class="amsg-role-tab <?= $roleFilter === 'buyer' ? 'active' : '' ?>">Buyers</a>
-        <a href="<?= msgUrl('vendor', $statusFilter) ?>" class="amsg-role-tab <?= $roleFilter === 'vendor' ? 'active' : '' ?>">Vendors</a>
-        <a href="<?= msgUrl('guest', $statusFilter) ?>" class="amsg-role-tab <?= $roleFilter === 'guest' ? 'active' : '' ?>">Contact Form</a>
+        <a href="<?= msgUrl('buyer', $statusFilter) ?>" class="amsg-role-tab <?= $roleFilter === 'buyer' ? 'active' : '' ?>">Buyers<?php if ($roleCounts['buyer'] > 0): ?> <span class="admin-tab-badge"><?= $roleCounts['buyer'] ?></span><?php endif; ?></a>
+        <a href="<?= msgUrl('vendor', $statusFilter) ?>" class="amsg-role-tab <?= $roleFilter === 'vendor' ? 'active' : '' ?>">Vendors<?php if ($roleCounts['vendor'] > 0): ?> <span class="admin-tab-badge"><?= $roleCounts['vendor'] ?></span><?php endif; ?></a>
+        <a href="<?= msgUrl('guest', $statusFilter) ?>" class="amsg-role-tab <?= $roleFilter === 'guest' ? 'active' : '' ?>">Contact Form<?php if ($roleCounts['guest'] > 0): ?> <span class="admin-tab-badge"><?= $roleCounts['guest'] ?></span><?php endif; ?></a>
         <a href="/admin/messages/emails.php" class="amsg-role-tab">Email templates</a>
     </div>
 
     <div class="order-filters" style="margin-bottom:1.25rem;">
         <a href="<?= msgUrl($roleFilter, 'all') ?>" class="filter-btn <?= $statusFilter === 'all' ? 'active' : '' ?>">All</a>
         <a href="<?= msgUrl($roleFilter, 'pending') ?>" class="filter-btn <?= $statusFilter === 'pending' ? 'active' : '' ?>">
-            Pending<?php if ($counts['pending'] > 0): ?> <span class="admin-tab-badge"><?= (int)$counts['pending'] ?></span><?php endif; ?>
+            Pending<?php if ($counts['pending'] > 0): ?> <span class="filter-count"><?= (int)$counts['pending'] ?></span><?php endif; ?>
         </a>
         <a href="<?= msgUrl($roleFilter, 'open') ?>" class="filter-btn <?= $statusFilter === 'open' ? 'active' : '' ?>">
-            Open<?php if ($counts['open'] > 0): ?> <span class="admin-tab-badge"><?= (int)$counts['open'] ?></span><?php endif; ?>
+            Open<?php if ($counts['open'] > 0): ?> <span class="filter-count"><?= (int)$counts['open'] ?></span><?php endif; ?>
         </a>
         <a href="<?= msgUrl($roleFilter, 'closed') ?>" class="filter-btn <?= $statusFilter === 'closed' ? 'active' : '' ?>">Closed</a>
     </div>
