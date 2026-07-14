@@ -300,11 +300,9 @@ $adminTab     = 'orders';
                 <div class="od-row"><span>Delivery buffer</span><span>+$<?= number_format($o['vendor_delivery_bonus'], 2) ?></span></div>
                 <?php endif; ?>
                 <div class="od-row od-row--bold"><span>Vendor payout</span><span>$<?= number_format($vendorPayout, 2) ?></span></div>
-                <?php if (!$windowPassed && $windowTime): ?>
-                <p style="font-size:0.8rem;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:4px;padding:0.4rem 0.75rem;margin:0.75rem 0 0;">Refund window closes <?= $windowTime ?> — pay out after this time.</p>
-                <?php endif; ?>
-                <details class="payout-confirm" style="margin-top:0.75rem;"<?= $windowPassed ? ' open' : '' ?>>
-                    <summary class="payout-confirm-toggle">Has the refund window closed? Confirm payout</summary>
+                <?php if ($windowPassed): ?>
+                <details class="payout-confirm" style="margin-top:0.75rem;" open>
+                    <summary class="payout-confirm-toggle">The refund window has passed — you may pay out to the vendor</summary>
                     <div class="payout-confirm-body">
                         <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Scan the vendor's ABA QR and send <strong>$<?= number_format($vendorPayout, 2) ?></strong>, then mark as completed.</p>
                         <?php if ($o['vendor_aba_qr']): ?>
@@ -321,6 +319,9 @@ $adminTab     = 'orders';
                         </div>
                     </div>
                 </details>
+                <?php else: ?>
+                <p style="font-size:0.8rem;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:4px;padding:0.4rem 0.75rem;margin:0.75rem 0 0;">The refund window has not passed — you cannot pay out to this vendor yet.<?= $windowTime ? ' It closes ' . $windowTime . '.' : '' ?></p>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
 
