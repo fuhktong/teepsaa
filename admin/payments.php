@@ -20,27 +20,20 @@ admin_require('payments');
 $success = $_SESSION['admin_success'] ?? '';
 unset($_SESSION['admin_success']);
 
-// One row per order so each pending payment can list its orders as links —
-// confirmation itself happens on the order page
+// One row per order in a pending payment, rendered like the Orders page —
+// clicking a row opens the order, where the payment is confirmed or rejected
 $stmt = $pdo->query('
-    SELECT p.id, p.total, p.created_at,
-           u.email AS buyer_email,
-           o.id AS order_id, o.created_at AS order_created_at,
-           b.name AS business_name
+    SELECT o.id, o.subtotal, o.delivery_fee, o.discount_amount, o.status, o.created_at,
+           b.name AS business_name,
+           bu.name AS buyer_name, bu.email AS buyer_email
     FROM payments p
-    JOIN buyers u ON u.id = p.buyer_user_id
     JOIN orders o ON o.payment_id = p.id
     JOIN businesses b ON b.id = o.business_id
+    JOIN buyers bu ON bu.id = o.buyer_user_id
     WHERE p.status = \'pending_confirmation\'
     ORDER BY p.created_at ASC, o.id ASC
 ');
-$payments = [];
-foreach ($stmt->fetchAll() as $row) {
-    $payments[$row['id']]['total']       = $row['total'];
-    $payments[$row['id']]['created_at']  = $row['created_at'];
-    $payments[$row['id']]['buyer_email'] = $row['buyer_email'];
-    $payments[$row['id']]['orders'][]    = $row;
-}
+$orders = $stmt->fetchAll();
 $adminSection = 'orders';
 $adminTab     = 'payments';
 ?>
@@ -55,6 +48,7 @@ $adminTab     = 'payments';
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
+    <link rel="stylesheet" href="/order-status/order-status.css">
     <link rel="stylesheet" href="/admin/admin.css">
 </head>
 <body>
@@ -70,32 +64,27 @@ $adminTab     = 'payments';
         <p class="admin-success"><?= htmlspecialchars($success) ?></p>
     <?php endif; ?>
 
-    <?php if (empty($payments)): ?>
+    <?php if (empty($orders)): ?>
         <p class="empty">No payments awaiting confirmation.</p>
     <?php else: ?>
-        <div class="admin-list">
-            <?php foreach ($payments as $pid => $p): ?>
-            <div class="admin-card">
-                <div class="admin-card-info">
-                    <h2>$<?= number_format($p['total'], 2) ?></h2>
-                    <p class="meta">
-                        Buyer: <?= htmlspecialchars($p['buyer_email']) ?>
-                        &middot; <?= count($p['orders']) ?> vendor<?= count($p['orders']) !== 1 ? 's' : '' ?>
-                        &middot; <?= date('M j, Y g:ia', strtotime($p['created_at'])) ?>
-                    </p>
-                    <p class="meta">Payment #<?= $pid ?> — open the order to verify and confirm the payment</p>
-                </div>
-                <div class="admin-card-actions">
-                    <?php foreach ($p['orders'] as $ord):
-                          $ordId = date('ymd', strtotime($ord['order_created_at'])) . '-' . str_pad($ord['order_id'], 4, '0', STR_PAD_LEFT); ?>
-                    <a href="/admin/order.php?id=<?= $ord['order_id'] ?>" class="btn-approve" style="text-decoration:none;display:inline-block;">
-                        <?= $ordId ?> — <?= htmlspecialchars($ord['business_name']) ?> →
-                    </a>
-                    <?php endforeach; ?>
-                </div>
+    <div class="order-list">
+        <?php foreach ($orders as $o): ?>
+        <?php $oid = date('ymd', strtotime($o['created_at'])) . '-' . str_pad($o['id'], 4, '0', STR_PAD_LEFT); ?>
+        <a href="/admin/order.php?id=<?= $o['id'] ?>" style="text-decoration:none;color:inherit;">
+        <div class="order-row">
+            <div class="order-row-top">
+                <span class="order-row-id"><?= $oid ?></span>
+                <span class="order-row-biz"><?= htmlspecialchars($o['business_name']) ?></span>
+                <span class="order-row-customer"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span>
+                <span class="order-row-total">$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span>
             </div>
-            <?php endforeach; ?>
+            <div class="order-row-bar">
+                <?php $orderStatus = $o['status']; require __DIR__ . '/../order-status/order-status.php'; ?>
+            </div>
         </div>
+        </a>
+        <?php endforeach; ?>
+    </div>
     <?php endif; ?>
 </main>
 
