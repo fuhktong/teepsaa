@@ -84,6 +84,12 @@ if ($action === 'suspend') {
         ->execute([$rate, $businessId]);
     $_SESSION['admin_success'] = 'Company royalty add-on saved.';
 
+} elseif ($action === 'spot_check_done') {
+    $businessId = (int)($_POST['business_id'] ?? 0);
+    $stmt = $pdo->prepare('UPDATE businesses SET spot_checked_at = NOW() WHERE id = ? AND user_id = ? AND deleted_at IS NULL');
+    $stmt->execute([$businessId, $vendorId]);
+    $_SESSION['admin_success'] = $stmt->rowCount() ? 'Spot check marked done.' : 'Business not found.';
+
 } elseif ($action === 'delete_business') {
     $businessId = (int)($_POST['business_id'] ?? 0);
 

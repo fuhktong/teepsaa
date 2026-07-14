@@ -16,6 +16,7 @@ $refundRequests  = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 
 $pendingBiz      = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 0 AND deleted_at IS NULL")->fetchColumn();
 $unreadSupport   = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM support_messages WHERE sender IN ('buyer','vendor') AND read_at IS NULL")->fetchColumn();
 $payoutsDue      = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();
+$spotChecksDue   = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 1 AND deleted_at IS NULL AND approved_at <= NOW() - INTERVAL 7 DAY AND spot_checked_at IS NULL")->fetchColumn();
 
 $rows = [
     ['Payments awaiting confirmation', $pendingPayments, '/admin/orders.php'],
@@ -23,9 +24,10 @@ $rows = [
     ['Businesses pending approval',    $pendingBiz,      '/admin/?status=pending'],
     ['Unread support threads',         $unreadSupport,   '/admin/messages/'],
     ['Payouts due',                    $payoutsDue,      '/admin/payouts.php'],
+    ['Vendor spot-checks due',         $spotChecksDue,   '/admin/?status=spot_check'],
 ];
 
-$total = $pendingPayments + $refundRequests + $pendingBiz + $unreadSupport + $payoutsDue;
+$total = $pendingPayments + $refundRequests + $pendingBiz + $unreadSupport + $payoutsDue + $spotChecksDue;
 if ($total === 0) {
     exit; // nothing pending — no email today
 }

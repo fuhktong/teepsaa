@@ -21,7 +21,7 @@ $success = $_SESSION['admin_success'] ?? '';
 unset($_SESSION['admin_success']);
 
 $search         = trim($_GET['search'] ?? '');
-$statusFilter   = in_array($_GET['status'] ?? '', ['all','pending','approved','rejected','no_business'])
+$statusFilter   = in_array($_GET['status'] ?? '', ['all','pending','approved','rejected','no_business','spot_check'])
                   ? ($_GET['status'] ?? 'all') : 'all';
 $catId = (int)($_GET['category'] ?? 0);
 
@@ -68,13 +68,15 @@ if ($statusFilter === 'pending')         { $vwhere[] = 'b.approved = 0 AND b.id 
 elseif ($statusFilter === 'approved')    { $vwhere[] = 'b.approved = 1'; }
 elseif ($statusFilter === 'rejected')    { $vwhere[] = 'b.approved = -1'; }
 elseif ($statusFilter === 'no_business') { $vwhere[] = 'b.id IS NULL'; }
+elseif ($statusFilter === 'spot_check')  { $vwhere[] = 'b.approved = 1 AND b.approved_at <= NOW() - INTERVAL 7 DAY AND b.spot_checked_at IS NULL'; }
 
 $vsql = '
     SELECT v.id, v.name, v.email, v.created_at,
            v.banned, v.ban_reason, v.banned_at,
            b.id AS business_id, b.name AS business_name,
            b.category, b.description, b.address, b.lat, b.lng,
-           b.approved, b.created_at AS submitted_at
+           b.approved, b.created_at AS submitted_at,
+           (SELECT COUNT(*) FROM products pc WHERE pc.business_id = b.id) AS product_count
     FROM vendors v
     LEFT JOIN businesses b ON b.user_id = v.id AND b.deleted_at IS NULL'
     . (!empty($vwhere) ? ' WHERE ' . implode(' AND ', $vwhere) : '')
@@ -89,7 +91,8 @@ $vcounts = $pdo->query("
            SUM(CASE WHEN b.id IS NULL THEN 1 ELSE 0 END) AS no_business,
            SUM(CASE WHEN b.approved = 0 AND b.id IS NOT NULL THEN 1 ELSE 0 END) AS pending,
            SUM(CASE WHEN b.approved = 1 THEN 1 ELSE 0 END) AS approved,
-           SUM(CASE WHEN b.approved = -1 THEN 1 ELSE 0 END) AS rejected
+           SUM(CASE WHEN b.approved = -1 THEN 1 ELSE 0 END) AS rejected,
+           SUM(CASE WHEN b.approved = 1 AND b.approved_at <= NOW() - INTERVAL 7 DAY AND b.spot_checked_at IS NULL THEN 1 ELSE 0 END) AS spot_check
     FROM vendors v LEFT JOIN businesses b ON b.user_id = v.id AND b.deleted_at IS NULL
 ")->fetch();
 
@@ -143,7 +146,7 @@ $adminTab     = 'vendors';
             <?php endif; ?>
         </form>
         <div class="order-filters">
-            <?php foreach (['all' => 'All', 'pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'no_business' => 'No business'] as $key => $label):
+            <?php foreach (['all' => 'All', 'pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'no_business' => 'No business', 'spot_check' => 'Spot check'] as $key => $label):
                   $n = $key === 'all' ? ($vcounts['total'] ?? 0) : ($vcounts[$key] ?? 0); ?>
             <a href="/admin/?status=<?= $key ?><?= $vSearchQ . $vCatQ ?>" class="filter-btn <?= $statusFilter === $key ? 'active' : '' ?>">
                 <?= $label ?> <span class="filter-count"><?= $n ?></span>
@@ -174,6 +177,9 @@ $adminTab     = 'vendors';
             </div>
             <div class="vendor-row-right">
                 <span class="vendor-row-biz"><?= htmlspecialchars($v['name'] ?: $v['email']) ?></span>
+                <?php if ($statusFilter === 'spot_check'): ?>
+                <span class="order-badge badge-grey"><?= (int)$v['product_count'] ?> product<?= (int)$v['product_count'] === 1 ? '' : 's' ?></span>
+                <?php endif; ?>
                 <?php if ($v['banned']): ?>
                 <span class="order-badge badge-red">Suspended</span>
                 <?php endif; ?>

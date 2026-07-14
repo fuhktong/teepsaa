@@ -26,6 +26,7 @@ $stmt = $pdo->prepare('
            b.id AS business_id, b.name AS business_name, b.category, b.description,
            b.address, b.house_number, b.khan, b.sangkat,
            b.approved, b.created_at AS submitted_at,
+           b.approved_at, b.spot_checked_at,
            b.royalty_add_on AS company_royalty_add_on, b.royalty_waived
     FROM vendors v
     LEFT JOIN businesses b ON b.user_id = v.id AND b.deleted_at IS NULL
@@ -311,6 +312,30 @@ $adminTab     = 'vendors';
                         <button type="submit" name="action" value="reject" class="btn-reject">Reject</button>
                     </form>
                 </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($v['business_id'] && $v['approved'] === 1 && !$v['spot_checked_at']):
+                  $spotDue = !$v['approved_at'] || strtotime($v['approved_at']) <= strtotime('-7 days'); ?>
+            <!-- One-week spot check -->
+            <div class="detail-card">
+                <div class="detail-card-title">Spot check</div>
+                <?php if ($spotDue): ?>
+                <p style="margin:0 0 0.75rem;font-size:0.9rem;color:#666;">
+                    <?= $v['approved_at'] ? 'Approved ' . date('M j, Y', strtotime($v['approved_at'])) . ' — the' : 'The' ?>
+                    one-week spot check is due. Review the products and photos above, then mark it done.
+                </p>
+                <form method="POST" action="/admin/vendor-action.php">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="vendor_id" value="<?= $v['id'] ?>">
+                    <input type="hidden" name="business_id" value="<?= $v['business_id'] ?>">
+                    <button type="submit" name="action" value="spot_check_done" class="btn-approve">Mark spot check done</button>
+                </form>
+                <?php else: ?>
+                <p style="margin:0;font-size:0.9rem;color:#666;">
+                    Scheduled for <?= date('M j, Y', strtotime($v['approved_at'] . ' +7 days')) ?>.
+                </p>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
 

@@ -34,10 +34,13 @@ if (!$id || !in_array($action, ['approve', 'reject'], true)) {
     exit;
 }
 
-$approved = $action === 'approve' ? 1 : -1;
-
-$stmt = $pdo->prepare('UPDATE businesses SET approved = ? WHERE id = ?');
-$stmt->execute([$approved, $id]);
+if ($action === 'approve') {
+    // Fresh approval (re-)starts the one-week spot-check clock
+    $stmt = $pdo->prepare('UPDATE businesses SET approved = 1, approved_at = NOW(), spot_checked_at = NULL WHERE id = ?');
+} else {
+    $stmt = $pdo->prepare('UPDATE businesses SET approved = -1, approved_at = NULL WHERE id = ?');
+}
+$stmt->execute([$id]);
 
 // Start vendor trial clock on approval if business has a promo code
 if ($action === 'approve') {
