@@ -1136,15 +1136,6 @@ main h1 {
 }
 
 /* Detail pages */
-.detail-back {
-  display: inline-block;
-  font-size: 0.875rem;
-  color: var(--text-muted);
-  text-decoration: none;
-  margin-bottom: 1.1rem;
-}
-.detail-back:hover { color: #111; }
-
 .detail-header {
   display: flex;
   align-items: baseline;

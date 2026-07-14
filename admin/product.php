@@ -90,7 +90,6 @@ $adminTab     = 'products';
 <main>
     <?php require __DIR__ . '/admin-tabs.php'; ?>
 
-    <a href="/admin/products.php" class="detail-back">← Products</a>
 
     <?php if ($success): ?><p class="admin-success"><?= htmlspecialchars($success) ?></p><?php endif; ?>
     <?php if ($error):   ?><p class="admin-error"><?= htmlspecialchars($error) ?></p><?php endif; ?>

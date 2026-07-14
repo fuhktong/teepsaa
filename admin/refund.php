@@ -98,7 +98,6 @@ $adminTab     = 'refunds';
     <?php if (!isset($pendingVendorCount)) { $pendingVendorCount = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 0")->fetchColumn(); } ?>
     <?php require __DIR__ . '/admin-tabs.php'; ?>
 
-    <a href="/admin/refunds.php" class="detail-back">← Refunds</a>
 
     <?php if ($success): ?><p class="admin-success"><?= htmlspecialchars($success) ?></p><?php endif; ?>
     <?php if ($error):   ?><p class="admin-error"><?= htmlspecialchars($error) ?></p><?php endif; ?>
