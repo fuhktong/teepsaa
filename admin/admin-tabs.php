@@ -1,9 +1,12 @@
 <?php
 $_atSection = $adminSection ?? '';
 $_atTab     = $adminTab     ?? '';
-$_atPendingVendor = admin_can('vendors') ? (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 0")->fetchColumn() : 0;
-$_atRefundCount   = admin_can('refunds') ? (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn() : 0;
-$_atPendingPayout = admin_can('payouts') ? (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn() : 0;
+// Vendors badge = businesses pending approval + spot checks due
+$_atPendingVendor  = admin_can('vendors') ? (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE deleted_at IS NULL AND (approved = 0 OR (approved = 1 AND approved_at <= NOW() - INTERVAL 7 DAY AND spot_checked_at IS NULL))")->fetchColumn() : 0;
+// Refunds badge = requests to review + returns received awaiting the refund transfer
+$_atRefundCount    = admin_can('refunds') ? (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status IN ('refund_requested','return_received')")->fetchColumn() : 0;
+$_atPendingPayment = admin_can('payments') ? (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending_confirmation'")->fetchColumn() : 0;
+$_atPendingPayout  = admin_can('payouts') ? (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn() : 0;
 ?>
 <?php if (!empty($_GET['denied'])): ?>
 <div class="admin-alert admin-alert--error" style="margin-bottom:1rem;">You don't have access to that section.</div>
@@ -18,11 +21,11 @@ $_atPendingPayout = admin_can('payouts') ? (int)$pdo->query("SELECT COUNT(*) FRO
 </nav>
 <?php elseif ($_atSection === 'orders'): ?>
 <nav class="admin-tabs">
-    <?php if (admin_can('orders')): ?><a href="/admin/orders.php"     class="admin-tab <?= $_atTab === 'orders'     ? 'active' : '' ?>">Orders<?= $_atPendingPayout > 0 ? ' <span class="admin-tab-badge">' . $_atPendingPayout . '</span>' : '' ?></a><?php endif; ?>
+    <?php if (admin_can('orders')): ?><a href="/admin/orders.php"     class="admin-tab <?= $_atTab === 'orders'     ? 'active' : '' ?>">Orders</a><?php endif; ?>
     <?php if (admin_can('refunds')): ?><a href="/admin/refunds.php"    class="admin-tab <?= $_atTab === 'refunds'    ? 'active' : '' ?>">Refunds<?= $_atRefundCount > 0 ? ' <span class="admin-tab-badge">' . $_atRefundCount . '</span>' : '' ?></a><?php endif; ?>
     <?php if (admin_can('accounting')): ?><a href="/admin/accounting.php" class="admin-tab <?= $_atTab === 'accounting' ? 'active' : '' ?>">Accounting</a><?php endif; ?>
-    <?php if (admin_can('payments')): ?><a href="/admin/payments.php"   class="admin-tab <?= $_atTab === 'payments'   ? 'active' : '' ?>">Payments</a><?php endif; ?>
-    <?php if (admin_can('payouts')): ?><a href="/admin/payouts.php"    class="admin-tab <?= $_atTab === 'payouts'    ? 'active' : '' ?>">Payouts</a><?php endif; ?>
+    <?php if (admin_can('payments')): ?><a href="/admin/payments.php"   class="admin-tab <?= $_atTab === 'payments'   ? 'active' : '' ?>">Payments<?= $_atPendingPayment > 0 ? ' <span class="admin-tab-badge">' . $_atPendingPayment . '</span>' : '' ?></a><?php endif; ?>
+    <?php if (admin_can('payouts')): ?><a href="/admin/payouts.php"    class="admin-tab <?= $_atTab === 'payouts'    ? 'active' : '' ?>">Payouts<?= $_atPendingPayout > 0 ? ' <span class="admin-tab-badge">' . $_atPendingPayout . '</span>' : '' ?></a><?php endif; ?>
 </nav>
 <?php elseif ($_atSection === 'marketing'): ?>
 <nav class="admin-tabs">

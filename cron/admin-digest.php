@@ -13,21 +13,23 @@ $today     = (new DateTime('now', new DateTimeZone('Asia/Phnom_Penh')))->format(
 
 $pendingPayments = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending_confirmation'")->fetchColumn();
 $refundRequests  = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn();
+$refundsToPay    = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'return_received'")->fetchColumn();
 $pendingBiz      = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 0 AND deleted_at IS NULL")->fetchColumn();
 $unreadSupport   = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM support_messages WHERE sender IN ('buyer','vendor') AND read_at IS NULL")->fetchColumn();
 $payoutsDue      = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();
 $spotChecksDue   = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 1 AND deleted_at IS NULL AND approved_at <= NOW() - INTERVAL 7 DAY AND spot_checked_at IS NULL")->fetchColumn();
 
 $rows = [
-    ['Payments awaiting confirmation', $pendingPayments, '/admin/orders.php'],
-    ['Refund requests',                $refundRequests,  '/admin/refunds.php'],
+    ['Payments awaiting confirmation', $pendingPayments, '/admin/payments.php'],
+    ['Refund requests',                $refundRequests,  '/admin/refunds.php?status=refund_requested'],
+    ['Refunds awaiting payment',       $refundsToPay,    '/admin/refunds.php?status=return_received'],
     ['Businesses pending approval',    $pendingBiz,      '/admin/?status=pending'],
     ['Unread support threads',         $unreadSupport,   '/admin/messages/'],
     ['Payouts due',                    $payoutsDue,      '/admin/payouts.php'],
     ['Vendor spot-checks due',         $spotChecksDue,   '/admin/?status=spot_check'],
 ];
 
-$total = $pendingPayments + $refundRequests + $pendingBiz + $unreadSupport + $payoutsDue + $spotChecksDue;
+$total = $pendingPayments + $refundRequests + $refundsToPay + $pendingBiz + $unreadSupport + $payoutsDue + $spotChecksDue;
 if ($total === 0) {
     exit; // nothing pending — no email today
 }
