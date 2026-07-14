@@ -69,20 +69,21 @@ $threads = $stmt->fetchAll();
         <p class="msg-empty"><?= $t['messages_empty'] ?></p>
     <?php else: ?>
     <div class="thread-list">
-        <?php foreach ($threads as $t): ?>
-        <a href="/messages-buyer/thread.php?id=<?= $t['id'] ?>" class="thread-row <?= $t['unread_count'] > 0 ? 'thread-row--unread' : '' ?>">
-            <?php if ($t['unread_count'] > 0): ?>
+        <?php // loop var must NOT be $t — that's the translations array the footer uses ?>
+        <?php foreach ($threads as $th): ?>
+        <a href="/messages-buyer/thread.php?id=<?= $th['id'] ?>" class="thread-row <?= $th['unread_count'] > 0 ? 'thread-row--unread' : '' ?>">
+            <?php if ($th['unread_count'] > 0): ?>
                 <span class="thread-unread-dot"></span>
             <?php else: ?>
                 <span style="width:8px;flex-shrink:0;"></span>
             <?php endif; ?>
-            <span class="thread-subject"><?= htmlspecialchars($t['subject']) ?></span>
-            <?php if ($t['last_body']): ?>
-            <span class="thread-preview"><?= htmlspecialchars(mb_substr($t['last_body'], 0, 80)) ?></span>
+            <span class="thread-subject"><?= htmlspecialchars($th['subject']) ?></span>
+            <?php if ($th['last_body']): ?>
+            <span class="thread-preview"><?= htmlspecialchars(mb_substr($th['last_body'], 0, 80)) ?></span>
             <?php endif; ?>
             <span class="thread-meta">
-                <span class="thread-badge thread-badge--<?= $t['status'] ?>"><?= ucfirst($t['status']) ?></span>
-                <span class="thread-date"><?= fmt_date('M j', strtotime($t['updated_at'])) ?></span>
+                <span class="thread-badge thread-badge--<?= $th['status'] ?>"><?= ucfirst($th['status']) ?></span>
+                <span class="thread-date"><?= fmt_date('M j', strtotime($th['updated_at'])) ?></span>
             </span>
         </a>
         <?php endforeach; ?>

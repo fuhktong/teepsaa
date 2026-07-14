@@ -54,7 +54,8 @@ accounts/orders created earlier.
       second address, switch between them, delete one)
 - [ ] Coupon: valid code applies discount; invalid/expired/over-max-uses
       rejected with clear message; discount survives to order total
-- [ ] Place order: succeeds, cart empties, success message shows
+- [x] Place order: succeeds, cart empties, success message shows
+      (live order run-through, Jul 2026)
 - [ ] Order confirmation email arrives — items, business names, totals,
       discount line, delivery note all correct (recently fixed — verify!)
 - [ ] Order from 2 different vendors in one checkout → splits into 2 orders
@@ -66,7 +67,10 @@ accounts/orders created earlier.
 - [ ] Order detail: items, prices, status timeline all correct
 - [ ] Status updates appear (paid → dispatched → delivered) as vendor/admin
       advances the order — check the live status-refresh polling too
-- [ ] Confirm delivery button works when dispatched arrives
+      (statuses advanced correctly in the live order test; polling itself
+      not specifically checked yet)
+- [x] Confirm delivery button works when dispatched arrives
+      (live order run-through — buyer confirmed, delivered_at set)
 - [ ] Review: can review a delivered item once (form rejects a second review);
       rating + text appear on the product page
 - [ ] Refund request: submit with reason; status changes to Refund Requested
@@ -87,8 +91,11 @@ accounts/orders created earlier.
 
 ## Vendor — account lifecycle
 
-- [ ] Register with business details (en + km names)
+- [x] Register with business details (en + km names)
+      (registered live 2026-07-08 with a real email)
 - [ ] Email verification flow (same checks as buyer)
+      (code arrived by email in the 2026-07-08 live registration;
+      wrong-code/resend paths untested)
 - [ ] Before admin approval: business/products invisible to buyers
 - [ ] Admin approves → vendor notified, business page goes live
 - [ ] Admin rejects → vendor sees rejection state
@@ -122,8 +129,11 @@ accounts/orders created earlier.
 
 ## Vendor — orders & money
 
-- [ ] New order appears on dashboard (pending/paid only)
-- [ ] Dispatch flow: mark dispatched (+ tracking URL), buyer sees it
+- [x] New order appears on dashboard (pending/paid only)
+      (live order run-through; vendor Orders nav badge added since)
+- [x] Dispatch flow: mark dispatched (+ tracking URL), buyer sees it
+      (live order run-through — Grab link entered, buyer saw it and
+      confirmed delivery)
 - [ ] Order detail shows royalty/payout breakdown correctly
 - [ ] Return received: vendor marks returned item received
 - [ ] ABA QR upload in settings (payout method)
@@ -147,11 +157,16 @@ accounts/orders created earlier.
       from buyer side)
 - [ ] Orders: list, filters by status, search by buyer/vendor/order id,
       date range
-- [ ] Order detail: confirm payment (pending → paid), advance/cancel status,
+- [x] Order detail: confirm payment (pending → paid), advance/cancel status,
       buyer + vendor notified at each step
-- [ ] Payments page reflects order payments correctly
+      (confirm payment live-tested in the order run-through)
+- [x] Payments page reflects order payments correctly
+      (reworked to a click-through list → order page; used in live test)
 - [ ] Payouts: delivered order appears after PAYOUT_WINDOW (24h in prod —
       test with a delivered order older than the window), mark paid out
+      (window gating verified live in both states via backdated
+      delivered_at; server-side guard added; final "mark paid out"
+      click still to verify)
 - [ ] Refunds: full cycle — request appears → approve return → buyer
       dispatches → vendor received → mark refunded; also test reject
 - [ ] Penalties: add a vendor penalty, verify it raises the effective
@@ -183,8 +198,9 @@ accounts/orders created earlier.
 - [ ] `cron/abandoned-cart.php` — buyer with items sitting in cart gets
       the reminder email (once, not repeatedly)
 - [ ] `cron/purge-password-resets.php` — expired reset tokens removed
-- [ ] Then: schedule all four in hPanel → Cron Jobs (use PHP CLI, not HTTP —
+- [x] Then: schedule all four in hPanel → Cron Jobs (use PHP CLI, not HTTP —
       HTTP is blocked by the pre-launch Basic Auth gate)
+      (done — all four registered with /usr/bin/php, screenshot-verified)
 
 ## Cross-cutting
 
