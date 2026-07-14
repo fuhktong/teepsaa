@@ -471,6 +471,15 @@ main h1 {
   font-weight: 600;
 }
 
+/* Approve/Reject row on the vendor review card (class shared with popup.css,
+   which is not loaded on admin pages) */
+.popup-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
 .btn-approve {
   background: var(--success-bg);
   color: var(--success-fg);

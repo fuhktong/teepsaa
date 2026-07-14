@@ -6,6 +6,11 @@ require __DIR__ . '/../config/notify.php';
 // Daily digest of everything waiting on admin action. Sends one email to
 // ADMIN_EMAIL, and only when at least one queue is non-empty.
 
+// Admin pages answer only on the admin subdomain (config/subdomain.php), and
+// its BASE_URL_* constants are empty under CLI — so the base is fixed here.
+$adminBase = 'https://admin.teepsaa.com';
+$today     = (new DateTime('now', new DateTimeZone('Asia/Phnom_Penh')))->format('D, M j, Y');
+
 $pendingPayments = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending_confirmation'")->fetchColumn();
 $refundRequests  = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn();
 $pendingBiz      = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 0 AND deleted_at IS NULL")->fetchColumn();
@@ -30,14 +35,14 @@ foreach ($rows as [$label, $count, $path]) {
     if ($count === 0) continue;
     $body .= '<tr>'
         . '<td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">'
-        . '<a href="' . SITE_URL . $path . '" style="color:#111827;text-decoration:none">' . $label . '</a></td>'
+        . '<a href="' . $adminBase . $path . '" style="color:#111827;text-decoration:none">' . $label . '</a></td>'
         . '<td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:700">' . $count . '</td>'
         . '</tr>';
 }
 $body .= '</table>';
 $body .= '<p style="margin-top:14px;color:#6b7280;font-size:0.85rem">This digest is sent once a day and only when something is waiting.</p>';
 
-$heading = 'teepsaa — ' . $total . ' item' . ($total === 1 ? '' : 's') . ' waiting for you';
-$html    = notification_email_html($heading, $body, 'Open admin dashboard', SITE_URL . '/admin/');
+$heading = $today . ' — ' . $total . ' item' . ($total === 1 ? '' : 's') . ' waiting for you';
+$html    = notification_email_html($heading, $body, 'Open admin dashboard', $adminBase . '/admin/');
 
-send_email(ADMIN_EMAIL, 'teepsaa daily digest — ' . $total . ' pending item' . ($total === 1 ? '' : 's'), $html);
+send_email(ADMIN_EMAIL, 'teepsaa daily digest ' . $today . ' — ' . $total . ' pending item' . ($total === 1 ? '' : 's'), $html);
