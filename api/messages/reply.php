@@ -94,18 +94,24 @@ if ($senderEnum === 'admin' && $thread['status'] === 'pending') {
         ->execute([$threadId]);
 }
 
-// Email guest when admin replies
+// Email guest when admin replies — via the site SMTP sender so the guest
+// only ever sees contact@teepsaa.com, never a personal admin address
 if ($senderEnum === 'admin' && $thread['sender_role'] === 'guest' && !empty($thread['guest_email'])) {
-    require_once __DIR__ . '/../../config/app.php';
+    require_once __DIR__ . '/../../config/mail.php';
     $subjectStmt = $pdo->prepare('SELECT subject FROM support_threads WHERE id = ?');
     $subjectStmt->execute([$threadId]);
     $threadSubject = $subjectStmt->fetchColumn();
 
     $emailSubject = 'Re: ' . $threadSubject;
-    $emailBody    = "Hello,\n\nYou have a new reply from the teepsaa support team:\n\n" . $body . "\n\n---\nYou can reply to this email to continue the conversation.\n\nteepsaa Support";
-    $headers      = "From: " . FROM_EMAIL . "\r\nReply-To: " . ADMIN_EMAIL . "\r\nContent-Type: text/plain; charset=UTF-8\r\n";
+    $emailHtml    = '<p>Hello,</p>'
+        . '<p>You have a new reply from the teepsaa support team:</p>'
+        . '<blockquote style="margin:0 0 1em;padding:0.5em 1em;border-left:3px solid #ddd;color:#374151;">'
+        . nl2br(htmlspecialchars($body))
+        . '</blockquote>'
+        . '<p>You can reply to this email to continue the conversation.</p>'
+        . '<p>teepsaa Support</p>';
 
-    mail($thread['guest_email'], $emailSubject, $emailBody, $headers);
+    send_email($thread['guest_email'], $emailSubject, $emailHtml);
 }
 
 echo json_encode([
