@@ -263,12 +263,14 @@ button {
   }
 }
 
+/* Content column matches .header-inner exactly: 1200px box with 1.5rem side
+   gutters, so page content always lines up with the header logo and nav */
 main {
   flex: 1;
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
-  padding: 2rem 0;
+  padding: 2rem 1.5rem;
 }
 
 /* ── Flash sale price display ─────────────────────────────────────── */
@@ -294,10 +296,4 @@ main {
   vertical-align: middle;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-}
-
-@media (max-width: 1248px) {
-  main {
-    padding: 2rem 1.5rem;
-  }
 }
