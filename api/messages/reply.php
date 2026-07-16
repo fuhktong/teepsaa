@@ -94,24 +94,37 @@ if ($senderEnum === 'admin' && $thread['status'] === 'pending') {
         ->execute([$threadId]);
 }
 
-// Email guest when admin replies — via the site SMTP sender so the guest
-// only ever sees contact@teepsaa.com, never a personal admin address
+// Email guest when admin replies — a link-only doorbell. The reply content
+// and the guest's answer both live on /support-thread/ (token-gated), so
+// the whole conversation stays inside the site's messages system.
 if ($senderEnum === 'admin' && $thread['sender_role'] === 'guest' && !empty($thread['guest_email'])) {
-    require_once __DIR__ . '/../../config/mail.php';
-    $subjectStmt = $pdo->prepare('SELECT subject FROM support_threads WHERE id = ?');
-    $subjectStmt->execute([$threadId]);
-    $threadSubject = $subjectStmt->fetchColumn();
+    require_once __DIR__ . '/../../config/app.php';
+    require_once __DIR__ . '/../../config/notify.php';
 
-    $emailSubject = 'Re: ' . $threadSubject;
-    $emailHtml    = '<p>Hello,</p>'
-        . '<p>You have a new reply from the teepsaa support team:</p>'
-        . '<blockquote style="margin:0 0 1em;padding:0.5em 1em;border-left:3px solid #ddd;color:#374151;">'
-        . nl2br(htmlspecialchars($body))
-        . '</blockquote>'
-        . '<p>You can reply to this email to continue the conversation.</p>'
-        . '<p>teepsaa Support</p>';
+    $tokStmt = $pdo->prepare('SELECT subject, guest_token FROM support_threads WHERE id = ?');
+    $tokStmt->execute([$threadId]);
+    $tokRow = $tokStmt->fetch();
 
-    send_email($thread['guest_email'], $emailSubject, $emailHtml);
+    // Backfill tokens for guest threads created before the magic-link system
+    $guestToken = $tokRow['guest_token'] ?? '';
+    if (!$guestToken) {
+        $guestToken = bin2hex(random_bytes(32));
+        $pdo->prepare('UPDATE support_threads SET guest_token = ? WHERE id = ?')
+            ->execute([$guestToken, $threadId]);
+    }
+
+    $threadUrl = SITE_URL . '/support-thread/?t=' . $guestToken;
+    send_email(
+        $thread['guest_email'],
+        email_subject_bi('ការឆ្លើយតបថ្មីពីផ្នែកជំនួយ teepsaa', 'New reply from teepsaa support'),
+        notification_email_html_bi(
+            'ការឆ្លើយតបថ្មីពីផ្នែកជំនួយ',
+            'ក្រុមជំនួយ teepsaa បានឆ្លើយតបសាររបស់អ្នក «' . htmlspecialchars($tokRow['subject']) . '»។ សូមមើលការឆ្លើយតប និងបន្តការសន្ទនាតាមតំណភ្ជាប់ខាងក្រោម។',
+            'New reply from teepsaa support',
+            'The teepsaa support team replied to your message "' . htmlspecialchars($tokRow['subject']) . '". View the reply and continue the conversation using the link below.',
+            'មើលការឆ្លើយតប', 'View reply', $threadUrl
+        )
+    );
 }
 
 echo json_encode([

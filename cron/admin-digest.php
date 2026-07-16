@@ -15,7 +15,7 @@ $pendingPayments = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status 
 $refundRequests  = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn();
 $refundsToPay    = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'return_received'")->fetchColumn();
 $pendingBiz      = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 0 AND deleted_at IS NULL")->fetchColumn();
-$unreadSupport   = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM support_messages WHERE sender IN ('buyer','vendor') AND read_at IS NULL")->fetchColumn();
+$unreadSupport   = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM support_messages WHERE sender IN ('buyer','vendor','guest') AND read_at IS NULL")->fetchColumn();
 $payoutsDue      = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();
 $spotChecksDue   = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 1 AND deleted_at IS NULL AND approved_at <= NOW() - INTERVAL 7 DAY AND spot_checked_at IS NULL")->fetchColumn();
 

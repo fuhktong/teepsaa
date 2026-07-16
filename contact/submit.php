@@ -46,10 +46,13 @@ if ($errors) {
     exit;
 }
 
+// Private access token — the guest's only way back into the conversation
+$guestToken = bin2hex(random_bytes(32));
+
 $pdo->prepare("
-    INSERT INTO support_threads (sender_id, sender_role, guest_name, guest_email, subject, status)
-    VALUES (NULL, 'guest', ?, ?, ?, 'pending')
-")->execute([$name, $email, mb_substr($subject, 0, 255)]);
+    INSERT INTO support_threads (sender_id, sender_role, guest_name, guest_email, guest_token, subject, status)
+    VALUES (NULL, 'guest', ?, ?, ?, ?, 'pending')
+")->execute([$name, $email, $guestToken, mb_substr($subject, 0, 255)]);
 
 $threadId = (int)$pdo->lastInsertId();
 
@@ -57,6 +60,22 @@ $pdo->prepare("INSERT INTO support_messages (thread_id, sender, body) VALUES (?,
     ->execute([$threadId, mb_substr($body, 0, 2000)]);
 
 $_SESSION['contact_guest_last'] = time();
+
+// Confirmation email carrying the thread link
+require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/../config/notify.php';
+$threadUrl = SITE_URL . '/support-thread/?t=' . $guestToken;
+send_email(
+    $email,
+    email_subject_bi('យើងបានទទួលសាររបស់អ្នកហើយ', 'We received your message'),
+    notification_email_html_bi(
+        'យើងបានទទួលសាររបស់អ្នកហើយ',
+        'ក្រុមជំនួយ teepsaa នឹងឆ្លើយតបក្នុងពេលឆាប់ៗ។ អ្នកអាចតាមដាន និងឆ្លើយតបការសន្ទនានេះតាមតំណភ្ជាប់ខាងក្រោម។ សូមរក្សាទុកអ៊ីមែលនេះ — តំណភ្ជាប់នេះជាការចូលប្រើឯកជនរបស់អ្នក។',
+        'We received your message',
+        'The teepsaa support team will reply soon. You can follow the conversation and reply using the link below. Please keep this email — the link is your private access to the conversation.',
+        'មើលការសន្ទនា', 'View conversation', $threadUrl
+    )
+);
 
 header('Location: /contact/thanks/');
 exit;

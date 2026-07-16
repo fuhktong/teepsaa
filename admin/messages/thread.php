@@ -51,7 +51,7 @@ if ($thread['sender_role'] === 'guest') {
 }
 
 // Mark buyer/vendor messages as read
-$pdo->prepare("UPDATE support_messages SET read_at = NOW() WHERE thread_id = ? AND sender IN ('buyer','vendor') AND read_at IS NULL")
+$pdo->prepare("UPDATE support_messages SET read_at = NOW() WHERE thread_id = ? AND sender IN ('buyer','vendor','guest') AND read_at IS NULL")
     ->execute([$threadId]);
 
 $msgs = $pdo->prepare('SELECT id, sender, body, created_at FROM support_messages WHERE thread_id = ? ORDER BY id ASC');
@@ -61,7 +61,7 @@ $lastId   = !empty($messages) ? (int)end($messages)['id'] : 0;
 
 $refundCount        = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn();
 $pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();
-$unreadMsgCount     = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM support_messages WHERE sender IN ('buyer','vendor') AND read_at IS NULL")->fetchColumn();
+$unreadMsgCount     = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM support_messages WHERE sender IN ('buyer','vendor','guest') AND read_at IS NULL")->fetchColumn();
 $adminSection = 'messages';
 $adminTab     = '';
 ?>

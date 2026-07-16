@@ -524,6 +524,15 @@ return [
     'messages_closed_notice'     => 'This conversation is closed. If you need further help, %s.',
     'messages_contact_lower'     => 'contact support',
 
+    // ── Guest support thread (magic-link page) ───────────────────────────
+    'support_thread_title'         => 'Support conversation',
+    'support_thread_invalid'       => 'This support link is invalid or is no longer available.',
+    'support_thread_closed_notice' => 'This conversation is closed. If you need more help, please send us a new message through the contact form.',
+    'support_thread_reply_ph'      => 'Write a reply…',
+    'support_thread_send'          => 'Send reply',
+    'support_thread_note'          => 'We will email you when the support team replies.',
+    'support_thread_contact_link'  => 'Go to contact form',
+
     // ── About ────────────────────────────────────────────────────────────
     'about_title'      => 'About teepsaa',
     'about_coming_soon'=> 'More coming soon.',

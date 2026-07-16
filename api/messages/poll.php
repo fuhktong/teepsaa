@@ -55,7 +55,7 @@ if ($role === 'buyer' || $role === 'vendor') {
     $pdo->prepare("UPDATE support_messages SET read_at = NOW() WHERE thread_id = ? AND sender = 'admin' AND read_at IS NULL")
         ->execute([$threadId]);
 } elseif ($isAdmin) {
-    $pdo->prepare("UPDATE support_messages SET read_at = NOW() WHERE thread_id = ? AND sender IN ('buyer','vendor') AND read_at IS NULL")
+    $pdo->prepare("UPDATE support_messages SET read_at = NOW() WHERE thread_id = ? AND sender IN ('buyer','vendor','guest') AND read_at IS NULL")
         ->execute([$threadId]);
 }
 
