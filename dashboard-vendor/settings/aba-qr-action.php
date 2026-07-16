@@ -25,7 +25,26 @@ $userId    = $_SESSION['user_id'];
 $uploadDir = __DIR__ . '/../../uploads/';
 $allowed   = ['image/jpeg', 'image/png'];
 
+$accountName = trim($_POST['aba_account_name'] ?? '');
+if ($accountName === '') {
+    $_SESSION['settings_error'] = 'Account name is required.';
+    header('Location: /dashboard-vendor/settings/?tab=aba-qr');
+    exit;
+}
+$accountName = mb_substr($accountName, 0, 100);
+
+// New QR file is optional once one exists — the account name can be updated alone
 if (empty($_FILES['aba_qr']['name'])) {
+    $stmt = $pdo->prepare('SELECT aba_qr FROM vendors WHERE id = ?');
+    $stmt->execute([$userId]);
+    if (!$stmt->fetchColumn()) {
+        $_SESSION['settings_error'] = 'Please upload your bank QR code.';
+        header('Location: /dashboard-vendor/settings/?tab=aba-qr');
+        exit;
+    }
+    $pdo->prepare('UPDATE vendors SET aba_account_name = ? WHERE id = ?')
+        ->execute([$accountName, $userId]);
+    $_SESSION['settings_success'] = 'Account name updated.';
     header('Location: /dashboard-vendor/settings/?tab=aba-qr');
     exit;
 }
@@ -44,8 +63,8 @@ $ext      = $mime === 'image/png' ? 'png' : 'jpg';
 $filename = bin2hex(random_bytes(16)) . '.' . $ext;
 
 if (move_uploaded_file($tmp, $uploadDir . $filename)) {
-    $stmt = $pdo->prepare('UPDATE vendors SET aba_qr = ? WHERE id = ?');
-    $stmt->execute([$filename, $userId]);
+    $stmt = $pdo->prepare('UPDATE vendors SET aba_qr = ?, aba_account_name = ? WHERE id = ?');
+    $stmt->execute([$filename, $accountName, $userId]);
     $_SESSION['settings_success'] = 'Bank QR code updated.';
 } else {
     $_SESSION['settings_error'] = 'Upload failed. Please try again.';

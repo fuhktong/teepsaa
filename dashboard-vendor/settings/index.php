@@ -19,7 +19,7 @@ $userId    = $_SESSION['user_id'];
 $validTabs = ['account', 'address', 'business', 'aba-qr', 'password', 'danger'];
 $tab       = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'account';
 
-$stmt = $pdo->prepare('SELECT name, email, phone, avatar, avatar_color, aba_qr FROM vendors WHERE id = ?');
+$stmt = $pdo->prepare('SELECT name, email, phone, avatar, avatar_color, aba_qr, aba_account_name FROM vendors WHERE id = ?');
 $stmt->execute([$userId]);
 $vendor = $stmt->fetch();
 
@@ -361,8 +361,13 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <form method="POST" action="/dashboard-vendor/settings/aba-qr-action.php" enctype="multipart/form-data">
                     <?= csrf_input() ?>
                     <div class="settings-field">
+                        <label for="aba_account_name"><?= $t['vendor_qr_account_name'] ?></label>
+                        <input type="text" id="aba_account_name" name="aba_account_name" value="<?= htmlspecialchars($vendor['aba_account_name'] ?? '') ?>" maxlength="100" required>
+                        <p class="field-hint"><?= $t['vendor_qr_account_name_hint'] ?></p>
+                    </div>
+                    <div class="settings-field">
                         <label for="aba_qr"><?= $vendor['aba_qr'] ? $t['vendor_replace_qr'] : $t['vendor_upload_qr'] ?> <span class="field-hint" style="font-weight:400;display:inline"><?= $t['vendor_qr_hint'] ?></span></label>
-                        <input type="file" id="aba_qr" name="aba_qr" accept="image/jpeg,image/png" required>
+                        <input type="file" id="aba_qr" name="aba_qr" accept="image/jpeg,image/png" <?= $vendor['aba_qr'] ? '' : 'required' ?>>
                     </div>
                     <button type="submit" class="btn-save"><?= $t['vendor_upload'] ?></button>
                 </form>

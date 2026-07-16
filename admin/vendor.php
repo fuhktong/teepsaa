@@ -22,7 +22,7 @@ if (!$id) { header('Location: /admin/'); exit; }
 
 $stmt = $pdo->prepare('
     SELECT v.id, v.name, v.email, v.created_at, v.banned, v.ban_reason, v.banned_at,
-           v.admin_note,
+           v.admin_note, v.aba_qr, v.aba_account_name,
            b.id AS business_id, b.name AS business_name, b.category, b.description,
            b.address, b.house_number, b.khan, b.sangkat,
            b.approved, b.created_at AS submitted_at,
@@ -292,6 +292,23 @@ $adminTab     = 'vendors';
                 </div>
             </div>
             <?php endif; ?>
+
+            <!-- Payout account — scan once here to verify the ABA name matches -->
+            <div class="detail-card">
+                <div class="detail-card-title">Payout account</div>
+                <?php if ($v['aba_qr']): ?>
+                <?php if ($v['aba_account_name']): ?>
+                <p style="margin:0 0 0.15rem;font-size:0.8rem;color:#6b7280;">Account name (as ABA should show it)</p>
+                <p style="margin:0 0 0.75rem;font-size:1.05rem;font-weight:700;"><?= htmlspecialchars($v['aba_account_name']) ?></p>
+                <?php else: ?>
+                <p style="margin:0 0 0.75rem;font-size:0.85rem;font-weight:700;color:#b45309;">No account name on file — ask the vendor to add it in their settings.</p>
+                <?php endif; ?>
+                <img src="/uploads/<?= htmlspecialchars($v['aba_qr']) ?>" alt="Vendor ABA QR" style="width:150px;height:150px;object-fit:contain;border:1px solid #e5e7eb;border-radius:6px;display:block;margin-bottom:0.5rem;">
+                <p style="margin:0;font-size:0.75rem;color:#6b7280;">Scan without paying — the name ABA shows must match the account name above.</p>
+                <?php else: ?>
+                <p style="margin:0;font-size:0.875rem;color:#6b7280;">Vendor has not uploaded an ABA QR code yet.</p>
+                <?php endif; ?>
+            </div>
 
             <?php if ($v['business_id'] && $v['approved'] === 0): ?>
             <!-- Approve / Reject -->

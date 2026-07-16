@@ -417,6 +417,8 @@ return [
     'vendor_replace_qr'    => 'Replace QR code',
     'vendor_upload_qr'     => 'Upload QR code',
     'vendor_qr_hint'       => '— JPG or PNG, max 2MB',
+    'vendor_qr_account_name'      => 'Account name',
+    'vendor_qr_account_name_hint' => 'Exactly as it appears in your ABA account — we use this to verify payouts go to you.',
     'vendor_upload'        => 'Upload',
     'vendor_delete_warning' => 'Deleting your account also removes your business and all associated products. This cannot be undone. Accounts with open orders cannot be deleted.',
     'settings_delete_business'        => 'Delete business',
