@@ -308,11 +308,11 @@ $adminTab     = 'orders';
                         <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Scan the vendor's ABA QR and send <strong>$<?= number_format($vendorPayout, 2) ?></strong>, then mark as completed.</p>
                         <?php if ($o['vendor_aba_qr']): ?>
                             <div style="display:inline-block;text-align:center;border:2px solid #1e7e34;border-radius:8px;padding:0.75rem 1.25rem 1rem;margin-bottom:1rem;">
-                                <div style="font-size:0.85rem;color:#6b7280;"><?= htmlspecialchars($o['vendor_name']) ?></div>
                                 <?php if ($o['vendor_aba_account_name']): ?>
+                                <div style="font-size:0.75rem;color:#6b7280;text-transform:uppercase;letter-spacing:0.03em;">ABA account name</div>
                                 <div style="font-size:1.15rem;font-weight:700;color:#111827;margin-top:0.1rem;"><?= htmlspecialchars($o['vendor_aba_account_name']) ?></div>
                                 <?php else: ?>
-                                <div style="font-size:0.8rem;font-weight:700;color:#b45309;margin-top:0.1rem;">No ABA account name on file — verify with the vendor first</div>
+                                <div style="font-size:0.8rem;font-weight:700;color:#b45309;">No ABA account name on file — verify with the vendor first</div>
                                 <?php endif; ?>
                                 <div style="font-size:1.6rem;font-weight:800;color:#1e7e34;margin:0.1rem 0 0.6rem;">$<?= number_format($vendorPayout, 2) ?></div>
                                 <img src="/uploads/<?= htmlspecialchars($o['vendor_aba_qr']) ?>" alt="Vendor ABA QR" style="width:160px;height:160px;object-fit:contain;border:1px solid #e5e7eb;border-radius:6px;display:block;margin:0 auto;">
