@@ -306,7 +306,12 @@ $adminTab     = 'orders';
                     <div class="payout-confirm-body">
                         <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Scan the vendor's ABA QR and send <strong>$<?= number_format($vendorPayout, 2) ?></strong>, then mark as completed.</p>
                         <?php if ($o['vendor_aba_qr']): ?>
-                            <img src="/uploads/<?= htmlspecialchars($o['vendor_aba_qr']) ?>" alt="Vendor ABA QR" style="width:160px;height:160px;object-fit:contain;border:1px solid #e5e7eb;border-radius:6px;display:block;margin-bottom:1rem;">
+                            <div style="display:inline-block;text-align:center;border:2px solid #1e7e34;border-radius:8px;padding:0.75rem 1.25rem 1rem;margin-bottom:1rem;">
+                                <div style="font-size:1.1rem;font-weight:700;color:#111827;"><?= htmlspecialchars($o['vendor_name']) ?></div>
+                                <div style="font-size:1.6rem;font-weight:800;color:#1e7e34;margin:0.1rem 0 0.6rem;">$<?= number_format($vendorPayout, 2) ?></div>
+                                <img src="/uploads/<?= htmlspecialchars($o['vendor_aba_qr']) ?>" alt="Vendor ABA QR" style="width:160px;height:160px;object-fit:contain;border:1px solid #e5e7eb;border-radius:6px;display:block;margin:0 auto;">
+                                <div style="font-size:0.75rem;color:#6b7280;margin-top:0.5rem;">Check the name in ABA matches before sending</div>
+                            </div>
                         <?php else: ?>
                             <p style="font-size:0.875rem;color:#ef4444;margin-bottom:1rem;">Vendor has not uploaded an ABA QR code yet.</p>
                         <?php endif; ?>
