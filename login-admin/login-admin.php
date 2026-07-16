@@ -51,5 +51,6 @@ $_SESSION['role']             = 'admin';
 $_SESSION['is_admin']         = true;
 $_SESSION['admin_role']       = $user['admin_role'];
 $_SESSION['admin_permissions'] = $permissions;
+$_SESSION['lang']             = 'en'; // office language — admins start in English
 header('Location: /admin/');
 exit;

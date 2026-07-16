@@ -5,24 +5,6 @@ not just local MAMP. Use email +aliases (dustint505+test1@gmail.com) for the
 throwaway accounts. Do the flows in order — later sections depend on
 accounts/orders created earlier.
 
-## Guest (not logged in)
-
-- [ ] Homepage loads, all sections render, banner carousel rotates and links work
-- [ ] Language switcher: switch en ↔ km, choice persists across pages
-- [ ] Currency switcher: USD ↔ KHR, prices convert everywhere they appear
-- [ ] Search: keyword search returns results, filters (category, price) work,
-      empty search shows something sensible
-- [ ] Product detail page loads from search, photos + gallery work
-- [ ] Business page loads, shows that vendor's products only
-- [ ] Content pages load: About, Help, Terms, Privacy, Shipping, Returns
-- [ ] Contact form: submits, thanks page, arrives in Admin → Messages;
-      honeypot untouched; second submit within 60s is rate-limited
-- [ ] Careers page lists jobs; apply with resume upload works; application
-      appears in Admin → Careers → Applications
-- [ ] Add to cart / wishlist while logged out → redirected to buyer login
-- [ ] Guest cannot open /dashboard-buyer/, /dashboard-vendor/, /admin/,
-      /checkout/ directly (all redirect to login)
-
 ## Buyer — account lifecycle
 
 - [ ] Register: blank/invalid fields rejected with messages
