@@ -305,6 +305,7 @@ return [
     'settings_drop_pin_hint'  => '— ចុចលើផែនទីដើម្បីកំណត់ទីតាំងដឹកជញ្ជូនច្បាស់លាស់',
     'settings_save_address'   => 'រក្សាទុកអាសយដ្ឋាន',
     'settings_saved_addresses' => 'អាសយដ្ឋានដែលបានរក្សាទុក',
+    'settings_delivery_addresses' => 'អាសយដ្ឋានដឹកជញ្ជូន',
     'settings_set_default'    => 'កំណត់ជាលំនាំដើម',
     'settings_select_khan'    => 'ជ្រើសរើសខណ្ឌ',
     'settings_select_sangkat' => 'ជ្រើសរើសសង្កាត់',

@@ -121,7 +121,30 @@ if ($action === 'add') {
 
 } elseif ($action === 'delete') {
     $addrId = (int)($_POST['address_id'] ?? 0);
+
+    $stmt = $pdo->prepare('SELECT is_default FROM buyer_addresses WHERE id = ? AND buyer_user_id = ?');
+    $stmt->execute([$addrId, $userId]);
+    $wasDefault = $stmt->fetchColumn();
+
     $pdo->prepare('DELETE FROM buyer_addresses WHERE id = ? AND buyer_user_id = ?')->execute([$addrId, $userId]);
+
+    // Deleting the default must not leave the account without one — promote
+    // the oldest remaining address, and keep the buyers table (which the
+    // delivery calculation reads) in step with whatever is now default
+    if ($wasDefault) {
+        $stmt = $pdo->prepare('SELECT * FROM buyer_addresses WHERE buyer_user_id = ? ORDER BY created_at ASC LIMIT 1');
+        $stmt->execute([$userId]);
+        $next = $stmt->fetch();
+        if ($next) {
+            $pdo->prepare('UPDATE buyer_addresses SET is_default = 1 WHERE id = ?')->execute([(int)$next['id']]);
+            $pdo->prepare('UPDATE buyers SET house_number=?, address=?, address_notes=?, khan=?, sangkat=?, lat=?, lng=? WHERE id=?')
+                ->execute([$next['house_number'], $next['address'], $next['address_notes'], $next['khan'], $next['sangkat'], $next['lat'], $next['lng'], $userId]);
+        } else {
+            $pdo->prepare('UPDATE buyers SET house_number=NULL, address=NULL, address_notes=NULL, khan=NULL, sangkat=NULL, lat=NULL, lng=NULL WHERE id=?')
+                ->execute([$userId]);
+        }
+    }
+
     $_SESSION['settings_success'] = 'Address removed.';
 }
 

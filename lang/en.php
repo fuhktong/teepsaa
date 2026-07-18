@@ -305,6 +305,7 @@ return [
     'settings_drop_pin_hint'  => '— click the map to set your precise delivery location',
     'settings_save_address'   => 'Save address',
     'settings_saved_addresses' => 'Saved addresses',
+    'settings_delivery_addresses' => 'Delivery addresses',
     'settings_set_default'    => 'Set as default',
     'settings_select_khan'    => 'Select Khan',
     'settings_select_sangkat' => 'Select Sangkat',

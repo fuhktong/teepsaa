@@ -29,10 +29,8 @@ if ($tab === 'address') {
 
 $editAddrId  = ($tab === 'address') ? (int)($_GET['edit'] ?? 0) : 0;
 $editingAddr = null;
-$defaultAddr = null;
 foreach ($savedAddresses as $sa) {
     if ($editAddrId && (int)$sa['id'] === $editAddrId) $editingAddr = $sa;
-    if ($sa['is_default'] && !$defaultAddr)            $defaultAddr = $sa;
 }
 
 $stmt = $pdo->prepare('SELECT name, email, phone, avatar, avatar_color, house_number, address, address_notes, khan, sangkat, lat, lng FROM buyers WHERE id = ?');
@@ -151,53 +149,17 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 
             <?php elseif ($tab === 'address'): ?>
             <div class="settings-section">
-                <h2><?= $t['settings_delivery_address'] ?></h2>
-                <?php
-                // Display only — the delivery address IS the default saved
-                // address; all editing happens per-address in the list below.
-                $src = $defaultAddr ?: [
-                    'label'         => null,
-                    'house_number'  => $buyer['house_number'],
-                    'address'       => $buyer['address'],
-                    'address_notes' => $buyer['address_notes'],
-                    'khan'          => $buyer['khan'],
-                    'sangkat'       => $buyer['sangkat'],
-                ];
-                $addrParts = array_filter([
-                    trim(($src['house_number'] ?? '') . ' ' . ($src['address'] ?? '')),
-                    $src['sangkat'] ?? '',
-                    $src['khan'] ?? '',
-                    'Phnom Penh',
-                ]);
-                $addrLine   = implode(', ', $addrParts);
-                $hasAddress = !empty($src['address']) || !empty($src['khan']);
-                ?>
-                <?php if ($hasAddress): ?>
-                <div class="addr-display">
-                    <p class="saved-addr-label">
-                        <?= htmlspecialchars($src['label'] ?: $t['settings_unnamed']) ?>
-                        <span class="saved-addr-badge"><?= $t['settings_address_default'] ?></span>
-                    </p>
-                    <p class="addr-display-line"><?= htmlspecialchars($addrLine) ?></p>
-                    <?php if (!empty($src['address_notes'])): ?>
-                    <p class="addr-display-notes"><?= htmlspecialchars($src['address_notes']) ?></p>
-                    <?php endif; ?>
-                </div>
-                <?php else: ?>
+                <h2><?= $t['settings_delivery_addresses'] ?></h2>
+                <?php if (empty($savedAddresses)): ?>
                 <p class="addr-display-empty"><?= $t['settings_no_address'] ?></p>
-                <?php endif; ?>
-
-                <hr class="form-divider">
-
-                <h2><?= $t['settings_saved_addresses'] ?></h2>
-                <?php if (!empty($savedAddresses)): ?>
+                <?php else: ?>
                 <div class="saved-addr-list">
                     <?php foreach ($savedAddresses as $a): ?>
                     <?php
                         $aParts = array_filter([$a['house_number'], $a['address'], $a['sangkat'], $a['khan'], 'Phnom Penh']);
                         $aLine  = implode(', ', $aParts);
                     ?>
-                    <div class="saved-addr-item<?= $a['is_default'] ? ' saved-addr-item--default' : '' ?>" id="addr-<?= $a['id'] ?>">
+                    <div class="saved-addr-item" id="addr-<?= $a['id'] ?>">
                         <div class="saved-addr-info">
                             <p class="saved-addr-label">
                                 <?= htmlspecialchars($a['label'] ?: $t['settings_unnamed']) ?>

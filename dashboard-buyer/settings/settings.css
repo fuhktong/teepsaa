@@ -222,30 +222,6 @@
     background: var(--border);
 }
 
-/* Address display + edit toggle */
-.addr-display {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 0.9rem 1rem;
-    margin-bottom: 0.75rem;
-}
-
-.addr-display .saved-addr-label {
-    margin-bottom: 0.3rem;
-}
-
-.addr-display-line {
-    font-size: 0.9rem;
-    color: #111;
-    margin: 0 0 0.2rem;
-}
-
-.addr-display-notes {
-    font-size: 0.82rem;
-    color: var(--text-muted);
-    margin: 0;
-}
-
 .addr-display-empty {
     font-size: 0.875rem;
     color: var(--text-muted);
@@ -293,10 +269,6 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     padding: 0.9rem 1rem;
-}
-
-.saved-addr-item--default {
-    border-color: #111;
 }
 
 .saved-addr-label {
