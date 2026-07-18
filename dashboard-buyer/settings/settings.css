@@ -53,6 +53,16 @@
     max-width: 480px;
 }
 
+/* Line the heading and the add-address block up with the text inside
+   the address cards (1px border + 1rem padding) */
+.settings-content--wide .settings-section h2 {
+    padding-left: calc(1rem + 1px);
+}
+
+.settings-content--wide .addr-edit {
+    padding: 0 calc(1rem + 1px);
+}
+
 .settings-content--wide .saved-addr-item--editing,
 .settings-content--wide .addr-edit[open] {
     max-width: none;
