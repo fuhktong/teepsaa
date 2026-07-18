@@ -27,6 +27,14 @@ if ($tab === 'address') {
     $savedAddresses = $addrStmt->fetchAll();
 }
 
+$editAddrId  = ($tab === 'address') ? (int)($_GET['edit'] ?? 0) : 0;
+$editingAddr = null;
+$defaultAddr = null;
+foreach ($savedAddresses as $sa) {
+    if ($editAddrId && (int)$sa['id'] === $editAddrId) $editingAddr = $sa;
+    if ($sa['is_default'] && !$defaultAddr)            $defaultAddr = $sa;
+}
+
 $stmt = $pdo->prepare('SELECT name, email, phone, avatar, avatar_color, house_number, address, address_notes, khan, sangkat, lat, lng FROM buyers WHERE id = ?');
 $stmt->execute([$userId]);
 $buyer = $stmt->fetch();
@@ -145,85 +153,39 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
             <div class="settings-section">
                 <h2><?= $t['settings_delivery_address'] ?></h2>
                 <?php
+                // Display only — the delivery address IS the default saved
+                // address; all editing happens per-address in the list below.
+                $src = $defaultAddr ?: [
+                    'label'         => null,
+                    'house_number'  => $buyer['house_number'],
+                    'address'       => $buyer['address'],
+                    'address_notes' => $buyer['address_notes'],
+                    'khan'          => $buyer['khan'],
+                    'sangkat'       => $buyer['sangkat'],
+                ];
                 $addrParts = array_filter([
-                    trim(($buyer['house_number'] ?? '') . ' ' . ($buyer['address'] ?? '')),
-                    $buyer['sangkat'] ?? '',
-                    $buyer['khan'] ?? '',
+                    trim(($src['house_number'] ?? '') . ' ' . ($src['address'] ?? '')),
+                    $src['sangkat'] ?? '',
+                    $src['khan'] ?? '',
                     'Phnom Penh',
                 ]);
                 $addrLine   = implode(', ', $addrParts);
-                $hasAddress = !empty($buyer['address']) || !empty($buyer['khan']);
+                $hasAddress = !empty($src['address']) || !empty($src['khan']);
                 ?>
                 <?php if ($hasAddress): ?>
                 <div class="addr-display">
+                    <p class="saved-addr-label">
+                        <?= htmlspecialchars($src['label'] ?: $t['settings_unnamed']) ?>
+                        <span class="saved-addr-badge"><?= $t['settings_address_default'] ?></span>
+                    </p>
                     <p class="addr-display-line"><?= htmlspecialchars($addrLine) ?></p>
-                    <?php if ($buyer['address_notes']): ?>
-                    <p class="addr-display-notes"><?= htmlspecialchars($buyer['address_notes']) ?></p>
+                    <?php if (!empty($src['address_notes'])): ?>
+                    <p class="addr-display-notes"><?= htmlspecialchars($src['address_notes']) ?></p>
                     <?php endif; ?>
                 </div>
                 <?php else: ?>
                 <p class="addr-display-empty"><?= $t['settings_no_address'] ?></p>
                 <?php endif; ?>
-                <details class="addr-edit"<?= !$hasAddress ? ' open' : '' ?>>
-                    <summary class="addr-edit-toggle"><?= $t['settings_address_edit'] ?></summary>
-                    <div class="addr-edit-body">
-                <form method="POST" action="/dashboard-buyer/settings/address-action.php">
-                    <?= csrf_input() ?>
-                    <div class="settings-field">
-                        <label for="phone"><?= $t['settings_phone_number'] ?></label>
-                        <input type="tel" id="phone" name="phone" value="<?= htmlspecialchars($buyer['phone'] ?? '') ?>" placeholder="e.g. 012 345 678">
-                    </div>
-                    <div class="settings-field">
-                        <label for="house_number"><?= $t['settings_address_house'] ?></label>
-                        <input type="text" id="house_number" name="house_number" value="<?= htmlspecialchars($buyer['house_number'] ?? '') ?>" placeholder="e.g. 15">
-                    </div>
-                    <div class="settings-field">
-                        <label for="address"><?= $t['settings_street'] ?></label>
-                        <input type="text" id="address" name="address" value="<?= htmlspecialchars($buyer['address'] ?? '') ?>" placeholder="e.g. Street 240">
-                    </div>
-                    <div class="settings-field">
-                        <label for="address_notes"><?= $t['settings_address_floor'] ?></label>
-                        <input type="text" id="address_notes" name="address_notes" value="<?= htmlspecialchars($buyer['address_notes'] ?? '') ?>" placeholder="e.g. Apt 4B, blue gate">
-                    </div>
-                    <div class="settings-field">
-                        <label for="khan"><?= $t['settings_address_khan'] ?></label>
-                        <select id="khan" name="khan" onchange="updateSangkats(this.value)">
-                            <option value=""><?= $t['settings_select_khan'] ?></option>
-                            <?php foreach (array_keys($locations) as $k): ?>
-                            <option value="<?= htmlspecialchars($k) ?>" <?= ($buyer['khan'] === $k) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($k) ?>
-                            </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="settings-field">
-                        <label for="sangkat"><?= $t['settings_address_sangkat'] ?></label>
-                        <select id="sangkat" name="sangkat">
-                            <option value=""><?= $t['settings_select_sangkat'] ?></option>
-                            <?php if ($buyer['khan'] && isset($locations[$buyer['khan']])): ?>
-                                <?php foreach ($locations[$buyer['khan']] as $s): ?>
-                                <option value="<?= htmlspecialchars($s) ?>" <?= ($buyer['sangkat'] === $s) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($s) ?>
-                                </option>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </select>
-                    </div>
-                    <div class="settings-field">
-                        <label><?= $t['settings_address_drop_pin'] ?> <span class="field-hint" style="font-weight:400;display:inline"> <?= $t['settings_drop_pin_hint'] ?></span></label>
-                        <div id="addr-map"></div>
-                        <p id="pin-label" class="pin-label">
-                            <?= ($buyer['lat'] && $buyer['lng'])
-                                ? number_format((float)$buyer['lat'], 5) . ', ' . number_format((float)$buyer['lng'], 5)
-                                : $t['settings_no_pin'] ?>
-                        </p>
-                        <input type="hidden" id="lat" name="lat" value="<?= htmlspecialchars($buyer['lat'] ?? '') ?>">
-                        <input type="hidden" id="lng" name="lng" value="<?= htmlspecialchars($buyer['lng'] ?? '') ?>">
-                    </div>
-                    <button type="submit" class="btn-save"><?= $t['settings_save_address'] ?></button>
-                </form>
-                    </div>
-                </details>
 
                 <hr class="form-divider">
 
@@ -235,7 +197,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                         $aParts = array_filter([$a['house_number'], $a['address'], $a['sangkat'], $a['khan'], 'Phnom Penh']);
                         $aLine  = implode(', ', $aParts);
                     ?>
-                    <div class="saved-addr-item<?= $a['is_default'] ? ' saved-addr-item--default' : '' ?>">
+                    <div class="saved-addr-item<?= $a['is_default'] ? ' saved-addr-item--default' : '' ?>" id="addr-<?= $a['id'] ?>">
                         <div class="saved-addr-info">
                             <p class="saved-addr-label">
                                 <?= htmlspecialchars($a['label'] ?: $t['settings_unnamed']) ?>
@@ -247,6 +209,11 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                             <?php endif; ?>
                         </div>
                         <div class="saved-addr-actions">
+                            <?php if ($editingAddr && (int)$a['id'] === $editAddrId): ?>
+                            <a href="?tab=address#addr-<?= $a['id'] ?>" class="btn-addr-action"><?= $t['btn_cancel'] ?></a>
+                            <?php else: ?>
+                            <a href="?tab=address&edit=<?= $a['id'] ?>#addr-<?= $a['id'] ?>" class="btn-addr-action"><?= $t['settings_address_edit'] ?></a>
+                            <?php endif; ?>
                             <?php if (!$a['is_default']): ?>
                             <form method="POST" action="/dashboard-buyer/settings/address-book-action.php">
                                 <?= csrf_input() ?>
@@ -263,6 +230,63 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                                 <button type="submit" class="btn-addr-delete btn-addr-action"><?= $t['settings_remove_photo'] ?></button>
                             </form>
                         </div>
+                        <?php if ($editingAddr && (int)$a['id'] === $editAddrId): ?>
+                        <div class="addr-edit-body saved-addr-edit">
+                            <form method="POST" action="/dashboard-buyer/settings/address-book-action.php">
+                                <?= csrf_input() ?>
+                                <input type="hidden" name="action" value="edit">
+                                <input type="hidden" name="address_id" value="<?= $a['id'] ?>">
+                                <div class="settings-field">
+                                    <label for="edit_label"><?= $t['settings_address_label'] ?></label>
+                                    <input type="text" id="edit_label" name="label" value="<?= htmlspecialchars($a['label'] ?? '') ?>" placeholder="e.g. Home, Work" maxlength="100">
+                                </div>
+                                <div class="settings-field">
+                                    <label for="edit_house_number"><?= $t['settings_address_house'] ?></label>
+                                    <input type="text" id="edit_house_number" name="house_number" value="<?= htmlspecialchars($a['house_number'] ?? '') ?>" placeholder="e.g. 15">
+                                </div>
+                                <div class="settings-field">
+                                    <label for="edit_address"><?= $t['settings_street'] ?></label>
+                                    <input type="text" id="edit_address" name="address" value="<?= htmlspecialchars($a['address'] ?? '') ?>" placeholder="e.g. Street 240">
+                                </div>
+                                <div class="settings-field">
+                                    <label for="edit_address_notes"><?= $t['settings_address_floor'] ?></label>
+                                    <input type="text" id="edit_address_notes" name="address_notes" value="<?= htmlspecialchars($a['address_notes'] ?? '') ?>" placeholder="e.g. Apt 4B, blue gate">
+                                </div>
+                                <div class="settings-field">
+                                    <label for="edit_khan"><?= $t['settings_address_khan'] ?></label>
+                                    <select id="edit_khan" name="khan" onchange="updateEditSangkats(this.value)">
+                                        <option value=""><?= $t['settings_select_khan'] ?></option>
+                                        <?php foreach (array_keys($locations) as $k): ?>
+                                        <option value="<?= htmlspecialchars($k) ?>" <?= ($a['khan'] === $k) ? 'selected' : '' ?>><?= htmlspecialchars($k) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="settings-field">
+                                    <label for="edit_sangkat"><?= $t['settings_address_sangkat'] ?></label>
+                                    <select id="edit_sangkat" name="sangkat">
+                                        <option value=""><?= $t['settings_select_sangkat'] ?></option>
+                                        <?php if ($a['khan'] && isset($locations[$a['khan']])): ?>
+                                            <?php foreach ($locations[$a['khan']] as $s): ?>
+                                            <option value="<?= htmlspecialchars($s) ?>" <?= ($a['sangkat'] === $s) ? 'selected' : '' ?>><?= htmlspecialchars($s) ?></option>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </select>
+                                </div>
+                                <div class="settings-field">
+                                    <label><?= $t['settings_address_drop_pin'] ?> <span class="field-hint" style="font-weight:400;display:inline"> <?= $t['settings_drop_pin_hint'] ?></span></label>
+                                    <div id="edit-addr-map"></div>
+                                    <p id="edit-pin-label" class="pin-label">
+                                        <?= ($a['lat'] && $a['lng'])
+                                            ? number_format((float)$a['lat'], 5) . ', ' . number_format((float)$a['lng'], 5)
+                                            : $t['settings_no_pin'] ?>
+                                    </p>
+                                    <input type="hidden" id="edit_lat" name="lat" value="<?= htmlspecialchars($a['lat'] ?? '') ?>">
+                                    <input type="hidden" id="edit_lng" name="lng" value="<?= htmlspecialchars($a['lng'] ?? '') ?>">
+                                </div>
+                                <button type="submit" class="btn-save"><?= $t['settings_save_address'] ?></button>
+                            </form>
+                        </div>
+                        <?php endif; ?>
                     </div>
                     <?php endforeach; ?>
                 </div>
@@ -371,18 +395,6 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 <script>
 const LOCATIONS = <?= json_encode($locations) ?>;
 
-function updateSangkats(khan) {
-    const sel = document.getElementById('sangkat');
-    sel.innerHTML = '<option value=""><?= $t['settings_select_sangkat'] ?></option>';
-    if (khan && LOCATIONS[khan]) {
-        LOCATIONS[khan].forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s; opt.textContent = s;
-            sel.appendChild(opt);
-        });
-    }
-}
-
 function updateNewSangkats(khan) {
     const sel = document.getElementById('new_sangkat');
     sel.innerHTML = '<option value=""><?= $t['settings_select_sangkat'] ?></option>';
@@ -396,43 +408,58 @@ function updateNewSangkats(khan) {
 }
 
 mapboxgl.accessToken = '<?= MAPBOX_TOKEN ?>';
-const existingLat = <?= $buyer['lat'] ? (float)$buyer['lat'] : 'null' ?>;
-const existingLng = <?= $buyer['lng'] ? (float)$buyer['lng'] : 'null' ?>;
 
-const map = new mapboxgl.Map({
-    container: 'addr-map',
+<?php if ($editingAddr): ?>
+function updateEditSangkats(khan) {
+    const sel = document.getElementById('edit_sangkat');
+    sel.innerHTML = '<option value=""><?= $t['settings_select_sangkat'] ?></option>';
+    if (khan && LOCATIONS[khan]) {
+        LOCATIONS[khan].forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s; opt.textContent = s;
+            sel.appendChild(opt);
+        });
+    }
+}
+
+const editLat = <?= $editingAddr['lat'] ? (float)$editingAddr['lat'] : 'null' ?>;
+const editLng = <?= $editingAddr['lng'] ? (float)$editingAddr['lng'] : 'null' ?>;
+
+const editMap = new mapboxgl.Map({
+    container: 'edit-addr-map',
     style: 'mapbox://styles/mapbox/streets-v12',
-    center: (existingLat && existingLng) ? [existingLng, existingLat] : [104.9160, 11.5564],
-    zoom: (existingLat && existingLng) ? 15 : 13,
+    center: (editLat && editLng) ? [editLng, editLat] : [104.9160, 11.5564],
+    zoom: (editLat && editLng) ? 15 : 13,
     maxBounds: [[104.654628, 11.324807], [105.055619, 11.737473]]
 });
 
-map.addControl(new mapboxgl.GeolocateControl({
+editMap.addControl(new mapboxgl.GeolocateControl({
     positionOptions: { enableHighAccuracy: true },
     trackUserLocation: false
 }));
 
-let marker = null;
+let editMarker = null;
 
-map.on('load', () => {
-    addCityMask(map);
-    if (existingLat && existingLng) {
-        marker = new mapboxgl.Marker().setLngLat([existingLng, existingLat]).addTo(map);
+editMap.on('load', () => {
+    addCityMask(editMap);
+    if (editLat && editLng) {
+        editMarker = new mapboxgl.Marker().setLngLat([editLng, editLat]).addTo(editMap);
     }
 });
 
-map.on('click', e => {
+editMap.on('click', e => {
     const { lng, lat } = e.lngLat;
     if (!pointInPolygon(lat, lng, CITY_BOUNDARY)) {
-        document.getElementById('pin-label').textContent = 'Please select a location inside Phnom Penh.';
+        document.getElementById('edit-pin-label').textContent = 'Please select a location inside Phnom Penh.';
         return;
     }
-    if (marker) marker.remove();
-    marker = new mapboxgl.Marker().setLngLat([lng, lat]).addTo(map);
-    document.getElementById('lat').value = lat.toFixed(7);
-    document.getElementById('lng').value = lng.toFixed(7);
-    document.getElementById('pin-label').textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    if (editMarker) editMarker.remove();
+    editMarker = new mapboxgl.Marker().setLngLat([lng, lat]).addTo(editMap);
+    document.getElementById('edit_lat').value = lat.toFixed(7);
+    document.getElementById('edit_lng').value = lng.toFixed(7);
+    document.getElementById('edit-pin-label').textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
 });
+<?php endif; ?>
 
 let newMap = null;
 let newMarker = null;

@@ -135,8 +135,8 @@
 
 .danger-zone {
     border: 1px solid #fca5a5;
-    border-radius: var(--radius);
-    padding: 1.25rem;
+    border-radius: var(--radius-sm);
+    padding: 0.9rem 1rem;
 }
 
 .danger-zone p {
@@ -163,13 +163,6 @@
     border: none;
     border-top: 1px solid var(--border);
     margin: 1.5rem 0;
-}
-
-#addr-map {
-    height: 260px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border-strong);
-    margin-bottom: 0.5rem;
 }
 
 .pin-label {
@@ -231,7 +224,14 @@
 
 /* Address display + edit toggle */
 .addr-display {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.9rem 1rem;
     margin-bottom: 0.75rem;
+}
+
+.addr-display .saved-addr-label {
+    margin-bottom: 0.3rem;
 }
 
 .addr-display-line {
@@ -362,8 +362,9 @@
     background: #fef2f2;
 }
 
-#new-addr-map {
-    height: 240px;
+#new-addr-map,
+#edit-addr-map {
+    height: 300px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-strong);
     margin-bottom: 0.5rem;

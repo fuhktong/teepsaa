@@ -59,6 +59,45 @@ if ($action === 'add') {
 
     $_SESSION['settings_success'] = 'Address saved.';
 
+} elseif ($action === 'edit') {
+    $addrId = (int)($_POST['address_id'] ?? 0);
+
+    $stmt = $pdo->prepare('SELECT * FROM buyer_addresses WHERE id = ? AND buyer_user_id = ?');
+    $stmt->execute([$addrId, $userId]);
+    $addr = $stmt->fetch();
+
+    if (!$addr) {
+        header('Location: /dashboard-buyer/settings/?tab=address');
+        exit;
+    }
+
+    $label        = mb_substr(trim($_POST['label'] ?? ''), 0, 100);
+    $houseNumber  = mb_substr(trim($_POST['house_number'] ?? ''), 0, 50) ?: null;
+    $address      = mb_substr(trim($_POST['address'] ?? ''), 0, 255) ?: null;
+    $addressNotes = mb_substr(trim($_POST['address_notes'] ?? ''), 0, 255) ?: null;
+    $khan         = mb_substr(trim($_POST['khan'] ?? ''), 0, 100) ?: null;
+    $sangkat      = mb_substr(trim($_POST['sangkat'] ?? ''), 0, 100) ?: null;
+    $lat          = ($_POST['lat'] ?? '') !== '' ? (float)$_POST['lat'] : null;
+    $lng          = ($_POST['lng'] ?? '') !== '' ? (float)$_POST['lng'] : null;
+
+    if (!$label && !$address && !$khan) {
+        $_SESSION['settings_error'] = 'Please fill in at least a label and address.';
+        header('Location: /dashboard-buyer/settings/?tab=address&edit=' . $addrId);
+        exit;
+    }
+
+    $pdo->prepare('UPDATE buyer_addresses SET label=?, house_number=?, address=?, address_notes=?, khan=?, sangkat=?, lat=?, lng=? WHERE id=?')
+        ->execute([$label ?: null, $houseNumber, $address, $addressNotes, $khan, $sangkat, $lat, $lng, $addrId]);
+
+    // Editing the default address must also update the buyers table,
+    // which is what the delivery calculation reads
+    if ($addr['is_default']) {
+        $pdo->prepare('UPDATE buyers SET house_number=?, address=?, address_notes=?, khan=?, sangkat=?, lat=?, lng=? WHERE id=?')
+            ->execute([$houseNumber, $address, $addressNotes, $khan, $sangkat, $lat, $lng, $userId]);
+    }
+
+    $_SESSION['settings_success'] = 'Address updated.';
+
 } elseif ($action === 'set_default') {
     $addrId = (int)($_POST['address_id'] ?? 0);
 
