@@ -41,6 +41,31 @@
     max-width: 480px;
 }
 
+/* Address tab: the column widens so an open map gets room, but the
+   address cards and form fields keep the normal 480px width */
+.settings-content--wide {
+    max-width: 760px;
+}
+
+.settings-content--wide .settings-section h2,
+.settings-content--wide .saved-addr-item,
+.settings-content--wide .addr-edit {
+    max-width: 480px;
+}
+
+.settings-content--wide .saved-addr-item--editing,
+.settings-content--wide .addr-edit[open] {
+    max-width: none;
+}
+
+.addr-edit-body .settings-field {
+    max-width: 448px;
+}
+
+.addr-edit-body .settings-field--map {
+    max-width: none;
+}
+
 .settings-section h2 {
     font-size: 1.1rem;
     margin-bottom: 1.25rem;
@@ -336,7 +361,7 @@
 
 #new-addr-map,
 #edit-addr-map {
-    height: 300px;
+    height: 400px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-strong);
     margin-bottom: 0.5rem;

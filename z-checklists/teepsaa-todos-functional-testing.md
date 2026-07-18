@@ -33,7 +33,7 @@ accounts/orders created earlier.
 - [x] Cart: cannot exceed available stock
 - [ ] Checkout blocked until email verified (redirects to resend-verification)
 - [ ] Checkout blocked until delivery address + map pin set
-- [ ] Set address: khan/sangkat dropdowns, map pin, address book (add a
+- [x] Set address: khan/sangkat dropdowns, map pin, address book (add a
       second address, switch between them, delete one)
 - [ ] Coupon: valid code applies discount; invalid/expired/over-max-uses
       rejected with clear message; discount survives to order total

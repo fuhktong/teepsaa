@@ -73,7 +73,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
             <a href="?tab=danger"    class="danger-link <?= $tab === 'danger' ? 'active' : '' ?>"><?= $t['settings_delete_account'] ?></a>
         </nav>
 
-        <div class="settings-content">
+        <div class="settings-content<?= $tab === 'address' ? ' settings-content--wide' : '' ?>">
 
             <?php if ($success): ?>
             <p class="settings-msg settings-msg--success"><?= htmlspecialchars($success) ?></p>
@@ -159,7 +159,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                         $aParts = array_filter([$a['house_number'], $a['address'], $a['sangkat'], $a['khan'], 'Phnom Penh']);
                         $aLine  = implode(', ', $aParts);
                     ?>
-                    <div class="saved-addr-item" id="addr-<?= $a['id'] ?>">
+                    <div class="saved-addr-item<?= ($editingAddr && (int)$a['id'] === $editAddrId) ? ' saved-addr-item--editing' : '' ?>" id="addr-<?= $a['id'] ?>">
                         <div class="saved-addr-info">
                             <p class="saved-addr-label">
                                 <?= htmlspecialchars($a['label'] ?: $t['settings_unnamed']) ?>
@@ -234,7 +234,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                                         <?php endif; ?>
                                     </select>
                                 </div>
-                                <div class="settings-field">
+                                <div class="settings-field settings-field--map">
                                     <label><?= $t['settings_address_drop_pin'] ?> <span class="field-hint" style="font-weight:400;display:inline"> <?= $t['settings_drop_pin_hint'] ?></span></label>
                                     <div id="edit-addr-map"></div>
                                     <p id="edit-pin-label" class="pin-label">
@@ -291,7 +291,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                                     <option value=""><?= $t['settings_select_sangkat'] ?></option>
                                 </select>
                             </div>
-                            <div class="settings-field">
+                            <div class="settings-field settings-field--map">
                                 <label><?= $t['settings_address_drop_pin'] ?> <span class="field-hint" style="font-weight:400;display:inline"> <?= $t['settings_drop_pin_hint'] ?></span></label>
                                 <div id="new-addr-map"></div>
                                 <p id="new-pin-label" class="pin-label"><?= $t['settings_no_pin'] ?></p>
