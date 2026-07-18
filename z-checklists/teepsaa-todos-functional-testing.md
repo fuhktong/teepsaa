@@ -35,14 +35,14 @@ accounts/orders created earlier.
 - [ ] Checkout blocked until delivery address + map pin set
 - [x] Set address: khan/sangkat dropdowns, map pin, address book (add a
       second address, switch between them, delete one)
-- [ ] Coupon: valid code applies discount; invalid/expired/over-max-uses
+- [x] Coupon: valid code applies discount; invalid/expired/over-max-uses
       rejected with clear message; discount survives to order total
 - [x] Place order: succeeds, cart empties, success message shows
       (live order run-through, Jul 2026)
-- [ ] Order confirmation email arrives — items, business names, totals,
+- [x] Order confirmation email arrives — items, business names, totals,
       discount line, delivery note all correct (recently fixed — verify!)
-- [ ] Order from 2 different vendors in one checkout → splits into 2 orders
-- [ ] Stock decremented after order (check product page / vendor side)
+- [x] Order from 2 different vendors in one checkout → splits into 2 orders
+- [x] Stock decremented after order (check product page / vendor side)
 
 ## Buyer — after ordering
 

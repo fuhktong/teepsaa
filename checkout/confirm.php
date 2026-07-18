@@ -283,6 +283,7 @@ try {
             uuid_v4(),
         ]);
         $orderId = $pdo->lastInsertId();
+        $grouped[$businessId]['order_id'] = (int)$orderId;
 
         if ($couponId) {
             $pdo->prepare('INSERT INTO coupon_uses (coupon_id, buyer_id, order_id, discount_amount) VALUES (?, ?, ?, ?)')
@@ -360,8 +361,10 @@ try {
     // Order confirmation email
     $itemLines = '';
     foreach ($grouped as $group) {
+        // Same order reference format the buyer sees on the dashboard cards
+        $orderRef = date('ymd') . '-' . str_pad((string)($group['order_id'] ?? 0), 4, '0', STR_PAD_LEFT);
         $itemLines .= '<tr><td colspan="2" style="padding:8px 0 2px;font-size:0.8rem;color:#999;text-transform:uppercase;letter-spacing:0.04em">'
-            . htmlspecialchars($group['items'][0]['business_name'] ?? '') . '</td></tr>';
+            . 'Order ' . $orderRef . ' &middot; ' . htmlspecialchars($group['items'][0]['business_name'] ?? '') . '</td></tr>';
         foreach ($group['items'] as $item) {
             $label = htmlspecialchars($item['product_name'])
                 . ($item['variant_label'] ? ' <span style="color:#999">(' . htmlspecialchars($item['variant_label']) . ')</span>' : '');
@@ -378,8 +381,14 @@ try {
     $discountRow = $discount > 0
         ? '<p style="margin:4px 0 0;font-size:0.9rem;color:#555">Discount (' . htmlspecialchars($couponCode) . '): &minus;$' . number_format($discount, 2) . '</p>'
         : '';
+    // Multi-shop checkouts become one order per shop — make sure the buyer
+    // knows the deliveries arrive independently
+    $splitNote = count($grouped) > 1
+        ? '<p style="margin:0 0 12px;font-size:0.85rem;color:#555">ការបញ្ជាទិញរបស់អ្នកនឹងត្រូវដឹកជញ្ជូនដោយឡែកពីគ្នា ហើយអាចមកដល់នៅពេលខុសៗគ្នា។<br>Your orders will be delivered separately and may arrive at different times.</p>'
+        : '';
     // Shared order summary (item names + prices) — shown once, under the Khmer block.
-    $emailSummary = '<table style="width:100%;border-collapse:collapse">' . $itemLines . '</table>'
+    $emailSummary = $splitNote
+        . '<table style="width:100%;border-collapse:collapse">' . $itemLines . '</table>'
         . '<hr style="border:none;border-top:1px solid #eee;margin:16px 0">'
         . $discountRow
         . '<p style="margin:0;font-size:0.95rem"><strong>សរុប · Total: $' . number_format($grandTotal, 2) . '</strong></p>'
@@ -397,6 +406,8 @@ try {
     exit;
 }
 
-$_SESSION['checkout_success'] = 'Your order has been placed. We\'ll confirm your payment and notify you within 1 hour.';
+$_SESSION['checkout_success'] = count($grouped) > 1
+    ? 'Your orders have been placed. These orders will be delivered separately and may arrive at different times. We\'ll confirm your payment and notify you within 1 hour.'
+    : 'Your order has been placed. We\'ll confirm your payment and notify you within 1 hour.';
 header('Location: /checkout/');
 exit;
