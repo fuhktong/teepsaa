@@ -28,11 +28,17 @@ $stmt = $pdo->prepare('SELECT id FROM businesses WHERE user_id = ? AND approved 
 $stmt->execute([$userId]);
 $ownedIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
+// The edit view is addressed by public_id, not the numeric id posted here
+$publicId = null;
 if (!empty($ownedIds)) {
     $placeholders = implode(',', array_fill(0, count($ownedIds), '?'));
+    $params = array_merge([$productId], array_map('intval', $ownedIds));
     $stmt = $pdo->prepare("UPDATE products SET active = 1 - active WHERE id = ? AND business_id IN ($placeholders)");
-    $stmt->execute(array_merge([$productId], array_map('intval', $ownedIds)));
+    $stmt->execute($params);
+    $stmt = $pdo->prepare("SELECT public_id FROM products WHERE id = ? AND business_id IN ($placeholders)");
+    $stmt->execute($params);
+    $publicId = $stmt->fetchColumn();
 }
 
-header('Location: /products/?action=edit&id=' . $productId);
+header('Location: ' . ($publicId ? '/products/?action=edit&id=' . $publicId : '/products/'));
 exit;

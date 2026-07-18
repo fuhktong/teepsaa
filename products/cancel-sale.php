@@ -34,9 +34,10 @@ if (!$productId || empty($bizIds)) {
 }
 
 $ph = implode(',', array_fill(0, count($bizIds), '?'));
-$check = $pdo->prepare("SELECT id FROM products WHERE id = ? AND business_id IN ($ph)");
+$check = $pdo->prepare("SELECT id, public_id FROM products WHERE id = ? AND business_id IN ($ph)");
 $check->execute(array_merge([$productId], array_map('intval', $bizIds)));
-if (!$check->fetch()) {
+$product = $check->fetch();
+if (!$product) {
     header('Location: /products/');
     exit;
 }
@@ -44,5 +45,6 @@ if (!$check->fetch()) {
 $pdo->prepare('UPDATE products SET sale_price = NULL, sale_ends_at = NULL WHERE id = ?')
     ->execute([$productId]);
 
-header('Location: /products/?action=edit&id=' . $productId);
+// The edit view is addressed by public_id, not the numeric id posted here
+header('Location: /products/?action=edit&id=' . $product['public_id']);
 exit;

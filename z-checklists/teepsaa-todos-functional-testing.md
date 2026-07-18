@@ -7,23 +7,24 @@ accounts/orders created earlier.
 
 ## Buyer — account lifecycle
 
-- [ ] Register: blank/invalid fields rejected with messages
-- [ ] Register: duplicate email rejected
-- [ ] Register: success → verification email arrives with code
-- [ ] Verify email: wrong code rejected, correct code verifies
-- [ ] Resend verification works (and old code stops working)
-- [ ] Login: wrong password shows error (and does NOT say which field was wrong)
-- [ ] Login: repeated wrong passwords triggers rate limit / lockout
-- [ ] Login: vendor credentials on buyer portal are rejected
-- [ ] Forgot password: email arrives, reset link works, old password dead,
+- [x] Register: blank/invalid fields rejected with messages
+- [x] Register: duplicate email rejected
+- [x] Register: success → verification email arrives with code
+- [x] Verify email: wrong code rejected, correct code verifies
+- [x] Resend verification works (and old code stops working)
+- [x] Login: wrong password shows error (and does NOT say which field was wrong)
+- [x] Login: repeated wrong passwords triggers rate limit / lockout
+- [x] Login: vendor credentials on buyer portal are rejected
+      (verified live — "Invalid email or password"; mirror test buyer→vendor portal not run yet)
+- [x] Forgot password: email arrives, reset link works, old password dead,
       new password logs in; used/expired reset link rejected
-- [ ] Logout works from every page
+- [x] Logout works from every page
 
 ## Buyer — shopping
 
-- [ ] Recently viewed row appears on homepage after browsing products
-- [ ] Wishlist: heart toggles on/off, wishlist page lists items, unavailable
-      items are marked
+- [x] Recently viewed row appears on homepage after browsing products
+- [x] Wishlist: heart toggles on/off, wishlist page lists items, unavailable
+      items are marked (verified live Jul 2026)
 - [ ] Add to cart: works for simple product
 - [ ] Add to cart: product with variants requires choosing a size first
 - [ ] Add to cart: out-of-stock product/variant is blocked, button disabled
