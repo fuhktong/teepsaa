@@ -40,6 +40,20 @@ if ($action === 'add') {
         exit;
     }
 
+    // First use of the address book: import the existing main address from
+    // the buyers table so it appears in the list instead of being stranded
+    $countStmt = $pdo->prepare('SELECT COUNT(*) FROM buyer_addresses WHERE buyer_user_id = ?');
+    $countStmt->execute([$userId]);
+    if ((int)$countStmt->fetchColumn() === 0) {
+        $bStmt = $pdo->prepare('SELECT house_number, address, address_notes, khan, sangkat, lat, lng FROM buyers WHERE id = ?');
+        $bStmt->execute([$userId]);
+        $b = $bStmt->fetch();
+        if ($b && ($b['address'] !== null || $b['khan'] !== null || $b['house_number'] !== null)) {
+            $pdo->prepare('INSERT INTO buyer_addresses (buyer_user_id, label, house_number, address, address_notes, khan, sangkat, lat, lng, is_default) VALUES (?,?,?,?,?,?,?,?,?,1)')
+                ->execute([$userId, $b['khan'] ?: 'Address', $b['house_number'], $b['address'], $b['address_notes'], $b['khan'], $b['sangkat'], $b['lat'], $b['lng']]);
+        }
+    }
+
     $pdo->prepare('INSERT INTO buyer_addresses (buyer_user_id, label, house_number, address, address_notes, khan, sangkat, lat, lng) VALUES (?,?,?,?,?,?,?,?,?)')
         ->execute([$userId, $label, $houseNumber, $address, $addressNotes, $khan, $sangkat, $lat, $lng]);
 

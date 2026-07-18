@@ -25,12 +25,12 @@ accounts/orders created earlier.
 - [x] Recently viewed row appears on homepage after browsing products
 - [x] Wishlist: heart toggles on/off, wishlist page lists items, unavailable
       items are marked (verified live Jul 2026)
-- [ ] Add to cart: works for simple product
-- [ ] Add to cart: product with variants requires choosing a size first
-- [ ] Add to cart: out-of-stock product/variant is blocked, button disabled
+- [x] Add to cart: works for simple product
+- [x] Add to cart: product with variants requires choosing a size first
+- [x] Add to cart: out-of-stock product/variant is blocked, button disabled
       on product page
-- [ ] Cart: quantities update, line + grand totals recalculate, remove works
-- [ ] Cart: cannot exceed available stock
+- [x] Cart: quantities update, line + grand totals recalculate, remove works
+- [x] Cart: cannot exceed available stock
 - [ ] Checkout blocked until email verified (redirects to resend-verification)
 - [ ] Checkout blocked until delivery address + map pin set
 - [ ] Set address: khan/sangkat dropdowns, map pin, address book (add a

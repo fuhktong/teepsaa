@@ -37,6 +37,22 @@ $lngVal = $lng !== '' ? filter_var($lng, FILTER_VALIDATE_FLOAT) : null;
 $stmt = $pdo->prepare('UPDATE buyers SET phone = ?, house_number = ?, address = ?, address_notes = ?, khan = ?, sangkat = ?, lat = ?, lng = ? WHERE id = ?');
 $stmt->execute([$phone ?: null, $houseNumber ?: null, $address ?: null, $notes ?: null, $khan ?: null, $sangkat ?: null, $latVal, $lngVal, $userId]);
 
+// Mirror the main address into the address book as the default entry —
+// otherwise it only lives on the buyers table and never shows in the
+// saved-addresses list (and gets silently overwritten on a default switch)
+if ($address !== '' || $khan !== '' || $houseNumber !== '') {
+    $stmt = $pdo->prepare('SELECT id FROM buyer_addresses WHERE buyer_user_id = ? AND is_default = 1');
+    $stmt->execute([$userId]);
+    $defaultId = $stmt->fetchColumn();
+    if ($defaultId) {
+        $pdo->prepare('UPDATE buyer_addresses SET house_number=?, address=?, address_notes=?, khan=?, sangkat=?, lat=?, lng=? WHERE id=?')
+            ->execute([$houseNumber ?: null, $address ?: null, $notes ?: null, $khan ?: null, $sangkat ?: null, $latVal, $lngVal, $defaultId]);
+    } else {
+        $pdo->prepare('INSERT INTO buyer_addresses (buyer_user_id, label, house_number, address, address_notes, khan, sangkat, lat, lng, is_default) VALUES (?,?,?,?,?,?,?,?,?,1)')
+            ->execute([$userId, $khan !== '' ? $khan : 'Address', $houseNumber ?: null, $address ?: null, $notes ?: null, $khan ?: null, $sangkat ?: null, $latVal, $lngVal]);
+    }
+}
+
 $_SESSION['settings_success'] = 'Delivery address saved.';
 header('Location: /dashboard-buyer/settings/?tab=address');
 exit;
