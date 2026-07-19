@@ -1,8 +1,30 @@
-/* Address switcher */
+/* Address switcher — lives in the payment box as the pre-payment review */
 .checkout-addr-switcher {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.9rem;
+    background: #fff;
+    text-align: left;
+}
+
+.checkout-addr-summary--static {
+    cursor: default;
+}
+
+.checkout-addr-instructions {
+    font-size: 0.85rem;
+    color: #555;
+    margin: 0 0 0.9rem;
+    text-align: left;
+}
+
+.checkout-field-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-soft);
+    margin-bottom: 0.25rem;
+    text-align: left;
 }
 
 .checkout-addr-summary {

@@ -179,42 +179,6 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
     </div>
     <?php endif; ?>
 
-    <?php if (!empty($savedAddresses)): ?>
-    <details class="checkout-addr-switcher">
-        <summary class="checkout-addr-summary">
-            <span class="checkout-addr-label"><?= $t['checkout_delivering_to'] ?>
-                <?php
-                $parts = array_filter([
-                    $buyer['house_number'],
-                    $buyer['address'],
-                    $buyer['sangkat'],
-                    $buyer['khan'],
-                ]);
-                echo $parts ? htmlspecialchars(implode(', ', $parts)) : $t['checkout_your_saved_address'];
-                ?>
-            </span>
-            <span class="checkout-addr-change"><?= $t['checkout_change'] ?></span>
-        </summary>
-        <div class="checkout-addr-list">
-            <?php foreach ($savedAddresses as $sa): ?>
-            <form method="POST" action="/checkout/set-address.php" class="checkout-addr-option">
-                <?= csrf_input() ?>
-                <input type="hidden" name="address_id" value="<?= (int)$sa['id'] ?>">
-                <div class="checkout-addr-option-text">
-                    <?php if ($sa['label']): ?><strong><?= htmlspecialchars($sa['label']) ?></strong> — <?php endif; ?>
-                    <?php
-                    $saparts = array_filter([$sa['house_number'], $sa['address'], $sa['sangkat'], $sa['khan']]);
-                    echo $saparts ? htmlspecialchars(implode(', ', $saparts)) : $t['checkout_saved_address'];
-                    ?>
-                    <?php if ($sa['is_default']): ?> <span class="checkout-addr-default-badge"><?= $t['checkout_default'] ?></span><?php endif; ?>
-                </div>
-                <button type="submit" class="btn-addr-use"><?= $t['checkout_use_address'] ?></button>
-            </form>
-            <?php endforeach; ?>
-        </div>
-    </details>
-    <?php endif; ?>
-
     <div class="checkout-layout">
 
         <div class="checkout-summary">
@@ -311,10 +275,61 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
                 <div class="aba-qr-placeholder"><?= $t['checkout_aba_coming_soon'] ?></div>
             <?php endif; ?>
 
+            <?php
+            // Final review before "I've paid": the address being delivered to,
+            // its saved instructions, then the one-off note for this order
+            $parts = array_filter([
+                $buyer['house_number'],
+                $buyer['address'],
+                $buyer['sangkat'],
+                $buyer['khan'],
+            ]);
+            $deliveringTo = $parts ? htmlspecialchars(implode(', ', $parts)) : $t['checkout_your_saved_address'];
+            ?>
+            <?php if (!empty($savedAddresses)): ?>
+            <details class="checkout-addr-switcher">
+                <summary class="checkout-addr-summary">
+                    <span class="checkout-addr-label"><?= $t['checkout_delivering_to'] ?> <?= $deliveringTo ?></span>
+                    <span class="checkout-addr-change"><?= $t['checkout_change'] ?></span>
+                </summary>
+                <div class="checkout-addr-list">
+                    <?php foreach ($savedAddresses as $sa): ?>
+                    <form method="POST" action="/checkout/set-address.php" class="checkout-addr-option">
+                        <?= csrf_input() ?>
+                        <input type="hidden" name="address_id" value="<?= (int)$sa['id'] ?>">
+                        <div class="checkout-addr-option-text">
+                            <?php if ($sa['label']): ?><strong><?= htmlspecialchars($sa['label']) ?></strong> — <?php endif; ?>
+                            <?php
+                            $saparts = array_filter([$sa['house_number'], $sa['address'], $sa['sangkat'], $sa['khan']]);
+                            echo $saparts ? htmlspecialchars(implode(', ', $saparts)) : $t['checkout_saved_address'];
+                            ?>
+                            <?php if ($sa['is_default']): ?> <span class="checkout-addr-default-badge"><?= $t['checkout_default'] ?></span><?php endif; ?>
+                        </div>
+                        <button type="submit" class="btn-addr-use"><?= $t['checkout_use_address'] ?></button>
+                    </form>
+                    <?php endforeach; ?>
+                </div>
+            </details>
+            <?php else: ?>
+            <div class="checkout-addr-switcher">
+                <div class="checkout-addr-summary checkout-addr-summary--static">
+                    <span class="checkout-addr-label"><?= $t['checkout_delivering_to'] ?> <?= $deliveringTo ?></span>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($buyer['address_notes']): ?>
+            <div class="checkout-addr-instructions">
+                <span class="checkout-field-label"><?= $t['checkout_delivery_instructions'] ?></span>
+                <?= htmlspecialchars($buyer['address_notes']) ?>
+            </div>
+            <?php endif; ?>
+
             <?php if ($canCheckout): ?>
             <form method="POST" action="/checkout/confirm.php">
                 <?= csrf_input() ?>
-                <textarea name="buyer_notes" class="checkout-notes" maxlength="500" rows="2" placeholder="<?= htmlspecialchars($t['checkout_notes_placeholder']) ?>"></textarea>
+                <label class="checkout-field-label" for="buyer_notes"><?= $t['checkout_order_instructions'] ?></label>
+                <textarea id="buyer_notes" name="buyer_notes" class="checkout-notes" maxlength="500" rows="2" placeholder="<?= htmlspecialchars($t['checkout_notes_placeholder']) ?>"></textarea>
                 <button type="submit" class="btn-paid"><?= $t['checkout_ive_paid'] ?></button>
             </form>
             <?php else: ?>
