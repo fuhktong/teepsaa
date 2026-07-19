@@ -51,13 +51,15 @@
 
 .checkout-addr-summary {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: 1rem;
     padding: 0.75rem 1rem;
-    cursor: pointer;
     list-style: none;
     user-select: none;
+    /* Only the "Change" word is the click target, not the whole card */
+    pointer-events: none;
+    cursor: default;
 }
 
 .checkout-addr-summary::-webkit-details-marker { display: none; }
@@ -72,14 +74,15 @@
     font-size: 0.95rem;
     font-weight: 700;
     color: #111;
-    margin-bottom: 0.2rem;
+    margin-bottom: 0.4rem;
+    text-align: left;
 }
 
 .checkout-addr-name {
     display: block;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-soft);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111;
     margin-bottom: 0.2rem;
 }
 
@@ -95,6 +98,12 @@
     color: var(--text-muted);
     text-decoration: underline;
     text-underline-offset: 2px;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.checkout-addr-change:hover {
+    color: #111;
 }
 
 .checkout-addr-list {
@@ -393,6 +402,15 @@
 .checkout-payment h2 {
     font-size: 1.1rem;
     margin-bottom: 0.75rem;
+}
+
+/* Everything in the payment box shares the same left text edge as the
+   card interiors (1px border + 1rem padding) */
+.checkout-payment h2,
+.checkout-payment .checkout-instructions,
+.checkout-addr-title {
+    padding-left: calc(1rem + 1px);
+    text-align: left;
 }
 
 .checkout-instructions {

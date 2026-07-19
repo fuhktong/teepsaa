@@ -289,7 +289,6 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
             $areaLine   = implode(', ', array_filter([$buyer['sangkat'], $buyer['khan']]));
             ob_start(); ?>
                     <span class="checkout-addr-label">
-                        <span class="checkout-addr-title"><?= $t['checkout_delivering_to'] ?></span>
                         <?php if ($currentAddrLabel): ?>
                         <span class="checkout-addr-name"><?= htmlspecialchars($currentAddrLabel) ?></span>
                         <?php endif; ?>
@@ -302,6 +301,7 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
                         <?php endif; ?>
                     </span>
             <?php $addrBlock = ob_get_clean(); ?>
+            <span class="checkout-addr-title"><?= $t['checkout_delivering_to'] ?></span>
             <?php if (!empty($savedAddresses)): ?>
             <details class="checkout-addr-switcher">
                 <summary class="checkout-addr-summary">
