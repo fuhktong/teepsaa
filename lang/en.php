@@ -149,7 +149,7 @@ return [
     'checkout_coupon_apply'   => 'Apply',
     'checkout_coupon_applied' => 'Code applied:',
     'checkout_coupon_remove'  => 'Remove',
-    'checkout_delivering_to'  => 'Delivering to',
+    'checkout_delivering_to'  => 'Delivering to:',
     'checkout_your_saved_address' => 'your saved address',
     'checkout_saved_address'  => 'Saved address',
     'checkout_oos_pre'        => 'Delivery unavailable for:',

@@ -149,7 +149,7 @@ return [
     'checkout_coupon_apply'   => 'អនុវត្ត',
     'checkout_coupon_applied' => 'បានអនុវត្តកូដ៖',
     'checkout_coupon_remove'  => 'លុប',
-    'checkout_delivering_to'  => 'ដឹកជញ្ជូនទៅ',
+    'checkout_delivering_to'  => 'ដឹកជញ្ជូនទៅ៖',
     'checkout_your_saved_address' => 'អាសយដ្ឋានដែលបានរក្សាទុករបស់អ្នក',
     'checkout_saved_address'  => 'អាសយដ្ឋានដែលបានរក្សាទុក',
     'checkout_oos_pre'        => 'មិនអាចដឹកជញ្ជូនសម្រាប់៖',
