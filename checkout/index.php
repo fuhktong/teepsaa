@@ -34,6 +34,13 @@ $savedAddrStmt = $pdo->prepare('SELECT * FROM buyer_addresses WHERE buyer_user_i
 $savedAddrStmt->execute([$userId]);
 $savedAddresses = $savedAddrStmt->fetchAll();
 
+// Label of the address currently in use — the buyers table (what delivery
+// runs on) has no label column, so it comes from the default book row
+$currentAddrLabel = null;
+foreach ($savedAddresses as $sa) {
+    if ($sa['is_default']) { $currentAddrLabel = $sa['label']; break; }
+}
+
 if (!$success && ($buyerLat === null || $buyerLng === null)) {
     $_SESSION['cart_error'] = 'Please set your delivery address before checking out.';
     header('Location: /dashboard-buyer/settings/?tab=address');
@@ -278,18 +285,27 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
             <?php
             // Final review before "I've paid": the address being delivered to,
             // its saved instructions, then the one-off note for this order
-            $parts = array_filter([
-                $buyer['house_number'],
-                $buyer['address'],
-                $buyer['sangkat'],
-                $buyer['khan'],
-            ]);
-            $deliveringTo = $parts ? htmlspecialchars(implode(', ', $parts)) : $t['checkout_your_saved_address'];
-            ?>
+            $streetLine = implode(', ', array_filter([$buyer['house_number'], $buyer['address']]));
+            $areaLine   = implode(', ', array_filter([$buyer['sangkat'], $buyer['khan']]));
+            ob_start(); ?>
+                    <span class="checkout-addr-label">
+                        <span class="checkout-addr-title"><?= $t['checkout_delivering_to'] ?></span>
+                        <?php if ($currentAddrLabel): ?>
+                        <span class="checkout-addr-name"><?= htmlspecialchars($currentAddrLabel) ?></span>
+                        <?php endif; ?>
+                        <?php if ($streetLine || $areaLine): ?>
+                            <?php if ($streetLine): ?><span class="checkout-addr-line"><?= htmlspecialchars($streetLine) ?></span><?php endif; ?>
+                            <?php if ($buyer['address_notes']): ?><span class="checkout-addr-line"><?= htmlspecialchars($buyer['address_notes']) ?></span><?php endif; ?>
+                            <?php if ($areaLine): ?><span class="checkout-addr-line"><?= htmlspecialchars($areaLine) ?></span><?php endif; ?>
+                        <?php else: ?>
+                            <span class="checkout-addr-line"><?= $t['checkout_your_saved_address'] ?></span>
+                        <?php endif; ?>
+                    </span>
+            <?php $addrBlock = ob_get_clean(); ?>
             <?php if (!empty($savedAddresses)): ?>
             <details class="checkout-addr-switcher">
                 <summary class="checkout-addr-summary">
-                    <span class="checkout-addr-label"><?= $t['checkout_delivering_to'] ?> <?= $deliveringTo ?></span>
+                    <?= $addrBlock ?>
                     <span class="checkout-addr-change"><?= $t['checkout_change'] ?></span>
                 </summary>
                 <div class="checkout-addr-list">
@@ -313,23 +329,18 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
             <?php else: ?>
             <div class="checkout-addr-switcher">
                 <div class="checkout-addr-summary checkout-addr-summary--static">
-                    <span class="checkout-addr-label"><?= $t['checkout_delivering_to'] ?> <?= $deliveringTo ?></span>
+                    <?= $addrBlock ?>
                 </div>
-            </div>
-            <?php endif; ?>
-
-            <?php if ($buyer['address_notes']): ?>
-            <div class="checkout-addr-instructions">
-                <span class="checkout-field-label"><?= $t['checkout_delivery_instructions'] ?></span>
-                <?= htmlspecialchars($buyer['address_notes']) ?>
             </div>
             <?php endif; ?>
 
             <?php if ($canCheckout): ?>
             <form method="POST" action="/checkout/confirm.php">
                 <?= csrf_input() ?>
-                <label class="checkout-field-label" for="buyer_notes"><?= $t['checkout_order_instructions'] ?></label>
-                <textarea id="buyer_notes" name="buyer_notes" class="checkout-notes" maxlength="500" rows="2" placeholder="<?= htmlspecialchars($t['checkout_notes_placeholder']) ?>"></textarea>
+                <div class="checkout-notes-card">
+                    <label class="checkout-field-label" for="buyer_notes"><?= $t['checkout_order_instructions'] ?></label>
+                    <textarea id="buyer_notes" name="buyer_notes" class="checkout-notes" maxlength="500" rows="2" placeholder="<?= htmlspecialchars($t['checkout_notes_placeholder']) ?>"></textarea>
+                </div>
                 <button type="submit" class="btn-paid"><?= $t['checkout_ive_paid'] ?></button>
             </form>
             <?php else: ?>

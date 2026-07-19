@@ -11,11 +11,27 @@
     cursor: default;
 }
 
-.checkout-addr-instructions {
-    font-size: 0.85rem;
-    color: #555;
-    margin: 0 0 0.9rem;
+/* Special-instructions card — same look as the address card above it */
+.checkout-notes-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: #fff;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.9rem;
     text-align: left;
+}
+
+.checkout-notes-card .checkout-field-label {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111;
+}
+
+.checkout-notes-card .checkout-notes {
+    border: none;
+    padding: 0.25rem 0 0;
+    margin-bottom: 0;
+    background: transparent;
 }
 
 .checkout-field-label {
@@ -29,8 +45,9 @@
 
 .checkout-addr-summary {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
+    gap: 1rem;
     padding: 0.75rem 1rem;
     cursor: pointer;
     list-style: none;
@@ -42,6 +59,29 @@
 .checkout-addr-label {
     font-size: 0.875rem;
     color: #111;
+}
+
+.checkout-addr-title {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 0.2rem;
+}
+
+.checkout-addr-name {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-soft);
+    margin-bottom: 0.2rem;
+}
+
+.checkout-addr-line {
+    display: block;
+    font-size: 0.875rem;
+    color: #111;
+    line-height: 1.45;
 }
 
 .checkout-addr-change {
