@@ -28,10 +28,16 @@
 }
 
 .checkout-notes-card .checkout-notes {
-    border: none;
-    padding: 0.25rem 0 0;
-    margin-bottom: 0;
-    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.65rem;
+    margin: 0.35rem 0 0;
+    background: #f9fafb;
+}
+
+.checkout-notes-card .checkout-notes:focus {
+    background: #fff;
+    border-color: var(--primary);
 }
 
 .checkout-field-label {
