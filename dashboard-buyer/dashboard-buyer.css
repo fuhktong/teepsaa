@@ -106,6 +106,24 @@
   background: var(--primary-hover);
 }
 
+/* Outlined counterpart to .btn-confirm — 1px border, so vertical padding
+   drops 1px to keep both buttons the same height */
+.btn-secondary {
+  display: inline-block;
+  padding: calc(0.5rem - 1px) 1.1rem;
+  background: #fff;
+  color: var(--text-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: #f3f4f6;
+}
+
 .order-track-link {
   display: inline-block;
   font-size: 0.85rem;

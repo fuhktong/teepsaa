@@ -31,8 +31,8 @@ accounts/orders created earlier.
       on product page
 - [x] Cart: quantities update, line + grand totals recalculate, remove works
 - [x] Cart: cannot exceed available stock
-- [ ] Checkout blocked until email verified (redirects to resend-verification)
-- [ ] Checkout blocked until delivery address + map pin set
+- [x] Checkout blocked until email verified (redirects to resend-verification)
+- [x] Checkout blocked until delivery address + map pin set
 - [x] Set address: khan/sangkat dropdowns, map pin, address book (add a
       second address, switch between them, delete one)
 - [x] Coupon: valid code applies discount; invalid/expired/over-max-uses
