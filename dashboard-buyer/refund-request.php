@@ -58,7 +58,7 @@ $stmt->execute([$reason, $orderId, $userId]);
 if ($stmt->rowCount()) {
     // Email the vendor that a refund was requested
     $vStmt = $pdo->prepare(
-        'SELECT o.created_at, v.name AS vendor_name, v.email
+        'SELECT o.created_at, v.id AS vendor_id, v.name AS vendor_name, v.email
          FROM orders o
          JOIN businesses b ON b.id = o.business_id
          JOIN vendors v ON v.id = b.user_id
@@ -73,6 +73,9 @@ if ($stmt->rowCount()) {
             'cta_url' => 'https://teepsaa.com/orders-vendor/order.php?id=' . $orderPublicId,
         ]);
         if ($html !== '') send_email($vendor['email'], $subj, $html);
+        notify($pdo, 'vendor', (int)$vendor['vendor_id'], 'refund_requested',
+            'A refund was requested for order #' . $oid . '.',
+            '/orders-vendor/order.php?id=' . $orderPublicId, ['ref' => $oid]);
     }
 }
 

@@ -651,6 +651,12 @@ return [
     'notif_review_reminder'    => 'How was order %s? Leave a review.',
     'notif_low_stock'          => 'Low stock: "%1$s" — %2$s remaining.',
     'notif_abandoned_cart'     => 'You have items waiting in your cart.',
+    'notif_refund_requested'   => 'A refund was requested for order #%s.',
+    'notif_refund_approved'    => 'Your refund for order #%s was approved — please send the item back.',
+    'notif_refund_rejected'    => 'Your refund request for order #%s was declined.',
+    'notif_refund_sent'        => 'Your refund for order #%s has been sent.',
+    'notif_return_dispatched'  => 'The buyer shipped a return for order #%s — mark it received when it arrives.',
+    'notif_return_received'    => 'Your return for order #%s was received — your refund is being processed.',
     // ── Strings passed to JavaScript (window.T) ─────────────────────────
     'js_st_pending'            => 'Payment<br>submitted',
     'js_st_paid'               => 'Payment<br>confirmed',

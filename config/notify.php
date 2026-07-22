@@ -23,6 +23,12 @@ function notification_text(array $row, array $t): string {
         case 'order_dispatched':
         case 'delivery_confirmed':
         case 'review_reminder':
+        case 'refund_requested':
+        case 'refund_approved':
+        case 'refund_rejected':
+        case 'refund_sent':
+        case 'return_dispatched':
+        case 'return_received':
             return isset($data['ref']) ? sprintf($t[$key], $data['ref']) : ($row['message'] ?? '');
         case 'low_stock':
             return isset($data['name']) ? sprintf($t[$key], $data['name'], $data['units'] ?? 0) : ($row['message'] ?? '');

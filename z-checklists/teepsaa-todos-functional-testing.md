@@ -46,15 +46,15 @@ accounts/orders created earlier.
 
 ## Buyer — after ordering
 
-- [ ] Dashboard lists orders, newest first, correct statuses
-- [ ] Order detail: items, prices, status timeline all correct
-- [ ] Status updates appear (paid → dispatched → delivered) as vendor/admin
+- [x] Dashboard lists orders, newest first, correct statuses
+- [x] Order detail: items, prices, status timeline all correct
+- [x] Status updates appear (paid → dispatched → delivered) as vendor/admin
       advances the order — check the live status-refresh polling too
       (statuses advanced correctly in the live order test; polling itself
       not specifically checked yet)
 - [x] Confirm delivery button works when dispatched arrives
       (live order run-through — buyer confirmed, delivered_at set)
-- [ ] Review: can review a delivered item once (form rejects a second review);
+- [x] Review: can review a delivered item once (form rejects a second review);
       rating + text appear on the product page
 - [ ] Refund request: submit with reason; status changes to Refund Requested
 - [ ] Return dispatch: after admin approves return, buyer can submit

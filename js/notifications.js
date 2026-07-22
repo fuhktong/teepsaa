@@ -7,6 +7,48 @@
 
     if (!bellBtn) return;
 
+    // ── New-notification chime ───────────────────────────────────────────
+    // Browsers block audio until the user has interacted with the page, so a
+    // shared AudioContext is created/resumed on the first gesture (capture
+    // phase, so the bell's stopPropagation can't swallow it). The chime is
+    // synthesized — no asset to deploy — and only ever plays in the same poll
+    // that raises the unread badge, so there's never a sound without the red dot.
+    var audioCtx  = null;
+    var lastMaxId = null; // highest notification id seen; null until first poll
+
+    function unlockAudio() {
+        if (!audioCtx) {
+            var AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return;
+            try { audioCtx = new AC(); } catch (e) { return; }
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    ['click', 'keydown', 'touchstart'].forEach(function (evt) {
+        document.addEventListener(evt, unlockAudio, true);
+    });
+
+    function playChime() {
+        if (!audioCtx || audioCtx.state !== 'running') return;
+        var now = audioCtx.currentTime;
+        // Two soft bell notes a fifth apart, each with a quick decay.
+        [[880, 0], [1320, 0.12]].forEach(function (pair) {
+            var t    = now + pair[1];
+            var osc  = audioCtx.createOscillator();
+            var gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = pair[0];
+            gain.gain.setValueAtTime(0.0001, t);
+            gain.gain.exponentialRampToValueAtTime(0.18, t + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(t);
+            osc.stop(t + 0.55);
+        });
+    }
+
     function escHtml(s) {
         return String(s)
             .replace(/&/g, '&amp;')
@@ -57,6 +99,20 @@
             .then(function (data) {
                 if (!data) return;
                 updateBadge(data.count);
+
+                // Chime only when a genuinely new notification arrived since the
+                // last poll — tracked by the highest id, which sidesteps the
+                // read-one/receive-one same-interval count wash. The count > 0
+                // guard keeps sound and red badge locked together. First poll
+                // just sets the baseline so we don't ding for pre-existing unread.
+                var maxId = (data.items && data.items.length) ? data.items[0].id : 0;
+                if (lastMaxId === null) {
+                    lastMaxId = maxId;
+                } else if (maxId > lastMaxId) {
+                    if (data.count > 0) playChime();
+                    lastMaxId = maxId;
+                }
+
                 if (renderList || bellDrop.classList.contains('open')) {
                     renderItems(data.items);
                 }

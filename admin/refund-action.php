@@ -57,8 +57,14 @@ if ($action === 'approve') {
 }
 
 if ($emailKey) {
+    // The bell notification type matches the email template key one-to-one.
+    $notifMsgs = [
+        'refund_approved' => 'Your refund was approved for order #%s — please send the item back.',
+        'refund_rejected' => 'Your refund request for order #%s was declined.',
+        'refund_sent'     => 'Your refund for order #%s has been sent.',
+    ];
     $bStmt = $pdo->prepare(
-        'SELECT o.public_id, o.created_at, bu.name, bu.email
+        'SELECT o.public_id, o.created_at, bu.id AS buyer_id, bu.name, bu.email
          FROM orders o JOIN buyers bu ON bu.id = o.buyer_user_id
          WHERE o.id = ?'
     );
@@ -71,6 +77,9 @@ if ($emailKey) {
             'cta_url' => 'https://teepsaa.com/dashboard-buyer/order.php?id=' . $buyer['public_id'],
         ]);
         if ($html !== '') send_email($buyer['email'], $subj, $html);
+        notify($pdo, 'buyer', (int)$buyer['buyer_id'], $emailKey,
+            sprintf($notifMsgs[$emailKey] ?? 'Update on order #%s.', $oid),
+            '/dashboard-buyer/order.php?id=' . $buyer['public_id'], ['ref' => $oid]);
     }
 }
 
