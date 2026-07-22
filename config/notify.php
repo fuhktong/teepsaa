@@ -18,6 +18,7 @@ function notification_text(array $row, array $t): string {
     $data = !empty($row['data']) ? (json_decode($row['data'], true) ?: []) : [];
 
     switch ($type) {
+        case 'new_order':
         case 'payout_sent':
         case 'payment_confirmed':
         case 'order_dispatched':

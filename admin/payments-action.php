@@ -65,9 +65,9 @@ if ($action === 'confirm') {
         if ($html !== '') send_email($buyer['email'], $subj, $html);
     }
 
-    // Email each vendor about their new paid order
+    // Notify + email each vendor about their new paid order
     $vendStmt = $pdo->prepare(
-        'SELECT o.id AS order_id, o.public_id, o.created_at, v.name AS vendor_name, v.email
+        'SELECT o.id AS order_id, o.public_id, o.created_at, v.id AS vendor_id, v.name AS vendor_name, v.email
          FROM orders o
          JOIN businesses b ON b.id = o.business_id
          JOIN vendors v ON v.id = b.user_id
@@ -76,6 +76,9 @@ if ($action === 'confirm') {
     $vendStmt->execute([$paymentId]);
     foreach ($vendStmt->fetchAll() as $row) {
         $oid = order_display_id((int)$row['order_id'], $row['created_at']);
+        notify($pdo, 'vendor', (int)$row['vendor_id'], 'new_order',
+            'New paid order #' . $oid . ' — pack and dispatch it.',
+            '/orders-vendor/order.php?id=' . $row['public_id'], ['ref' => $oid]);
         [$subj, $html] = render_email_template($pdo, 'vendor_new_order', [
             'name'    => htmlspecialchars($row['vendor_name']),
             'order'   => $oid,

@@ -644,6 +644,7 @@ return [
     'apply_submit'     => 'Submit application',
 
     // ── In-app notifications (bell) — rendered in the reader's language ───
+    'notif_new_order'          => 'New paid order #%s — pack and dispatch it.',
     'notif_payout_sent'        => 'Your payout for order #%s has been sent to your ABA account.',
     'notif_payment_confirmed'  => 'Your payment has been confirmed — order #%s is being prepared.',
     'notif_order_dispatched'   => 'Your order #%s has been dispatched and is on its way.',

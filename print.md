@@ -1,79 +1,99 @@
-# Reset a refund test order (phpMyAdmin)
+# Test the notification sound (chime)
 
-Resets an order that's mid-refund back to a fresh "delivered" state so you can
-re-run the whole refund flow without creating a new order.
+## First: which actions actually ding?
 
-## Step 1 — find the order
+The chime plays when a NEW bell notification arrives while the recipient's tab
+is open. Not every action makes a notification. Quick map:
 
-Run in phpMyAdmin's SQL tab:
+- **Placing an order** — no ding for anyone (except a low-stock ding to the
+  vendor if that item crosses its stock threshold). The order sits unpaid
+  (`pending`) until admin confirms the ABA payment, so no one is asked to act yet.
+- **Admin confirms payment** — dings the **buyer** (`payment_confirmed`) AND the
+  **vendor** (`new_order`, "pack and dispatch it"). This is the vendor's cue to
+  fulfill — the headline use case for the chime.
+- **Buyer requests a refund** — dings the **vendor**.
+- **Admin approves / rejects / completes a refund** — dings the **buyer**.
+- **Buyer ships a return back** — dings the **vendor**.
+- **Vendor marks return received** — dings the **buyer**.
+- **Vendor dispatches an order** — dings the **buyer**.
+- **Admin sends payout** — dings the **vendor**.
 
-```sql
-SELECT id, public_id, status, delivered_at
-FROM orders
-WHERE status IN ('refund_requested','return_approved','return_dispatched','return_received','refunded','refund_rejected')
-ORDER BY id DESC;
+So to test a VENDOR ding, have a buyer request a refund.
+To test a BUYER ding, have admin confirm payment or approve a refund.
+
+## Three things must ALL be true or you hear nothing
+
+1. The recipient's tab is open and in the FOREGROUND during the ~15s after the
+   event. You cannot do the action and check the same account in one tab — the
+   page must already be open when the notification arrives.
+2. The new `js/notifications.js` is deployed AND hard-refreshed (browser caches
+   the old one). Verify: DevTools > Sources > /js/notifications.js, search for
+   `playChime`. If it's not there, you're on the old cached file.
+3. You clicked the page at least once first (browsers block audio until one
+   interaction).
+
+## Reliable test recipe
+
+1. Deploy `js/notifications.js`, then hard-refresh both browsers (Cmd-Shift-R).
+2. Browser A (e.g. Chrome): log in as the BUYER. Leave the dashboard open and
+   in front. Click somewhere on the page once.
+3. Browser B (e.g. Safari, or an incognito window): log in as ADMIN. Approve
+   the payment / a refund for that buyer's order.
+4. Watch Browser A for up to 15 seconds — the red badge should appear AND the
+   chime should play together.
+5. Vendor side: same setup, but Browser A logged in as the VENDOR, and in
+   Browser B request a refund as the buyer -> vendor dings.
+
+## Isolation check — is it the sound or the timing?
+
+Open DevTools console on any page with the bell, click the page once, then
+paste this. It tests your browser/speakers directly, independent of the site
+code. If you hear a short beep, audio works and the issue is deploy/timing
+(items above). If silent, it's your system audio/output, not the code.
+
+```js
+var c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.frequency.value=880;g.gain.value=0.2;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+0.3);
 ```
 
-## Step 2 — reset it (swap in the id from step 1)
+# Why the chime isn't firing (diagnostic)
 
-**Replace `123` with the real order id from Step 1**, or it will match nothing
-and report "0 rows affected" (see Troubleshooting below).
+## Step 1 — is the new JS actually deployed?
+The isolation beep above works even on the OLD file, so it does NOT prove the
+new code is live. Check directly:
+DevTools > Sources > /js/notifications.js > Cmd-F > search `playChime`.
+- Not found  -> old/cached file. Deploy, then hard-refresh (Cmd-Shift-R).
+- Found      -> code is live; go to Step 2.
 
-```sql
-UPDATE orders
-SET status              = 'delivered',
-    delivered_at        = NOW(),
-    refund_reason       = NULL,
-    refund_requested_at = NULL,
-    refunded_at         = NULL,
-    return_tracking_url = NULL
-WHERE id = 123;
+## Step 2 — does the RED BADGE update live?
+Trigger the event and watch the recipient's bell for ~15s WITHOUT refreshing.
+- Badge does NOT appear/increment -> the new notification isn't seen live:
+  JS not deployed, OR the tab was backgrounded (polling stalls when hidden),
+  OR you refreshed the recipient page after triggering (resets the baseline).
+- Badge updates but still SILENT -> detection works, but the audio context
+  isn't unlocked on that tab. Click directly on the recipient page once, keep
+  both windows visible side-by-side (don't minimize/cover it), trigger again.
+
+# Change the sound — audition presets
+
+Paste each into the DevTools console (click the page once first). Tell me the
+letter you want and I'll set it as the notification chime.
+
+## A — current: two-note bell (880 -> 1320, sine)
+```js
+(function(){var c=new(window.AudioContext||window.webkitAudioContext)();var n=c.currentTime;[[880,0],[1320,0.12]].forEach(function(p){var t=n+p[1],o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=p[0];g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.18,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+0.5);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.55);});})();
 ```
 
-Setting `delivered_at = NOW()` reopens the 24h refund window so the "Request
-refund" button reappears. If you leave an old `delivered_at`, the window is
-already closed and the button won't show.
-
-## Alternative — edit the row by hand (no SQL)
-
-1. Left sidebar → click the **`orders`** table.
-2. **Browse** tab → find your test order (sort by `id` descending, or use the
-   **Search** tab to filter by status).
-3. Click the **pencil / Edit** icon on that row.
-4. **`status`** — ENUM dropdown → pick **`delivered`**.
-5. **`delivered_at`** — in the **Function** column dropdown, choose **`NOW()`**
-   (or type a recent date-time). This reopens the 24h refund window.
-6. **`refund_reason`**, **`refund_requested_at`**, **`refunded_at`**,
-   **`return_tracking_url`** — tick the **`NULL`** checkbox for each.
-   (Tick NULL — just clearing the text can leave an empty string, not NULL.)
-7. Click **Go**.
-
-## Troubleshooting — "nothing changed"
-
-- **Did it say "0 rows affected"?** The `WHERE id =` didn't match. You probably
-  left the literal `123` instead of your real order id. Re-run Step 1 to get the
-  id, then use that number.
-- **Right database?** If you're testing on the live site, run this in the live
-  Hostinger phpMyAdmin — not a local one (and vice versa).
-
-To test the **window-expired** case instead, use:
-
-```sql
-delivered_at = NOW() - INTERVAL 2 DAY
+## B — single soft bloop (gentle, low)
+```js
+(function(){var c=new(window.AudioContext||window.webkitAudioContext)();var t=c.currentTime,o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(660,t);o.frequency.exponentialRampToValueAtTime(440,t+0.15);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.2,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+0.4);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.45);})();
 ```
 
-## Optional — clear the test bell notifications
-
-Safe on a test DB (it clears these types for all users):
-
-```sql
-DELETE FROM notifications
-WHERE type IN ('refund_requested','refund_approved','refund_rejected','refund_sent','return_dispatched','return_received');
+## C — three-note rising (cheerful)
+```js
+(function(){var c=new(window.AudioContext||window.webkitAudioContext)();var n=c.currentTime;[[659,0],[784,0.1],[1047,0.2]].forEach(function(p){var t=n+p[1],o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=p[0];g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.16,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+0.35);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.4);});})();
 ```
 
-## Caution (live server)
-
-Always run the Step 1 `SELECT` first and delete/update by a specific `id`.
-The `UPDATE` would rewind any real customer's in-progress refund too if one
-existed — not a concern pre-launch with only your test data, but the reason to
-target one `id` rather than running it blind.
+## D — marimba pluck (woody, short, triangle)
+```js
+(function(){var c=new(window.AudioContext||window.webkitAudioContext)();var n=c.currentTime;[[880,0],[1174,0.09]].forEach(function(p){var t=n+p[1],o=c.createOscillator(),g=c.createGain();o.type='triangle';o.frequency.value=p[0];g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.22,t+0.005);g.gain.exponentialRampToValueAtTime(0.0001,t+0.25);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.3);});})();
+```

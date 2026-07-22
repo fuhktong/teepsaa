@@ -32,20 +32,20 @@
     function playChime() {
         if (!audioCtx || audioCtx.state !== 'running') return;
         var now = audioCtx.currentTime;
-        // Two soft bell notes a fifth apart, each with a quick decay.
-        [[880, 0], [1320, 0.12]].forEach(function (pair) {
+        // Three-note rising chime (E5, G5, C6), each with a quick decay.
+        [[659, 0], [784, 0.1], [1047, 0.2]].forEach(function (pair) {
             var t    = now + pair[1];
             var osc  = audioCtx.createOscillator();
             var gain = audioCtx.createGain();
             osc.type = 'sine';
             osc.frequency.value = pair[0];
             gain.gain.setValueAtTime(0.0001, t);
-            gain.gain.exponentialRampToValueAtTime(0.18, t + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+            gain.gain.exponentialRampToValueAtTime(0.16, t + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.start(t);
-            osc.stop(t + 0.55);
+            osc.stop(t + 0.4);
         });
     }
 

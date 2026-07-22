@@ -644,6 +644,7 @@ return [
     'apply_submit'     => 'ដាក់ស្នើពាក្យសុំ',
 
     // ── In-app notifications (bell) — rendered in the reader's language ───
+    'notif_new_order'          => 'ការបញ្ជាទិញថ្មីដែលបានបង់ប្រាក់ #%s — សូមខ្ចប់ និងដឹកជញ្ជូន។',
     'notif_payout_sent'        => 'ការទូទាត់សម្រាប់ការបញ្ជាទិញ #%s ត្រូវបានផ្ញើទៅគណនី ABA របស់អ្នក។',
     'notif_payment_confirmed'  => 'ការបង់ប្រាក់របស់អ្នកត្រូវបានបញ្ជាក់ — ការបញ្ជាទិញ #%s កំពុងត្រូវបានរៀបចំ។',
     'notif_order_dispatched'   => 'ការបញ្ជាទិញ #%s របស់អ្នកត្រូវបានបញ្ជូន ហើយកំពុងធ្វើដំណើរ។',
