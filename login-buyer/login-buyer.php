@@ -21,7 +21,7 @@ check_rate_limit($pdo);
 $email    = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
 
-$stmt = $pdo->prepare('SELECT id, name, password, avatar, avatar_color, banned, email_verified_at, lang FROM buyers WHERE email = ?');
+$stmt = $pdo->prepare('SELECT id, name, password, avatar, avatar_color, banned, email_verified_at, lang FROM buyers WHERE email = ? AND deleted_at IS NULL');
 $stmt->execute([$email]);
 $user = $stmt->fetch();
 

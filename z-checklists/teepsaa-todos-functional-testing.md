@@ -65,16 +65,16 @@ accounts/orders created earlier.
 - [x] Refund status page shows the correct step at each stage
       (verified all three roles; buyer/vendor/admin status timeline now renders
       correctly after adding order-status.css to the vendor + admin refund pages)
-- [ ] Messages (support desk — buyer ↔ admin, NOT buyer↔vendor): from
+- [x] Messages (support desk — buyer ↔ admin, NOT buyer↔vendor): from
       /contact-buyer/ send a support message (optionally attach one of your
       orders); it appears in /messages-buyer/; admin's reply shows up there
       with an unread count; the "one pending thread at a time" guard blocks a
       second message while one is still pending
-- [ ] Notifications bell: shows order updates, mark-as-read works,
+- [x] Notifications bell: shows order updates, mark-as-read works,
       mark-all-read works
       (refund-stage bells confirmed arriving during the refund run-through;
       still verify mark-as-read + mark-all-read actions specifically)
-- [ ] Settings: change name/profile, avatar upload, avatar color, password
+- [x] Settings: change name/profile, avatar upload, avatar color, password
       change (old sessions still valid?), language preference persists
       across logout/login
 - [ ] Delete account: works, login afterwards impossible, orders retained

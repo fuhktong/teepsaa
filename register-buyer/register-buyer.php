@@ -45,9 +45,10 @@ if ($password !== $confirm) {
     exit;
 }
 
-$stmt = $pdo->prepare('SELECT id FROM buyers WHERE email = ?');
+$stmt = $pdo->prepare('SELECT id, deleted_at FROM buyers WHERE email = ?');
 $stmt->execute([$email]);
-if ($stmt->fetch()) {
+$existing = $stmt->fetch();
+if ($existing && $existing['deleted_at'] === null) {
     $_SESSION['auth_error'] = 'An account with that email already exists.';
     header('Location: /register-buyer/');
     exit;
@@ -59,9 +60,18 @@ require __DIR__ . '/../config/notify.php';
 $code    = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 $expires = date('Y-m-d H:i:s', strtotime('+15 minutes'));
 
-$stmt = $pdo->prepare('INSERT INTO buyers (email, name, password, verify_token, verify_code_expires) VALUES (?, ?, ?, ?, ?)');
-$stmt->execute([$email, $name, password_hash($password, PASSWORD_DEFAULT), $code, $expires]);
-$newId = $pdo->lastInsertId();
+if ($existing) {
+    // Re-registration with a soft-deleted account's email: revive that same row
+    // so the buyer's retained orders stay linked to them. They re-verify the
+    // email (deleted_at cleared, email_verified_at reset) before it's usable.
+    $stmt = $pdo->prepare('UPDATE buyers SET name = ?, password = ?, verify_token = ?, verify_code_expires = ?, email_verified_at = NULL, deleted_at = NULL WHERE id = ?');
+    $stmt->execute([$name, password_hash($password, PASSWORD_DEFAULT), $code, $expires, $existing['id']]);
+    $newId = (int)$existing['id'];
+} else {
+    $stmt = $pdo->prepare('INSERT INTO buyers (email, name, password, verify_token, verify_code_expires) VALUES (?, ?, ?, ?, ?)');
+    $stmt->execute([$email, $name, password_hash($password, PASSWORD_DEFAULT), $code, $expires]);
+    $newId = $pdo->lastInsertId();
+}
 
 if (DEV_MODE) {
     $_SESSION['dev_otp'] = $code;

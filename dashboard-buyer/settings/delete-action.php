@@ -35,7 +35,10 @@ if (!password_verify($password, $row['password'])) {
     exit;
 }
 
-$stmt = $pdo->prepare('DELETE FROM buyers WHERE id = ?');
+// Soft delete: keep the row (and its orders/payments/reviews) for accounting.
+// Login is blocked while deleted_at is set; re-registering with the same email
+// revives this same row.
+$stmt = $pdo->prepare('UPDATE buyers SET deleted_at = NOW() WHERE id = ?');
 $stmt->execute([$userId]);
 
 [$subj, $html] = render_email_template($pdo, 'account_deleted', [
