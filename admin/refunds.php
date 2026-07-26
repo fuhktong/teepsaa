@@ -139,9 +139,6 @@ $adminTab     = 'refunds';
             <?php if ($o['items']): ?>
             <div class="refund-row-reason" style="font-style:normal;color:#374151;"><?= htmlspecialchars($o['items']) ?></div>
             <?php endif; ?>
-            <?php if ($o['refund_reason']): ?>
-            <div class="refund-row-reason">"<?= htmlspecialchars($o['refund_reason']) ?>"</div>
-            <?php endif; ?>
         </div>
         </a>
         <?php endforeach; ?>

@@ -56,7 +56,9 @@ accounts/orders created earlier.
       (live order run-through — buyer confirmed, delivered_at set)
 - [x] Review: can review a delivered item once (form rejects a second review);
       rating + text appear on the product page
-- [ ] Refund request: submit with reason; status changes to Refund Requested
+- [x] Refund request: submit with reason; status changes to Refund Requested
+      (buyer submitted during refund test; vendor refund-requested email fired,
+      which only sends after the order flips to refund_requested)
 - [ ] Return dispatch: after admin approves return, buyer can submit
       tracking; status advances
 - [ ] Refund status page shows the correct step at each stage

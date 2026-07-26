@@ -87,6 +87,7 @@ $adminTab     = 'refunds';
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
+    <link rel="stylesheet" href="/order-status/order-status.css">
     <link rel="stylesheet" href="/refund-status/refund-status.css">
     <link rel="stylesheet" href="/admin/admin.css">
 </head>

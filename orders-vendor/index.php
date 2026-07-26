@@ -203,9 +203,6 @@ if ($tab === 'refunds' && !empty($bizIds)) {
                 <div class="order-card-status">
                     <?php $refundStatus = $o['status']; require __DIR__ . '/../refund-status/refund-status.php'; ?>
                 </div>
-                <?php if ($o['refund_reason']): ?>
-                <div class="refund-row-reason" style="font-size:0.82rem;color:#6b7280;font-style:italic;margin-top:0.25rem;">"<?= htmlspecialchars($o['refund_reason']) ?>"</div>
-                <?php endif; ?>
             </div>
             </a>
             <?php endforeach; ?>

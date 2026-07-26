@@ -86,6 +86,7 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
+    <link rel="stylesheet" href="/order-status/order-status.css">
     <link rel="stylesheet" href="/refund-status/refund-status.css">
     <link rel="stylesheet" href="/popup/popup.css">
     <link rel="stylesheet" href="/dashboard-vendor/dashboard-vendor.css">

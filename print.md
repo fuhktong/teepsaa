@@ -1,99 +1,163 @@
-# Test the notification sound (chime)
+# Can teepsaa succeed without funding?
 
-## First: which actions actually ding?
+Short answer: **Yes — and the Amazon comparison is the wrong thing to fear.**
+Amazon needed money for reasons that do not apply to you. But "no funding"
+does impose real rules, and there are two constraints that matter far more
+than cash. Read to the bottom.
 
-The chime plays when a NEW bell notification arrives while the recipient's tab
-is open. Not every action makes a notification. Quick map:
+---
 
-- **Placing an order** — no ding for anyone (except a low-stock ding to the
-  vendor if that item crosses its stock threshold). The order sits unpaid
-  (`pending`) until admin confirms the ABA payment, so no one is asked to act yet.
-- **Admin confirms payment** — dings the **buyer** (`payment_confirmed`) AND the
-  **vendor** (`new_order`, "pack and dispatch it"). This is the vendor's cue to
-  fulfill — the headline use case for the chime.
-- **Buyer requests a refund** — dings the **vendor**.
-- **Admin approves / rejects / completes a refund** — dings the **buyer**.
-- **Buyer ships a return back** — dings the **vendor**.
-- **Vendor marks return received** — dings the **buyer**.
-- **Vendor dispatches an order** — dings the **buyer**.
-- **Admin sends payout** — dings the **vendor**.
+## 1. Why Amazon needed money (and why you don't)
 
-So to test a VENDOR ding, have a buyer request a refund.
-To test a BUYER ding, have admin confirm payment or approve a refund.
+Amazon lost money on purpose. That was a *strategy*, not a law of e-commerce:
 
-## Three things must ALL be true or you hear nothing
+- They spent billions building **warehouses, delivery fleets, and servers** —
+  physical infrastructure. You have none of that. Your vendors hold their own
+  stock and ship their own goods (Grab/self-delivery). You are a marketplace,
+  not a warehouse.
+- They **bought growth** — selling below cost, undercutting rivals, racing to
+  own the market before anyone else. That race requires cash to burn. It is a
+  choice to trade money for *speed*.
+- They had **investors demanding scale**, so "grow now, profit later" was
+  forced on them.
 
-1. The recipient's tab is open and in the FOREGROUND during the ~15s after the
-   event. You cannot do the action and check the same account in one tab — the
-   page must already be open when the notification arrives.
-2. The new `js/notifications.js` is deployed AND hard-refreshed (browser caches
-   the old one). Verify: DevTools > Sources > /js/notifications.js, search for
-   `playChime`. If it's not there, you're on the old cached file.
-3. You clicked the page at least once first (browsers block audio until one
-   interaction).
+None of these are your situation. You are not racing a funded competitor to
+own a continent. You are building one solid marketplace, at the speed your own
+revenue allows. That is a completely different game with completely different
+rules — and it has been won many times by bootstrapped founders.
 
-## Reliable test recipe
+**The thing that made Amazon need money — heavy infrastructure + a growth race
+— is the exact thing you don't have.** Your cost structure is the opposite.
 
-1. Deploy `js/notifications.js`, then hard-refresh both browsers (Cmd-Shift-R).
-2. Browser A (e.g. Chrome): log in as the BUYER. Leave the dashboard open and
-   in front. Click somewhere on the page once.
-3. Browser B (e.g. Safari, or an incognito window): log in as ADMIN. Approve
-   the payment / a refund for that buyer's order.
-4. Watch Browser A for up to 15 seconds — the red badge should appear AND the
-   chime should play together.
-5. Vendor side: same setup, but Browser A logged in as the VENDOR, and in
-   Browser B request a refund as the buyer -> vendor dings.
+---
 
-## Isolation check — is it the sound or the timing?
+## 2. Your cost structure is a bootstrapper's dream
 
-Open DevTools console on any page with the bell, click the page once, then
-paste this. It tests your browser/speakers directly, independent of the site
-code. If you hear a short beep, audio works and the issue is deploy/timing
-(items above). If silent, it's your system audio/output, not the code.
+This is the strongest fact in your favor. Look at what teepsaa actually costs
+to run each month:
 
-```js
-var c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.frequency.value=880;g.gain.value=0.2;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+0.3);
-```
+- Hosting (Hostinger shared): ~$5–30/mo
+- Domain: ~$1/mo amortized
+- Email (in-house SMTP): $0
+- Payments (ABA transfer + manual confirm): ~$0 in platform fees
+- Developer salary: **$0 — you built it yourself**
 
-# Why the chime isn't firing (diagnostic)
+Your fixed monthly cost is basically **the price of two coffees**. Compare that
+to a funded startup burning $50k/month on salaries and ads. You reach the point
+where revenue > costs almost immediately — the business is *profitable* (in the
+"covers its bills" sense) after only a handful of orders.
 
-## Step 1 — is the new JS actually deployed?
-The isolation beep above works even on the OLD file, so it does NOT prove the
-new code is live. Check directly:
-DevTools > Sources > /js/notifications.js > Cmd-F > search `playChime`.
-- Not found  -> old/cached file. Deploy, then hard-refresh (Cmd-Shift-R).
-- Found      -> code is live; go to Step 2.
+That means you can never really "run out of money" the way a funded startup
+does. teepsaa can sit online, cost you almost nothing, and keep growing slowly
+for *years* if it needs to. Funded startups die when the cash runs out. You
+don't have that clock.
 
-## Step 2 — does the RED BADGE update live?
-Trigger the event and watch the recipient's bell for ~15s WITHOUT refreshing.
-- Badge does NOT appear/increment -> the new notification isn't seen live:
-  JS not deployed, OR the tab was backgrounded (polling stalls when hidden),
-  OR you refreshed the recipient page after triggering (resets the baseline).
-- Badge updates but still SILENT -> detection works, but the audio context
-  isn't unlocked on that tab. Click directly on the recipient page once, keep
-  both windows visible side-by-side (don't minimize/cover it), trigger again.
+---
 
-# Change the sound — audition presets
+## 3. The real question: profitable *enough*, how fast?
 
-Paste each into the DevTools console (click the page once first). Tell me the
-letter you want and I'll set it as the notification chime.
+"Viable" has two meanings. Let's separate them:
 
-## A — current: two-note bell (880 -> 1320, sine)
-```js
-(function(){var c=new(window.AudioContext||window.webkitAudioContext)();var n=c.currentTime;[[880,0],[1320,0.12]].forEach(function(p){var t=n+p[1],o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=p[0];g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.18,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+0.5);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.55);});})();
-```
+**(a) Does it cover its own costs?** — Yes, almost instantly. A few orders a
+month pays the hosting bill.
 
-## B — single soft bloop (gentle, low)
-```js
-(function(){var c=new(window.AudioContext||window.webkitAudioContext)();var t=c.currentTime,o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(660,t);o.frequency.exponentialRampToValueAtTime(440,t+0.15);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.2,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+0.4);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.45);})();
-```
+**(b) Does it pay YOU a living?** — This is the real question. Here's the math,
+using a marketplace commission model (you take a royalty % of each sale):
 
-## C — three-note rising (cheerful)
-```js
-(function(){var c=new(window.AudioContext||window.webkitAudioContext)();var n=c.currentTime;[[659,0],[784,0.1],[1047,0.2]].forEach(function(p){var t=n+p[1],o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=p[0];g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.16,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+0.35);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.4);});})();
-```
+- Say average order = ~$15, and your commission (royalty) = ~12%.
+- That's roughly **$1.80 revenue per order**.
+- To earn a modest Cambodian living wage (~$1,500/mo) you'd need about
+  **~830 orders/month ≈ 28 orders/day**.
+- To earn ~$500/mo (a real side income) → ~9–10 orders/day.
+- To simply cover hosting → ~15–20 orders *total* per month.
 
-## D — marimba pluck (woody, short, triangle)
-```js
-(function(){var c=new(window.AudioContext||window.webkitAudioContext)();var n=c.currentTime;[[880,0],[1174,0.09]].forEach(function(p){var t=n+p[1],o=c.createOscillator(),g=c.createGain();o.type='triangle';o.frequency.value=p[0];g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.22,t+0.005);g.gain.exponentialRampToValueAtTime(0.0001,t+0.25);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.3);});})();
-```
+So the ladder is: **covers costs (trivial) → side income (dozens of orders a
+week) → full living (~25–30 orders a day) → real business (hundreds a day).**
+
+None of those rungs require investor money. They require **orders**. Your job
+isn't fundraising — it's climbing that ladder one rung at a time.
+
+*(Plug in your own real numbers — actual average order value and your actual
+royalty rate — to get your own targets. The shape stays the same.)*
+
+---
+
+## 4. The two things that ACTUALLY threaten you (neither is money)
+
+**A. The cold-start / chicken-and-egg problem.** This is the #1 killer of
+marketplaces. No buyers come without vendors; no vendors stay without buyers.
+This is a *hustle* problem, not a *money* problem — but it is the hard part.
+The bootstrapped playbook:
+
+- **Go narrow first.** Don't launch "all of Cambodia, everything." Pick one
+  city, one category, or one type of seller you can personally recruit and
+  support. A marketplace that's *dense* in one small niche beats one that's
+  thin everywhere.
+- **Recruit the first vendors by hand.** Walk in, message them, onboard them
+  personally. The first 20–50 vendors come from your own effort, not ads.
+- **Manufacture the first buyers** — friends, family, local groups, Facebook.
+  Get real orders flowing so early vendors see it works and tell others.
+- **Make word-of-mouth do your marketing.** You can't outspend anyone on ads,
+  so the product and the seller experience have to be good enough that people
+  talk. Bootstrapped growth is organic growth.
+
+**B. Your personal runway.** This is the *real* "funding" question, and it's
+about you, not the company. The business costs nothing to run — but **you** need
+to eat while order volume climbs from 0 to a living wage, which could take
+months to a couple of years. The honest question isn't "can the app survive
+without funding" (it can, indefinitely) — it's **"can I personally survive the
+ramp-up?"** Options:
+
+- Build it as a **side project** while you have other income, and let it grow
+  until it can pay you. This is the classic bootstrapper's path and it fits
+  teepsaa perfectly because the app needs little day-to-day money.
+- Keep monthly costs near zero (you already do) so there's no pressure to rush.
+- Treat time-to-living-wage as the metric you're managing, not cash burn.
+
+---
+
+## 5. Bootstrapped marketplaces that prove it works
+
+You are not attempting something unproven. Plenty of marketplaces and
+e-commerce businesses grew profitably without (or before) taking VC — by
+staying lean, charging a fair cut from day one, and growing at the speed of
+their own revenue. The model — **take a commission, keep costs tiny, reinvest
+the profit, grow organically** — is old and reliable. It's just *slower* and
+*less flashy* than the funded rocket-ship story you read about in the news.
+The news covers the rockets because explosions make headlines; the quiet
+profitable ones don't get written about, but there are far more of them.
+
+---
+
+## 6. The honest risks (so you go in clear-eyed)
+
+- **It will be slower.** No paid ads means growth is word-of-mouth speed. Years,
+  not months, to a full income. Patience is the price of independence.
+- **You are the whole team.** Support, vendor recruiting, bug fixes, accounting
+  — all you, until revenue lets you hire. That's a time and energy limit, not a
+  money one.
+- **A funded competitor could enter and outspend you** on acquisition. Your
+  defense isn't a bigger budget — it's being *closer to your vendors and buyers*,
+  more trusted, more local, and more focused than a cash-burning outsider can be.
+- **You must charge from day one.** Don't fall into the "free now, monetize
+  later" trap — that trap is what *creates* the need for funding. Your
+  commission is your fuel. Take a fair cut on the very first order.
+
+---
+
+## Bottom line
+
+teepsaa is **highly viable without funding** — arguably *more* suited to
+bootstrapping than to VC, because it has almost no fixed costs and no
+infrastructure to build. You will never "run out of runway" the way a funded
+startup does.
+
+What you're really signing up for is **slower, self-funded growth**, where the
+two things you must win are (1) the cold-start problem — getting the first
+vendors and buyers by hand — and (2) your own personal runway while order
+volume climbs. Solve those with hustle and patience, keep your costs near zero
+(you already do), and charge a fair commission from the first sale, and there
+is a clear, well-trodden path to a real, profitable, independently-owned
+business.
+
+You don't need other people's money. You need orders, time, and focus.
