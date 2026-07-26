@@ -59,13 +59,21 @@ accounts/orders created earlier.
 - [x] Refund request: submit with reason; status changes to Refund Requested
       (buyer submitted during refund test; vendor refund-requested email fired,
       which only sends after the order flips to refund_requested)
-- [ ] Return dispatch: after admin approves return, buyer can submit
+- [x] Return dispatch: after admin approves return, buyer can submit
       tracking; status advances
-- [ ] Refund status page shows the correct step at each stage
-- [ ] Messages: contact a vendor from an order/product, thread works,
-      replies from vendor show up
+      (verified in full refund run-through, Jul 2026)
+- [x] Refund status page shows the correct step at each stage
+      (verified all three roles; buyer/vendor/admin status timeline now renders
+      correctly after adding order-status.css to the vendor + admin refund pages)
+- [ ] Messages (support desk — buyer ↔ admin, NOT buyer↔vendor): from
+      /contact-buyer/ send a support message (optionally attach one of your
+      orders); it appears in /messages-buyer/; admin's reply shows up there
+      with an unread count; the "one pending thread at a time" guard blocks a
+      second message while one is still pending
 - [ ] Notifications bell: shows order updates, mark-as-read works,
       mark-all-read works
+      (refund-stage bells confirmed arriving during the refund run-through;
+      still verify mark-as-read + mark-all-read actions specifically)
 - [ ] Settings: change name/profile, avatar upload, avatar color, password
       change (old sessions still valid?), language preference persists
       across logout/login
@@ -120,10 +128,16 @@ accounts/orders created earlier.
       (live order run-through — Grab link entered, buyer saw it and
       confirmed delivery)
 - [ ] Order detail shows royalty/payout breakdown correctly
-- [ ] Return received: vendor marks returned item received
+- [x] Return received: vendor marks returned item received
+      (verified in full refund run-through, Jul 2026)
 - [ ] ABA QR upload in settings (payout method)
-- [ ] Messages: reply to buyer threads
+- [ ] Messages (support desk — vendor ↔ admin, NOT vendor↔buyer): from
+      /contact-vendor/ send a support message (optionally attach an order);
+      it appears in /messages-vendor/; admin's reply shows up there; same
+      "one pending thread at a time" guard applies
 - [ ] Notifications: new order, low stock, refund request all arrive
+      (refund request bell confirmed in the refund run-through;
+      still verify new-order + low-stock bells)
 - [ ] Settings: profile, avatar, banner, business info edit, business
       address + map pin, password change, delete account
 - [ ] Vendor CANNOT open /cart/, /checkout/, /dashboard-buyer/, /wishlist/
@@ -152,8 +166,10 @@ accounts/orders created earlier.
       (window gating verified live in both states via backdated
       delivered_at; server-side guard added; final "mark paid out"
       click still to verify)
-- [ ] Refunds: full cycle — request appears → approve return → buyer
+- [x] Refunds: full cycle — request appears → approve return → buyer
       dispatches → vendor received → mark refunded; also test reject
+      (full happy-path cycle verified live Jul 2026; confirm the reject path
+      was also exercised)
 - [ ] Penalties: add a vendor penalty, verify it raises the effective
       royalty on the vendor's next order
 - [ ] Coupons + promo codes: create sitewide coupon, limits (max uses,
@@ -165,8 +181,11 @@ accounts/orders created earlier.
 - [ ] FAQ: add/edit/delete, verify on Help page
 - [ ] Careers: post a job (en + km), see application + resume download
 - [ ] Reviews: moderate/remove a review, gone from product page
-- [ ] Messages: guest/buyer/vendor threads visible, reply works, buyer and
-      vendor receive replies, status (open/closed) works
+- [ ] Messages (support desk): all support threads visible — guest (via
+      /contact/, replies to a token link at /support-thread/), buyer, and
+      vendor; admin reply reaches the sender (buyer in /messages-buyer/,
+      vendor in /messages-vendor/, guest by email/token link); status
+      transitions pending → open → closed work
 - [ ] Email templates: edit one, send test, verify the change
 - [ ] Accounting: totals match the test orders you placed
 - [ ] Admins: create a second admin, role restrictions apply

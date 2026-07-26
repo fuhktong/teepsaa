@@ -95,7 +95,6 @@ $isPending = $thread['status'] === 'pending';
     <?php else: ?>
 
     <div class="chat-topbar">
-        <a href="/messages-buyer/" class="chat-back">←</a>
         <div class="chat-topbar-info">
             <div class="chat-topbar-title"><?= htmlspecialchars($thread['subject']) ?></div>
             <div class="chat-topbar-sub">
