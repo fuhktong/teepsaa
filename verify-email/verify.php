@@ -97,6 +97,8 @@ $_SESSION['role']        = $role;
 $_SESSION['user_name']   = $profile['name']   ?? '';
 $_SESSION['user_avatar'] = $profile['avatar'] ?? '';
 
-$dest = $role === 'vendor' ? '/dashboard-vendor/' : '/dashboard-buyer/';
+// Vendors land on their dashboard (they have setup to do); a fresh buyer has no
+// orders yet, so send them to the product catalog to start shopping instead.
+$dest = $role === 'vendor' ? '/dashboard-vendor/' : '/';
 header('Location: ' . $dest);
 exit;

@@ -28,7 +28,8 @@ $stmt->execute([$userId]);
 $user = $stmt->fetch();
 
 if ($user && $user['email_verified_at']) {
-    $dest = $role === 'vendor' ? '/dashboard-vendor/' : '/dashboard-buyer/';
+    // Buyers go to the product catalog to shop; vendors go to their dashboard.
+    $dest = $role === 'vendor' ? '/dashboard-vendor/' : '/';
     header('Location: ' . $dest);
     exit;
 }

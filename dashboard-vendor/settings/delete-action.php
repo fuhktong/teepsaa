@@ -47,7 +47,14 @@ if ($stmt->fetchColumn() > 0) {
     exit;
 }
 
-$stmt = $pdo->prepare('DELETE FROM vendors WHERE id = ?');
+// Soft delete: keep the vendor row (and its businesses, orders, reviews, payouts)
+// for accounting. Login is blocked while deleted_at is set; re-registering with the
+// same email revives this same row. Their businesses are soft-deleted too so their
+// products stop showing (mirrors business-delete-action.php).
+$stmt = $pdo->prepare('UPDATE vendors SET deleted_at = NOW() WHERE id = ?');
+$stmt->execute([$userId]);
+
+$stmt = $pdo->prepare('UPDATE businesses SET deleted_at = NOW(), approved = -1 WHERE user_id = ? AND deleted_at IS NULL');
 $stmt->execute([$userId]);
 
 [$subj, $html] = render_email_template($pdo, 'account_deleted', [

@@ -46,9 +46,10 @@ if ($password !== $confirm) {
     exit;
 }
 
-$stmt = $pdo->prepare('SELECT id FROM vendors WHERE email = ?');
+$stmt = $pdo->prepare('SELECT id, deleted_at FROM vendors WHERE email = ?');
 $stmt->execute([$email]);
-if ($stmt->fetch()) {
+$existing = $stmt->fetch();
+if ($existing && $existing['deleted_at'] === null) {
     $_SESSION['auth_error'] = 'An account with that email already exists.';
     header('Location: /register-vendor/');
     exit;
@@ -70,9 +71,19 @@ if ($promoCode) {
     }
 }
 
-$stmt = $pdo->prepare('INSERT INTO vendors (email, name, password, verify_token, verify_code_expires, promo_code) VALUES (?, ?, ?, ?, ?, ?)');
-$stmt->execute([$email, $name, password_hash($password, PASSWORD_DEFAULT), $code, $expires, $validatedPromoCode]);
-$newId = $pdo->lastInsertId();
+if ($existing) {
+    // Re-registration with a soft-deleted account's email: revive that same row so
+    // the vendor's retained businesses/orders stay linked. They re-verify the email
+    // (deleted_at cleared, email_verified_at reset) before it's usable again. Their
+    // businesses stay soft-deleted — the vendor re-submits a shop for approval.
+    $stmt = $pdo->prepare('UPDATE vendors SET name = ?, password = ?, verify_token = ?, verify_code_expires = ?, promo_code = ?, email_verified_at = NULL, deleted_at = NULL WHERE id = ?');
+    $stmt->execute([$name, password_hash($password, PASSWORD_DEFAULT), $code, $expires, $validatedPromoCode, $existing['id']]);
+    $newId = (int)$existing['id'];
+} else {
+    $stmt = $pdo->prepare('INSERT INTO vendors (email, name, password, verify_token, verify_code_expires, promo_code) VALUES (?, ?, ?, ?, ?, ?)');
+    $stmt->execute([$email, $name, password_hash($password, PASSWORD_DEFAULT), $code, $expires, $validatedPromoCode]);
+    $newId = $pdo->lastInsertId();
+}
 
 if (DEV_MODE) {
     $_SESSION['dev_otp'] = $code;
