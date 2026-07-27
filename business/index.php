@@ -79,13 +79,15 @@ $bizRatingRow = $bizRating->fetch();
 
 <?php require __DIR__ . '/../header/header.php'; ?>
 
-<main>
-    <?php if ($business['banner']): ?>
-    <div class="business-banner">
-        <img src="/uploads/<?= htmlspecialchars($business['banner']) ?>" alt="">
-    </div>
-    <?php endif; ?>
+<?php if ($business['banner']): ?>
+<!-- Full-bleed banner: sits outside <main> (like the homepage carousel) so it
+     spans the whole viewport instead of the 1200px content column. -->
+<div class="business-banner">
+    <img src="/uploads/<?= htmlspecialchars($business['banner']) ?>" alt="">
+</div>
+<?php endif; ?>
 
+<main>
     <div class="store-header">
         <h1 class="store-name"><?= htmlspecialchars(lang_field($business, 'name')) ?></h1>
         <?php if ((int)$bizRatingRow['review_count'] > 0): ?>

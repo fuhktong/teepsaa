@@ -270,7 +270,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <p style="font-size:0.9rem;color:#6b7280;"><?= $t['vendor_no_business'] ?> <a href="/submit/"><?= $t['vendor_submit_one'] ?></a></p>
                 <?php else: ?>
 
-                <form method="POST" action="/dashboard-vendor/settings/business-action.php">
+                <form method="POST" action="/dashboard-vendor/settings/business-action.php" id="business-form">
                     <?= csrf_input() ?>
                     <div class="settings-field">
                         <label for="business_name"><?= $t['vendor_settings_biz_name'] ?></label>
@@ -302,7 +302,6 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                         </div>
                     </div>
                     <?php endif; ?>
-                    <button type="submit" class="btn-save"><?= $t['settings_save'] ?></button>
                 </form>
 
                 <hr class="form-divider">
@@ -347,6 +346,10 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     </form>
                     <?php endif; ?>
                 </div>
+
+                <!-- Saves the business-details form above (name/description/categories).
+                     Banner + gallery are separate forms that save on upload. -->
+                <button type="submit" form="business-form" class="btn-save"><?= $t['settings_save'] ?></button>
 
                 <?php endif; ?>
             </div>

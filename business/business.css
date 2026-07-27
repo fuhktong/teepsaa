@@ -1,7 +1,7 @@
-/* Banner */
+/* Banner — full-bleed (rendered outside <main>, so it spans the viewport). */
 .business-banner {
     width: 100%;
-    height: 280px;
+    height: 340px;
     overflow: hidden;
     background: #1a1a1a;
 }
@@ -16,7 +16,7 @@
 /* Store header */
 .store-header {
     margin-bottom: 2rem;
-    padding: 2rem 0 0;
+    padding: 0;
 }
 
 .store-name {
@@ -87,7 +87,7 @@
 }
 
 @media (max-width: 560px) {
-    .business-banner { height: 180px; }
+    .business-banner { height: 200px; }
     .product-grid { grid-template-columns: 1fr; }
 }
 

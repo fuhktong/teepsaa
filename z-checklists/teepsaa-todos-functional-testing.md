@@ -77,9 +77,9 @@ accounts/orders created earlier.
 - [x] Settings: change name/profile, avatar upload, avatar color, password
       change (old sessions still valid?), language preference persists
       across logout/login
-- [ ] Delete account: works, login afterwards impossible, orders retained
+- [x] Delete account: works, login afterwards impossible, orders retained
       for vendor/admin
-- [ ] Buyer CANNOT open /dashboard-vendor/, /products/, /orders-vendor/
+- [x] Buyer CANNOT open /dashboard-vendor/, /products/, /orders-vendor/
       (rejected), nor /admin/
 
 ## Vendor — account lifecycle
