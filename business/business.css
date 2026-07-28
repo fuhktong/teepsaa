@@ -59,6 +59,47 @@
 .banner-dot { opacity: 0.45; }
 .banner-tagline { color: rgba(255,255,255,0.88); }
 
+/* Small uppercase label above the store name (mock's "store-eyebrow"). */
+.store-eyebrow {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.75);
+    margin-bottom: 0.5rem;
+}
+.store-eyebrow--dark { color: var(--primary, #b45f3f); }
+
+/* "Verified" chip — every storefront is admin-approved before it goes live. */
+.banner-badge,
+.store-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+}
+.banner-badge {
+    color: #fff;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.35);
+}
+.store-badge {
+    color: var(--primary-hover, #8a4227);
+    background: var(--primary-soft, #f3e4db);
+}
+.store-header-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+    margin: 0 0 0.5rem;
+}
+.store-header-meta .store-rating { margin: 0; }
+
 /* Store header */
 .store-header {
     margin-bottom: 2rem;
@@ -100,7 +141,6 @@
     font-size: 1.2rem;
     margin-bottom: 1rem;
     padding-top: 1.5rem;
-    border-top: 1px solid #eee;
 }
 .store-gallery {
     display: grid;
@@ -226,7 +266,6 @@
     font-size: 1.2rem;
     margin-bottom: 1rem;
     padding-top: 1.5rem;
-    border-top: 1px solid #eee;
 }
 
 .product-grid {
@@ -253,6 +292,7 @@
 }
 
 .product-card {
+    position: relative;
     text-decoration: none;
     color: inherit;
     border: 1px solid #e5e5e5;
@@ -261,6 +301,24 @@
     background: #fff;
     transition: box-shadow 0.15s;
 }
+
+/* "Sale" corner badge, overlaid on the product photo when a sale is live. */
+.sale-badge {
+    position: absolute;
+    top: 0.6rem;
+    left: 0.6rem;
+    z-index: 3;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--sale, #d64545);
+    padding: 0.18rem 0.5rem;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+.featured-media .sale-badge { top: 0.9rem; left: 0.9rem; font-size: 0.8rem; }
 
 .product-card:hover {
     box-shadow: 0 2px 12px rgba(0,0,0,0.1);

@@ -614,6 +614,9 @@ return [
     'store_from_shop'   => 'ពីហាង',
     'store_view_product' => 'ទិញឥឡូវនេះ',
     'store_left'        => 'នៅសល់',
+    'store_eyebrow'     => 'ហាង teepsaa',
+    'store_verified'    => 'បានផ្ទៀងផ្ទាត់',
+    'store_sale'        => 'បញ្ចុះតម្លៃ',
 
     // ── Review page (review/) ────────────────────────────────────────────
     'review_back_order' => 'ត្រឡប់ទៅកម្មង់',

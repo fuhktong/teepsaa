@@ -614,6 +614,9 @@ return [
     'store_from_shop'   => 'From the shop',
     'store_view_product' => 'Shop now',
     'store_left'        => 'left',
+    'store_eyebrow'     => 'teepsaa shop',
+    'store_verified'    => 'Verified',
+    'store_sale'        => 'Sale',
 
     // ── Review page (review/) ────────────────────────────────────────────
     'review_back_order' => 'Back to order',

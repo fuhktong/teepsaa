@@ -113,13 +113,15 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
     <img src="/uploads/<?= htmlspecialchars($business['banner']) ?>" alt="">
     <div class="banner-overlay">
         <div class="banner-overlay-inner">
+            <span class="store-eyebrow"><?= $t['store_eyebrow'] ?></span>
             <h1 class="banner-store-name"><?= $storeName ?></h1>
             <div class="banner-store-meta">
+                <span class="banner-badge">✓ <?= $t['store_verified'] ?></span>
                 <?php if ($reviewCount > 0): ?>
                 <span class="banner-rating">★ <?= number_format((float)$bizRatingRow['avg_rating'], 1) ?> <span class="banner-rating-count">(<?= $reviewCount ?> <?= $reviewWord ?>)</span></span>
                 <?php endif; ?>
                 <?php if ($storeDesc): ?>
-                <?php if ($reviewCount > 0): ?><span class="banner-dot">·</span><?php endif; ?>
+                <span class="banner-dot">·</span>
                 <span class="banner-tagline"><?= htmlspecialchars(mb_strimwidth($storeDesc, 0, 110, '…')) ?></span>
                 <?php endif; ?>
             </div>
@@ -131,10 +133,14 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
 <main>
     <?php if (!$business['banner']): ?>
     <div class="store-header">
+        <span class="store-eyebrow store-eyebrow--dark"><?= $t['store_eyebrow'] ?></span>
         <h1 class="store-name"><?= $storeName ?></h1>
-        <?php if ($reviewCount > 0): ?>
-        <p class="store-rating">★ <?= number_format((float)$bizRatingRow['avg_rating'], 1) ?> <span class="store-rating-count">(<?= $reviewCount ?> <?= $reviewWord ?>)</span></p>
-        <?php endif; ?>
+        <p class="store-header-meta">
+            <span class="store-badge">✓ <?= $t['store_verified'] ?></span>
+            <?php if ($reviewCount > 0): ?>
+            <span class="store-rating">★ <?= number_format((float)$bizRatingRow['avg_rating'], 1) ?> <span class="store-rating-count">(<?= $reviewCount ?> <?= $reviewWord ?>)</span></span>
+            <?php endif; ?>
+        </p>
         <?php if ($storeDesc): ?>
             <p class="store-desc"><?= htmlspecialchars($storeDesc) ?></p>
         <?php endif; ?>
@@ -149,6 +155,7 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
         </div>
         <div class="featured-card">
             <a href="/product/?id=<?= $featured['public_id'] ?>" class="featured-media">
+                <?php if (active_sale($featured)): ?><span class="sale-badge"><?= $t['store_sale'] ?></span><?php endif; ?>
                 <?php if ($featured['photo']): ?>
                     <img src="/uploads/<?= htmlspecialchars($featured['photo']) ?>" alt="">
                 <?php else: ?>
@@ -181,6 +188,7 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
         <div class="product-grid">
             <?php foreach ($gridProducts as $p): ?>
             <a href="/product/?id=<?= $p['public_id'] ?>" class="product-card">
+                <?php if (active_sale($p)): ?><span class="sale-badge"><?= $t['store_sale'] ?></span><?php endif; ?>
                 <?php if ($p['photo']): ?>
                     <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="" class="product-photo">
                 <?php else: ?>
