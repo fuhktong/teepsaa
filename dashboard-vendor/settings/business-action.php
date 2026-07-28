@@ -24,8 +24,10 @@ csrf_verify();
 $userId      = $_SESSION['user_id'];
 $name        = trim($_POST['business_name'] ?? '');
 $nameKm      = trim($_POST['business_name_km'] ?? '');
-$description = trim($_POST['description'] ?? '');
-$descriptionKm = trim($_POST['description_km'] ?? '');
+// Description shows under the store name on the storefront — cap at 160 chars
+// (matches the maxlength on the settings form).
+$description   = mb_substr(trim($_POST['description'] ?? ''), 0, 160);
+$descriptionKm = mb_substr(trim($_POST['description_km'] ?? ''), 0, 160);
 $rawCats     = $_POST['categories'] ?? [];
 
 if (!$name) {

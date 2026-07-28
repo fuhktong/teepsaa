@@ -27,15 +27,20 @@ $address     = trim($_POST['address'] ?? '');
 $notes       = trim($_POST['address_notes'] ?? '');
 $khan        = trim($_POST['khan'] ?? '');
 $sangkat     = trim($_POST['sangkat'] ?? '');
+$city        = trim($_POST['city'] ?? '');
 $lat         = $_POST['lat'] ?? '';
 $lng         = $_POST['lng'] ?? '';
+
+// Only accept a city we actually deliver in (Phnom Penh for now).
+$cities = require __DIR__ . '/../../config/cities.php';
+$city   = in_array($city, $cities, true) ? $city : ($cities[0] ?? null);
 
 $latVal = $lat !== '' ? filter_var($lat, FILTER_VALIDATE_FLOAT) : null;
 $lngVal = $lng !== '' ? filter_var($lng, FILTER_VALIDATE_FLOAT) : null;
 
 $stmt = $pdo->prepare('
     UPDATE businesses
-    SET house_number = ?, address = ?, address_notes = ?, khan = ?, sangkat = ?, lat = ?, lng = ?
+    SET house_number = ?, address = ?, address_notes = ?, khan = ?, sangkat = ?, city = ?, lat = ?, lng = ?
     WHERE user_id = ? AND deleted_at IS NULL
 ');
 $stmt->execute([
@@ -44,6 +49,7 @@ $stmt->execute([
     $notes       ?: null,
     $khan        ?: null,
     $sangkat     ?: null,
+    $city,
     $latVal,
     $lngVal,
     $userId,

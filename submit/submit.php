@@ -41,15 +41,20 @@ if ($stmt->fetchColumn() > 0) {
 
 $name           = trim($_POST['name'] ?? '');
 $name_km        = trim($_POST['name_km'] ?? '');
-$description    = trim($_POST['description'] ?? '');
-$description_km = trim($_POST['description_km'] ?? '');
+$description    = mb_substr(trim($_POST['description'] ?? ''), 0, 160);
+$description_km = mb_substr(trim($_POST['description_km'] ?? ''), 0, 160);
 $category_id  = (int)($_POST['category_id'] ?? 0);
 $house_number = trim($_POST['house_number'] ?? '');
 $address      = trim($_POST['address'] ?? '');
 $khan         = trim($_POST['khan'] ?? '');
 $sangkat      = trim($_POST['sangkat'] ?? '');
+$city         = trim($_POST['city'] ?? '');
 $lat          = $_POST['lat'] ?? '';
 $lng          = $_POST['lng'] ?? '';
+
+// Only accept a city we deliver in (Phnom Penh for now).
+$cities = require __DIR__ . '/../config/cities.php';
+$city   = in_array($city, $cities, true) ? $city : ($cities[0] ?? null);
 
 if (!$name) {
     $_SESSION['submit_error'] = 'Business name is required.';
@@ -88,8 +93,8 @@ if ($vendorPromoCode) {
     }
 }
 
-$stmt = $pdo->prepare('INSERT INTO businesses (user_id, name, name_km, category, description, description_km, house_number, address, khan, sangkat, lat, lng, promo_code_id, public_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-$stmt->execute([$_SESSION['user_id'], $name, $name_km !== '' ? $name_km : null, $categoryName, $description, $description_km !== '' ? $description_km : null, $house_number, $address, $khan, $sangkat, $lat, $lng, $promoCodeId, uuid_v4()]);
+$stmt = $pdo->prepare('INSERT INTO businesses (user_id, name, name_km, category, description, description_km, house_number, address, khan, sangkat, city, lat, lng, promo_code_id, public_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+$stmt->execute([$_SESSION['user_id'], $name, $name_km !== '' ? $name_km : null, $categoryName, $description, $description_km !== '' ? $description_km : null, $house_number, $address, $khan, $sangkat, $city, $lat, $lng, $promoCodeId, uuid_v4()]);
 $business_id = $pdo->lastInsertId();
 
 $allowed_types = ['image/jpeg', 'image/png'];

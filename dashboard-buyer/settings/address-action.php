@@ -28,14 +28,19 @@ $address     = trim($_POST['address'] ?? '');
 $notes       = trim($_POST['address_notes'] ?? '');
 $khan        = trim($_POST['khan'] ?? '');
 $sangkat     = trim($_POST['sangkat'] ?? '');
+$city        = trim($_POST['city'] ?? '');
 $lat         = $_POST['lat'] ?? '';
 $lng         = $_POST['lng'] ?? '';
+
+// Only accept a city we deliver in (Phnom Penh for now).
+$cities = require __DIR__ . '/../../config/cities.php';
+$city   = in_array($city, $cities, true) ? $city : ($cities[0] ?? null);
 
 $latVal = $lat !== '' ? filter_var($lat, FILTER_VALIDATE_FLOAT) : null;
 $lngVal = $lng !== '' ? filter_var($lng, FILTER_VALIDATE_FLOAT) : null;
 
-$stmt = $pdo->prepare('UPDATE buyers SET phone = ?, house_number = ?, address = ?, address_notes = ?, khan = ?, sangkat = ?, lat = ?, lng = ? WHERE id = ?');
-$stmt->execute([$phone ?: null, $houseNumber ?: null, $address ?: null, $notes ?: null, $khan ?: null, $sangkat ?: null, $latVal, $lngVal, $userId]);
+$stmt = $pdo->prepare('UPDATE buyers SET phone = ?, house_number = ?, address = ?, address_notes = ?, khan = ?, sangkat = ?, city = ?, lat = ?, lng = ? WHERE id = ?');
+$stmt->execute([$phone ?: null, $houseNumber ?: null, $address ?: null, $notes ?: null, $khan ?: null, $sangkat ?: null, $city, $latVal, $lngVal, $userId]);
 
 // Mirror the main address into the address book as the default entry —
 // otherwise it only lives on the buyers table and never shows in the
@@ -45,11 +50,11 @@ if ($address !== '' || $khan !== '' || $houseNumber !== '') {
     $stmt->execute([$userId]);
     $defaultId = $stmt->fetchColumn();
     if ($defaultId) {
-        $pdo->prepare('UPDATE buyer_addresses SET house_number=?, address=?, address_notes=?, khan=?, sangkat=?, lat=?, lng=? WHERE id=?')
-            ->execute([$houseNumber ?: null, $address ?: null, $notes ?: null, $khan ?: null, $sangkat ?: null, $latVal, $lngVal, $defaultId]);
+        $pdo->prepare('UPDATE buyer_addresses SET house_number=?, address=?, address_notes=?, khan=?, sangkat=?, city=?, lat=?, lng=? WHERE id=?')
+            ->execute([$houseNumber ?: null, $address ?: null, $notes ?: null, $khan ?: null, $sangkat ?: null, $city, $latVal, $lngVal, $defaultId]);
     } else {
-        $pdo->prepare('INSERT INTO buyer_addresses (buyer_user_id, label, house_number, address, address_notes, khan, sangkat, lat, lng, is_default) VALUES (?,?,?,?,?,?,?,?,?,1)')
-            ->execute([$userId, $khan !== '' ? $khan : 'Address', $houseNumber ?: null, $address ?: null, $notes ?: null, $khan ?: null, $sangkat ?: null, $latVal, $lngVal]);
+        $pdo->prepare('INSERT INTO buyer_addresses (buyer_user_id, label, house_number, address, address_notes, khan, sangkat, city, lat, lng, is_default) VALUES (?,?,?,?,?,?,?,?,?,?,1)')
+            ->execute([$userId, $khan !== '' ? $khan : 'Address', $houseNumber ?: null, $address ?: null, $notes ?: null, $khan ?: null, $sangkat ?: null, $city, $latVal, $lngVal]);
     }
 }
 

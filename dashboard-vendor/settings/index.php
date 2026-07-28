@@ -23,7 +23,7 @@ $stmt = $pdo->prepare('SELECT name, email, phone, avatar, avatar_color, aba_qr, 
 $stmt->execute([$userId]);
 $vendor = $stmt->fetch();
 
-$stmt = $pdo->prepare('SELECT id, name, name_km, description, description_km, house_number, address, address_notes, khan, sangkat, lat, lng, banner FROM businesses WHERE user_id = ? AND deleted_at IS NULL LIMIT 1');
+$stmt = $pdo->prepare('SELECT id, name, name_km, description, description_km, house_number, address, address_notes, khan, sangkat, city, lat, lng, banner FROM businesses WHERE user_id = ? AND deleted_at IS NULL LIMIT 1');
 $stmt->execute([$userId]);
 $business = $stmt->fetch();
 
@@ -40,6 +40,7 @@ if ($tab === 'business' && $business) {
 }
 
 $locations = ($tab === 'address') ? require __DIR__ . '/../../config/phnom-penh-locations.php' : [];
+$cities    = ($tab === 'address') ? require __DIR__ . '/../../config/cities.php' : [];
 
 $bizProductCount = 0;
 $bizOpenOrders   = 0;
@@ -178,7 +179,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     trim(($business['house_number'] ?? '') . ' ' . ($business['address'] ?? '')),
                     $business['sangkat'] ?? '',
                     $business['khan'] ?? '',
-                    'Phnom Penh',
+                    $business['city'] ?: 'Phnom Penh',
                 ]);
                 $addrLine   = implode(', ', $addrParts);
                 $hasAddress = !empty($business['address']) || !empty($business['khan']);
@@ -213,6 +214,16 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     <div class="settings-field">
                         <label for="address_notes"><?= $t['settings_address_floor'] ?></label>
                         <input type="text" id="address_notes" name="address_notes" value="<?= htmlspecialchars($business['address_notes'] ?? '') ?>" placeholder="e.g. Ground floor, blue sign">
+                    </div>
+
+                    <div class="settings-field">
+                        <label for="city"><?= $t['settings_address_city'] ?></label>
+                        <select id="city" name="city">
+                            <?php $selCity = $business['city'] ?: ($cities[0] ?? ''); ?>
+                            <?php foreach ($cities as $c): ?>
+                            <option value="<?= htmlspecialchars($c) ?>" <?= ($selCity === $c) ? 'selected' : '' ?>><?= htmlspecialchars($c) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
 
                     <div class="settings-field">
@@ -281,12 +292,14 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                         <input type="text" id="business_name_km" name="business_name_km" value="<?= htmlspecialchars($business['name_km'] ?? '') ?>" placeholder="ឈ្មោះហាងជាភាសាខ្មែរ">
                     </div>
                     <div class="settings-field">
-                        <label for="description"><?= $t['vendor_settings_description'] ?></label>
-                        <textarea id="description" name="description" rows="4" placeholder="<?= htmlspecialchars($t['vendor_biz_desc_placeholder']) ?>"><?= htmlspecialchars($business['description'] ?? '') ?></textarea>
+                        <label for="description"><?= $t['vendor_settings_description'] ?> <span class="field-hint" style="font-weight:400;display:inline"><?= $t['vendor_biz_desc_hint'] ?></span></label>
+                        <textarea id="description" name="description" rows="4" maxlength="160" placeholder="<?= htmlspecialchars($t['vendor_biz_desc_placeholder']) ?>" oninput="document.getElementById('desc-count').textContent = 160 - this.value.length"><?= htmlspecialchars($business['description'] ?? '') ?></textarea>
+                        <p class="field-hint" style="margin:0.3rem 0 0"><span id="desc-count"><?= 160 - mb_strlen($business['description'] ?? '') ?></span> <?= $t['vendor_biz_desc_count'] ?></p>
                     </div>
                     <div class="settings-field">
-                        <label for="description_km"><?= $t['vendor_settings_description'] ?> <span class="field-hint" style="font-weight:400;display:inline"><?= $t['form_km_field'] ?></span></label>
-                        <textarea id="description_km" name="description_km" rows="4" placeholder="ការពិពណ៌នាហាងជាភាសាខ្មែរ"><?= htmlspecialchars($business['description_km'] ?? '') ?></textarea>
+                        <label for="description_km"><?= $t['vendor_settings_description'] ?> <span class="field-hint" style="font-weight:400;display:inline"><?= $t['form_km_field'] ?> <?= $t['vendor_biz_desc_hint'] ?></span></label>
+                        <textarea id="description_km" name="description_km" rows="4" maxlength="160" placeholder="ការពិពណ៌នាហាងជាភាសាខ្មែរ" oninput="document.getElementById('desc-km-count').textContent = 160 - this.value.length"><?= htmlspecialchars($business['description_km'] ?? '') ?></textarea>
+                        <p class="field-hint" style="margin:0.3rem 0 0"><span id="desc-km-count"><?= 160 - mb_strlen($business['description_km'] ?? '') ?></span> <?= $t['vendor_biz_desc_count'] ?></p>
                     </div>
                     <?php if (!empty($parentCategories)): ?>
                     <div class="settings-field">

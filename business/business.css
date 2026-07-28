@@ -59,17 +59,25 @@
 .banner-dot { opacity: 0.45; }
 .banner-tagline { color: rgba(255,255,255,0.88); }
 
-/* Small uppercase label above the store name (mock's "store-eyebrow"). */
+/* Row above the store name: "Verified" chip + city (mock's "store-eyebrow"). */
 .store-eyebrow {
-    display: block;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.75);
-    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.6rem;
 }
-.store-eyebrow--dark { color: var(--primary, #b45f3f); }
+.banner-city {
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.45);
+}
+.store-city {
+    color: var(--text-muted, #6b7280);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
 
 /* "Verified" chip — every storefront is admin-approved before it goes live. */
 .banner-badge,

@@ -113,18 +113,24 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
     <img src="/uploads/<?= htmlspecialchars($business['banner']) ?>" alt="">
     <div class="banner-overlay">
         <div class="banner-overlay-inner">
-            <span class="store-eyebrow"><?= $t['store_eyebrow'] ?></span>
-            <h1 class="banner-store-name"><?= $storeName ?></h1>
-            <div class="banner-store-meta">
+            <div class="store-eyebrow">
                 <span class="banner-badge">✓ <?= $t['store_verified'] ?></span>
+                <?php if (!empty($business['city'])): ?>
+                <span class="banner-city">📍 <?= htmlspecialchars($business['city']) ?></span>
+                <?php endif; ?>
+            </div>
+            <h1 class="banner-store-name"><?= $storeName ?></h1>
+            <?php if ($storeDesc || $reviewCount > 0): ?>
+            <div class="banner-store-meta">
                 <?php if ($reviewCount > 0): ?>
                 <span class="banner-rating">★ <?= number_format((float)$bizRatingRow['avg_rating'], 1) ?> <span class="banner-rating-count">(<?= $reviewCount ?> <?= $reviewWord ?>)</span></span>
                 <?php endif; ?>
                 <?php if ($storeDesc): ?>
-                <span class="banner-dot">·</span>
+                <?php if ($reviewCount > 0): ?><span class="banner-dot">·</span><?php endif; ?>
                 <span class="banner-tagline"><?= htmlspecialchars(mb_strimwidth($storeDesc, 0, 110, '…')) ?></span>
                 <?php endif; ?>
             </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -133,14 +139,18 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
 <main>
     <?php if (!$business['banner']): ?>
     <div class="store-header">
-        <span class="store-eyebrow store-eyebrow--dark"><?= $t['store_eyebrow'] ?></span>
-        <h1 class="store-name"><?= $storeName ?></h1>
-        <p class="store-header-meta">
+        <div class="store-eyebrow store-eyebrow--dark">
             <span class="store-badge">✓ <?= $t['store_verified'] ?></span>
-            <?php if ($reviewCount > 0): ?>
-            <span class="store-rating">★ <?= number_format((float)$bizRatingRow['avg_rating'], 1) ?> <span class="store-rating-count">(<?= $reviewCount ?> <?= $reviewWord ?>)</span></span>
+            <?php if (!empty($business['city'])): ?>
+            <span class="store-city">📍 <?= htmlspecialchars($business['city']) ?></span>
             <?php endif; ?>
+        </div>
+        <h1 class="store-name"><?= $storeName ?></h1>
+        <?php if ($reviewCount > 0): ?>
+        <p class="store-header-meta">
+            <span class="store-rating">★ <?= number_format((float)$bizRatingRow['avg_rating'], 1) ?> <span class="store-rating-count">(<?= $reviewCount ?> <?= $reviewWord ?>)</span></span>
         </p>
+        <?php endif; ?>
         <?php if ($storeDesc): ?>
             <p class="store-desc"><?= htmlspecialchars($storeDesc) ?></p>
         <?php endif; ?>

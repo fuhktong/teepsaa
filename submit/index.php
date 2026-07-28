@@ -10,6 +10,7 @@ require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/mapbox.php';
 $locations = require __DIR__ . '/../config/phnom-penh-locations.php';
+$cities    = require __DIR__ . '/../config/cities.php';
 
 $allCatsRaw = $pdo->query('SELECT id, parent_id, name, name_km FROM categories ORDER BY name ASC')->fetchAll();
 function submitBuildCatTree(array $cats, $parentId = null): array {
@@ -95,13 +96,15 @@ unset($_SESSION['submit_error'], $_SESSION['submit_success']);
         </div>
 
         <div class="field">
-            <label for="description"><?= $t['vendor_settings_description'] ?></label>
-            <textarea id="description" name="description" rows="4"></textarea>
+            <label for="description"><?= $t['vendor_settings_description'] ?> <span class="hint"><?= $t['vendor_biz_desc_hint'] ?></span></label>
+            <textarea id="description" name="description" rows="4" maxlength="160" oninput="document.getElementById('desc-count').textContent = 160 - this.value.length"></textarea>
+            <p class="hint"><span id="desc-count">160</span> <?= $t['vendor_biz_desc_count'] ?></p>
         </div>
 
         <div class="field">
-            <label for="description_km"><?= $t['vendor_settings_description'] ?> <span class="hint"><?= $t['form_km_field'] ?></span></label>
-            <textarea id="description_km" name="description_km" rows="4" placeholder="ការពិពណ៌នាហាងជាភាសាខ្មែរ"></textarea>
+            <label for="description_km"><?= $t['vendor_settings_description'] ?> <span class="hint"><?= $t['form_km_field'] ?> <?= $t['vendor_biz_desc_hint'] ?></span></label>
+            <textarea id="description_km" name="description_km" rows="4" maxlength="160" placeholder="ការពិពណ៌នាហាងជាភាសាខ្មែរ" oninput="document.getElementById('desc-km-count').textContent = 160 - this.value.length"></textarea>
+            <p class="hint"><span id="desc-km-count">160</span> <?= $t['vendor_biz_desc_count'] ?></p>
         </div>
 
         <div class="field">
@@ -118,6 +121,15 @@ unset($_SESSION['submit_error'], $_SESSION['submit_success']);
         <div class="field">
             <label for="address"><?= $t['settings_street'] ?></label>
             <input type="text" id="address" name="address" placeholder="e.g. Street 240">
+        </div>
+
+        <div class="field">
+            <label for="city"><?= $t['settings_address_city'] ?></label>
+            <select id="city" name="city">
+                <?php foreach ($cities as $c): ?>
+                <option value="<?= htmlspecialchars($c) ?>"><?= htmlspecialchars($c) ?></option>
+                <?php endforeach; ?>
+            </select>
         </div>
 
         <div class="field">

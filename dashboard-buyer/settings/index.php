@@ -19,6 +19,7 @@ $userId    = $_SESSION['user_id'];
 $validTabs = ['account', 'address', 'password', 'danger'];
 $tab       = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'account';
 $locations = ($tab === 'address') ? require __DIR__ . '/../../config/phnom-penh-locations.php' : [];
+$cities    = ($tab === 'address') ? require __DIR__ . '/../../config/cities.php' : [];
 
 $savedAddresses = [];
 if ($tab === 'address') {
@@ -156,7 +157,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <div class="saved-addr-list">
                     <?php foreach ($savedAddresses as $a): ?>
                     <?php
-                        $aParts = array_filter([$a['house_number'], $a['address'], $a['sangkat'], $a['khan'], 'Phnom Penh']);
+                        $aParts = array_filter([$a['house_number'], $a['address'], $a['sangkat'], $a['khan'], $a['city'] ?: 'Phnom Penh']);
                         $aLine  = implode(', ', $aParts);
                     ?>
                     <div class="saved-addr-item<?= ($editingAddr && (int)$a['id'] === $editAddrId) ? ' saved-addr-item--editing' : '' ?>" id="addr-<?= $a['id'] ?>">
@@ -213,6 +214,15 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                                 <div class="settings-field">
                                     <label for="edit_address_notes"><?= $t['settings_address_floor'] ?></label>
                                     <input type="text" id="edit_address_notes" name="address_notes" value="<?= htmlspecialchars($a['address_notes'] ?? '') ?>" placeholder="e.g. Apt 4B, blue gate">
+                                </div>
+                                <div class="settings-field">
+                                    <label for="edit_city"><?= $t['settings_address_city'] ?></label>
+                                    <select id="edit_city" name="city">
+                                        <?php $editSelCity = $a['city'] ?: ($cities[0] ?? ''); ?>
+                                        <?php foreach ($cities as $c): ?>
+                                        <option value="<?= htmlspecialchars($c) ?>" <?= ($editSelCity === $c) ? 'selected' : '' ?>><?= htmlspecialchars($c) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
                                 <div class="settings-field">
                                     <label for="edit_khan"><?= $t['settings_address_khan'] ?></label>
@@ -275,6 +285,14 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                             <div class="settings-field">
                                 <label for="new_address_notes"><?= $t['settings_address_floor'] ?></label>
                                 <input type="text" id="new_address_notes" name="address_notes" placeholder="e.g. Apt 4B, blue gate">
+                            </div>
+                            <div class="settings-field">
+                                <label for="new_city"><?= $t['settings_address_city'] ?></label>
+                                <select id="new_city" name="city">
+                                    <?php foreach ($cities as $c): ?>
+                                    <option value="<?= htmlspecialchars($c) ?>"><?= htmlspecialchars($c) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
                             <div class="settings-field">
                                 <label for="new_khan"><?= $t['settings_address_khan'] ?></label>

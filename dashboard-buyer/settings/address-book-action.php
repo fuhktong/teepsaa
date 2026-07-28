@@ -24,6 +24,11 @@ csrf_verify();
 $userId = (int)$_SESSION['user_id'];
 $action = $_POST['action'] ?? '';
 
+// Only accept a city we deliver in (Phnom Penh for now); fall back to the first.
+$cities   = require __DIR__ . '/../../config/cities.php';
+$postCity = trim($_POST['city'] ?? '');
+$city     = in_array($postCity, $cities, true) ? $postCity : ($cities[0] ?? null);
+
 if ($action === 'add') {
     $label        = mb_substr(trim($_POST['label'] ?? ''), 0, 100);
     $houseNumber  = mb_substr(trim($_POST['house_number'] ?? ''), 0, 50) ?: null;
@@ -45,17 +50,17 @@ if ($action === 'add') {
     $countStmt = $pdo->prepare('SELECT COUNT(*) FROM buyer_addresses WHERE buyer_user_id = ?');
     $countStmt->execute([$userId]);
     if ((int)$countStmt->fetchColumn() === 0) {
-        $bStmt = $pdo->prepare('SELECT house_number, address, address_notes, khan, sangkat, lat, lng FROM buyers WHERE id = ?');
+        $bStmt = $pdo->prepare('SELECT house_number, address, address_notes, khan, sangkat, city, lat, lng FROM buyers WHERE id = ?');
         $bStmt->execute([$userId]);
         $b = $bStmt->fetch();
         if ($b && ($b['address'] !== null || $b['khan'] !== null || $b['house_number'] !== null)) {
-            $pdo->prepare('INSERT INTO buyer_addresses (buyer_user_id, label, house_number, address, address_notes, khan, sangkat, lat, lng, is_default) VALUES (?,?,?,?,?,?,?,?,?,1)')
-                ->execute([$userId, $b['khan'] ?: 'Address', $b['house_number'], $b['address'], $b['address_notes'], $b['khan'], $b['sangkat'], $b['lat'], $b['lng']]);
+            $pdo->prepare('INSERT INTO buyer_addresses (buyer_user_id, label, house_number, address, address_notes, khan, sangkat, city, lat, lng, is_default) VALUES (?,?,?,?,?,?,?,?,?,?,1)')
+                ->execute([$userId, $b['khan'] ?: 'Address', $b['house_number'], $b['address'], $b['address_notes'], $b['khan'], $b['sangkat'], $b['city'], $b['lat'], $b['lng']]);
         }
     }
 
-    $pdo->prepare('INSERT INTO buyer_addresses (buyer_user_id, label, house_number, address, address_notes, khan, sangkat, lat, lng) VALUES (?,?,?,?,?,?,?,?,?)')
-        ->execute([$userId, $label, $houseNumber, $address, $addressNotes, $khan, $sangkat, $lat, $lng]);
+    $pdo->prepare('INSERT INTO buyer_addresses (buyer_user_id, label, house_number, address, address_notes, khan, sangkat, city, lat, lng) VALUES (?,?,?,?,?,?,?,?,?,?)')
+        ->execute([$userId, $label, $houseNumber, $address, $addressNotes, $khan, $sangkat, $city, $lat, $lng]);
 
     $_SESSION['settings_success'] = 'Address saved.';
 
@@ -86,14 +91,14 @@ if ($action === 'add') {
         exit;
     }
 
-    $pdo->prepare('UPDATE buyer_addresses SET label=?, house_number=?, address=?, address_notes=?, khan=?, sangkat=?, lat=?, lng=? WHERE id=?')
-        ->execute([$label ?: null, $houseNumber, $address, $addressNotes, $khan, $sangkat, $lat, $lng, $addrId]);
+    $pdo->prepare('UPDATE buyer_addresses SET label=?, house_number=?, address=?, address_notes=?, khan=?, sangkat=?, city=?, lat=?, lng=? WHERE id=?')
+        ->execute([$label ?: null, $houseNumber, $address, $addressNotes, $khan, $sangkat, $city, $lat, $lng, $addrId]);
 
     // Editing the default address must also update the buyers table,
     // which is what the delivery calculation reads
     if ($addr['is_default']) {
-        $pdo->prepare('UPDATE buyers SET house_number=?, address=?, address_notes=?, khan=?, sangkat=?, lat=?, lng=? WHERE id=?')
-            ->execute([$houseNumber, $address, $addressNotes, $khan, $sangkat, $lat, $lng, $userId]);
+        $pdo->prepare('UPDATE buyers SET house_number=?, address=?, address_notes=?, khan=?, sangkat=?, city=?, lat=?, lng=? WHERE id=?')
+            ->execute([$houseNumber, $address, $addressNotes, $khan, $sangkat, $city, $lat, $lng, $userId]);
     }
 
     $_SESSION['settings_success'] = 'Address updated.';
@@ -114,8 +119,8 @@ if ($action === 'add') {
     $pdo->prepare('UPDATE buyer_addresses SET is_default = 1 WHERE id = ?')->execute([$addrId]);
 
     // Sync to buyers table so delivery calculation uses this address
-    $pdo->prepare('UPDATE buyers SET house_number=?, address=?, address_notes=?, khan=?, sangkat=?, lat=?, lng=? WHERE id=?')
-        ->execute([$addr['house_number'], $addr['address'], $addr['address_notes'], $addr['khan'], $addr['sangkat'], $addr['lat'], $addr['lng'], $userId]);
+    $pdo->prepare('UPDATE buyers SET house_number=?, address=?, address_notes=?, khan=?, sangkat=?, city=?, lat=?, lng=? WHERE id=?')
+        ->execute([$addr['house_number'], $addr['address'], $addr['address_notes'], $addr['khan'], $addr['sangkat'], $addr['city'], $addr['lat'], $addr['lng'], $userId]);
 
     $_SESSION['settings_success'] = 'Default address updated.';
 
@@ -137,10 +142,10 @@ if ($action === 'add') {
         $next = $stmt->fetch();
         if ($next) {
             $pdo->prepare('UPDATE buyer_addresses SET is_default = 1 WHERE id = ?')->execute([(int)$next['id']]);
-            $pdo->prepare('UPDATE buyers SET house_number=?, address=?, address_notes=?, khan=?, sangkat=?, lat=?, lng=? WHERE id=?')
-                ->execute([$next['house_number'], $next['address'], $next['address_notes'], $next['khan'], $next['sangkat'], $next['lat'], $next['lng'], $userId]);
+            $pdo->prepare('UPDATE buyers SET house_number=?, address=?, address_notes=?, khan=?, sangkat=?, city=?, lat=?, lng=? WHERE id=?')
+                ->execute([$next['house_number'], $next['address'], $next['address_notes'], $next['khan'], $next['sangkat'], $next['city'], $next['lat'], $next['lng'], $userId]);
         } else {
-            $pdo->prepare('UPDATE buyers SET house_number=NULL, address=NULL, address_notes=NULL, khan=NULL, sangkat=NULL, lat=NULL, lng=NULL WHERE id=?')
+            $pdo->prepare('UPDATE buyers SET house_number=NULL, address=NULL, address_notes=NULL, khan=NULL, sangkat=NULL, city=NULL, lat=NULL, lng=NULL WHERE id=?')
                 ->execute([$userId]);
         }
     }
