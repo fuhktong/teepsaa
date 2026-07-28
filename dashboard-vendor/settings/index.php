@@ -16,7 +16,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 }
 
 $userId    = $_SESSION['user_id'];
-$validTabs = ['account', 'address', 'business', 'storefront', 'aba-qr', 'password', 'danger'];
+$validTabs = ['account', 'address', 'business', 'aba-qr', 'password', 'danger'];
 $tab       = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'account';
 
 $stmt = $pdo->prepare('SELECT name, email, phone, avatar, avatar_color, aba_qr, aba_account_name FROM vendors WHERE id = ?');
@@ -34,12 +34,13 @@ if ($tab === 'business' && $business) {
     $selectedCategories = array_filter(array_map('trim', explode(',', $business['category'] ?? '')));
 }
 
-// Storefront layout tab: the shop's sellable products, plus the current
-// featured pick and slot order so the form can pre-fill.
+// Storefront layout (lives inside the Business tab): the shop's sellable
+// products, plus the current featured pick and slot order so the form can
+// pre-fill.
 $sfProducts = [];
 $sfFeatured = 0;
 $sfSlots    = [];
-if ($tab === 'storefront' && $business) {
+if ($tab === 'business' && $business) {
     $stmt = $pdo->prepare('SELECT id, name, name_km, is_featured, storefront_order FROM products WHERE business_id = ? AND active = 1 AND archived = 0 ORDER BY name ASC');
     $stmt->execute([$business['id']]);
     $sfProducts = $stmt->fetchAll();
@@ -99,7 +100,6 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
             <a href="?tab=account"  class="<?= $tab === 'account'  ? 'active' : '' ?>"><?= $t['settings_tab_account'] ?></a>
             <a href="?tab=address"  class="<?= $tab === 'address'  ? 'active' : '' ?>"><?= $t['vendor_settings_tab_address'] ?></a>
             <a href="?tab=business" class="<?= $tab === 'business' ? 'active' : '' ?>"><?= $t['vendor_settings_tab_business'] ?></a>
-            <a href="?tab=storefront" class="<?= $tab === 'storefront' ? 'active' : '' ?>"><?= $t['vendor_settings_tab_storefront'] ?></a>
             <a href="?tab=aba-qr"   class="<?= $tab === 'aba-qr'   ? 'active' : '' ?>"><?= $t['vendor_settings_tab_bank'] ?></a>
             <a href="?tab=password" class="<?= $tab === 'password' ? 'active' : '' ?>"><?= $t['settings_password_heading'] ?></a>
             <a href="?tab=danger"   class="danger-link <?= $tab === 'danger' ? 'active' : '' ?>"><?= $t['settings_delete_account'] ?></a>
@@ -361,12 +361,12 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <?php endif; ?>
             </div>
 
-            <?php elseif ($tab === 'storefront'): ?>
+            <?php if ($business): ?>
+            <!-- Storefront layout — same tab, second card. What shows on the shop
+                 page and in what order. -->
             <div class="settings-section">
                 <h2><?= $t['storefront_heading'] ?></h2>
-                <?php if (!$business): ?>
-                <p style="font-size:0.9rem;color:#6b7280;"><?= $t['vendor_no_business'] ?> <a href="/submit/"><?= $t['vendor_submit_one'] ?></a></p>
-                <?php elseif (empty($sfProducts)): ?>
+                <?php if (empty($sfProducts)): ?>
                 <p class="field-hint"><?= $t['storefront_no_products'] ?></p>
                 <?php else: ?>
                 <p class="field-hint" style="margin-bottom:1.25rem"><?= $t['storefront_intro'] ?></p>
@@ -420,6 +420,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 </template>
                 <?php endif; ?>
             </div>
+            <?php endif; ?>
 
             <?php elseif ($tab === 'aba-qr'): ?>
             <div class="settings-section">
@@ -515,7 +516,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 
 <?php require __DIR__ . '/../../footer/footer.php'; ?>
 
-<?php if ($tab === 'storefront' && $business && !empty($sfProducts)): ?>
+<?php if ($tab === 'business' && $business && !empty($sfProducts)): ?>
 <script>
 function renumberSlots() {
     document.querySelectorAll('#slot-list .slot-row').forEach((row, i) => {

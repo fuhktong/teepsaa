@@ -15,7 +15,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-vendor/settings/?tab=storefront');
+    header('Location: /dashboard-vendor/settings/?tab=business');
     exit;
 }
 
@@ -29,7 +29,7 @@ $stmt->execute([$userId]);
 $businessId = $stmt->fetchColumn();
 
 if (!$businessId) {
-    header('Location: /dashboard-vendor/settings/?tab=storefront');
+    header('Location: /dashboard-vendor/settings/?tab=business');
     exit;
 }
 
@@ -79,5 +79,5 @@ foreach ($slots as $pid) {
 $pdo->commit();
 
 $_SESSION['settings_success'] = 'Storefront updated.';
-header('Location: /dashboard-vendor/settings/?tab=storefront');
+header('Location: /dashboard-vendor/settings/?tab=business');
 exit;
