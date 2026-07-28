@@ -568,6 +568,10 @@
   background: #f5f5f5;
   color: #888;
 }
+.status-featured {
+  background: var(--primary-soft, #f3e4db);
+  color: var(--primary-hover);
+}
 
 .actions {
   display: flex;

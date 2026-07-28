@@ -479,6 +479,9 @@ return [
     'prod_activate'        => 'Activate',
     'prod_unarchive'       => 'Unarchive',
     'prod_cancel_sale'     => 'Cancel sale',
+    'prod_feature'         => 'Feature on storefront',
+    'prod_unfeature'       => 'Remove from featured',
+    'prod_featured_badge'  => 'Featured',
     'prod_need_business'   => 'You need an approved business before adding products.',
     'prod_submit_business' => 'Submit a business',
     'prod_name'            => 'Product name',
@@ -603,9 +606,14 @@ return [
     'contact_issue_listing' => 'Product/listing issue',
 
     // ── Business storefront (business/) ──────────────────────────────────
-    'store_review'     => 'review',
-    'store_reviews'    => 'reviews',
-    'store_in_stock'   => 'in stock',
+    'store_review'      => 'review',
+    'store_reviews'     => 'reviews',
+    'store_in_stock'    => 'in stock',
+    'store_featured'    => 'Featured',
+    'store_shop_all'    => 'Shop all',
+    'store_from_shop'   => 'From the shop',
+    'store_view_product' => 'Shop now',
+    'store_left'        => 'left',
 
     // ── Review page (review/) ────────────────────────────────────────────
     'review_back_order' => 'Back to order',

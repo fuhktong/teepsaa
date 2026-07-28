@@ -310,9 +310,17 @@ if ($editing) {
                     <span><?= $t['vendor_col_status'] ?></span>
                     <span class="status-action-wrap">
                         <span class="status <?= $editing['active'] ? 'status-active' : 'status-inactive' ?>"><?= $editing['active'] ? $t['vendor_status_active'] : $t['vendor_status_inactive'] ?></span>
+                        <?php if (!empty($editing['is_featured'])): ?>
+                            <span class="status status-featured"><?= $t['prod_featured_badge'] ?></span>
+                        <?php endif; ?>
                         <div class="status-dropdown-container">
                             <button type="button" class="status-edit-btn" id="status-edit-btn"><?= $t['prod_edit'] ?></button>
                             <div class="status-dropdown" id="status-dropdown">
+                                <form method="POST" action="/products/feature.php">
+                                    <?= csrf_input() ?>
+                                    <input type="hidden" name="product_id" value="<?= $editing['id'] ?>">
+                                    <button type="submit"><?= !empty($editing['is_featured']) ? $t['prod_unfeature'] : $t['prod_feature'] ?></button>
+                                </form>
                                 <form method="POST" action="/products/toggle.php">
                                     <?= csrf_input() ?>
                                     <input type="hidden" name="product_id" value="<?= $editing['id'] ?>">

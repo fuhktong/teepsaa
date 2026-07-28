@@ -479,6 +479,9 @@ return [
     'prod_activate'        => 'បើកដំណើរការ',
     'prod_unarchive'       => 'ដកចេញពីបណ្ណសារ',
     'prod_cancel_sale'     => 'បោះបង់ការបញ្ចុះតម្លៃ',
+    'prod_feature'         => 'បង្ហាញនៅលើទំព័រហាង',
+    'prod_unfeature'       => 'ដកចេញពីផលិតផលពិសេស',
+    'prod_featured_badge'  => 'ផលិតផលពិសេស',
     'prod_need_business'   => 'អ្នកត្រូវការអាជីវកម្មដែលបានអនុម័តមុននឹងបន្ថែមផលិតផល។',
     'prod_submit_business' => 'ដាក់ស្នើអាជីវកម្ម',
     'prod_name'            => 'ឈ្មោះផលិតផល',
@@ -603,9 +606,14 @@ return [
     'contact_issue_listing' => 'បញ្ហាផលិតផល/បញ្ជី',
 
     // ── Business storefront (business/) ──────────────────────────────────
-    'store_review'     => 'មតិយោបល់',
-    'store_reviews'    => 'មតិយោបល់',
-    'store_in_stock'   => 'ក្នុងស្តុក',
+    'store_review'      => 'មតិយោបល់',
+    'store_reviews'     => 'មតិយោបល់',
+    'store_in_stock'    => 'ក្នុងស្តុក',
+    'store_featured'    => 'ផលិតផលពិសេស',
+    'store_shop_all'    => 'ទិញទាំងអស់',
+    'store_from_shop'   => 'ពីហាង',
+    'store_view_product' => 'ទិញឥឡូវនេះ',
+    'store_left'        => 'នៅសល់',
 
     // ── Review page (review/) ────────────────────────────────────────────
     'review_back_order' => 'ត្រឡប់ទៅកម្មង់',
