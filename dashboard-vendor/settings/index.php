@@ -354,10 +354,6 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     <p class="field-hint"><?= $t['vendor_banner_upload_hint'] ?></p>
                 </div>
 
-                <!-- Saves the business-details form above (name/description/categories).
-                     The banner is a separate form that saves on upload. -->
-                <button type="submit" form="business-form" class="btn-save"><?= $t['settings_save'] ?></button>
-
                 <?php endif; ?>
             </div>
 
@@ -370,49 +366,46 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <p class="field-hint"><?= $t['storefront_no_products'] ?></p>
                 <?php else: ?>
                 <p class="field-hint" style="margin-bottom:1.25rem"><?= $t['storefront_intro'] ?></p>
-                <form method="POST" action="/dashboard-vendor/settings/storefront-action.php">
-                    <?= csrf_input() ?>
 
-                    <div class="settings-field">
-                        <label for="featured"><?= $t['storefront_featured_label'] ?> <span class="field-hint" style="font-weight:400;display:inline"><?= $t['storefront_featured_hint'] ?></span></label>
-                        <select id="featured" name="featured">
-                            <option value="0"><?= $t['storefront_none'] ?></option>
-                            <?php foreach ($sfProducts as $p): ?>
-                            <option value="<?= (int)$p['id'] ?>" <?= $sfFeatured === (int)$p['id'] ? 'selected' : '' ?>><?= htmlspecialchars(lang_field($p, 'name')) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
+                <!-- These fields post with the business form above (form="business-form"),
+                     so the single Save button at the bottom saves everything at once. -->
+                <div class="settings-field">
+                    <label for="featured"><?= $t['storefront_featured_label'] ?> <span class="field-hint" style="font-weight:400;display:inline"><?= $t['storefront_featured_hint'] ?></span></label>
+                    <select id="featured" name="featured" form="business-form">
+                        <option value="0"><?= $t['storefront_none'] ?></option>
+                        <?php foreach ($sfProducts as $p): ?>
+                        <option value="<?= (int)$p['id'] ?>" <?= $sfFeatured === (int)$p['id'] ? 'selected' : '' ?>><?= htmlspecialchars(lang_field($p, 'name')) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-                    <div class="settings-field">
-                        <label><?= $t['storefront_slots_label'] ?> <span class="field-hint" style="font-weight:400;display:inline"><?= $t['storefront_slots_hint'] ?></span></label>
-                        <div id="slot-list">
-                            <?php $rows = $sfSlots ?: [0]; foreach ($rows as $i => $slotPid): ?>
-                            <div class="slot-row">
-                                <span class="slot-num"><?= $t['storefront_slot'] ?> #<span class="slot-index"><?= $i + 1 ?></span></span>
-                                <select name="slots[]">
-                                    <option value="0"><?= $t['storefront_slot_empty'] ?></option>
-                                    <?php foreach ($sfProducts as $p): ?>
-                                    <option value="<?= (int)$p['id'] ?>" <?= (int)$slotPid === (int)$p['id'] ? 'selected' : '' ?>><?= htmlspecialchars(lang_field($p, 'name')) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <button type="button" class="slot-remove" onclick="removeSlot(this)"><?= $t['storefront_remove'] ?></button>
-                            </div>
-                            <?php endforeach; ?>
+                <div class="settings-field">
+                    <label><?= $t['storefront_slots_label'] ?> <span class="field-hint" style="font-weight:400;display:inline"><?= $t['storefront_slots_hint'] ?></span></label>
+                    <div id="slot-list">
+                        <?php $rows = $sfSlots ?: [0]; foreach ($rows as $i => $slotPid): ?>
+                        <div class="slot-row">
+                            <span class="slot-num"><?= $t['storefront_slot'] ?> #<span class="slot-index"><?= $i + 1 ?></span></span>
+                            <select name="slots[]" form="business-form" class="slot-select">
+                                <option value="0"><?= $t['storefront_slot_empty'] ?></option>
+                                <?php foreach ($sfProducts as $p): ?>
+                                <option value="<?= (int)$p['id'] ?>" data-name="<?= htmlspecialchars(lang_field($p, 'name')) ?>" <?= (int)$slotPid === (int)$p['id'] ? 'selected' : '' ?>><?= htmlspecialchars(lang_field($p, 'name')) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <button type="button" class="slot-remove" onclick="removeSlot(this)"><?= $t['storefront_remove'] ?></button>
                         </div>
-                        <button type="button" class="btn-add-slot" onclick="addSlot()"><?= $t['storefront_add_slot'] ?></button>
+                        <?php endforeach; ?>
                     </div>
-
-                    <button type="submit" class="btn-save"><?= $t['storefront_save'] ?></button>
-                </form>
+                    <button type="button" class="btn-add-slot" onclick="addSlot()"><?= $t['storefront_add_slot'] ?></button>
+                </div>
 
                 <!-- Template cloned by addSlot() to add another empty slot row. -->
                 <template id="slot-template">
                     <div class="slot-row">
                         <span class="slot-num"><?= $t['storefront_slot'] ?> #<span class="slot-index"></span></span>
-                        <select name="slots[]">
+                        <select name="slots[]" form="business-form" class="slot-select">
                             <option value="0"><?= $t['storefront_slot_empty'] ?></option>
                             <?php foreach ($sfProducts as $p): ?>
-                            <option value="<?= (int)$p['id'] ?>"><?= htmlspecialchars(lang_field($p, 'name')) ?></option>
+                            <option value="<?= (int)$p['id'] ?>" data-name="<?= htmlspecialchars(lang_field($p, 'name')) ?>"><?= htmlspecialchars(lang_field($p, 'name')) ?></option>
                             <?php endforeach; ?>
                         </select>
                         <button type="button" class="slot-remove" onclick="removeSlot(this)"><?= $t['storefront_remove'] ?></button>
@@ -420,6 +413,10 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 </template>
                 <?php endif; ?>
             </div>
+
+            <!-- One Save button for the whole Business tab (details + banner note +
+                 storefront), submitting the business form. -->
+            <button type="submit" form="business-form" class="btn-save"><?= $t['settings_save'] ?></button>
             <?php endif; ?>
 
             <?php elseif ($tab === 'aba-qr'): ?>
@@ -518,20 +515,46 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 
 <?php if ($tab === 'business' && $business && !empty($sfProducts)): ?>
 <script>
+const FEATURED_SUFFIX = <?= json_encode(' ' . $t['storefront_featured_suffix']) ?>;
+
 function renumberSlots() {
     document.querySelectorAll('#slot-list .slot-row').forEach((row, i) => {
         row.querySelector('.slot-index').textContent = i + 1;
+    });
+}
+// The featured product is the hero, so it can't also sit in a slot. In every
+// slot dropdown, disable + relabel the featured product's option, and clear it
+// from any slot that currently holds it. Runs on load and whenever the featured
+// pick changes, so the rule is always visible before saving.
+function syncFeaturedInSlots() {
+    const fid = document.getElementById('featured').value;
+    document.querySelectorAll('#slot-list .slot-select').forEach(sel => {
+        Array.from(sel.options).forEach(opt => {
+            if (opt.value === '0') return;
+            const name = opt.dataset.name || opt.textContent;
+            if (fid !== '0' && opt.value === fid) {
+                if (sel.value === opt.value) sel.value = '0';
+                opt.disabled = true;
+                opt.textContent = name + FEATURED_SUFFIX;
+            } else {
+                opt.disabled = false;
+                opt.textContent = name;
+            }
+        });
     });
 }
 function addSlot() {
     const tpl = document.getElementById('slot-template');
     document.getElementById('slot-list').appendChild(tpl.content.cloneNode(true));
     renumberSlots();
+    syncFeaturedInSlots();
 }
 function removeSlot(btn) {
     btn.closest('.slot-row').remove();
     renumberSlots();
 }
+document.getElementById('featured').addEventListener('change', syncFeaturedInSlots);
+syncFeaturedInSlots();
 </script>
 <?php endif; ?>
 

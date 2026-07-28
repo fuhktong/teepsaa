@@ -360,6 +360,7 @@ return [
     'storefront_remove'        => 'លុប',
     'storefront_save'          => 'រក្សាទុកទំព័រហាង',
     'storefront_no_products'   => 'សូមបន្ថែមផលិតផលមុនសិន — បន្ទាប់មកអ្នកអាចរៀបចំទំព័រហាងនៅទីនេះ។',
+    'storefront_featured_suffix' => '(ពិសេស)',
     'vendor_settings_tab_bank'     => 'QR ធនាគារ',
     'vendor_settings_tab_security' => 'សុវត្ថិភាព',
     'vendor_settings_biz_name'     => 'ឈ្មោះអាជីវកម្ម',

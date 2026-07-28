@@ -43,6 +43,46 @@ $category = implode(', ', $safeCats);
 $stmt = $pdo->prepare('UPDATE businesses SET name = ?, name_km = ?, description = ?, description_km = ?, category = ? WHERE user_id = ? AND deleted_at IS NULL');
 $stmt->execute([$name, $nameKm ?: null, $description, $descriptionKm ?: null, $category, $userId]);
 
+// Storefront layout — same form, saved together. Featured pick + ordered slots.
+// Only touch products this shop owns, so a tampered POST can't feature or slot
+// another shop's product.
+$stmt = $pdo->prepare('SELECT id FROM businesses WHERE user_id = ? AND deleted_at IS NULL LIMIT 1');
+$stmt->execute([$userId]);
+$businessId = $stmt->fetchColumn();
+
+if ($businessId) {
+    $stmt = $pdo->prepare('SELECT id FROM products WHERE business_id = ? AND active = 1 AND archived = 0');
+    $stmt->execute([$businessId]);
+    $ownedSet = array_flip(array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN)));
+
+    $featuredId = (int)($_POST['featured'] ?? 0);
+    if (!isset($ownedSet[$featuredId])) {
+        $featuredId = 0;
+    }
+
+    // Slots in the vendor's arranged order: owned only, not the featured hero,
+    // de-duplicated so a product can't occupy two slots.
+    $slots = [];
+    foreach ((array)($_POST['slots'] ?? []) as $pid) {
+        $pid = (int)$pid;
+        if ($pid && $pid !== $featuredId && isset($ownedSet[$pid]) && !in_array($pid, $slots, true)) {
+            $slots[] = $pid;
+        }
+    }
+
+    $pdo->beginTransaction();
+    $pdo->prepare('UPDATE products SET is_featured = 0, storefront_order = NULL WHERE business_id = ?')->execute([$businessId]);
+    if ($featuredId) {
+        $pdo->prepare('UPDATE products SET is_featured = 1 WHERE id = ? AND business_id = ?')->execute([$featuredId, $businessId]);
+    }
+    $pos = 1;
+    $upd = $pdo->prepare('UPDATE products SET storefront_order = ? WHERE id = ? AND business_id = ?');
+    foreach ($slots as $pid) {
+        $upd->execute([$pos++, $pid, $businessId]);
+    }
+    $pdo->commit();
+}
+
 $_SESSION['settings_success'] = 'Business info updated.';
 header('Location: /dashboard-vendor/settings/?tab=business');
 exit;

@@ -360,6 +360,7 @@ return [
     'storefront_remove'        => 'Remove',
     'storefront_save'          => 'Save storefront',
     'storefront_no_products'   => 'Add some products first — then you can arrange your storefront here.',
+    'storefront_featured_suffix' => '(featured)',
     'vendor_settings_tab_bank'     => 'Bank QR',
     'vendor_settings_tab_security' => 'Security',
     'vendor_settings_biz_name'     => 'Business name',
