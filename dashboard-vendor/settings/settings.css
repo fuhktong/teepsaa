@@ -460,3 +460,63 @@
   background: var(--error-bg);
   border-color: var(--error-fg);
 }
+
+/* Banner upload + remove buttons sit on one row. */
+.banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Storefront tab — featured + ordered product slots. */
+#slot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+.slot-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.slot-row select {
+  flex: 1;
+  min-width: 0;
+}
+.slot-num {
+  flex: 0 0 auto;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+.slot-remove {
+  flex: 0 0 auto;
+  background: none;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--error-fg);
+  cursor: pointer;
+}
+.slot-remove:hover {
+  background: var(--error-bg);
+  border-color: var(--error-fg);
+}
+.btn-add-slot {
+  background: none;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  cursor: pointer;
+}
+.btn-add-slot:hover {
+  border-color: var(--primary, #b45f3f);
+  color: var(--primary, #b45f3f);
+}

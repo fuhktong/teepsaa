@@ -25,6 +25,21 @@ $userId    = $_SESSION['user_id'];
 $uploadDir = __DIR__ . '/../../uploads/';
 $allowed   = ['image/jpeg', 'image/png'];
 
+// Remove the current banner — clear the column and delete the file. The
+// storefront falls back to the plain header when there's no banner.
+if (($_POST['action'] ?? '') === 'remove') {
+    $stmt = $pdo->prepare('SELECT banner FROM businesses WHERE user_id = ? AND deleted_at IS NULL');
+    $stmt->execute([$userId]);
+    $old = $stmt->fetchColumn();
+    if ($old && file_exists($uploadDir . $old)) {
+        @unlink($uploadDir . $old);
+    }
+    $pdo->prepare('UPDATE businesses SET banner = NULL WHERE user_id = ? AND deleted_at IS NULL')->execute([$userId]);
+    $_SESSION['settings_success'] = 'Banner removed.';
+    header('Location: /dashboard-vendor/settings/?tab=business');
+    exit;
+}
+
 if (empty($_FILES['banner']['name'])) {
     header('Location: /dashboard-vendor/settings/?tab=business');
     exit;

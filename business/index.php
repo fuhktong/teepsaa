@@ -26,12 +26,9 @@ if (!$business) {
 
 $id = (int)$business['id'];
 
-$stmt = $pdo->prepare('SELECT id, filename FROM photos WHERE business_id = ? ORDER BY id ASC');
-$stmt->execute([$id]);
-$photos = $stmt->fetchAll();
-
 $stmt = $pdo->prepare('
     SELECT p.id, p.public_id, p.name, p.name_km, p.description, p.description_km, p.price, p.sale_price, p.sale_ends_at, p.stock,
+           p.storefront_order,
            pp.filename AS photo,
            COALESCE(rv.avg_rating, 0) AS avg_rating,
            COALESCE(rv.review_count, 0) AS review_count
@@ -39,7 +36,7 @@ $stmt = $pdo->prepare('
     LEFT JOIN product_photos pp ON pp.product_id = p.id AND pp.is_primary = 1
     LEFT JOIN (SELECT product_id, AVG(rating) AS avg_rating, COUNT(*) AS review_count FROM reviews GROUP BY product_id) rv ON rv.product_id = p.id
     WHERE p.business_id = ? AND p.active = 1 AND p.archived = 0
-    ORDER BY p.name ASC
+    ORDER BY (p.storefront_order IS NULL), p.storefront_order ASC, p.name ASC
 ');
 $stmt->execute([$id]);
 $products = $stmt->fetchAll();
@@ -75,7 +72,7 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
     <title><?= htmlspecialchars($business['name']) ?> — teepsaa</title>
     <?php
         require_once __DIR__ . '/../config/seo.php';
-        $bizPhoto = $photos[0]['filename'] ?? '';
+        $bizPhoto = $featured['photo'] ?? ($products[0]['photo'] ?? '');
         $bizDesc  = !empty($business['description'])
             ? $business['name'] . ' — ' . $business['description']
             : 'Shop ' . $business['name'] . ' on teepsaa. Browse products and order for delivery in Phnom Penh.';
@@ -116,7 +113,7 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
             <div class="store-eyebrow">
                 <span class="banner-badge">✓ <?= $t['store_verified'] ?></span>
                 <?php if (!empty($business['city'])): ?>
-                <span class="banner-city">📍 <?= htmlspecialchars($business['city']) ?></span>
+                <span class="banner-city"><?= htmlspecialchars($business['city']) ?></span>
                 <?php endif; ?>
             </div>
             <h1 class="banner-store-name"><?= $storeName ?></h1>
@@ -218,19 +215,6 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
                         <?php endif; ?>
                     </div>
                 </div>
-            </a>
-            <?php endforeach; ?>
-        </div>
-    </section>
-    <?php endif; ?>
-
-    <?php if (!empty($photos)): ?>
-    <section class="gallery-section">
-        <h2><?= $t['store_from_shop'] ?></h2>
-        <div class="store-gallery">
-            <?php foreach ($photos as $ph): ?>
-            <a href="/uploads/<?= htmlspecialchars($ph['filename']) ?>" class="gallery-tile" target="_blank" rel="noopener">
-                <img src="/uploads/<?= htmlspecialchars($ph['filename']) ?>" alt="" loading="lazy">
             </a>
             <?php endforeach; ?>
         </div>

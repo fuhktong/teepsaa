@@ -143,35 +143,6 @@
     margin: 0;
 }
 
-/* Gallery — square thumbnail grid (click opens the full image). */
-.gallery-section { margin-bottom: 2.5rem; }
-.gallery-section h2 {
-    font-size: 1.2rem;
-    margin-bottom: 1rem;
-    padding-top: 1.5rem;
-}
-.store-gallery {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.7rem;
-}
-.gallery-tile {
-    aspect-ratio: 1 / 1;
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-    border: 1px solid var(--border);
-    display: block;
-    position: relative;
-}
-.gallery-tile img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.3s ease;
-}
-.gallery-tile:hover img { transform: scale(1.06); }
-
 /* Featured product hero */
 .featured-section { margin-bottom: 2.6rem; }
 .featured-eyebrow {
@@ -276,15 +247,18 @@
     padding-top: 1.5rem;
 }
 
+/* Product grid — max 2 across. When the count is odd, the last card has no
+   partner on its row, so it spans the full width of the two above it. */
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
+}
+.product-grid .product-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
 }
 
 @media (max-width: 900px) {
-    .product-grid { grid-template-columns: repeat(2, 1fr); }
-    .store-gallery { grid-template-columns: repeat(3, 1fr); }
     .featured-card { grid-template-columns: 1fr; }
     .featured-media { min-height: 260px; }
     .banner-store-name { font-size: 2rem; }
@@ -292,8 +266,9 @@
 
 @media (max-width: 560px) {
     .business-banner { height: 220px; }
-    .product-grid { grid-template-columns: 1fr 1fr; }
-    .store-gallery { grid-template-columns: repeat(2, 1fr); }
+    /* Narrow viewport — one across; drop the full-width-last-card rule. */
+    .product-grid { grid-template-columns: 1fr; }
+    .product-grid .product-card:last-child:nth-child(odd) { grid-column: auto; }
     .featured-body { padding: 1.5rem 1.4rem; }
     .banner-store-name { font-size: 1.6rem; }
     .banner-overlay-inner { padding-bottom: 1.3rem; }

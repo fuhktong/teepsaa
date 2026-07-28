@@ -16,7 +16,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 }
 
 $userId    = $_SESSION['user_id'];
-$validTabs = ['account', 'address', 'business', 'aba-qr', 'password', 'danger'];
+$validTabs = ['account', 'address', 'business', 'storefront', 'aba-qr', 'password', 'danger'];
 $tab       = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'account';
 
 $stmt = $pdo->prepare('SELECT name, email, phone, avatar, avatar_color, aba_qr, aba_account_name FROM vendors WHERE id = ?');
@@ -27,16 +27,28 @@ $stmt = $pdo->prepare('SELECT id, name, name_km, description, description_km, ho
 $stmt->execute([$userId]);
 $business = $stmt->fetch();
 
-$photos = [];
 $parentCategories = [];
 $selectedCategories = [];
 if ($tab === 'business' && $business) {
-    $stmt = $pdo->prepare('SELECT id, filename FROM photos WHERE business_id = ? ORDER BY id ASC');
-    $stmt->execute([$business['id']]);
-    $photos = $stmt->fetchAll();
-
     $parentCategories = $pdo->query('SELECT id, name, name_km FROM categories WHERE parent_id IS NULL ORDER BY name ASC')->fetchAll();
     $selectedCategories = array_filter(array_map('trim', explode(',', $business['category'] ?? '')));
+}
+
+// Storefront layout tab: the shop's sellable products, plus the current
+// featured pick and slot order so the form can pre-fill.
+$sfProducts = [];
+$sfFeatured = 0;
+$sfSlots    = [];
+if ($tab === 'storefront' && $business) {
+    $stmt = $pdo->prepare('SELECT id, name, name_km, is_featured, storefront_order FROM products WHERE business_id = ? AND active = 1 AND archived = 0 ORDER BY name ASC');
+    $stmt->execute([$business['id']]);
+    $sfProducts = $stmt->fetchAll();
+    foreach ($sfProducts as $p) {
+        if ((int)$p['is_featured'] === 1) $sfFeatured = (int)$p['id'];
+        if ($p['storefront_order'] !== null) $sfSlots[(int)$p['storefront_order']] = (int)$p['id'];
+    }
+    ksort($sfSlots);
+    $sfSlots = array_values($sfSlots);
 }
 
 $locations = ($tab === 'address') ? require __DIR__ . '/../../config/phnom-penh-locations.php' : [];
@@ -87,6 +99,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
             <a href="?tab=account"  class="<?= $tab === 'account'  ? 'active' : '' ?>"><?= $t['settings_tab_account'] ?></a>
             <a href="?tab=address"  class="<?= $tab === 'address'  ? 'active' : '' ?>"><?= $t['vendor_settings_tab_address'] ?></a>
             <a href="?tab=business" class="<?= $tab === 'business' ? 'active' : '' ?>"><?= $t['vendor_settings_tab_business'] ?></a>
+            <a href="?tab=storefront" class="<?= $tab === 'storefront' ? 'active' : '' ?>"><?= $t['vendor_settings_tab_storefront'] ?></a>
             <a href="?tab=aba-qr"   class="<?= $tab === 'aba-qr'   ? 'active' : '' ?>"><?= $t['vendor_settings_tab_bank'] ?></a>
             <a href="?tab=password" class="<?= $tab === 'password' ? 'active' : '' ?>"><?= $t['settings_password_heading'] ?></a>
             <a href="?tab=danger"   class="danger-link <?= $tab === 'danger' ? 'active' : '' ?>"><?= $t['settings_delete_account'] ?></a>
@@ -217,16 +230,6 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     </div>
 
                     <div class="settings-field">
-                        <label for="city"><?= $t['settings_address_city'] ?></label>
-                        <select id="city" name="city">
-                            <?php $selCity = $business['city'] ?: ($cities[0] ?? ''); ?>
-                            <?php foreach ($cities as $c): ?>
-                            <option value="<?= htmlspecialchars($c) ?>" <?= ($selCity === $c) ? 'selected' : '' ?>><?= htmlspecialchars($c) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="settings-field">
                         <label for="khan"><?= $t['settings_address_khan'] ?></label>
                         <select id="khan" name="khan" onchange="updateSangkats(this.value)">
                             <option value=""><?= $t['settings_select_khan'] ?></option>
@@ -249,6 +252,16 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                                 </option>
                                 <?php endforeach; ?>
                             <?php endif; ?>
+                        </select>
+                    </div>
+
+                    <div class="settings-field">
+                        <label for="city"><?= $t['settings_address_city'] ?></label>
+                        <select id="city" name="city">
+                            <?php $selCity = $business['city'] ?: ($cities[0] ?? ''); ?>
+                            <?php foreach ($cities as $c): ?>
+                            <option value="<?= htmlspecialchars($c) ?>" <?= ($selCity === $c) ? 'selected' : '' ?>><?= htmlspecialchars($c) ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
 
@@ -324,46 +337,87 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     <?php if ($business['banner']): ?>
                         <img src="/uploads/<?= htmlspecialchars($business['banner']) ?>" alt="" class="banner-preview">
                     <?php endif; ?>
-                    <form method="POST" action="/dashboard-vendor/settings/banner-action.php" enctype="multipart/form-data">
-                        <?= csrf_input() ?>
-                        <label for="banner" class="btn-upload" style="margin-top:0.6rem;display:inline-block"><?= $business['banner'] ? $t['vendor_replace_banner'] : $t['vendor_upload_banner'] ?></label>
-                        <input type="file" id="banner" name="banner" accept="image/jpeg,image/png" style="display:none" onchange="this.form.submit()">
-                        <p class="field-hint"><?= $t['vendor_banner_upload_hint'] ?></p>
-                    </form>
-                </div>
-
-                <hr class="form-divider">
-
-                <div class="settings-field">
-                    <label><?= $t['vendor_gallery'] ?> <span class="field-hint" style="font-weight:400;display:inline"> <?= $t['vendor_settings_photos_hint'] ?></span></label>
-                    <?php if (!empty($photos)): ?>
-                    <div class="gallery-grid">
-                        <?php foreach ($photos as $ph): ?>
-                        <div class="gallery-item">
-                            <img src="/uploads/<?= htmlspecialchars($ph['filename']) ?>" alt="">
-                            <form method="POST" action="/dashboard-vendor/settings/photo-delete-action.php">
-                                <?= csrf_input() ?>
-                                <input type="hidden" name="photo_id" value="<?= $ph['id'] ?>">
-                                <button type="submit" class="gallery-delete" title="Delete">×</button>
-                            </form>
-                        </div>
-                        <?php endforeach; ?>
+                    <div class="banner-actions">
+                        <form method="POST" action="/dashboard-vendor/settings/banner-action.php" enctype="multipart/form-data" style="display:inline">
+                            <?= csrf_input() ?>
+                            <label for="banner" class="btn-upload" style="margin-top:0.6rem;display:inline-block"><?= $business['banner'] ? $t['vendor_replace_banner'] : $t['vendor_upload_banner'] ?></label>
+                            <input type="file" id="banner" name="banner" accept="image/jpeg,image/png" style="display:none" onchange="this.form.submit()">
+                        </form>
+                        <?php if ($business['banner']): ?>
+                        <form method="POST" action="/dashboard-vendor/settings/banner-action.php" style="display:inline" onsubmit="return confirm('<?= htmlspecialchars($t['vendor_remove_banner_confirm'], ENT_QUOTES) ?>')">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="action" value="remove">
+                            <button type="submit" class="btn-remove-avatar" style="margin-top:0.6rem"><?= $t['vendor_remove_banner'] ?></button>
+                        </form>
+                        <?php endif; ?>
                     </div>
-                    <?php endif; ?>
-                    <?php if (count($photos) < 10): ?>
-                    <form method="POST" action="/dashboard-vendor/settings/photo-upload-action.php" enctype="multipart/form-data" style="margin-top:0.75rem">
-                        <?= csrf_input() ?>
-                        <label for="gallery_photo" class="btn-upload" style="margin-top:0.6rem;display:inline-block"><?= $t['vendor_settings_photos'] ?></label>
-                        <input type="file" id="gallery_photo" name="gallery_photo[]" accept="image/jpeg,image/png" multiple style="display:none" onchange="this.form.submit()">
-                        <p class="field-hint"><?= sprintf($t['vendor_gallery_upload_hint'], count($photos)) ?></p>
-                    </form>
-                    <?php endif; ?>
+                    <p class="field-hint"><?= $t['vendor_banner_upload_hint'] ?></p>
                 </div>
 
                 <!-- Saves the business-details form above (name/description/categories).
-                     Banner + gallery are separate forms that save on upload. -->
+                     The banner is a separate form that saves on upload. -->
                 <button type="submit" form="business-form" class="btn-save"><?= $t['settings_save'] ?></button>
 
+                <?php endif; ?>
+            </div>
+
+            <?php elseif ($tab === 'storefront'): ?>
+            <div class="settings-section">
+                <h2><?= $t['storefront_heading'] ?></h2>
+                <?php if (!$business): ?>
+                <p style="font-size:0.9rem;color:#6b7280;"><?= $t['vendor_no_business'] ?> <a href="/submit/"><?= $t['vendor_submit_one'] ?></a></p>
+                <?php elseif (empty($sfProducts)): ?>
+                <p class="field-hint"><?= $t['storefront_no_products'] ?></p>
+                <?php else: ?>
+                <p class="field-hint" style="margin-bottom:1.25rem"><?= $t['storefront_intro'] ?></p>
+                <form method="POST" action="/dashboard-vendor/settings/storefront-action.php">
+                    <?= csrf_input() ?>
+
+                    <div class="settings-field">
+                        <label for="featured"><?= $t['storefront_featured_label'] ?> <span class="field-hint" style="font-weight:400;display:inline"><?= $t['storefront_featured_hint'] ?></span></label>
+                        <select id="featured" name="featured">
+                            <option value="0"><?= $t['storefront_none'] ?></option>
+                            <?php foreach ($sfProducts as $p): ?>
+                            <option value="<?= (int)$p['id'] ?>" <?= $sfFeatured === (int)$p['id'] ? 'selected' : '' ?>><?= htmlspecialchars(lang_field($p, 'name')) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="settings-field">
+                        <label><?= $t['storefront_slots_label'] ?> <span class="field-hint" style="font-weight:400;display:inline"><?= $t['storefront_slots_hint'] ?></span></label>
+                        <div id="slot-list">
+                            <?php $rows = $sfSlots ?: [0]; foreach ($rows as $i => $slotPid): ?>
+                            <div class="slot-row">
+                                <span class="slot-num"><?= $t['storefront_slot'] ?> #<span class="slot-index"><?= $i + 1 ?></span></span>
+                                <select name="slots[]">
+                                    <option value="0"><?= $t['storefront_slot_empty'] ?></option>
+                                    <?php foreach ($sfProducts as $p): ?>
+                                    <option value="<?= (int)$p['id'] ?>" <?= (int)$slotPid === (int)$p['id'] ? 'selected' : '' ?>><?= htmlspecialchars(lang_field($p, 'name')) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button type="button" class="slot-remove" onclick="removeSlot(this)"><?= $t['storefront_remove'] ?></button>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <button type="button" class="btn-add-slot" onclick="addSlot()"><?= $t['storefront_add_slot'] ?></button>
+                    </div>
+
+                    <button type="submit" class="btn-save"><?= $t['storefront_save'] ?></button>
+                </form>
+
+                <!-- Template cloned by addSlot() to add another empty slot row. -->
+                <template id="slot-template">
+                    <div class="slot-row">
+                        <span class="slot-num"><?= $t['storefront_slot'] ?> #<span class="slot-index"></span></span>
+                        <select name="slots[]">
+                            <option value="0"><?= $t['storefront_slot_empty'] ?></option>
+                            <?php foreach ($sfProducts as $p): ?>
+                            <option value="<?= (int)$p['id'] ?>"><?= htmlspecialchars(lang_field($p, 'name')) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="button" class="slot-remove" onclick="removeSlot(this)"><?= $t['storefront_remove'] ?></button>
+                    </div>
+                </template>
                 <?php endif; ?>
             </div>
 
@@ -460,6 +514,25 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 </main>
 
 <?php require __DIR__ . '/../../footer/footer.php'; ?>
+
+<?php if ($tab === 'storefront' && $business && !empty($sfProducts)): ?>
+<script>
+function renumberSlots() {
+    document.querySelectorAll('#slot-list .slot-row').forEach((row, i) => {
+        row.querySelector('.slot-index').textContent = i + 1;
+    });
+}
+function addSlot() {
+    const tpl = document.getElementById('slot-template');
+    document.getElementById('slot-list').appendChild(tpl.content.cloneNode(true));
+    renumberSlots();
+}
+function removeSlot(btn) {
+    btn.closest('.slot-row').remove();
+    renumberSlots();
+}
+</script>
+<?php endif; ?>
 
 <?php if ($tab === 'address' && $business): ?>
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>

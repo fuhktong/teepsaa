@@ -286,14 +286,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                                 <label for="new_address_notes"><?= $t['settings_address_floor'] ?></label>
                                 <input type="text" id="new_address_notes" name="address_notes" placeholder="e.g. Apt 4B, blue gate">
                             </div>
-                            <div class="settings-field">
-                                <label for="new_city"><?= $t['settings_address_city'] ?></label>
-                                <select id="new_city" name="city">
-                                    <?php foreach ($cities as $c): ?>
-                                    <option value="<?= htmlspecialchars($c) ?>"><?= htmlspecialchars($c) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
+
                             <div class="settings-field">
                                 <label for="new_khan"><?= $t['settings_address_khan'] ?></label>
                                 <select id="new_khan" name="khan" onchange="updateNewSangkats(this.value)">
@@ -307,6 +300,14 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                                 <label for="new_sangkat"><?= $t['settings_address_sangkat'] ?></label>
                                 <select id="new_sangkat" name="sangkat">
                                     <option value=""><?= $t['settings_select_sangkat'] ?></option>
+                                </select>
+                            </div>
+                            <div class="settings-field">
+                                <label for="new_city"><?= $t['settings_address_city'] ?></label>
+                                <select id="new_city" name="city">
+                                    <?php foreach ($cities as $c): ?>
+                                    <option value="<?= htmlspecialchars($c) ?>"><?= htmlspecialchars($c) ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             <div class="settings-field settings-field--map">
