@@ -516,26 +516,34 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 <?php if ($tab === 'business' && $business && !empty($sfProducts)): ?>
 <script>
 const FEATURED_SUFFIX = <?= json_encode(' ' . $t['storefront_featured_suffix']) ?>;
+const ADDED_SUFFIX    = <?= json_encode(' ' . $t['storefront_added_suffix']) ?>;
 
 function renumberSlots() {
     document.querySelectorAll('#slot-list .slot-row').forEach((row, i) => {
         row.querySelector('.slot-index').textContent = i + 1;
     });
 }
-// The featured product is the hero, so it can't also sit in a slot. In every
-// slot dropdown, disable + relabel the featured product's option, and clear it
-// from any slot that currently holds it. Runs on load and whenever the featured
-// pick changes, so the rule is always visible before saving.
-function syncFeaturedInSlots() {
-    const fid = document.getElementById('featured').value;
-    document.querySelectorAll('#slot-list .slot-select').forEach(sel => {
+// A product can appear on the storefront only once. In every slot dropdown,
+// disable + relabel any product that's already the featured hero or already
+// chosen in another slot — so the vendor sees each product only once, before
+// saving (the server dedupes too, as a backstop). Runs on load and on any
+// change to the featured pick or a slot.
+function syncSlots() {
+    const fid   = document.getElementById('featured').value;
+    const slots = Array.from(document.querySelectorAll('#slot-list .slot-select'));
+    slots.forEach(sel => {
         Array.from(sel.options).forEach(opt => {
             if (opt.value === '0') return;
-            const name = opt.dataset.name || opt.textContent;
-            if (fid !== '0' && opt.value === fid) {
+            const name         = opt.dataset.name || opt.textContent;
+            const isFeatured   = fid !== '0' && opt.value === fid;
+            const usedElsewhere = slots.some(other => other !== sel && other.value === opt.value);
+            if (isFeatured) {
                 if (sel.value === opt.value) sel.value = '0';
                 opt.disabled = true;
                 opt.textContent = name + FEATURED_SUFFIX;
+            } else if (usedElsewhere) {
+                opt.disabled = true;
+                opt.textContent = name + ADDED_SUFFIX;
             } else {
                 opt.disabled = false;
                 opt.textContent = name;
@@ -547,14 +555,16 @@ function addSlot() {
     const tpl = document.getElementById('slot-template');
     document.getElementById('slot-list').appendChild(tpl.content.cloneNode(true));
     renumberSlots();
-    syncFeaturedInSlots();
+    syncSlots();
 }
 function removeSlot(btn) {
     btn.closest('.slot-row').remove();
     renumberSlots();
+    syncSlots();
 }
-document.getElementById('featured').addEventListener('change', syncFeaturedInSlots);
-syncFeaturedInSlots();
+document.getElementById('featured').addEventListener('change', syncSlots);
+document.getElementById('slot-list').addEventListener('change', syncSlots);
+syncSlots();
 </script>
 <?php endif; ?>
 

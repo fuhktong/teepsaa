@@ -809,6 +809,20 @@ if ($editing) {
         .btn-add-variant {padding:0.35rem 0.85rem; font-size:0.85rem; border:1px dashed var(--border-strong); border-radius: var(--radius-sm); background:#fff; color:var(--text-muted); cursor:pointer; font-family:inherit; }
         .btn-add-variant:hover { border-color:#9ca3af; color:var(--text-soft); }
         </style>
+        <script src="/js/square-cropper.js"></script>
+        <script>
+        (function () {
+            var labels = {
+                title:  <?= json_encode($t['crop_title']) ?>,
+                hint:   <?= json_encode($t['crop_hint']) ?>,
+                ok:     <?= json_encode($t['crop_ok']) ?>,
+                cancel: <?= json_encode($t['crop_cancel']) ?>
+            };
+            document.querySelectorAll('input[name="gallery_photos[]"]').forEach(function (inp) {
+                attachSquareCropper(inp, { size: 800, labels: labels });
+            });
+        })();
+        </script>
         <?php endif; ?>
 
     <?php elseif ($tab === 'archive'): ?>
