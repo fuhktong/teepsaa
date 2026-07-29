@@ -26,7 +26,7 @@ $photoId   = (int)($_POST['photo_id']   ?? 0);
 $productId = (int)($_POST['product_id'] ?? 0);
 
 $stmt = $pdo->prepare('
-    SELECT pp.filename, pp.is_primary
+    SELECT pp.filename, pp.is_primary, p.public_id
     FROM product_photos pp
     JOIN products p ON p.id = pp.product_id
     JOIN businesses b ON b.id = p.business_id
@@ -50,5 +50,11 @@ if ($photo) {
     }
 }
 
-header('Location: /products/?action=edit&id=' . $productId);
+// The edit view looks products up by public_id (UUID), not the internal int id,
+// so redirect with that — otherwise the lookup misses and lands on a blank page.
+if ($photo) {
+    header('Location: /products/?action=edit&id=' . urlencode($photo['public_id']));
+} else {
+    header('Location: /products/');
+}
 exit;

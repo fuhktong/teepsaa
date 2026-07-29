@@ -154,6 +154,9 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
     </div>
     <?php endif; ?>
 
+    <!-- Storefront column: a narrower centered band so product images read at a
+         comfortable size instead of filling the full 1200px content width. -->
+    <div class="storefront-inner">
     <?php if ($featured): ?>
     <!-- Featured product hero — the vendor's one "featured" pick. -->
     <section class="featured-section">
@@ -220,6 +223,7 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
         </div>
     </section>
     <?php endif; ?>
+    </div><!-- /.storefront-inner -->
 </main>
 
 <?php require __DIR__ . '/../footer/footer.php'; ?>
