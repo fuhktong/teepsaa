@@ -573,10 +573,18 @@
   color: var(--primary-hover);
 }
 
+/* Keep this as a normal table cell (not display:flex) so the cell's
+   vertical-align:middle centers the buttons against the taller photo row —
+   a flexed <td> doesn't stretch to the row height, which left them top-aligned. */
 .actions {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
+  white-space: nowrap;
+}
+.actions form {
+  display: inline-block;
+  vertical-align: middle;
+}
+.actions form + form {
+  margin-left: 0.75rem;
 }
 
 .actions a {

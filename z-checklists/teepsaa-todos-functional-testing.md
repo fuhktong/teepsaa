@@ -107,9 +107,9 @@ accounts/orders created earlier.
 - [x] Photo delete works
 - [x] Variants: add sizes with stock/price overrides; buyer side shows them;
       deleting a variant removes it
-- [ ] Sale price + end date: badge shows for buyers, price reverts after end
+- [x] Sale price + end date: badge shows for buyers, price reverts after end
       date; cancel sale works
-- [ ] Product status toggle (active/inactive): inactive product disappears
+- [x] Product status toggle (active/inactive): inactive product disappears
       from buyer surfaces
 - [ ] Archive: product moves to archive tab, invisible to buyers;
       unarchive returns it (inactive until re-activated)
