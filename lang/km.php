@@ -510,6 +510,7 @@ return [
     'prod_stock_variant_hint' => 'កំណត់តាមប្រភេទខាងក្រោម',
     'prod_delivery_method' => 'វិធីដឹកជញ្ជូន',
     'prod_sale_price'      => 'តម្លៃបញ្ចុះ (ដុល្លារ)',
+    'prod_sale_percent'    => 'បញ្ចុះតម្លៃ — % ',
     'prod_optional'        => 'ស្រេចចិត្ត',
     'prod_sale_date'       => 'ថ្ងៃបញ្ចប់ការបញ្ចុះតម្លៃ',
     'prod_sale_time'       => 'ម៉ោងបញ្ចប់ការបញ្ចុះតម្លៃ',

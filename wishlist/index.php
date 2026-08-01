@@ -17,7 +17,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
 $buyerId = (int)$_SESSION['user_id'];
 
 $stmt = $pdo->prepare('
-    SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, p.stock, p.active, p.archived,
+    SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_percent, p.sale_ends_at, p.stock, p.active, p.archived,
            b.id AS business_id, b.name AS business_name, b.name_km AS business_name_km, b.approved,
            pp.filename AS photo,
            COALESCE(rv.avg_rating, 0) AS avg_rating,

@@ -510,6 +510,7 @@ return [
     'prod_stock_variant_hint' => 'Set per variant below',
     'prod_delivery_method' => 'Delivery method',
     'prod_sale_price'      => 'Sale price (USD)',
+    'prod_sale_percent'    => 'Sale — % off',
     'prod_optional'        => 'Optional',
     'prod_sale_date'       => 'Sale end date',
     'prod_sale_time'       => 'Sale end time',

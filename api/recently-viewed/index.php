@@ -21,7 +21,10 @@ if (!$ids) {
 
 $ph   = implode(',', array_fill(0, count($ids), '?'));
 $stmt = $pdo->prepare(
-    "SELECT p.public_id AS id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km, pp.filename AS photo
+    "SELECT p.public_id AS id, p.name, p.name_km, p.price,
+            CASE WHEN p.sale_percent IS NOT NULL AND p.sale_ends_at IS NOT NULL AND p.sale_ends_at > NOW()
+                 THEN ROUND(p.price * (100 - p.sale_percent) / 100, 2) END AS sale_price,
+            p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km, pp.filename AS photo
      FROM products p
      JOIN businesses b ON p.business_id = b.id
      LEFT JOIN product_photos pp ON pp.product_id = p.id AND pp.is_primary = 1

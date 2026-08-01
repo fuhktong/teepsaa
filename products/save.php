@@ -40,13 +40,13 @@ $descriptionKm = trim($_POST['description_km'] ?? '');
 $price       = (float)($_POST['price'] ?? 0);
 $stock       = max(0, (int)($_POST['stock'] ?? 0));
 $deliveryMethod = in_array($_POST['delivery_method'] ?? '', ['bike','tuktuk']) ? $_POST['delivery_method'] : 'bike';
-$salePriceRaw   = trim($_POST['sale_price'] ?? '');
+$salePercentRaw = trim($_POST['sale_percent'] ?? '');
 $saleDateRaw    = trim($_POST['sale_date']  ?? '');
 $saleTimeRaw    = trim($_POST['sale_time']  ?? '');
-$salePrice      = ($salePriceRaw !== '' && is_numeric($salePriceRaw) && (float)$salePriceRaw > 0) ? (float)$salePriceRaw : null;
+$salePercent    = (ctype_digit($salePercentRaw) && (int)$salePercentRaw >= 1 && (int)$salePercentRaw <= 90) ? (int)$salePercentRaw : null;
 $saleEndsRaw    = ($saleDateRaw !== '' && $saleTimeRaw !== '') ? $saleDateRaw . ' ' . $saleTimeRaw . ':00' : '';
 $saleEndsAt     = ($saleEndsRaw !== '' && strtotime($saleEndsRaw) > time()) ? date('Y-m-d H:i:s', strtotime($saleEndsRaw)) : null;
-if ($salePrice === null || $saleEndsAt === null) { $salePrice = null; $saleEndsAt = null; }
+if ($salePercent === null || $saleEndsAt === null) { $salePercent = null; $saleEndsAt = null; }
 $businessId  = (int)($_POST['business_id'] ?? 0);
 $categoryId  = (int)($_POST['category_id'] ?? 0) ?: null;
 
@@ -185,8 +185,8 @@ if ($action === 'gallery_upload') {
 
 if ($action === 'add') {
     $newPublicId = uuid_v4();
-    $stmt = $pdo->prepare('INSERT INTO products (business_id, category_id, name, name_km, description, description_km, price, stock, delivery_method, sale_price, sale_ends_at, public_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-    $stmt->execute([$businessId, $categoryId, $name, $nameKm ?: null, $description, $descriptionKm ?: null, $price, $stock, $deliveryMethod, $salePrice, $saleEndsAt, $newPublicId]);
+    $stmt = $pdo->prepare('INSERT INTO products (business_id, category_id, name, name_km, description, description_km, price, stock, delivery_method, sale_percent, sale_ends_at, public_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $stmt->execute([$businessId, $categoryId, $name, $nameKm ?: null, $description, $descriptionKm ?: null, $price, $stock, $deliveryMethod, $salePercent, $saleEndsAt, $newPublicId]);
     $newId = (int)$pdo->lastInsertId();
     if ($photo) {
         $pdo->prepare('INSERT INTO product_photos (product_id, filename, sort_order, is_primary) VALUES (?, ?, 0, 1)')
@@ -211,8 +211,8 @@ if ($action === 'add') {
 
     $active = ($_POST['active'] ?? '0') === '1' ? 1 : 0;
 
-    $stmt = $pdo->prepare('UPDATE products SET category_id=?, name=?, name_km=?, description=?, description_km=?, price=?, stock=?, delivery_method=?, active=?, sale_price=?, sale_ends_at=? WHERE id=?');
-    $stmt->execute([$categoryId, $name, $nameKm ?: null, $description, $descriptionKm ?: null, $price, $stock, $deliveryMethod, $active, $salePrice, $saleEndsAt, $productId]);
+    $stmt = $pdo->prepare('UPDATE products SET category_id=?, name=?, name_km=?, description=?, description_km=?, price=?, stock=?, delivery_method=?, active=?, sale_percent=?, sale_ends_at=?, sale_price=NULL WHERE id=?');
+    $stmt->execute([$categoryId, $name, $nameKm ?: null, $description, $descriptionKm ?: null, $price, $stock, $deliveryMethod, $active, $salePercent, $saleEndsAt, $productId]);
     // If stock was replenished above threshold, clear the notification flag so vendor gets alerted again if it drops low again
     $pdo->prepare('UPDATE products SET low_stock_notified_at = NULL WHERE id = ? AND stock > low_stock_threshold')
         ->execute([$productId]);

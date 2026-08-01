@@ -34,7 +34,8 @@ if (empty($buyer['address']) && empty($buyer['khan'])) {
 $stmt = $pdo->prepare('
     SELECT ci.id AS cart_item_id, ci.quantity, ci.variant_id,
            p.id AS product_id, p.name AS product_name, p.name_km AS product_name_km, p.price, p.stock, p.weight_g,
-           COALESCE(pv.price_override, IF(p.sale_ends_at IS NOT NULL AND p.sale_ends_at > NOW(), p.sale_price, NULL), p.price) AS effective_price,
+           ROUND(COALESCE(pv.price_override, p.price)
+                 * (100 - IF(p.sale_ends_at IS NOT NULL AND p.sale_ends_at > NOW() AND p.sale_percent IS NOT NULL, p.sale_percent, 0)) / 100, 2) AS effective_price,
            COALESCE(pv.stock, p.stock) AS effective_stock,
            pv.label AS variant_label, pv.label_km AS variant_label_km,
            pp.filename AS photo,

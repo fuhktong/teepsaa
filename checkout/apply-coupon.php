@@ -34,7 +34,8 @@ $userId = $_SESSION['user_id'];
 
 $stmt = $pdo->prepare('
     SELECT b.id AS business_id,
-           COALESCE(pv.price_override, IF(p.sale_ends_at IS NOT NULL AND p.sale_ends_at > NOW(), p.sale_price, NULL), p.price) AS effective_price,
+           ROUND(COALESCE(pv.price_override, p.price)
+                 * (100 - IF(p.sale_ends_at IS NOT NULL AND p.sale_ends_at > NOW() AND p.sale_percent IS NOT NULL, p.sale_percent, 0)) / 100, 2) AS effective_price,
            ci.quantity
     FROM cart_items ci
     JOIN products p ON p.id = ci.product_id AND p.active = 1

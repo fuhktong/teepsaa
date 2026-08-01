@@ -30,7 +30,7 @@ $rv = 'LEFT JOIN (SELECT product_id, AVG(rating) AS avg_rating, COUNT(*) AS revi
 
 // ── Featured — random in-stock products ──────────────────────────
 $featured = $pdo->query(
-    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
+    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_percent, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             pp.filename AS photo,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
      FROM products p
@@ -43,7 +43,7 @@ $featured = $pdo->query(
 
 // ── Best sellers — most ordered all time ─────────────────────────
 $bestSellers = $pdo->query(
-    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
+    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_percent, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             (SELECT filename FROM product_photos WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS photo,
             SUM(oi.quantity) AS total_sold,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
@@ -52,14 +52,14 @@ $bestSellers = $pdo->query(
      JOIN businesses b ON p.business_id = b.id AND b.approved = 1
      $rv
      WHERE p.active = 1 AND p.archived = 0 AND p.stock > 0
-     GROUP BY p.id, p.name, p.price, p.sale_price, p.sale_ends_at, b.name, rv.avg_rating, rv.review_count
+     GROUP BY p.id, p.name, p.price, p.sale_percent, p.sale_ends_at, b.name, rv.avg_rating, rv.review_count
      ORDER BY total_sold DESC
      LIMIT 8"
 )->fetchAll();
 
 // ── Trending this week — order volume last 7 days ─────────────────
 $trending = $pdo->query(
-    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
+    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_percent, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             (SELECT filename FROM product_photos WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS photo,
             SUM(oi.quantity) AS total_sold,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
@@ -71,14 +71,14 @@ $trending = $pdo->query(
      WHERE p.active = 1 AND p.archived = 0 AND p.stock > 0
        AND o.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
        AND o.status NOT IN ('pending','cancelled')
-     GROUP BY p.id, p.name, p.price, p.sale_price, p.sale_ends_at, b.name, rv.avg_rating, rv.review_count
+     GROUP BY p.id, p.name, p.price, p.sale_percent, p.sale_ends_at, b.name, rv.avg_rating, rv.review_count
      ORDER BY total_sold DESC
      LIMIT 8"
 )->fetchAll();
 
 // ── New arrivals — most recently added ───────────────────────────
 $newArrivals = $pdo->query(
-    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
+    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_percent, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             pp.filename AS photo,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
      FROM products p
@@ -92,13 +92,13 @@ $newArrivals = $pdo->query(
 
 // ── Top rated — highest-reviewed products ────────────────────────
 $topRated = $pdo->query(
-    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
+    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_percent, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             (SELECT filename FROM product_photos WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS photo,
             AVG(r.rating) AS avg_rating, COUNT(r.id) AS review_count
      FROM reviews r
      JOIN products p ON r.product_id = p.id AND p.active = 1 AND p.archived = 0 AND p.stock > 0
      JOIN businesses b ON p.business_id = b.id AND b.approved = 1
-     GROUP BY p.id, p.name, p.price, p.sale_price, p.sale_ends_at, b.name
+     GROUP BY p.id, p.name, p.price, p.sale_percent, p.sale_ends_at, b.name
      HAVING review_count >= 1
      ORDER BY avg_rating DESC, review_count DESC
      LIMIT 8"
@@ -106,7 +106,7 @@ $topRated = $pdo->query(
 
 // ── Under $15 ────────────────────────────────────────────────────
 $underFifteen = $pdo->query(
-    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
+    "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_percent, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
             (SELECT filename FROM product_photos WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS photo,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
      FROM products p
@@ -154,7 +154,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
         $ph     = implode(',', array_fill(0, count($catIds), '?'));
         $params = array_merge($catIds, [$buyerId]);
         $stmt   = $pdo->prepare(
-            "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_price, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
+            "SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_percent, p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km,
                     pp.filename AS photo,
                     COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
              FROM products p

@@ -87,7 +87,10 @@ $orderBy = match($sort) {
 $fetchParams = array_merge($params, [$limit + 1, $offset]);
 
 $stmt = $pdo->prepare("
-    SELECT p.id, p.public_id, p.name, p.name_km, p.description, p.description_km, p.price, p.sale_price, p.sale_ends_at,
+    SELECT p.id, p.public_id, p.name, p.name_km, p.description, p.description_km, p.price,
+           CASE WHEN p.sale_percent IS NOT NULL AND p.sale_ends_at IS NOT NULL AND p.sale_ends_at > NOW()
+                THEN ROUND(p.price * (100 - p.sale_percent) / 100, 2) END AS sale_price,
+           p.sale_ends_at,
            pp.filename AS photo,
            b.id AS business_id, b.name AS business_name, b.name_km AS business_name_km,
            COALESCE(rv.avg_rating, 0) AS avg_rating,

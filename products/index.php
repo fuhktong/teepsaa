@@ -464,9 +464,9 @@ if ($editing) {
 
                 <div class="field-row">
                     <div class="field">
-                        <label for="sale_price"><?= $t['prod_sale_price'] ?> <span class="hint"><?= $t['prod_optional'] ?></span></label>
-                        <input type="number" id="sale_price" name="sale_price" min="0" step="0.01" placeholder="e.g. 8.00"
-                               value="<?= ($editing && $editing['sale_price'] !== null) ? number_format((float)$editing['sale_price'], 2, '.', '') : '' ?>">
+                        <label for="sale_percent"><?= $t['prod_sale_percent'] ?> <span class="hint"><?= $t['prod_optional'] ?></span></label>
+                        <input type="number" id="sale_percent" name="sale_percent" min="1" max="90" step="1" placeholder="e.g. 20"
+                               value="<?= ($editing && $editing['sale_percent'] !== null) ? (int)$editing['sale_percent'] : '' ?>">
                     </div>
                     <div class="field">
                         <label for="sale_date"><?= $t['prod_sale_date'] ?></label>

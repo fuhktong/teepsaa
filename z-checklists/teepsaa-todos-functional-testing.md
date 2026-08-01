@@ -86,7 +86,7 @@ accounts/orders created earlier.
 
 - [x] Register with business details (en + km names)
       (registered live 2026-07-08 with a real email)
-- [ ] Email verification flow (same checks as buyer)
+- [x] Email verification flow (same checks as buyer)
       (code arrived by email in the 2026-07-08 live registration;
       wrong-code/resend paths untested)
 - [ ] Before admin approval: business/products invisible to buyers
@@ -97,15 +97,15 @@ accounts/orders created earlier.
 
 ## Vendor — products
 
-- [ ] Add product: all fields, en + km, category cascade, price, stock,
+- [x] Add product: all fields, en + km, category cascade, price, stock,
       delivery method, up to 9 photos
-- [ ] Photo upload rejects non-images (try a renamed .txt → should fail on
+- [x] Photo upload rejects non-images (try a renamed .txt → should fail on
       magic-byte check)
-- [ ] Edit product: change fields, save, verify on buyer side
-- [ ] Photo gallery: drag to reorder, order persists after reload, first
+- [x] Edit product: change fields, save, verify on buyer side
+- [x] Photo gallery: drag to reorder, order persists after reload, first
       photo becomes the primary shown to buyers
-- [ ] Photo delete works
-- [ ] Variants: add sizes with stock/price overrides; buyer side shows them;
+- [x] Photo delete works
+- [x] Variants: add sizes with stock/price overrides; buyer side shows them;
       deleting a variant removes it
 - [ ] Sale price + end date: badge shows for buyers, price reverts after end
       date; cancel sale works

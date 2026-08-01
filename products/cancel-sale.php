@@ -42,7 +42,7 @@ if (!$product) {
     exit;
 }
 
-$pdo->prepare('UPDATE products SET sale_price = NULL, sale_ends_at = NULL WHERE id = ?')
+$pdo->prepare('UPDATE products SET sale_percent = NULL, sale_price = NULL, sale_ends_at = NULL WHERE id = ?')
     ->execute([$productId]);
 
 // The edit view is addressed by public_id, not the numeric id posted here

@@ -382,23 +382,23 @@ $reviews = $rStmt->fetchAll();
 <?php if ($hasOptionTypes): ?>
 (function () {
     var basePrice    = <?= (float)$product['price'] ?>;
-    var salePrice    = <?= $product['sale_price'] !== null ? (float)$product['sale_price'] : 'null' ?>;
-    var saleEndsAt   = <?= ($product['sale_ends_at'] !== null) ? json_encode($product['sale_ends_at']) : 'null' ?>;
-    var saleActive   = salePrice !== null && saleEndsAt !== null && (new Date(saleEndsAt).getTime() / 1000) > Date.now() / 1000;
+    var salePercent  = <?= active_sale($product) ? (int)$product['sale_percent'] : 0 ?>;
+    var saleActive   = salePercent > 0;
     var stockEl      = document.getElementById('stock-display');
     var priceEl      = document.getElementById('product-price');
     var addBtn       = document.getElementById('add-cart-btn');
     var variantIn    = document.getElementById('selected_variant_id');
 
     function fmtPrice(usd) { return '$' + usd.toFixed(2); }
+    function saleOf(base) { return Math.round(base * (100 - salePercent)) / 100; }
+    // The sale % applies to whichever price is in effect — base or a variant's own price.
     function setPriceHtml(override) {
-        if (override !== null) {
-            priceEl.innerHTML = fmtPrice(override);
-        } else if (saleActive) {
-            priceEl.innerHTML = '<span class="price-sale">' + fmtPrice(salePrice) + '</span>'
-                + '<span class="price-original">' + fmtPrice(basePrice) + '</span>';
+        var base = override !== null ? override : basePrice;
+        if (saleActive) {
+            priceEl.innerHTML = '<span class="price-sale">' + fmtPrice(saleOf(base)) + '</span>'
+                + '<span class="price-original">' + fmtPrice(base) + '</span>';
         } else {
-            priceEl.innerHTML = fmtPrice(basePrice);
+            priceEl.innerHTML = fmtPrice(base);
         }
     }
 
@@ -494,23 +494,23 @@ $reviews = $rStmt->fetchAll();
 })();
 <?php else: ?>
 (function () {
-    var basePrice  = <?= (float)$product['price'] ?>;
-    var salePrice  = <?= $product['sale_price'] !== null ? (float)$product['sale_price'] : 'null' ?>;
-    var saleEndsAt = <?= ($product['sale_ends_at'] !== null) ? json_encode($product['sale_ends_at']) : 'null' ?>;
-    var saleActive = salePrice !== null && saleEndsAt !== null && (new Date(saleEndsAt).getTime() / 1000) > Date.now() / 1000;
+    var basePrice   = <?= (float)$product['price'] ?>;
+    var salePercent = <?= active_sale($product) ? (int)$product['sale_percent'] : 0 ?>;
+    var saleActive  = salePercent > 0;
     var stockEl    = document.getElementById('stock-display');
     var priceEl    = document.getElementById('product-price');
     var addBtn     = document.getElementById('add-cart-btn');
 
     function fmtPrice(usd) { return '$' + usd.toFixed(2); }
+    function saleOf(base) { return Math.round(base * (100 - salePercent)) / 100; }
+    // The sale % applies to whichever price is in effect — base or a variant's own price.
     function setPriceHtml(override) {
-        if (override !== null) {
-            priceEl.innerHTML = fmtPrice(override);
-        } else if (saleActive) {
-            priceEl.innerHTML = '<span class="price-sale">' + fmtPrice(salePrice) + '</span>'
-                + '<span class="price-original">' + fmtPrice(basePrice) + '</span>';
+        var base = override !== null ? override : basePrice;
+        if (saleActive) {
+            priceEl.innerHTML = '<span class="price-sale">' + fmtPrice(saleOf(base)) + '</span>'
+                + '<span class="price-original">' + fmtPrice(base) + '</span>';
         } else {
-            priceEl.innerHTML = fmtPrice(basePrice);
+            priceEl.innerHTML = fmtPrice(base);
         }
     }
 

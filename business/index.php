@@ -27,7 +27,7 @@ if (!$business) {
 $id = (int)$business['id'];
 
 $stmt = $pdo->prepare('
-    SELECT p.id, p.public_id, p.name, p.name_km, p.description, p.description_km, p.price, p.sale_price, p.sale_ends_at, p.stock,
+    SELECT p.id, p.public_id, p.name, p.name_km, p.description, p.description_km, p.price, p.sale_percent, p.sale_ends_at, p.stock,
            p.storefront_order,
            pp.filename AS photo,
            COALESCE(rv.avg_rating, 0) AS avg_rating,
@@ -49,7 +49,7 @@ $bizRatingRow = $bizRating->fetch();
 // shop, enforced in products/feature.php). Rendered as the hero tile up top.
 $featStmt = $pdo->prepare('
     SELECT p.id, p.public_id, p.name, p.name_km, p.description, p.description_km,
-           p.price, p.sale_price, p.sale_ends_at, p.stock,
+           p.price, p.sale_percent, p.sale_ends_at, p.stock,
            pp.filename AS photo,
            COALESCE(rv.avg_rating, 0) AS avg_rating,
            COALESCE(rv.review_count, 0) AS review_count
