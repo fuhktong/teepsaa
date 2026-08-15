@@ -59,10 +59,23 @@ if ($action === 'add') {
         }
     }
 
-    $pdo->prepare('INSERT INTO buyer_addresses (buyer_user_id, label, house_number, address, address_notes, khan, sangkat, city, lat, lng) VALUES (?,?,?,?,?,?,?,?,?,?)')
-        ->execute([$userId, $label, $houseNumber, $address, $addressNotes, $khan, $sangkat, $city, $lat, $lng]);
+    // No default on the account yet (first address saved) — make this one the
+    // default automatically. The buyers table is what cart and checkout read,
+    // and it only gets filled by a default, so without this the buyer is bounced
+    // back to settings for "no delivery address" right after saving one.
+    $defStmt = $pdo->prepare('SELECT COUNT(*) FROM buyer_addresses WHERE buyer_user_id = ? AND is_default = 1');
+    $defStmt->execute([$userId]);
+    $makeDefault = (int)$defStmt->fetchColumn() === 0 ? 1 : 0;
 
-    $_SESSION['settings_success'] = 'Address saved.';
+    $pdo->prepare('INSERT INTO buyer_addresses (buyer_user_id, label, house_number, address, address_notes, khan, sangkat, city, lat, lng, is_default) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
+        ->execute([$userId, $label, $houseNumber, $address, $addressNotes, $khan, $sangkat, $city, $lat, $lng, $makeDefault]);
+
+    if ($makeDefault) {
+        $pdo->prepare('UPDATE buyers SET house_number=?, address=?, address_notes=?, khan=?, sangkat=?, city=?, lat=?, lng=? WHERE id=?')
+            ->execute([$houseNumber, $address, $addressNotes, $khan, $sangkat, $city, $lat, $lng, $userId]);
+    }
+
+    $_SESSION['settings_success'] = $makeDefault ? 'Address saved and set as your default.' : 'Address saved.';
 
 } elseif ($action === 'edit') {
     $addrId = (int)($_POST['address_id'] ?? 0);

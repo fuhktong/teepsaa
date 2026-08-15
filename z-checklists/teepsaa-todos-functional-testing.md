@@ -111,7 +111,7 @@ accounts/orders created earlier.
       date; cancel sale works
 - [x] Product status toggle (active/inactive): inactive product disappears
       from buyer surfaces
-- [ ] Archive: product moves to archive tab, invisible to buyers;
+- [x] Archive: product moves to archive tab, invisible to buyers;
       unarchive returns it (inactive until re-activated)
 - [ ] Delete: gone from lists; existing orders still display its name
       (snapshot), buyer's cart handles it gracefully
