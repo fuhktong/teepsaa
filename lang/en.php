@@ -89,6 +89,8 @@ return [
     'product_no_reviews'      => 'No reviews yet.',
     'product_out_of_stock'    => 'Out of stock',
     'product_in_stock'        => 'In stock',
+    'product_only_left'       => 'Only %d left',
+    'product_quantity'        => 'Quantity',
     'product_select_options'  => 'Select options',
     'product_select_variant'  => 'Select a variant',
     'product_combo_unavailable' => 'Combination not available',

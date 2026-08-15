@@ -113,7 +113,7 @@ accounts/orders created earlier.
       from buyer surfaces
 - [x] Archive: product moves to archive tab, invisible to buyers;
       unarchive returns it (inactive until re-activated)
-- [ ] Delete: gone from lists; existing orders still display its name
+- [x] Delete: gone from lists; existing orders still display its name
       (snapshot), buyer's cart handles it gracefully
 - [ ] Low stock: set threshold, sell past it → vendor notification + email
 - [ ] Coupons: create vendor coupon, buyer applies it, discount comes out of

@@ -89,6 +89,32 @@
     margin-bottom: 1.25rem;
 }
 
+.product-stock--low {
+    color: var(--error-fg);
+    font-weight: 600;
+}
+
+.product-qty-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.9rem;
+}
+
+.product-qty-row label {
+    font-size: 0.85rem;
+    color: #444;
+}
+
+.product-qty-input {
+    width: 64px;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
 .cart-form {
     margin: 0;
 }

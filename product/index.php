@@ -232,9 +232,19 @@ $reviews = $rStmt->fetchAll();
                 <?php endif; ?>
                 <?php endif; ?>
 
-                <p class="product-stock" id="stock-display">
+                <?php
+                    // Warn the buyer when a product is nearly gone, using the same
+                    // per-product threshold the vendor's low-stock alert runs on
+                    $lowThreshold = (int)($product['low_stock_threshold'] ?? 0);
+                    $showLow      = empty($variants) && $lowThreshold > 0
+                                    && $product['stock'] > 0 && $product['stock'] <= $lowThreshold;
+                    $outOfStock   = empty($variants) && $product['stock'] < 1;
+                ?>
+                <p class="product-stock<?= $showLow ? ' product-stock--low' : '' ?>" id="stock-display">
                     <?php if (!empty($variants)): ?>
                         <?= $hasOptionTypes ? $t['product_select_options'] : $t['product_select_variant'] ?>
+                    <?php elseif ($showLow): ?>
+                        <?= sprintf($t['product_only_left'], (int)$product['stock']) ?>
                     <?php elseif ($product['stock'] > 0): ?>
                         <?= $t['product_in_stock'] ?>
                     <?php else: ?>
@@ -243,7 +253,14 @@ $reviews = $rStmt->fetchAll();
                 </p>
 
                 <?php if ($isBuyer): ?>
-                    <?php $outOfStock = empty($variants) && $product['stock'] < 1; ?>
+                    <?php if (!$outOfStock): ?>
+                    <div class="product-qty-row">
+                        <label for="quantity"><?= $t['product_quantity'] ?></label>
+                        <input type="number" id="quantity" name="quantity" class="product-qty-input"
+                               value="1" min="1" step="1" inputmode="numeric"
+                               max="<?= !empty($variants) ? 1 : (int)$product['stock'] ?>">
+                    </div>
+                    <?php endif; ?>
                     <button type="submit" class="btn-add-cart <?= $outOfStock ? 'btn-add-cart--disabled' : (!empty($variants) ? 'btn-add-cart--pending' : '') ?>"
                             id="add-cart-btn"
                             <?= $outOfStock ? 'disabled' : '' ?>>
@@ -379,6 +396,28 @@ $reviews = $rStmt->fetchAll();
 </script>
 <?php if (!empty($variants)): ?>
 <script>
+// Stock wording and the quantity cap both follow the selected variant
+var LOW_THRESHOLD = <?= (int)($product['low_stock_threshold'] ?? 0) ?>;
+var TXT_IN_STOCK  = <?= json_encode($t['product_in_stock'], JSON_UNESCAPED_UNICODE) ?>;
+var TXT_OUT_STOCK = <?= json_encode($t['product_out_of_stock'], JSON_UNESCAPED_UNICODE) ?>;
+var TXT_ONLY_LEFT = <?= json_encode($t['product_only_left'], JSON_UNESCAPED_UNICODE) ?>;
+
+function applyVariantStock(stockEl, stock) {
+    if (stock <= 0) {
+        stockEl.textContent = TXT_OUT_STOCK;
+        stockEl.classList.remove('product-stock--low');
+    } else {
+        var low = LOW_THRESHOLD > 0 && stock <= LOW_THRESHOLD;
+        stockEl.textContent = low ? TXT_ONLY_LEFT.replace('%d', stock) : TXT_IN_STOCK;
+        stockEl.classList.toggle('product-stock--low', low);
+    }
+    var qtyEl = document.getElementById('quantity');
+    if (!qtyEl) return;
+    var max = stock > 0 ? stock : 1;
+    qtyEl.max = max;
+    if (parseInt(qtyEl.value, 10) > max) qtyEl.value = max;
+}
+
 <?php if ($hasOptionTypes): ?>
 (function () {
     var basePrice    = <?= (float)$product['price'] ?>;
@@ -426,6 +465,7 @@ $reviews = $rStmt->fetchAll();
     function updateState() {
         if (!allSelected()) {
             stockEl.textContent = '<?= $t['product_select_options'] ?>';
+            stockEl.classList.remove('product-stock--low');
             if (variantIn) variantIn.value = '';
             setPending(true);
             return;
@@ -434,12 +474,13 @@ $reviews = $rStmt->fetchAll();
         var match = variantLookup[key];
         if (!match) {
             stockEl.textContent = '<?= $t['product_combo_unavailable'] ?>';
+            stockEl.classList.remove('product-stock--low');
             if (variantIn) variantIn.value = '';
             setPending(true);
             return;
         }
         if (variantIn) variantIn.value = match.variant_id;
-        stockEl.textContent = match.stock > 0 ? '<?= $t['product_in_stock'] ?>' : '<?= $t['product_out_of_stock'] ?>';
+        applyVariantStock(stockEl, match.stock);
         var override = match.price_override !== null ? parseFloat(match.price_override) : null;
         setPriceHtml(override);
         setPending(match.stock < 1);
@@ -522,7 +563,7 @@ $reviews = $rStmt->fetchAll();
         r.addEventListener('change', function () {
             var stock    = parseInt(this.dataset.stock, 10);
             var rawPrice = this.dataset.price;
-            stockEl.textContent = stock > 0 ? '<?= $t['product_in_stock'] ?>' : '<?= $t['product_out_of_stock'] ?>';
+            applyVariantStock(stockEl, stock);
             setPriceHtml(rawPrice !== '' ? parseFloat(rawPrice) : null);
             if (addBtn) addBtn.classList.toggle('btn-add-cart--pending', stock < 1);
             if (groupEl) groupEl.classList.remove('variant-selector--error');

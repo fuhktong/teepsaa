@@ -68,6 +68,12 @@ if ($variantId !== null) {
 
 $stockLimit = $variantId !== null ? $variant['stock'] : $product['stock'];
 
+// Quantity comes from the product page selector; the cart page has its own
+// update path. Clamp rather than reject — the max is what's actually in stock.
+$qty = (int)($_POST['quantity'] ?? 1);
+if ($qty < 1)           { $qty = 1; }
+if ($qty > $stockLimit) { $qty = $stockLimit; }
+
 // Manual upsert — ON DUPLICATE KEY UPDATE can't handle NULL variant_id correctly
 if ($variantId !== null) {
     $stmt = $pdo->prepare('SELECT id, quantity FROM cart_items WHERE buyer_user_id = ? AND product_id = ? AND variant_id = ?');
@@ -84,10 +90,12 @@ if ($existing) {
         header('Location: ' . $redirect);
         exit;
     }
-    $pdo->prepare('UPDATE cart_items SET quantity = quantity + 1 WHERE id = ?')->execute([$existing['id']]);
+    // Top up what's already there, never past what the vendor can ship
+    $newQty = min($existing['quantity'] + $qty, $stockLimit);
+    $pdo->prepare('UPDATE cart_items SET quantity = ? WHERE id = ?')->execute([$newQty, $existing['id']]);
 } else {
-    $pdo->prepare('INSERT INTO cart_items (buyer_user_id, product_id, variant_id, quantity) VALUES (?, ?, ?, 1)')
-        ->execute([$userId, $productId, $variantId]);
+    $pdo->prepare('INSERT INTO cart_items (buyer_user_id, product_id, variant_id, quantity) VALUES (?, ?, ?, ?)')
+        ->execute([$userId, $productId, $variantId, $qty]);
 }
 
 $_SESSION['cart_success'] = 'Added to cart.';

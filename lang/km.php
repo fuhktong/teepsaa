@@ -89,6 +89,8 @@ return [
     'product_no_reviews'      => 'មិនទាន់មានមតិយោបល់ទេ។',
     'product_out_of_stock'    => 'អស់ស្តុក',
     'product_in_stock'        => 'មានស្តុក',
+    'product_only_left'       => 'នៅសល់តែ %d ប៉ុណ្ណោះ',
+    'product_quantity'        => 'បរិមាណ',
     'product_select_options'  => 'ជ្រើសរើសជម្រើស',
     'product_select_variant'  => 'ជ្រើសរើសប្រភេទ',
     'product_combo_unavailable' => 'ការផ្សំនេះមិនមាន',
