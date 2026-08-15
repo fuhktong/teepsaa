@@ -34,6 +34,17 @@ foreach ($savedAddresses as $sa) {
     if ($editAddrId && (int)$sa['id'] === $editAddrId) $editingAddr = $sa;
 }
 
+// ?fix=street,pin — sent by the cart, checkout and a rejected save. Opens the
+// right form and puts the cursor on the first thing that's missing instead of
+// leaving the buyer to hunt for it.
+$fixFields = [];
+if ($tab === 'address' && !empty($_GET['fix'])) {
+    $fixFields = array_values(array_intersect(
+        explode(',', (string)$_GET['fix']),
+        ['street', 'khan', 'sangkat', 'pin']
+    ));
+}
+
 $stmt = $pdo->prepare('SELECT name, email, phone, avatar, avatar_color, house_number, address, address_notes, khan, sangkat, lat, lng FROM buyers WHERE id = ?');
 $stmt->execute([$userId]);
 $buyer = $stmt->fetch();
@@ -142,7 +153,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     </div>
                     <div class="settings-field">
                         <label for="phone"><?= $t['settings_phone'] ?></label>
-                        <input type="tel" id="phone" name="phone" value="<?= htmlspecialchars($buyer['phone'] ?? '') ?>" placeholder="e.g. 012 345 678">
+                        <input type="tel" id="phone" name="phone" value="<?= htmlspecialchars($buyer['phone'] ?? '') ?>" placeholder="e.g. 012 345 678" required>
                     </div>
                     <button type="submit" class="btn-save"><?= $t['settings_save'] ?></button>
                 </form>
@@ -209,7 +220,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                                 </div>
                                 <div class="settings-field">
                                     <label for="edit_address"><?= $t['settings_street'] ?></label>
-                                    <input type="text" id="edit_address" name="address" value="<?= htmlspecialchars($a['address'] ?? '') ?>" placeholder="e.g. Street 240">
+                                    <input type="text" id="edit_address" name="address" value="<?= htmlspecialchars($a['address'] ?? '') ?>" placeholder="e.g. Street 240" required>
                                 </div>
                                 <div class="settings-field">
                                     <label for="edit_address_notes"><?= $t['settings_address_floor'] ?></label>
@@ -226,7 +237,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                                 </div>
                                 <div class="settings-field">
                                     <label for="edit_khan"><?= $t['settings_address_khan'] ?></label>
-                                    <select id="edit_khan" name="khan" onchange="updateEditSangkats(this.value)">
+                                    <select id="edit_khan" name="khan" onchange="updateEditSangkats(this.value)" required>
                                         <option value=""><?= $t['settings_select_khan'] ?></option>
                                         <?php foreach (array_keys($locations) as $k): ?>
                                         <option value="<?= htmlspecialchars($k) ?>" <?= ($a['khan'] === $k) ? 'selected' : '' ?>><?= htmlspecialchars($k) ?></option>
@@ -235,7 +246,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                                 </div>
                                 <div class="settings-field">
                                     <label for="edit_sangkat"><?= $t['settings_address_sangkat'] ?></label>
-                                    <select id="edit_sangkat" name="sangkat">
+                                    <select id="edit_sangkat" name="sangkat" required>
                                         <option value=""><?= $t['settings_select_sangkat'] ?></option>
                                         <?php if ($a['khan'] && isset($locations[$a['khan']])): ?>
                                             <?php foreach ($locations[$a['khan']] as $s): ?>
@@ -280,7 +291,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                             </div>
                             <div class="settings-field">
                                 <label for="new_address"><?= $t['settings_street'] ?></label>
-                                <input type="text" id="new_address" name="address" placeholder="e.g. Street 240">
+                                <input type="text" id="new_address" name="address" placeholder="e.g. Street 240" required>
                             </div>
                             <div class="settings-field">
                                 <label for="new_address_notes"><?= $t['settings_address_floor'] ?></label>
@@ -289,7 +300,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 
                             <div class="settings-field">
                                 <label for="new_khan"><?= $t['settings_address_khan'] ?></label>
-                                <select id="new_khan" name="khan" onchange="updateNewSangkats(this.value)">
+                                <select id="new_khan" name="khan" onchange="updateNewSangkats(this.value)" required>
                                     <option value=""><?= $t['settings_select_khan'] ?></option>
                                     <?php foreach (array_keys($locations) as $k): ?>
                                     <option value="<?= htmlspecialchars($k) ?>"><?= htmlspecialchars($k) ?></option>
@@ -298,7 +309,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                             </div>
                             <div class="settings-field">
                                 <label for="new_sangkat"><?= $t['settings_address_sangkat'] ?></label>
-                                <select id="new_sangkat" name="sangkat">
+                                <select id="new_sangkat" name="sangkat" required>
                                     <option value=""><?= $t['settings_select_sangkat'] ?></option>
                                 </select>
                             </div>
@@ -469,6 +480,55 @@ document.getElementById('new-addr-details').addEventListener('toggle', function 
         document.getElementById('new-pin-label').textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
     });
 });
+
+// The pin lives in hidden inputs, which `required` does not cover — block the
+// save and say so, matching the server-side check in address-book-action.php
+function requirePin(latId, lngId, labelId) {
+    const latEl = document.getElementById(latId);
+    if (!latEl) return;
+    latEl.form.addEventListener('submit', e => {
+        if (latEl.value && document.getElementById(lngId).value) return;
+        e.preventDefault();
+        const label = document.getElementById(labelId);
+        label.textContent = <?= json_encode($t['settings_pin_required'], JSON_UNESCAPED_UNICODE) ?>;
+        label.classList.add('pin-label--error');
+        label.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+}
+requirePin('new_lat', 'new_lng', 'new-pin-label');
+requirePin('edit_lat', 'edit_lng', 'edit-pin-label');
+
+<?php if ($fixFields): ?>
+// Arrived here from the cart, checkout or a rejected save — open the form
+// holding the incomplete address and jump to the first missing field
+(function () {
+    const fix    = <?= json_encode($fixFields) ?>;
+    const prefix = <?= $editingAddr ? "'edit'" : "'new'" ?>;
+
+    if (prefix === 'new') {
+        const details = document.getElementById('new-addr-details');
+        if (details) details.open = true;   // fires `toggle`, which builds the map
+    }
+
+    const ids = { street: '_address', khan: '_khan', sangkat: '_sangkat' };
+    const target = fix.find(f => ids[f]) || (fix.includes('pin') ? 'pin' : null);
+    if (!target) return;
+
+    if (target === 'pin') {
+        const label = document.getElementById(prefix + '-pin-label');
+        if (!label) return;
+        label.textContent = <?= json_encode($t['settings_pin_required'], JSON_UNESCAPED_UNICODE) ?>;
+        label.classList.add('pin-label--error');
+        label.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+
+    const field = document.getElementById(prefix + ids[target]);
+    if (!field) return;
+    field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    field.focus({ preventScroll: true });
+})();
+<?php endif; ?>
 </script>
 <?php endif; ?>
 

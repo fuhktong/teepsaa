@@ -10,6 +10,7 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/delivery-calc.php';
 require __DIR__ . '/../config/coupon.php';
+require __DIR__ . '/../config/delivery-address.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -24,7 +25,7 @@ unset($_SESSION['checkout_success'], $_SESSION['cart_success'], $_SESSION['cart_
 $userId = $_SESSION['user_id'];
 
 // Fetch buyer address — required for checkout
-$stmt = $pdo->prepare('SELECT lat, lng, house_number, address, address_notes, khan, sangkat FROM buyers WHERE id = ?');
+$stmt = $pdo->prepare('SELECT lat, lng, house_number, address, address_notes, khan, sangkat, phone FROM buyers WHERE id = ?');
 $stmt->execute([$userId]);
 $buyer    = $stmt->fetch();
 $buyerLat = ($buyer['lat'] !== null && $buyer['lat'] !== '') ? (float)$buyer['lat'] : null;
@@ -41,9 +42,14 @@ foreach ($savedAddresses as $sa) {
     if ($sa['is_default']) { $currentAddrLabel = $sa['label']; break; }
 }
 
-if (!$success && ($buyerLat === null || $buyerLng === null)) {
-    $_SESSION['cart_error'] = 'Please set your delivery address before checking out.';
-    header('Location: /dashboard-buyer/settings/?tab=address');
+// Same completeness rule the cart enforces — checkout is reachable directly,
+// so it cannot rely on the cart having already checked
+$missing = buyer_missing_fields($buyer);
+if (!$success && $missing) {
+    [$message, $url] = missing_fields_prompt($missing, 'checkout', buyer_default_address_id($pdo, (int)$userId));
+    // settings_error, not cart_error — the settings page only renders the former
+    $_SESSION['settings_error'] = $message;
+    header('Location: ' . $url);
     exit;
 }
 

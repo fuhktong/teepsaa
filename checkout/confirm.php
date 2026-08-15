@@ -11,6 +11,7 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/delivery-calc.php';
 require __DIR__ . '/../config/notify.php';
 require __DIR__ . '/../config/coupon.php';
+require __DIR__ . '/../config/delivery-address.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -27,7 +28,7 @@ csrf_verify();
 $userId = $_SESSION['user_id'];
 
 // Require verified email and delivery address
-$stmt = $pdo->prepare('SELECT lat, lng, email_verified_at, name, email FROM buyers WHERE id = ?');
+$stmt = $pdo->prepare('SELECT lat, lng, address, khan, sangkat, phone, email_verified_at, name, email FROM buyers WHERE id = ?');
 $stmt->execute([$userId]);
 $buyer = $stmt->fetch();
 
@@ -40,9 +41,11 @@ if (!$buyer['email_verified_at']) {
 $buyerLat = ($buyer['lat'] !== null && $buyer['lat'] !== '') ? (float)$buyer['lat'] : null;
 $buyerLng = ($buyer['lng'] !== null && $buyer['lng'] !== '') ? (float)$buyer['lng'] : null;
 
-if ($buyerLat === null || $buyerLng === null) {
-    $_SESSION['cart_error'] = 'Please set your delivery address before checking out.';
-    header('Location: /dashboard-buyer/settings/?tab=address');
+$missing = buyer_missing_fields($buyer);
+if ($missing) {
+    [$message, $url] = missing_fields_prompt($missing, 'checkout', buyer_default_address_id($pdo, (int)$userId));
+    $_SESSION['settings_error'] = $message;
+    header('Location: ' . $url);
     exit;
 }
 

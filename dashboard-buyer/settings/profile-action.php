@@ -31,8 +31,17 @@ if (!$name) {
     exit;
 }
 
+// The driver needs a number to call on delivery, so the cart requires one
+if (!$phone) {
+    require __DIR__ . '/../../config/delivery-address.php';
+    $t = delivery_lang();
+    $_SESSION['settings_error'] = $t['settings_phone_required'];
+    header('Location: /dashboard-buyer/settings/?tab=account');
+    exit;
+}
+
 $stmt = $pdo->prepare('UPDATE buyers SET name = ?, phone = ? WHERE id = ?');
-$stmt->execute([$name, $phone ?: null, $userId]);
+$stmt->execute([$name, $phone, $userId]);
 
 $_SESSION['user_name']        = $name;
 $_SESSION['settings_success'] = 'Account updated.';

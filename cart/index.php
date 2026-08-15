@@ -9,6 +9,7 @@ session_start([
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/delivery-calc.php';
+require __DIR__ . '/../config/delivery-address.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -18,16 +19,21 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
 $userId = $_SESSION['user_id'];
 
 // Buyer address
-$stmt = $pdo->prepare('SELECT lat, lng, address, khan FROM buyers WHERE id = ?');
+$stmt = $pdo->prepare('SELECT lat, lng, address, khan, sangkat, phone FROM buyers WHERE id = ?');
 $stmt->execute([$userId]);
 $buyer      = $stmt->fetch();
 $buyerLat   = ($buyer['lat'] !== null && $buyer['lat'] !== '') ? (float)$buyer['lat'] : null;
 $buyerLng   = ($buyer['lng'] !== null && $buyer['lng'] !== '') ? (float)$buyer['lng'] : null;
 $hasAddress = $buyerLat !== null && $buyerLng !== null;
 
-if (empty($buyer['address']) && empty($buyer['khan'])) {
-    $_SESSION['settings_success'] = 'Please set your delivery address before adding items to your cart.';
-    header('Location: /dashboard-buyer/settings/?tab=address');
+// A cart is only useful if we can actually deliver it: full address, map pin
+// and a phone number for the driver. Whatever is missing gets named, and the
+// buyer is dropped on the settings tab that holds it with the form open.
+$missing = buyer_missing_fields($buyer);
+if ($missing) {
+    [$message, $url] = missing_fields_prompt($missing, 'cart', buyer_default_address_id($pdo, (int)$userId));
+    $_SESSION['settings_error'] = $message;
+    header('Location: ' . $url);
     exit;
 }
 

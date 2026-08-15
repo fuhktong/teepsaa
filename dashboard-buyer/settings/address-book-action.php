@@ -29,6 +29,11 @@ $cities   = require __DIR__ . '/../../config/cities.php';
 $postCity = trim($_POST['city'] ?? '');
 $city     = in_array($postCity, $cities, true) ? $postCity : ($cities[0] ?? null);
 
+// Same completeness rule the cart and checkout enforce, so an address that
+// saves here can never bounce the buyer later
+require __DIR__ . '/../../config/delivery-address.php';
+$t = delivery_lang();
+
 if ($action === 'add') {
     $label        = mb_substr(trim($_POST['label'] ?? ''), 0, 100);
     $houseNumber  = mb_substr(trim($_POST['house_number'] ?? ''), 0, 50) ?: null;
@@ -39,11 +44,16 @@ if ($action === 'add') {
     $lat          = ($_POST['lat'] ?? '') !== '' ? (float)$_POST['lat'] : null;
     $lng          = ($_POST['lng'] ?? '') !== '' ? (float)$_POST['lng'] : null;
 
-    if (!$label && !$address && !$khan) {
-        $_SESSION['settings_error'] = 'Please fill in at least a label and address.';
-        header('Location: /dashboard-buyer/settings/?tab=address');
+    $missing = address_missing_fields($address, $khan, $sangkat, $lat, $lng);
+    if ($missing) {
+        $_SESSION['settings_error'] = sprintf($t['missing_intro_save'], missing_fields_list($missing));
+        header('Location: /dashboard-buyer/settings/?tab=address&fix=' . implode(',', $missing));
         exit;
     }
+
+    // Label is optional but the checkout address picker shows it, so never
+    // leave it blank
+    $label = $label ?: $khan;
 
     // First use of the address book: import the existing main address from
     // the buyers table so it appears in the list instead of being stranded
@@ -98,14 +108,17 @@ if ($action === 'add') {
     $lat          = ($_POST['lat'] ?? '') !== '' ? (float)$_POST['lat'] : null;
     $lng          = ($_POST['lng'] ?? '') !== '' ? (float)$_POST['lng'] : null;
 
-    if (!$label && !$address && !$khan) {
-        $_SESSION['settings_error'] = 'Please fill in at least a label and address.';
-        header('Location: /dashboard-buyer/settings/?tab=address&edit=' . $addrId);
+    $missing = address_missing_fields($address, $khan, $sangkat, $lat, $lng);
+    if ($missing) {
+        $_SESSION['settings_error'] = sprintf($t['missing_intro_save'], missing_fields_list($missing));
+        header('Location: /dashboard-buyer/settings/?tab=address&edit=' . $addrId . '&fix=' . implode(',', $missing));
         exit;
     }
 
+    $label = $label ?: $khan;
+
     $pdo->prepare('UPDATE buyer_addresses SET label=?, house_number=?, address=?, address_notes=?, khan=?, sangkat=?, city=?, lat=?, lng=? WHERE id=?')
-        ->execute([$label ?: null, $houseNumber, $address, $addressNotes, $khan, $sangkat, $city, $lat, $lng, $addrId]);
+        ->execute([$label, $houseNumber, $address, $addressNotes, $khan, $sangkat, $city, $lat, $lng, $addrId]);
 
     // Editing the default address must also update the buyers table,
     // which is what the delivery calculation reads
