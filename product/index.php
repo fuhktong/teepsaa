@@ -239,6 +239,9 @@ $reviews = $rStmt->fetchAll();
                     $showLow      = empty($variants) && $lowThreshold > 0
                                     && $product['stock'] > 0 && $product['stock'] <= $lowThreshold;
                     $outOfStock   = empty($variants) && $product['stock'] < 1;
+                    // Longest quantity dropdown we'll render — a buyer wanting more
+                    // than this can raise it on the cart page
+                    $qtySelectMax = 20;
                 ?>
                 <p class="product-stock<?= $showLow ? ' product-stock--low' : '' ?>" id="stock-display">
                     <?php if (!empty($variants)): ?>
@@ -254,11 +257,14 @@ $reviews = $rStmt->fetchAll();
 
                 <?php if ($isBuyer): ?>
                     <?php if (!$outOfStock): ?>
+                    <?php $qtyOptions = !empty($variants) ? 1 : min((int)$product['stock'], $qtySelectMax); ?>
                     <div class="product-qty-row">
                         <label for="quantity"><?= $t['product_quantity'] ?></label>
-                        <input type="number" id="quantity" name="quantity" class="product-qty-input"
-                               value="1" min="1" step="1" inputmode="numeric"
-                               max="<?= !empty($variants) ? 1 : (int)$product['stock'] ?>">
+                        <select id="quantity" name="quantity" class="product-qty-select">
+                            <?php for ($i = 1; $i <= $qtyOptions; $i++): ?>
+                            <option value="<?= $i ?>"><?= $i ?></option>
+                            <?php endfor; ?>
+                        </select>
                     </div>
                     <?php endif; ?>
                     <button type="submit" class="btn-add-cart <?= $outOfStock ? 'btn-add-cart--disabled' : (!empty($variants) ? 'btn-add-cart--pending' : '') ?>"
@@ -397,7 +403,8 @@ $reviews = $rStmt->fetchAll();
 <?php if (!empty($variants)): ?>
 <script>
 // Stock wording and the quantity cap both follow the selected variant
-var LOW_THRESHOLD = <?= (int)($product['low_stock_threshold'] ?? 0) ?>;
+var LOW_THRESHOLD   = <?= (int)($product['low_stock_threshold'] ?? 0) ?>;
+var QTY_SELECT_MAX  = <?= (int)$qtySelectMax ?>;
 var TXT_IN_STOCK  = <?= json_encode($t['product_in_stock'], JSON_UNESCAPED_UNICODE) ?>;
 var TXT_OUT_STOCK = <?= json_encode($t['product_out_of_stock'], JSON_UNESCAPED_UNICODE) ?>;
 var TXT_ONLY_LEFT = <?= json_encode($t['product_only_left'], JSON_UNESCAPED_UNICODE) ?>;
@@ -413,9 +420,16 @@ function applyVariantStock(stockEl, stock) {
     }
     var qtyEl = document.getElementById('quantity');
     if (!qtyEl) return;
-    var max = stock > 0 ? stock : 1;
-    qtyEl.max = max;
-    if (parseInt(qtyEl.value, 10) > max) qtyEl.value = max;
+    var max  = stock > 0 ? Math.min(stock, QTY_SELECT_MAX) : 1;
+    var prev = parseInt(qtyEl.value, 10) || 1;
+    qtyEl.innerHTML = '';
+    for (var i = 1; i <= max; i++) {
+        var opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = i;
+        qtyEl.appendChild(opt);
+    }
+    qtyEl.value = Math.min(prev, max);
 }
 
 <?php if ($hasOptionTypes): ?>
