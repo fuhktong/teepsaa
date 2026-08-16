@@ -639,12 +639,10 @@ main h1 {
   font-family: inherit;
 }
 
+/* Shape and chevron come from the global `select` rule in style.css */
 .cat-parent-select {
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
+  padding: 0.35rem 1.9rem 0.35rem 0.5rem;
   font-size: 0.875rem;
-  font-family: inherit;
   max-width: 220px;
 }
 
@@ -1042,7 +1040,13 @@ main h1 {
   font-size: 0.875rem;
   font-family: inherit;
   width: 220px;
-  background: #fff;
+  /* background-color, not the shorthand — the class is also used on a
+     <select>, whose chevron lives in background-image */
+  background-color: #fff;
+}
+
+select.admin-search-input {
+  padding-right: 1.9rem;
 }
 
 .admin-search-input:focus {
@@ -1050,20 +1054,11 @@ main h1 {
   border-color: var(--text-muted);
 }
 
+/* Shape and chevron come from the global `select` rule in style.css */
 .admin-select {
-  padding: 0.38rem 0.55rem;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
+  padding: 0.38rem 1.9rem 0.38rem 0.55rem;
   font-size: 0.875rem;
-  font-family: inherit;
-  background: #fff;
-  cursor: pointer;
   margin-left: 0.4rem;
-}
-
-.admin-select:focus {
-  outline: none;
-  border-color: var(--text-muted);
 }
 
 .admin-date-form {

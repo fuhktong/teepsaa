@@ -62,7 +62,6 @@
 }
 
 .contact-field input,
-.contact-field select,
 .contact-field textarea {
     width: 100%;
     padding: 0.5rem 0.75rem;
@@ -72,6 +71,11 @@
     color: #111;
     background: #fff;
     box-sizing: border-box;
+}
+
+/* Shape and chevron come from the global `select` rule in style.css */
+.contact-field select {
+    width: 100%;
 }
 
 .contact-field input:focus,

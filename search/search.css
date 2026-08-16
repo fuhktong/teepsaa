@@ -55,17 +55,14 @@
     letter-spacing: 0.04em;
 }
 
+/* Fixed-height filter bar control — shape and chevron come from the
+   global `select` rule in style.css */
 .filter-select {
     width: 100%;
     height: 36px;
-    padding: 0 0.6rem;
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
+    padding-top: 0;
+    padding-bottom: 0;
     font-size: 0.875rem;
-    color: #111;
-    background: #fff;
-    cursor: pointer;
-    appearance: auto;
 }
 
 .filter-select:focus {

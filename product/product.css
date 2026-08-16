@@ -106,16 +106,11 @@
     color: #444;
 }
 
-/* Full width to line up with the add-to-cart button below it,
-   but keeps its own natural height */
+/* Full width to line up with the add-to-cart button below it, but keeps
+   its own natural height. Shape and chevron come from the global
+   `select` rule in style.css */
 .product-qty-select {
     width: 100%;
-    padding: 0.55rem 0.75rem;
-    border: 1px solid #ccc;
-    border-radius: var(--radius-sm);
-    font-size: 1rem;
-    font-family: inherit;
-    box-sizing: border-box;
 }
 
 .cart-form {

@@ -191,14 +191,16 @@ footer {
   line-height: 0;
 }
 
+/* The wrapper draws the box, so strip the global select's own frame and
+   pull its chevron in tight against the text */
 .footer-select {
-  background: transparent;
+  background-color: transparent;
+  background-position: right 0 center;
   border: none;
   outline: none;
   font-size: 0.82rem;
   color: #222;
-  cursor: pointer;
-  padding-right: 0.25rem;
+  padding: 0 0.95rem 0 0;
 }
 
 .footer-copy {

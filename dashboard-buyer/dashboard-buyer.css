@@ -164,10 +164,11 @@
   box-sizing: border-box;
 }
 
+/* Shares the textarea's box above; the chevron comes from the global
+   `select` rule in style.css, so only make room for it */
 select.refund-reason-input {
   resize: none;
-  background: #fff;
-  cursor: pointer;
+  padding-right: 2rem;
 }
 
 .refund-reason-input:focus {

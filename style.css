@@ -107,6 +107,13 @@
   /* Signature / script accent — swap the first name to restyle */
   --font-script: "Pacifico", cursive;
   --font-script-km: "Metal", cursive;
+
+  /* Dropdown chevron — the native select arrow is replaced site-wide so its
+     distance from the right edge is ours to control. Change it here and every
+     dropdown follows. */
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236b7280' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  --select-arrow-muted: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239ca3af' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  --select-arrow-inset: 0.75rem; /* gap between the chevron and the right edge */
 }
 
 body {
@@ -127,6 +134,41 @@ button {
   font-family: inherit;
   border: none;
   cursor: pointer;
+}
+
+/* ── Dropdowns ─────────────────────────────────────────────────────
+   One look for every <select> on the site. Width is deliberately left
+   out so pages can size their own (full-width forms vs. inline toolbar
+   filters). Two rules for page CSS overriding anything here:
+     • use `background-color`, never the `background` shorthand — the
+       shorthand wipes out the chevron
+     • if you change `padding`, keep room on the right for the chevron */
+select {
+  padding: 0.55rem 2.25rem 0.55rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background-color: var(--surface);
+  background-image: var(--select-arrow);
+  background-repeat: no-repeat;
+  background-position: right var(--select-arrow-inset) center;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--text-muted);
+}
+
+select:disabled {
+  background-color: var(--bg-subtle);
+  background-image: var(--select-arrow-muted);
+  color: var(--text-muted);
+  cursor: not-allowed;
 }
 
 /* ── Banner carousel ──────────────────────────────────────────── */

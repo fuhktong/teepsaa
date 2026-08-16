@@ -51,7 +51,7 @@ $adminTab     = 'careers';
     <link rel="stylesheet" href="/admin/admin.css">
     <style>
         .app-toolbar { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
-        .app-toolbar select { padding: 0.4rem 0.6rem; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); font-size: 0.9rem; font-family: inherit; }
+        .app-toolbar select { padding: 0.4rem 2rem 0.4rem 0.6rem; font-size: 0.9rem; }
         .app-grid { display: flex; flex-direction: column; gap: 0.85rem; }
         .app-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
         .app-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
@@ -62,7 +62,7 @@ $adminTab     = 'careers';
         .app-contact a { color: var(--primary); text-decoration: none; }
         .app-message { font-size: 0.9rem; color: #555; line-height: 1.6; background: var(--bg-subtle); border-radius: var(--radius-sm); padding: 0.6rem 0.8rem; margin: 0.5rem 0; white-space: pre-wrap; }
         .app-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.6rem; }
-        .app-actions select { padding: 0.35rem 0.5rem; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); font-size: 0.85rem; font-family: inherit; }
+        .app-actions select { padding: 0.35rem 1.9rem 0.35rem 0.5rem; font-size: 0.85rem; }
         .status-badge { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 2px 8px; border-radius: var(--radius-lg); }
         .status-new         { color: #1d4ed8; background: #dbeafe; }
         .status-reviewed    { color: #6b7280; background: #f3f4f6; }

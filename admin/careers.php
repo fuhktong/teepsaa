@@ -71,10 +71,12 @@ $adminTab     = 'careers';
         .upload-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
         .upload-form-grid .full { grid-column: 1 / -1; }
         .upload-label { font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 4px; }
-        .upload-input, .upload-textarea, .upload-select {
+        .upload-input, .upload-textarea {
             width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--border-strong);
             border-radius: var(--radius-sm); font-size: 0.9rem; font-family: inherit;
         }
+        /* Shape and chevron come from the global `select` rule in style.css */
+        .upload-select { width: 100%; }
         .upload-textarea { min-height: 140px; resize: vertical; }
         .upload-check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
         .btn { display: inline-block; padding: 0.35rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); background: #fff; font-size: 0.85rem; cursor: pointer; font-family: inherit; white-space: nowrap; text-decoration: none; color: inherit; }

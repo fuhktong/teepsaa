@@ -254,7 +254,6 @@
 .field input[type="text"],
 .field input[type="number"],
 .field input[type="date"],
-.field select,
 .field textarea {
   padding: 0.55rem 0.75rem;
   border: 1px solid #ccc;
@@ -264,9 +263,10 @@
   width: 100%;
 }
 
-.field select:disabled {
-  background: #f5f5f5;
-  color: #666;
+/* Shape, chevron and the disabled look come from the global `select`
+   rule in style.css */
+.field select {
+  width: 100%;
 }
 
 .field textarea {
@@ -480,6 +480,12 @@
   border-radius: var(--radius-sm);
   font-size: 0.875rem;
   font-family: inherit;
+}
+
+/* Same compact height as the text inputs beside it, but keeps room
+   for the chevron */
+select.coupon-input {
+  padding-right: 1.9rem;
 }
 
 .coupon-input:focus {
