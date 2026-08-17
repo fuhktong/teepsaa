@@ -115,10 +115,10 @@ accounts/orders created earlier.
       unarchive returns it (inactive until re-activated)
 - [x] Delete: gone from lists; existing orders still display its name
       (snapshot), buyer's cart handles it gracefully
-- [ ] Low stock: set threshold, sell past it → vendor notification + email
-- [ ] Coupons: create vendor coupon, buyer applies it, discount comes out of
+- [x] Low stock: set threshold, sell past it → vendor notification + email
+- [x] Coupons: create vendor coupon, buyer applies it, discount comes out of
       vendor payout (check the numbers in admin accounting)
-- [ ] Products list: sorting works, orders tab shows full history
+- [x] Products list: sorting works, orders tab shows full history
 
 ## Vendor — orders & money
 
@@ -127,10 +127,10 @@ accounts/orders created earlier.
 - [x] Dispatch flow: mark dispatched (+ tracking URL), buyer sees it
       (live order run-through — Grab link entered, buyer saw it and
       confirmed delivery)
-- [ ] Order detail shows royalty/payout breakdown correctly
+- [x] Order detail shows royalty/payout breakdown correctly
 - [x] Return received: vendor marks returned item received
       (verified in full refund run-through, Jul 2026)
-- [ ] ABA QR upload in settings (payout method)
+- [x] ABA QR upload in settings (payout method)
 - [ ] Messages (support desk — vendor ↔ admin, NOT vendor↔buyer): from
       /contact-vendor/ send a support message (optionally attach an order);
       it appears in /messages-vendor/; admin's reply shows up there; same

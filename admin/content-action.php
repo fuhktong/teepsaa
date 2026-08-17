@@ -1,5 +1,6 @@
 <?php
 session_start([
+    'gc_maxlifetime'  => 28800,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict',
     'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
@@ -10,7 +11,7 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/csrf.php';
 
-if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin' || !($_SESSION['is_admin'] ?? false)) {
+if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
     exit;
 }
@@ -59,7 +60,7 @@ function do_save(string $slug): void {
     }
 
     $stmt = $pdo->prepare('UPDATE content_pages SET title_en = ?, title_km = ?, body_en = ?, body_km = ?, updated_by = ? WHERE slug = ?');
-    $stmt->execute([$titleEn, $titleKm, $bodyEn, $bodyKm, (int) $_SESSION['user_id'], $slug]);
+    $stmt->execute([$titleEn, $titleKm, $bodyEn, $bodyKm, (int) $_SESSION['admin_id'], $slug]);
 
     redirect_content($slug, 'Page updated.');
 }

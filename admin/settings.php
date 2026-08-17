@@ -1,5 +1,6 @@
 <?php
 session_start([
+    'gc_maxlifetime'  => 28800,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict',
     'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
@@ -10,7 +11,7 @@ require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 
-if (!isset($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
+if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
     exit;
 }
@@ -19,7 +20,7 @@ $refundCount        = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status
 $pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();
 $unreadMsgCount     = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM support_messages WHERE sender IN ('buyer','vendor','guest') AND read_at IS NULL")->fetchColumn();
 $stmt = $pdo->prepare('SELECT email FROM admins WHERE id = ?');
-$stmt->execute([$_SESSION['user_id']]);
+$stmt->execute([$_SESSION['admin_id']]);
 $adminEmail = $stmt->fetchColumn() ?: '';
 $success = $_SESSION['settings_success'] ?? '';
 $error   = $_SESSION['settings_error']   ?? '';
@@ -58,11 +59,11 @@ $adminTab     = '';
 
     <?php
     $aStmt = $pdo->prepare('SELECT avatar, avatar_color FROM admins WHERE id = ?');
-    $aStmt->execute([$_SESSION['user_id']]);
+    $aStmt->execute([$_SESSION['admin_id']]);
     $aRow = $aStmt->fetch(PDO::FETCH_ASSOC);
     $adminAvatar      = $aRow['avatar'] ?? '';
     $adminAvatarColor = isset($aRow['avatar_color']) ? (int)$aRow['avatar_color'] : null;
-    $adminColorIdx    = $adminAvatarColor ?? (abs((int)$_SESSION['user_id']) % 5);
+    $adminColorIdx    = $adminAvatarColor ?? (abs((int)$_SESSION['admin_id']) % 5);
     $avPalette = ['#4a86e8','#e06055','#f6b026','#57bb8a','#8e63ce'];
     ?>
     <div class="settings-form">
@@ -72,7 +73,7 @@ $adminTab     = '';
             <?php if ($adminAvatar): ?>
                 <img src="/uploads/<?= htmlspecialchars($adminAvatar) ?>" alt="" class="avatar-preview">
             <?php else: ?>
-                <?= _avatar_svg((int)$_SESSION['user_id'], $adminAvatarColor, 64) ?>
+                <?= _avatar_svg((int)$_SESSION['admin_id'], $adminAvatarColor, 64) ?>
             <?php endif; ?>
             <div>
                 <form method="POST" action="/admin/avatar-action.php" enctype="multipart/form-data" style="display:inline">

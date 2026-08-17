@@ -87,14 +87,17 @@ function syncActionButtons(container, newStatus) {
     });
 }
 
-async function refreshCard(card, { loginUrl, isAdminFilter, popupBody }) {
+async function refreshCard(card, { loginUrl, isAdminFilter, asAdmin, popupBody }) {
     const orderId       = card.dataset.orderId;
     const orderRef      = card.dataset.orderRef;
     const currentStatus = card.dataset.status;
     const popupId       = card.dataset.popup;
 
     try {
-        const res = await fetch(`/api/order-status.php?order_id=${encodeURIComponent(orderId)}`);
+        // One browser can hold an admin session and a buyer/vendor one at once,
+        // so admin pages say which hat they are wearing.
+        const asParam = asAdmin ? '&as=admin' : '';
+        const res = await fetch(`/api/order-status.php?order_id=${encodeURIComponent(orderId)}${asParam}`);
 
         if (res.status === 401) {
             showToast(`${T.session_expired || 'Session expired —'} <a href="${loginUrl}">${T.login_again || 'please log in again'}</a>`, true);
@@ -143,6 +146,7 @@ async function refreshCard(card, { loginUrl, isAdminFilter, popupBody }) {
 export function initStatusRefresh(options = {}) {
     const loginUrl      = options.loginUrl || '/login-buyer/';
     const isAdminFilter = !!options.isAdminFilter;
+    const asAdmin       = !!options.asAdmin;
     const popupBody     = document.getElementById('popup-body');
     const btn           = document.querySelector('[data-refresh-all-btn]');
     if (!btn) return;
@@ -154,7 +158,7 @@ export function initStatusRefresh(options = {}) {
         const cards = [...document.querySelectorAll('[data-order-id]')];
         try {
             await Promise.all([
-                Promise.all(cards.map(card => refreshCard(card, { loginUrl, isAdminFilter, popupBody }))),
+                Promise.all(cards.map(card => refreshCard(card, { loginUrl, isAdminFilter, asAdmin, popupBody }))),
                 new Promise(r => setTimeout(r, 700)),
             ]);
         } finally {

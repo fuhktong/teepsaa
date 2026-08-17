@@ -1,5 +1,6 @@
 <?php
 session_start([
+    'gc_maxlifetime'  => 28800,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict',
     'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
@@ -10,7 +11,7 @@ require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 
-if (!isset($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
+if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
     exit;
 }
@@ -54,7 +55,7 @@ if ($action === 'add') {
         INSERT INTO vendor_penalties (business_id, rate_increase, admin_note, start_date, end_date, created_by)
         VALUES (?, ?, ?, ?, ?, ?)
     ');
-    $stmt->execute([$businessId, $rateIncrease, $note, $startDate, $endDate, $_SESSION['user_id']]);
+    $stmt->execute([$businessId, $rateIncrease, $note, $startDate, $endDate, $_SESSION['admin_id']]);
     $_SESSION['admin_success'] = 'Penalty applied.';
 
 } elseif ($action === 'remove') {

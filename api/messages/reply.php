@@ -1,5 +1,6 @@
 <?php
 session_start([
+    'gc_maxlifetime'  => 28800,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict',
     'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
@@ -11,7 +12,7 @@ require __DIR__ . '/../../config/csrf.php';
 
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['user_id']) && empty($_SESSION['admin_id'])) {
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized']);
     exit;
@@ -30,9 +31,10 @@ if (empty($token) || !hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
     exit;
 }
 
-$role    = $_SESSION['role'] ?? '';
-$userId  = $_SESSION['user_id'];
-$isAdmin = !empty($_SESSION['is_admin']);
+// See api/messages/poll.php — the caller declares which identity it is using.
+$isAdmin = !empty($_SESSION['admin_id']) && ($_POST['as'] ?? '') === 'admin';
+$role    = $isAdmin ? '' : ($_SESSION['role'] ?? '');
+$userId  = $_SESSION['user_id'] ?? 0;
 
 $threadId = (int)($_POST['thread_id'] ?? 0);
 $body     = trim($_POST['body'] ?? '');

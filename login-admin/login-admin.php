@@ -1,5 +1,6 @@
 <?php
 session_start([
+    'gc_maxlifetime'  => 28800,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict',
     'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
@@ -45,12 +46,17 @@ if ($user['admin_role'] !== 'super') {
     $permissions = $permStmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
+// The admin identity lives under its own keys and never touches 'user_id' or
+// 'role', so an admin, a buyer and a vendor can all be signed in in the same
+// browser without clobbering each other. See config/admin-auth.php.
 session_regenerate_id(true);
-$_SESSION['user_id']          = $user['id'];
-$_SESSION['role']             = 'admin';
-$_SESSION['is_admin']         = true;
-$_SESSION['admin_role']       = $user['admin_role'];
+$_SESSION['admin_id']          = $user['id'];
+$_SESSION['admin_role']        = $user['admin_role'];
 $_SESSION['admin_permissions'] = $permissions;
-$_SESSION['lang']             = 'en'; // office language — admins start in English
+// Office language — but don't yank a buyer/vendor already signed in here
+// out of their chosen language.
+if (empty($_SESSION['user_id'])) {
+    $_SESSION['lang'] = 'en';
+}
 header('Location: /admin/');
 exit;

@@ -27,6 +27,32 @@ function admin_all_sections(): array {
     return array_merge(...array_values(ADMIN_SECTION_GROUPS));
 }
 
+// ── Admin identity ────────────────────────────────────────────────────
+// The admin session is namespaced: 'admin_id' / 'admin_role' /
+// 'admin_permissions', never 'user_id' / 'role' / 'is_admin'. Buyer and
+// vendor logins write the latter set, so all three roles can be signed in
+// in one browser at once and no login knocks another one out. It also
+// closes the hole where a stale is_admin flag left admin pages reachable
+// with a buyer's user_id.
+function admin_logged_in(): bool {
+    return !empty($_SESSION['admin_id']);
+}
+
+function admin_id(): int {
+    return (int)($_SESSION['admin_id'] ?? 0);
+}
+
+// True when the current request is for the admin panel itself, which is what
+// decides whether the header/footer render in admin mode — not session state,
+// since the visitor may hold a buyer session in the same browser.
+function admin_area_request(): bool {
+    if (defined('IS_ADMIN_SUBDOMAIN') && IS_ADMIN_SUBDOMAIN) {
+        return true;
+    }
+    $path = strtok($_SERVER['REQUEST_URI'] ?? '/', '?') ?: '/';
+    return str_starts_with($path, '/admin/') || str_starts_with($path, '/login-admin/');
+}
+
 function admin_is_super(): bool {
     return ($_SESSION['admin_role'] ?? 'super') === 'super';
 }

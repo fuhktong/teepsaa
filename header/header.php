@@ -10,11 +10,24 @@ if (!isset($t)) {
 // The header reads the DB for a logged-in user's cart count and unread
 // badges. Static pages (privacy, about, terms, …) don't load the DB
 // config, so ensure $pdo exists when it's actually needed.
-if (!isset($pdo) && !empty($_SESSION['user_id'])) {
+if (!isset($pdo) && (!empty($_SESSION['user_id']) || !empty($_SESSION['admin_id']))) {
     require_once __DIR__ . '/../config/db.php';
 }
-if (!function_exists('admin_can') && ($_SESSION['role'] ?? '') === 'admin') {
+if (!function_exists('admin_can') && !empty($_SESSION['admin_id'])) {
     require_once __DIR__ . '/../config/admin-auth.php';
+}
+// Admin chrome is chosen by where the request landed, not by session state:
+// the same browser may hold a buyer session alongside the admin one, and a
+// buyer page must not sprout the admin nav.
+$isAdminHeader = !empty($_SESSION['admin_id']) && function_exists('admin_area_request') && admin_area_request();
+
+// One-time migration: admin logins used to write user_id/role/is_admin. Those
+// sessions are no longer admins, and leaving role='admin' behind makes the
+// buyer nav render against an admins-table id. Clear the remnant so they just
+// look logged out; safe to delete once no pre-namespacing sessions survive.
+if (($_SESSION['role'] ?? '') === 'admin') {
+    unset($_SESSION['user_id'], $_SESSION['role'], $_SESSION['is_admin'],
+          $_SESSION['user_name'], $_SESSION['user_avatar'], $_SESSION['user_avatar_color']);
 }
 
 if (!function_exists('_avatar_svg')) {
@@ -66,7 +79,7 @@ $activeFlag = $lang === 'km'
 $isVendorHeader = ($_SESSION['role'] ?? '') === 'vendor';
 $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer';
 ?>
-<header<?= ($_SESSION['role'] ?? '') === 'admin' ? ' class="admin-header"' : ($isVendorHeader ? ' class="vendor-header"' : ($isBuyerHeader ? ' class="buyer-header"' : '')) ?>>
+<header<?= $isAdminHeader ? ' class="admin-header"' : ($isVendorHeader ? ' class="vendor-header"' : ($isBuyerHeader ? ' class="buyer-header"' : '')) ?>>
     <div class="header-inner">
         <a href="/" class="site-name"><img src="/images/<?= $lang === 'km' ? 'teepsaa_logo_khm.png' : 'teepsaa_logo_eng_myriad.png' ?>" alt="teepsaa"></a>
         <form class="header-search" method="GET" action="/search/">
@@ -79,8 +92,8 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
         </button>
 
         <nav>
-            <?php if (isset($_SESSION['user_id']) && isset($_SESSION['role'])): ?>
-                <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
+            <?php if ($isAdminHeader || (isset($_SESSION['user_id']) && isset($_SESSION['role']))): ?>
+                <?php if ($isAdminHeader): ?>
                     <?php
                         // Section roll-up badges: everything waiting inside a section,
                         // visible from any admin page (each queue gated by permission)
@@ -95,7 +108,7 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                         if (admin_can('refunds'))  $adminNavOrders += (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status IN ('refund_requested','return_received')")->fetchColumn();
                         if (admin_can('payouts'))  $adminNavOrders += (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();
                         $aAvStmt = $pdo->prepare('SELECT avatar, avatar_color FROM admins WHERE id = ?');
-                        $aAvStmt->execute([$_SESSION['user_id']]);
+                        $aAvStmt->execute([$_SESSION['admin_id']]);
                         $aAvRow = $aAvStmt->fetch(PDO::FETCH_ASSOC);
                         $adminAvatarFile  = $aAvRow['avatar'] ?? '';
                         $adminAvatarColor = isset($aAvRow['avatar_color']) ? (int)$aAvRow['avatar_color'] : null;
@@ -111,13 +124,13 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                             <?php if ($adminAvatarFile): ?>
                                 <img src="/uploads/<?= htmlspecialchars($adminAvatarFile) ?>" alt="">
                             <?php else: ?>
-                                <?= _avatar_svg((int)$_SESSION['user_id'], $adminAvatarColor) ?>
+                                <?= _avatar_svg((int)$_SESSION['admin_id'], $adminAvatarColor) ?>
                             <?php endif; ?>
                         </button>
                         <div class="user-dropdown" id="user-dropdown">
                             <?php if (admin_can('admins')): ?><a href="/admin/admins.php">Manage Admins</a><?php endif; ?>
                             <a href="/admin/settings.php"><?= $t['nav_settings'] ?></a>
-                            <a href="/logout/logout.php"><?= $t['nav_logout'] ?></a>
+                            <a href="/admin/logout.php"><?= $t['nav_logout'] ?></a>
                         </div>
                     </div>
                 <?php elseif (($_SESSION['role'] ?? '') === 'vendor'): ?>
@@ -257,8 +270,8 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
     </div>
 
     <div class="mobile-nav" id="mobile-nav">
-        <?php if (isset($_SESSION['user_id']) && isset($_SESSION['role'])): ?>
-            <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
+        <?php if ($isAdminHeader || (isset($_SESSION['user_id']) && isset($_SESSION['role']))): ?>
+            <?php if ($isAdminHeader): ?>
                 <?php if (admin_can('vendors')): ?><a href="/admin/" class="mobile-nav-link <?= ($adminSection ?? '') === 'admin' ? 'active' : '' ?>"><?= ($adminNavAdmin ?? 0) > 0 ? $t['nav_admin'] . ' (' . $adminNavAdmin . ')' : $t['nav_admin'] ?></a><?php endif; ?>
                 <?php if (admin_can('orders')): ?><a href="/admin/orders.php" class="mobile-nav-link <?= ($adminSection ?? '') === 'orders' ? 'active' : '' ?>"><?= ($adminNavOrders ?? 0) > 0 ? $t['nav_orders'] . ' (' . $adminNavOrders . ')' : $t['nav_orders'] ?></a><?php endif; ?>
                 <?php if (admin_can('promo-codes')): ?><a href="/admin/promo-codes.php" class="mobile-nav-link <?= ($adminSection ?? '') === 'marketing' ? 'active' : '' ?>"><?= $t['nav_marketing'] ?></a><?php endif; ?>
@@ -266,7 +279,7 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                 <?php if (admin_can('messages')): ?><a href="/admin/messages/" class="mobile-nav-link <?= ($adminSection ?? '') === 'messages' ? 'active' : '' ?>"><?= ($adminNavMessages ?? 0) > 0 ? $t['nav_messages'] . ' (' . ($adminNavMessages ?? 0) . ')' : $t['nav_messages'] ?></a><?php endif; ?>
                 <?php if (admin_can('admins')): ?><a href="/admin/admins.php" class="mobile-nav-link">Manage Admins</a><?php endif; ?>
                 <a href="/admin/settings.php" class="mobile-nav-link"><?= $t['nav_settings'] ?></a>
-                <a href="/logout/logout.php" class="mobile-nav-link"><?= $t['nav_logout'] ?></a>
+                <a href="/admin/logout.php" class="mobile-nav-link"><?= $t['nav_logout'] ?></a>
             <?php elseif (($_SESSION['role'] ?? '') === 'vendor'): ?>
                 <a href="/orders-vendor/" class="mobile-nav-link <?= $vendorSection === 'orders' ? 'active' : '' ?>"><?= ($vendorOrdersTodo ?? 0) > 0 ? $t['nav_orders'] . ' (' . $vendorOrdersTodo . ')' : $t['nav_orders'] ?></a>
                 <a href="/products/" class="mobile-nav-link <?= $vendorSection === 'products' ? 'active' : '' ?>"><?= $t['nav_products'] ?></a>

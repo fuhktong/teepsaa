@@ -1,5 +1,6 @@
 <?php
 session_start([
+    'gc_maxlifetime'  => 28800,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict',
     'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
@@ -46,6 +47,21 @@ $stmt->execute([$userId]);
 ]);
 if ($html !== '') send_email($row['email'], $subj, $html);
 
-session_destroy();
+// Sign the deleted account out without dropping an admin session that may be
+// signed in in the same browser (see /logout/logout.php).
+unset(
+    $_SESSION['user_id'],
+    $_SESSION['role'],
+    $_SESSION['user_name'],
+    $_SESSION['user_avatar'],
+    $_SESSION['user_avatar_color'],
+    $_SESSION['pending_role']
+);
+if (empty($_SESSION['admin_id'])) {
+    session_destroy();
+} else {
+    session_regenerate_id(true);
+}
+
 header('Location: /');
 exit;

@@ -1,5 +1,6 @@
 <?php
 session_start([
+    'gc_maxlifetime'  => 28800,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict',
     'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
@@ -9,7 +10,7 @@ session_start([
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 
-if (!isset($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
+if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
     exit;
 }

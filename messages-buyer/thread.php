@@ -1,5 +1,6 @@
 <?php
 session_start([
+    'gc_maxlifetime'  => 28800,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict',
     'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
@@ -57,7 +58,7 @@ $isPending = $thread['status'] === 'pending';
 
 <?php require __DIR__ . '/../header/header.php'; ?>
 
-<main <?= !$isPending ? 'class="chat-main"' : '' ?>>
+<main>
 
     <?php if ($isPending): ?>
 
@@ -95,6 +96,7 @@ $isPending = $thread['status'] === 'pending';
     <?php else: ?>
 
     <div class="chat-topbar">
+        <a href="/messages-buyer/" class="chat-back">←</a>
         <div class="chat-topbar-info">
             <div class="chat-topbar-title"><?= htmlspecialchars($thread['subject']) ?></div>
             <div class="chat-topbar-sub">
@@ -110,8 +112,9 @@ $isPending = $thread['status'] === 'pending';
     <div class="chat-messages" id="msg-list">
         <?php foreach ($messages as $m): ?>
         <?php $isMe = $m['sender'] !== 'admin'; ?>
-        <div class="msg-bubble-wrap <?= $isMe ? 'msg-bubble-wrap--user' : 'msg-bubble-wrap--admin' ?>" data-msg-id="<?= $m['id'] ?>">
-            <div class="msg-bubble <?= $isMe ? 'msg-bubble--user' : 'msg-bubble--admin' ?>"><?= nl2br(htmlspecialchars($m['body'])) ?></div>
+        <div class="msg-bubble-wrap <?= $isMe ? 'msg-bubble-wrap--sent' : 'msg-bubble-wrap--recv' ?>" data-msg-id="<?= $m['id'] ?>">
+            <div class="msg-bubble-label"><?= $isMe ? $t['messages_you'] : $t['messages_support_name'] ?></div>
+            <div class="msg-bubble <?= $isMe ? 'msg-bubble--sent' : 'msg-bubble--recv' ?>"><?= nl2br(htmlspecialchars($m['body'])) ?></div>
             <div class="msg-bubble-time"><?= fmt_date('M j, g:ia', strtotime($m['created_at'])) ?></div>
         </div>
         <?php endforeach; ?>
@@ -131,7 +134,7 @@ $isPending = $thread['status'] === 'pending';
         <div id="chat-error" class="chat-error" style="display:none;"></div>
     </div>
     <?php else: ?>
-    <div class="chat-closed-bar">This conversation is closed. If you need further help, <a href="/contact-buyer/">contact support</a>.</div>
+    <div class="chat-closed-bar"><?= sprintf($t['messages_closed_notice'], '<a href="/contact-buyer/">' . $t['messages_contact_lower'] . '</a>') ?></div>
     <?php endif; ?>
 
     <?php endif; ?>
@@ -141,10 +144,12 @@ $isPending = $thread['status'] === 'pending';
 <?php require __DIR__ . '/../footer/footer.php'; ?>
 
 <script>
-const THREAD_ID  = <?= $thread['id'] ?>;
-const CSRF_TOKEN = <?= json_encode(csrf_token()) ?>;
-let   lastId     = <?= $lastId ?>;
-let   isPending  = <?= $isPending ? 'true' : 'false' ?>;
+const THREAD_ID    = <?= $thread['id'] ?>;
+const CSRF_TOKEN   = <?= json_encode(csrf_token()) ?>;
+const YOU_LABEL    = <?= json_encode($t['messages_you']) ?>;
+const ADMIN_LABEL  = <?= json_encode($t['messages_support_name']) ?>;
+let   lastId       = <?= $lastId ?>;
+let   isPending    = <?= $isPending ? 'true' : 'false' ?>;
 
 function escHtml(s) {
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>');
@@ -155,13 +160,55 @@ function fmtTime(dateStr) {
     return d.toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
 }
 
+// Below 640px the message list isn't its own scroller (the composer goes
+// sticky and the page scrolls instead), so scrolling the list is a no-op
+// there and the window has to be moved instead.
+function listScrolls() {
+    const list = document.getElementById('msg-list');
+    return list && list.scrollHeight > list.clientHeight + 1;
+}
+
+// How far the newest message sits below the fold. Negative means it's
+// already on screen — the sticky composer's height counts as "covered".
+function overshoot() {
+    const list = document.getElementById('msg-list');
+    const bar  = document.querySelector('.chat-input-wrap, .chat-closed-bar');
+    return list.getBoundingClientRect().bottom
+         + (bar ? bar.offsetHeight : 0)
+         - window.innerHeight;
+}
+
+function scrollBottom(smooth) {
+    const list     = document.getElementById('msg-list');
+    if (!list) return;
+    const behavior = smooth ? 'smooth' : 'auto';
+    if (listScrolls()) {
+        list.scrollTo({top: list.scrollHeight, behavior});
+        return;
+    }
+    // Nudge the page just far enough, rather than to document bottom — that
+    // would park a short thread down in the footer.
+    const delta = overshoot();
+    if (delta > 0) window.scrollBy({top: delta, behavior});
+}
+
+function isNearBottom() {
+    const list = document.getElementById('msg-list');
+    if (!list) return true;
+    if (listScrolls()) {
+        return list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+    }
+    return overshoot() < 120;
+}
+
 function buildBubble(msg) {
     const isMe = msg.sender !== 'admin';
     const wrap = document.createElement('div');
-    wrap.className = 'msg-bubble-wrap ' + (isMe ? 'msg-bubble-wrap--user' : 'msg-bubble-wrap--admin');
+    wrap.className = 'msg-bubble-wrap ' + (isMe ? 'msg-bubble-wrap--sent' : 'msg-bubble-wrap--recv');
     wrap.dataset.msgId = msg.id;
     wrap.innerHTML =
-        '<div class="msg-bubble ' + (isMe ? 'msg-bubble--user' : 'msg-bubble--admin') + '">' + escHtml(msg.body) + '</div>' +
+        '<div class="msg-bubble-label">' + escHtml(isMe ? YOU_LABEL : ADMIN_LABEL) + '</div>' +
+        '<div class="msg-bubble ' + (isMe ? 'msg-bubble--sent' : 'msg-bubble--recv') + '">' + escHtml(msg.body) + '</div>' +
         '<div class="msg-bubble-time">' + fmtTime(msg.created_at) + '</div>';
     return wrap;
 }
@@ -176,14 +223,14 @@ async function poll() {
             if (hasAdmin && isPending) { location.reload(); return; }
             const list = document.getElementById('msg-list');
             if (list) {
-                const near = list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+                const stick = isNearBottom();
                 data.messages.forEach(msg => {
                     if (msg.sender === 'admin') {
                         list.appendChild(buildBubble(msg));
                         if (msg.id > lastId) lastId = msg.id;
                     }
                 });
-                if (near) list.scrollTo({top: list.scrollHeight, behavior: 'smooth'});
+                if (stick) scrollBottom(true);
             }
         }
     } catch (_) {}
@@ -221,7 +268,7 @@ if (form) {
                 if (data.id > lastId) lastId = data.id;
                 textarea.value = '';
                 textarea.style.height = '';
-                list.scrollTo({top: list.scrollHeight, behavior: 'smooth'});
+                scrollBottom(true);
             }
         } catch (_) {
             errBox.textContent = 'Network error. Please try again.';
@@ -243,10 +290,9 @@ if (form) {
         this.style.height = 'auto';
         this.style.height = Math.min(this.scrollHeight, 120) + 'px';
     });
-
-    const list = document.getElementById('msg-list');
-    if (list) list.scrollTo({top: list.scrollHeight});
 }
+
+scrollBottom(false);
 </script>
 </body>
 </html>

@@ -20,7 +20,8 @@ if (empty($_SESSION['user_id'])) {
         ['/messages-vendor/',           $t['nav_messages']],
         ['/dashboard-vendor/settings/', $t['nav_settings']],
     ];
-} elseif (($_SESSION['role'] ?? '') === 'admin') {
+} elseif (!empty($_SESSION['admin_id'])
+          && (!function_exists('admin_area_request') || admin_area_request())) {
     $accountLinks = [
         ['/admin/orders.php',   $t['nav_orders']],
         ['/admin/messages/',    $t['nav_messages']],

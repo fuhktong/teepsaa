@@ -1,5 +1,6 @@
 <?php
 session_start([
+    'gc_maxlifetime'  => 28800,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict',
     'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
@@ -10,7 +11,7 @@ require __DIR__ . '/../config/db.php';
 
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['user_id']) && empty($_SESSION['admin_id'])) {
     http_response_code(401);
     echo json_encode(['error' => 'unauthorized']);
     exit;
@@ -23,9 +24,12 @@ if (!$orderId) {
     exit;
 }
 
-$userId  = $_SESSION['user_id'];
-$role    = $_SESSION['role'] ?? '';
-$isAdmin = !empty($_SESSION['is_admin']);
+// One browser can hold an admin session and a buyer/vendor one at the same
+// time, so the caller says which hat it is wearing: admin pages send as=admin,
+// and it is honoured only if this session really is an admin.
+$isAdmin = !empty($_SESSION['admin_id']) && ($_GET['as'] ?? '') === 'admin';
+$userId  = $_SESSION['user_id'] ?? 0;
+$role    = $isAdmin ? '' : ($_SESSION['role'] ?? '');
 
 if ($isAdmin) {
     $stmt = $pdo->prepare('SELECT status FROM orders WHERE id = ?');

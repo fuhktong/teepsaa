@@ -1,5 +1,6 @@
 <?php
 session_start([
+    'gc_maxlifetime'  => 28800,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict',
     'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
@@ -12,7 +13,6 @@ if (isset($_SESSION['user_id'])) {
     $role = $_SESSION['role'] ?? '';
     if ($role === 'buyer')  { header('Location: /dashboard-buyer/');  exit; }
     if ($role === 'vendor') { header('Location: /dashboard-vendor/settings/'); exit; }
-    if ($role === 'admin')  { header('Location: /admin/');             exit; }
 }
 ?>
 <!DOCTYPE html>

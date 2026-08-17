@@ -1,5 +1,6 @@
 <?php
 session_start([
+    'gc_maxlifetime'  => 28800,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict',
     'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
@@ -10,7 +11,7 @@ require __DIR__ . '/../../config/csrf.php';
 require __DIR__ . '/../../config/db.php';
 require __DIR__ . '/../../config/admin-auth.php';
 
-if (!isset($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
+if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
     exit;
 }
@@ -64,6 +65,12 @@ $pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status
 $unreadMsgCount     = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM support_messages WHERE sender IN ('buyer','vendor','guest') AND read_at IS NULL")->fetchColumn();
 $adminSection = 'messages';
 $adminTab     = '';
+
+// status.php redirects back here, so this page — not the list — has to drain
+// the flash, or it resurfaces on the next visit to /admin/messages/.
+$flashSuccess = $_SESSION['admin_msg_success'] ?? '';
+$flashError   = $_SESSION['admin_msg_error']   ?? '';
+unset($_SESSION['admin_msg_success'], $_SESSION['admin_msg_error']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -90,7 +97,10 @@ $adminTab     = '';
         <a href="/admin/messages/?role=guest" class="amsg-role-tab <?= $thread['sender_role'] === 'guest' ? 'active' : '' ?>">Contact Form</a>
     </div>
 
-    <div class="chat-topbar chat-topbar--admin">
+    <?php if ($flashSuccess): ?><p class="admin-success"><?= htmlspecialchars($flashSuccess) ?></p><?php endif; ?>
+    <?php if ($flashError): ?><p class="admin-error"><?= htmlspecialchars($flashError) ?></p><?php endif; ?>
+
+    <div class="chat-topbar">
         <a href="/admin/messages/" class="chat-back">←</a>
         <div class="chat-topbar-info">
             <div class="chat-topbar-title"><?= htmlspecialchars($thread['subject']) ?></div>
@@ -103,29 +113,24 @@ $adminTab     = '';
                 · <span class="thread-badge thread-badge--<?= $thread['status'] ?>"><?= ucfirst($thread['status']) ?></span>
             </div>
         </div>
-        <?php if ($thread['status'] === 'open'): ?>
+        <?php // Only a closed thread can be reopened. Pending threads get Close
+              // too, so a duplicate or spam request can be dismissed without
+              // replying — replying is what turns pending into open. ?>
+        <?php $isClosed = $thread['status'] === 'closed'; ?>
         <form method="POST" action="/admin/messages/status.php" style="margin:0;flex-shrink:0;">
             <?= csrf_input() ?>
             <input type="hidden" name="thread_id" value="<?= $thread['id'] ?>">
-            <input type="hidden" name="action" value="close">
-            <button type="submit" class="chat-close-btn">Close</button>
+            <input type="hidden" name="action" value="<?= $isClosed ? 'reopen' : 'close' ?>">
+            <button type="submit" class="chat-close-btn"><?= $isClosed ? 'Reopen' : 'Close' ?></button>
         </form>
-        <?php else: ?>
-        <form method="POST" action="/admin/messages/status.php" style="margin:0;flex-shrink:0;">
-            <?= csrf_input() ?>
-            <input type="hidden" name="thread_id" value="<?= $thread['id'] ?>">
-            <input type="hidden" name="action" value="reopen">
-            <button type="submit" class="chat-close-btn">Reopen</button>
-        </form>
-        <?php endif; ?>
     </div>
 
-    <div class="chat-messages chat-messages--admin" id="msg-list">
+    <div class="chat-messages" id="msg-list">
         <?php foreach ($messages as $m): ?>
         <?php $isMe = $m['sender'] === 'admin'; ?>
-        <div class="msg-bubble-wrap <?= $isMe ? 'msg-bubble-wrap--admin-sent' : 'msg-bubble-wrap--user-recv' ?>" data-msg-id="<?= $m['id'] ?>">
+        <div class="msg-bubble-wrap <?= $isMe ? 'msg-bubble-wrap--sent' : 'msg-bubble-wrap--recv' ?>" data-msg-id="<?= $m['id'] ?>">
             <div class="msg-bubble-label"><?= $isMe ? 'You' : htmlspecialchars($senderName) ?></div>
-            <div class="msg-bubble <?= $isMe ? 'msg-bubble--admin-sent' : 'msg-bubble--user-recv' ?>"><?= nl2br(htmlspecialchars($m['body'])) ?></div>
+            <div class="msg-bubble <?= $isMe ? 'msg-bubble--sent' : 'msg-bubble--recv' ?>"><?= nl2br(htmlspecialchars($m['body'])) ?></div>
             <div class="msg-bubble-time"><?= date('M j, g:ia', strtotime($m['created_at'])) ?></div>
         </div>
         <?php endforeach; ?>
@@ -139,7 +144,7 @@ $adminTab     = '';
     <?php endif; ?>
 
     <?php if (in_array($thread['status'], ['pending', 'open'])): ?>
-    <div class="chat-input-wrap chat-input-wrap--admin">
+    <div class="chat-input-wrap">
         <form id="reply-form" class="chat-form" autocomplete="off">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
             <input type="hidden" name="thread_id" value="<?= $thread['id'] ?>">
@@ -191,33 +196,70 @@ function buildBubble(msg) {
     const isMe  = msg.sender === 'admin';
     const label = isMe ? 'You' : escHtml(SENDER_NAME);
     const wrap  = document.createElement('div');
-    wrap.className = 'msg-bubble-wrap ' + (isMe ? 'msg-bubble-wrap--admin-sent' : 'msg-bubble-wrap--user-recv');
+    wrap.className = 'msg-bubble-wrap ' + (isMe ? 'msg-bubble-wrap--sent' : 'msg-bubble-wrap--recv');
     wrap.dataset.msgId = msg.id;
     wrap.innerHTML =
         '<div class="msg-bubble-label">' + label + '</div>' +
-        '<div class="msg-bubble ' + (isMe ? 'msg-bubble--admin-sent' : 'msg-bubble--user-recv') + '">' + escHtml(msg.body) + '</div>' +
+        '<div class="msg-bubble ' + (isMe ? 'msg-bubble--sent' : 'msg-bubble--recv') + '">' + escHtml(msg.body) + '</div>' +
         '<div class="msg-bubble-time">' + fmtTime(msg.created_at) + '</div>';
     return wrap;
 }
 
-function scrollBottom(smooth) {
+// Below 640px the message list isn't its own scroller (the composer goes
+// sticky and the page scrolls instead), so scrolling the list is a no-op
+// there and the window has to be moved instead.
+function listScrolls() {
     const list = document.getElementById('msg-list');
-    list.scrollTo({top: list.scrollHeight, behavior: smooth ? 'smooth' : 'auto'});
+    return list && list.scrollHeight > list.clientHeight + 1;
+}
+
+// How far the newest message sits below the fold. Negative means it's
+// already on screen — the sticky composer's height counts as "covered".
+function overshoot() {
+    const list = document.getElementById('msg-list');
+    const bar  = document.querySelector('.chat-input-wrap, .chat-closed-bar');
+    return list.getBoundingClientRect().bottom
+         + (bar ? bar.offsetHeight : 0)
+         - window.innerHeight;
+}
+
+function scrollBottom(smooth) {
+    const list     = document.getElementById('msg-list');
+    if (!list) return;
+    const behavior = smooth ? 'smooth' : 'auto';
+    if (listScrolls()) {
+        list.scrollTo({top: list.scrollHeight, behavior});
+        return;
+    }
+    // Nudge the page just far enough, rather than to document bottom — that
+    // would park a short thread down in the footer.
+    const delta = overshoot();
+    if (delta > 0) window.scrollBy({top: delta, behavior});
+}
+
+function isNearBottom() {
+    const list = document.getElementById('msg-list');
+    if (!list) return true;
+    if (listScrolls()) {
+        return list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+    }
+    return overshoot() < 120;
 }
 
 async function poll() {
     try {
-        const res = await fetch('/api/messages/poll.php?thread_id=' + THREAD_ID + '&after=' + lastId);
+        // as=admin: this browser may also hold a buyer/vendor session.
+        const res = await fetch('/api/messages/poll.php?as=admin&thread_id=' + THREAD_ID + '&after=' + lastId);
         if (!res.ok) return;
         const data = await res.json();
         if (data.messages && data.messages.length) {
             const list = document.getElementById('msg-list');
-            const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+            const stick = isNearBottom();
             data.messages.forEach(msg => {
                 list.appendChild(buildBubble(msg));
                 if (msg.id > lastId) lastId = msg.id;
             });
-            if (nearBottom) scrollBottom(true);
+            if (stick) scrollBottom(true);
         }
     } catch (_) {}
 }
@@ -242,7 +284,7 @@ if (form) {
             const res = await fetch('/api/messages/reply.php', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: new URLSearchParams({csrf_token: CSRF_TOKEN, thread_id: THREAD_ID, body})
+                body: new URLSearchParams({csrf_token: CSRF_TOKEN, as: 'admin', thread_id: THREAD_ID, body})
             });
             const data = await res.json();
             if (!res.ok) {

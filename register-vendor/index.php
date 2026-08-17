@@ -1,5 +1,6 @@
 <?php
 session_start([
+    'gc_maxlifetime'  => 28800,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict',
     'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
@@ -12,7 +13,6 @@ $buyerBlocked = false;
 if (isset($_SESSION['user_id'])) {
     $role = $_SESSION['role'] ?? 'buyer';
     if ($role === 'vendor') { header('Location: /dashboard-vendor/'); exit; }
-    if ($role === 'admin')  { header('Location: /admin/'); exit; }
     // A logged-in buyer can't sell — vendor accounts are separate accounts.
     // Show an explainer instead of silently bouncing to the buyer dashboard.
     $buyerBlocked = true;

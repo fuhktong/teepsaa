@@ -1,5 +1,6 @@
 <?php
 session_start([
+    'gc_maxlifetime'  => 28800,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict',
     'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
@@ -10,7 +11,7 @@ require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 
-if (!isset($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
+if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
     exit;
 }
@@ -127,7 +128,7 @@ function do_toggle_active(int $id): void {
     global $pdo;
     if (!$id) redirect_admins();
 
-    if ($id === (int) $_SESSION['user_id']) {
+    if ($id === (int) $_SESSION['admin_id']) {
         redirect_admins('You cannot deactivate your own account.', true);
     }
 
@@ -152,7 +153,7 @@ function do_delete(int $id): void {
     global $pdo;
     if (!$id) redirect_admins('Invalid admin.', true);
 
-    if ($id === (int) $_SESSION['user_id']) {
+    if ($id === (int) $_SESSION['admin_id']) {
         redirect_admins('You cannot delete your own account.', true);
     }
 

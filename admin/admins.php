@@ -1,5 +1,6 @@
 <?php
 session_start([
+    'gc_maxlifetime'  => 28800,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict',
     'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
@@ -10,7 +11,7 @@ require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 
-if (!isset($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
+if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
     exit;
 }
@@ -211,7 +212,7 @@ function admin_form_fields(?array $admin, array $perms): void {
                 <span class="badge-inactive">Deactivated</span>
                 <?php endif; ?>
                 <div class="admin-admin-controls">
-                    <?php if ((int) $a['id'] !== (int) $_SESSION['user_id'] && !$a['is_owner']): ?>
+                    <?php if ((int) $a['id'] !== (int) $_SESSION['admin_id'] && !$a['is_owner']): ?>
                     <?php if (!$a['is_active']): ?>
                     <form method="POST" action="/admin/admins-action.php">
                         <?= csrf_input() ?>
