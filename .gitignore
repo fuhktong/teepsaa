@@ -13,6 +13,7 @@ mail.log
 
 # Deploy script (contains FTP password)
 deploycode.txt
+print.md
 
 # macOS
 .DS_Store

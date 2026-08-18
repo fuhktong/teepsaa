@@ -131,11 +131,11 @@ accounts/orders created earlier.
 - [x] Return received: vendor marks returned item received
       (verified in full refund run-through, Jul 2026)
 - [x] ABA QR upload in settings (payout method)
-- [ ] Messages (support desk — vendor ↔ admin, NOT vendor↔buyer): from
+- [x] Messages (support desk — vendor ↔ admin, NOT vendor↔buyer): from
       /contact-vendor/ send a support message (optionally attach an order);
       it appears in /messages-vendor/; admin's reply shows up there; same
       "one pending thread at a time" guard applies
-- [ ] Notifications: new order, low stock, refund request all arrive
+- [x] Notifications: new order, low stock, refund request all arrive
       (refund request bell confirmed in the refund run-through;
       still verify new-order + low-stock bells)
 - [ ] Settings: profile, avatar, banner, business info edit, business

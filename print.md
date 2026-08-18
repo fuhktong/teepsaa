@@ -1,92 +1,114 @@
-# Should teepsaa build an Amazon-style customizable storefront?
+# teepsaa deploy — SSH setup
 
-You looked at Nintendo's Amazon page — big single product, then square pics,
-then a banner, then a grid of products — and asked whether that's a system
-where the seller chooses each image's shape, and whether we should let vendors
-customize their pics like that.
+Replaces the old FTP deploy, which got the coffee-shop wifi IP banned by
+Hostinger's firewall (the ban blocks every port, so the website itself goes
+dark from that network — not just FTP).
 
-Short answer: **that's exactly what Amazon does, but copying it wholesale would
-be a mistake for teepsaa right now.** Here's the full reasoning.
+Your server details, from hPanel → Advanced → SSH Access:
 
----
-
-## What that Amazon page actually is
-
-That Nintendo page is an **Amazon Store** — not a normal seller page. It's built
-with Amazon's **Store Builder**, which is a drag-and-drop **page builder** (a
-mini-CMS). The brand assembles the page out of **tiles/widgets**, each with a
-type:
-
-- Full-width banner
-- Half-width or quarter-width image tiles (the "square pics")
-- Product grids
-- Text blocks, video, "shop the look," etc.
-
-So yes — it **is** a system where the seller chooses each image's shape and
-arranges them. The 16:9 banner, the square tiles, the product rows are all
-*blocks the brand placed themselves*. Amazon isn't picking that layout;
-Nintendo's marketing team built it.
+| | |
+|---|---|
+| IP | `194.164.64.128` |
+| Port | `65002` |
+| Username | `u767733958` |
+| Status | ACTIVE |
 
 ---
 
-## Why I'd NOT build that for teepsaa (yet)
+## Already done for you
 
-Two reasons, and they're both about who your vendors are.
+- SSH key created: `~/.ssh/teepsaa_deploy` (private) and
+  `~/.ssh/teepsaa_deploy.pub` (public)
+- `~/.ssh/config` written with a `teepsaa` shortcut, so you never type the
+  IP, port, or username again
+- `deploy-sftp.sh` created in the project root
 
-**1. It's a massive build.** A real page builder means: a block-type system,
-per-block ordering, image cropping/aspect-ratio enforcement per block type, a
-live preview, mobile reflow rules, a storage schema for the layout, and an
-editing UI. That's weeks of work and a permanent maintenance surface — and it's
-the single most complex feature in Amazon's seller tooling, backed by a large
-team.
+## Step 1 — Paste the key into hPanel
 
-**2. It fights your core goal.** Your vendors are small Phnom Penh clothing
-shops uploading phone photos, and your whole design goal is *simple and
-idiot-proof, handoff-able to a bilingual employee*. A blank-canvas page builder
-produces **great pages for Nintendo and ugly, broken pages for everyone else.**
-Amazon can absorb that because they have millions of brands; a young marketplace
-can't — every ugly shop drags down the whole site's credibility. Freedom is a
-liability here, not a feature.
+On the SSH Access page, click **Add SSH key** and paste this:
+
+```
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDnnAEjb5Q0Z1Iw+G2ImdJqfR3XQAVrvMoZs56npEKkE teepsaa deploy
+```
+
+If you need it on the clipboard again:
+
+```bash
+pbcopy < ~/.ssh/teepsaa_deploy.pub
+```
+
+Paste it in hPanel rather than using `ssh-copy-id` — `ssh-copy-id` tries your
+password first, and failed password attempts are one of the things that
+triggers the IP ban.
+
+## Step 2 — Turn on your phone hotspot
+
+Connect the laptop to your phone, not the cafe wifi. The cafe IP is still
+banned, so nothing below will work on it.
+
+## Step 3 — Test the connection
+
+```bash
+ssh teepsaa
+```
+
+You should land on a shell prompt with no password asked. Type `exit` to
+come back.
+
+## Step 4 — Deploy
+
+```bash
+cd ~/Documents/programming/mywebsites/043\ teepsaa/teepsaa
+./deploy-sftp.sh --dry-run
+```
+
+Read the file list. It must **not** contain any of these:
+
+- `config/db.php`
+- `config/smtp.php`
+- `config/mapbox.php`
+- `uploads/`
+
+Those exist only on the server — production database, mail, and map
+credentials, plus all user-uploaded images. If they show up, stop and fix the
+excludes before uploading.
+
+If the list looks right:
+
+```bash
+./deploy-sftp.sh
+```
+
+That's the whole deploy from now on. Two commands, no password, no ban.
 
 ---
 
-## What to build instead: a constrained, opinionated template
+## Notes
 
-Keep *one* good-looking layout (the one we're refining) and give vendors a
-**small number of idiot-proof knobs** — never a blank canvas. This gets you 80%
-of the visual richness with ~5% of the build, and it's impossible to make ugly:
+**Nothing is ever deleted on the server.** The script has no `--delete`, same
+as the old FTP mirror. To remove a stale file from the server, delete it by
+hand over SSH.
 
-| Knob | What the vendor does | Guardrail |
-|---|---|---|
-| **Banner** (done) | Upload 1 wide image | Fixed full-width slot, auto-cropped |
-| **Featured product** | Tick 1–2 products as "featured" | Rendered as a big hero tile at top — this is your "large single product" |
-| **Gallery** | Upload up to N photos | We render them in a fixed square grid + lightbox — this is your "square pics" |
-| **Category order** (later) | Reorder their product sections | Templated, can't break |
+**The key has no passphrase**, which is what makes the deploy a single
+command. It's still a big improvement on the old setup, where the FTP
+password sat in plaintext in `deploycode.txt`. To add a passphrase later:
 
-That reproduces the Amazon *feel* you liked — big hero product, square image
-tiles, banner, then the product grid — but the **layout is ours, so it always
-looks right**. The vendor supplies content, not design decisions.
+```bash
+ssh-keygen -p -f ~/.ssh/teepsaa_deploy
+```
 
----
+**The old FTP script still works** as a fallback. `deploycode.txt` is
+untouched apart from dropping `--parallel=10` to `--parallel=2`. Delete it
+once SSH deploys are proven.
 
-## Recommendation
+**If rsync fails saying the remote has no rsync binary**, switch the old
+lftp line from `ftp://` to `sftp://` and port 21 to 65002. lftp speaks SFTP
+natively, so you keep the familiar command and still get one encrypted
+connection.
 
-Don't build the page builder. Instead build the **"featured product" hero + a
-proper square gallery grid**, which together give you the exact Amazon structure
-you described (single big product → square tiles → products) without any of the
-risk.
-
-Two phases:
-
-- **Phase 1 (small, high value):** featured-product hero tile + convert the
-  gallery from the current full-width stack to a square thumbnail grid with a
-  lightbox. Reorder so products come before the gallery.
-- **Phase 2 (only if vendors ask):** let vendors reorder their product sections
-  or pick a second accent image. Still templated.
-
-If you ever truly need the full builder, it's a post-traction, "we have 500
-vendors and big brands are asking" feature — not a launch feature.
-
-**Next step:** say "go" and I'll build Phase 1 (featured-product hero + square
-gallery grid). Or I can mock the new storefront layout as a visual page first so
-you can see it before committing.
+**If an IP gets banned again:** the giveaway is that the server drops every
+port *and* ping from that network, while other websites load fine. Switch to
+the hotspot to keep working; bans usually expire within hours, or Hostinger
+support can clear a specific IP. Note the pre-launch password gate in
+`.htaccess` is a separate ban trigger — repeated cancelled Basic-auth prompts
+look like brute force. That risk goes away when the gate is removed at launch.
