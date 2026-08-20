@@ -557,6 +557,7 @@ return [
     'prod_payout_at'       => 'ត្រង់',
     'prod_payout_mid'      => '% កម្រៃ → អ្នកទទួលបាន ~$',
     'prod_stock_word'      => 'ស្តុក',
+    'prod_price_royalties' => 'តម្លៃ និងកម្រៃជើងសារ',
 
     // ── Messages ─────────────────────────────────────────────────────────
     'messages_title'   => 'ជំនួយ',

@@ -89,6 +89,18 @@ if (!empty($bizIds)) {
     ");
     $stmt->execute(array_values($bizIds));
     $activePenalties = $stmt->fetchAll();
+}
+
+$penaltyRate   = array_sum(array_column($activePenalties, 'rate_increase'));
+$penaltyExpiry = null;
+$penaltyIndefinite = false;
+foreach ($activePenalties as $p) {
+    if ($p['end_date'] === null) { $penaltyIndefinite = true; }
+    elseif ($penaltyExpiry === null || $p['end_date'] < $penaltyExpiry) { $penaltyExpiry = $p['end_date']; }
+}
+
+if (!empty($bizIds)) {
+    $ph = implode(',', array_fill(0, count($bizIds), '?'));
 
     // Detect newly expired penalties and create notifications
     $stmt = $pdo->prepare("
@@ -224,19 +236,11 @@ if ($editing) {
     </div>
     <?php endif; ?>
 
-    <?php if (!empty($activePenalties)):
-        $totalPenalty = array_sum(array_column($activePenalties, 'rate_increase'));
-        $soonestExpiry = null;
-        $hasIndefinite = false;
-        foreach ($activePenalties as $p) {
-            if ($p['end_date'] === null) { $hasIndefinite = true; }
-            elseif ($soonestExpiry === null || $p['end_date'] < $soonestExpiry) { $soonestExpiry = $p['end_date']; }
-        }
-    ?>
+    <?php if (!empty($activePenalties) && $action !== 'add' && $action !== 'edit'): ?>
     <div class="vendor-penalty-notice">
-        A royalty penalty of <strong>+<?= number_format($totalPenalty * 100, 1) ?>%</strong> is active on your account<?php
-            if ($hasIndefinite) echo ' with no set expiry date';
-            elseif ($soonestExpiry) echo ', expiring ' . fmt_date('M j, Y', strtotime($soonestExpiry));
+        A royalty penalty of <strong>+<?= number_format($penaltyRate * 100, 1) ?>%</strong> is active on your account<?php
+            if ($penaltyIndefinite) echo ' with no set expiry date';
+            elseif ($penaltyExpiry) echo ', expiring ' . fmt_date('M j, Y', strtotime($penaltyExpiry));
         ?>.
     </div>
     <?php endif; ?>
@@ -441,6 +445,17 @@ if ($editing) {
             </div>
 
             <div class="form-section">
+                <h2 class="form-section-title"><?= $t['prod_price_royalties'] ?></h2>
+
+                <?php if (!empty($activePenalties)): ?>
+                <div class="vendor-penalty-notice">
+                    A royalty penalty of <strong>+<?= number_format($penaltyRate * 100, 1) ?>%</strong> is active on your account<?php
+                        if ($penaltyIndefinite) echo ' with no set expiry date';
+                        elseif ($penaltyExpiry) echo ', expiring ' . fmt_date('M j, Y', strtotime($penaltyExpiry));
+                    ?>. It is included in the fee shown below.
+                </div>
+                <?php endif; ?>
+
                 <div class="field-row">
                     <div class="field">
                         <label for="price"><?= $t['search_price_usd'] ?></label>
@@ -649,6 +664,7 @@ if ($editing) {
             var preview      = document.getElementById('payout-preview');
             var COMPANY_ADDN   = <?= json_encode($companyAddOn) ?>;
             var PRODUCT_ADDN   = <?= json_encode($editing ? (float)$editing['royalty_add_on'] : 0.0) ?>;
+            var PENALTY_RATE   = <?= json_encode((float)$penaltyRate) ?>;
             var ROYALTY_WAIVED = <?= json_encode($royaltyWaived) ?>;
 
             function isLeaf(id) { return !byParent[id] || !byParent[id].length; }
@@ -657,7 +673,7 @@ if ($editing) {
                 var id    = parseInt(hidden.value);
                 var cat   = id ? byId[id] : null;
                 var catRate = cat ? parseFloat(cat.royalty_rate) : 0;
-                var total = ROYALTY_WAIVED ? 0 : (catRate + COMPANY_ADDN + PRODUCT_ADDN);
+                var total = ROYALTY_WAIVED ? 0 : (catRate + COMPANY_ADDN + PRODUCT_ADDN + PENALTY_RATE);
                 var price = parseFloat(priceIn.value) || 0;
                 if (!price) { preview.textContent = ''; return; }
                 if (!total) { preview.textContent = '<?= $t['prod_payout_at'] ?> 0<?= $t['prod_payout_mid'] ?>' + price.toFixed(2); return; }

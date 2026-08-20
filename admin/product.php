@@ -26,7 +26,7 @@ $stmt = $pdo->prepare('
            p.delivery_method, p.royalty_add_on AS product_royalty_add_on,
            c.name AS category_name, c.royalty_rate AS category_rate,
            b.id AS business_id, b.name AS business_name,
-           b.royalty_add_on AS company_royalty_add_on,
+           b.royalty_add_on AS company_royalty_add_on, b.royalty_waived,
            v.id AS vendor_id, v.name AS vendor_name, v.email AS vendor_email
     FROM products p
     LEFT JOIN categories c ON c.id = p.category_id
@@ -64,10 +64,22 @@ $pendingVendorCount = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE ap
 $badgeClass = $p['active'] ? 'badge-green' : 'badge-grey';
 $badgeLabel = $p['active'] ? 'Active' : 'Inactive';
 
-$catRate     = (float)($p['category_rate'] ?? 0);
-$companyRate = (float)$p['company_royalty_add_on'];
-$productRate = (float)$p['product_royalty_add_on'];
-$totalRate   = $catRate + $companyRate + $productRate;
+$stmt = $pdo->prepare('
+    SELECT COALESCE(SUM(rate_increase), 0)
+    FROM vendor_penalties
+    WHERE business_id = ?
+      AND cleared_at IS NULL
+      AND start_date <= CURDATE()
+      AND (end_date IS NULL OR end_date >= CURDATE())
+');
+$stmt->execute([$p['business_id']]);
+$penaltyRate = (float)$stmt->fetchColumn();
+
+$catRate       = (float)($p['category_rate'] ?? 0);
+$companyRate   = (float)$p['company_royalty_add_on'];
+$productRate   = (float)$p['product_royalty_add_on'];
+$royaltyWaived = (bool)$p['royalty_waived'];
+$totalRate     = $royaltyWaived ? 0.0 : $catRate + $companyRate + $productRate + $penaltyRate;
 $adminSection = 'admin';
 $adminTab     = 'products';
 ?>
@@ -196,13 +208,21 @@ $adminTab     = 'products';
                     <span class="detail-row-label">Product add-on</span>
                     <span class="detail-row-value"><?= $productRate > 0 ? '+' . number_format($productRate * 100, 1) . '%' : '—' ?></span>
                 </div>
+                <div class="detail-row">
+                    <span class="detail-row-label">Penalty</span>
+                    <span class="detail-row-value" <?= $penaltyRate > 0 ? 'style="color:#dc2626;font-weight:600;"' : '' ?>><?= $penaltyRate > 0 ? '+' . number_format($penaltyRate * 100, 1) . '%' : '—' ?></span>
+                </div>
                 <div class="detail-row" style="font-weight:700;">
-                    <span class="detail-row-label">Total rate</span>
+                    <span class="detail-row-label">Effective rate</span>
                     <span class="detail-row-value"><?= number_format($totalRate * 100, 1) ?>%</span>
                 </div>
-                <?php if ($totalRate > 0): ?>
+                <?php if ($royaltyWaived): ?>
                 <p style="font-size:0.8rem;color:#6b7280;margin:0.5rem 0 0">
-                    At $<?= number_format($p['price'], 2) ?> → vendor receives ~$<?= number_format($p['price'] * (1 - $totalRate), 2) ?> per unit (before penalties)
+                    Royalty is waived for this vendor — they keep 100% of every sale.
+                </p>
+                <?php elseif ($totalRate > 0): ?>
+                <p style="font-size:0.8rem;color:#6b7280;margin:0.5rem 0 0">
+                    At $<?= number_format($p['price'], 2) ?> → vendor receives ~$<?= number_format($p['price'] * (1 - $totalRate), 2) ?> per unit<?= $penaltyRate > 0 ? ' (includes active penalty)' : '' ?>
                 </p>
                 <?php endif; ?>
             </div>

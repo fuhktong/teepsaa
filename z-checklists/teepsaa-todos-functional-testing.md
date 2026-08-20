@@ -152,16 +152,16 @@ accounts/orders created earlier.
 - [x] Vendor detail page + vendor map load
 - [x] Buyers: list, search, detail, ban/unban (banned buyer can't log in),
       notes
-- [ ] Products: list, search, view, moderate (deactivate a product → gone
+- [x] Products: list, search, view, moderate (deactivate a product → gone
       from buyer side)
-- [ ] Orders: list, filters by status, search by buyer/vendor/order id,
+- [x] Orders: list, filters by status, search by buyer/vendor/order id,
       date range
 - [x] Order detail: confirm payment (pending → paid), advance/cancel status,
       buyer + vendor notified at each step
       (confirm payment live-tested in the order run-through)
 - [x] Payments page reflects order payments correctly
       (reworked to a click-through list → order page; used in live test)
-- [ ] Payouts: delivered order appears after PAYOUT_WINDOW (24h in prod —
+- [x] Payouts: delivered order appears after PAYOUT_WINDOW (24h in prod —
       test with a delivered order older than the window), mark paid out
       (window gating verified live in both states via backdated
       delivered_at; server-side guard added; final "mark paid out"

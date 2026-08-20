@@ -557,6 +557,7 @@ return [
     'prod_payout_at'       => 'At',
     'prod_payout_mid'      => '% fee → you receive ~$',
     'prod_stock_word'      => 'Stock',
+    'prod_price_royalties' => 'Price & Royalties',
 
     // ── Messages ─────────────────────────────────────────────────────────
     'messages_title'    => 'Support',
