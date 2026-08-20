@@ -1108,6 +1108,32 @@ select.admin-search-input {
   box-sizing: border-box;
 }
 
+/* "Email the user" opt-out on the suspend / lift-suspension forms. */
+.notify-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin-top: 0.6rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--text-soft);
+  cursor: pointer;
+}
+
+.notify-check input[type="checkbox"] {
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.notify-check-hint {
+  margin: 0.3rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: #9ca3af;
+}
+
 .suspend-details {
   margin-top: 0.25rem;
 }
@@ -1289,6 +1315,33 @@ select.admin-search-input {
   margin-left: auto;
   color: #9ca3af;
   font-size: 0.8rem;
+}
+
+/* Popup close button: Mapbox's default is a ~10px glyph jammed into the
+   corner. Enlarge it and inset it, then pad the content so the text can't
+   run underneath. */
+.admin-map .mapboxgl-popup-close-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  top: 5px;
+  right: 5px;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--text-soft);
+}
+
+.admin-map .mapboxgl-popup-close-button:hover {
+  background-color: rgba(0, 0, 0, 0.07);
+  color: var(--text);
+}
+
+.admin-map .mapboxgl-popup-content {
+  padding-right: 36px;
 }
 
 .admin-reviews-list {

@@ -382,6 +382,10 @@ $adminTab     = 'vendors';
                     <?= csrf_input() ?>
                     <input type="hidden" name="action" value="unsuspend">
                     <input type="hidden" name="vendor_id" value="<?= $v['id'] ?>">
+                    <label class="notify-check">
+                        <input type="checkbox" name="notify_user" value="1" checked>
+                        Email the vendor that their storefront is live again
+                    </label>
                     <button type="submit" class="btn-approve" style="width:100%;">Lift suspension</button>
                 </form>
                 <?php else: ?>
@@ -390,7 +394,12 @@ $adminTab     = 'vendors';
                     <?= csrf_input() ?>
                     <input type="hidden" name="action" value="suspend">
                     <input type="hidden" name="vendor_id" value="<?= $v['id'] ?>">
-                    <textarea name="ban_reason" rows="2" class="penalty-textarea" placeholder="Reason for suspension (internal only)…" required></textarea>
+                    <textarea name="ban_reason" rows="2" class="penalty-textarea" placeholder="Reason for suspension…" required></textarea>
+                    <label class="notify-check">
+                        <input type="checkbox" name="notify_user" value="1" checked>
+                        Email the vendor, including the reason above
+                    </label>
+                    <p class="notify-check-hint">Untick to suspend silently. A vendor loses income while suspended — tell them unless there's a reason not to.</p>
                     <button type="submit" class="btn-reject" style="margin-top:0.5rem;width:100%;">Suspend account</button>
                 </form>
                 <?php endif; ?>

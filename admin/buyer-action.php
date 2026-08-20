@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
+require __DIR__ . '/../config/notify.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -35,6 +36,30 @@ if (!$buyerId) {
 
 $returnUrl = '/admin/buyer.php?id=' . $buyerId;
 
+// Email the buyer about a suspension change, if the admin ticked "notify".
+// Unticked is the silent path for spam/bot accounts. Returns false when there
+// is nobody to mail or no template; send_email() handles SMTP failure itself
+// by logging to mail.log, so a bad mailbox never blocks the suspension.
+$notifyBuyer = function (string $template, array $tokens) use ($pdo, $buyerId): bool {
+    $stmt = $pdo->prepare('SELECT name, email FROM buyers WHERE id = ?');
+    $stmt->execute([$buyerId]);
+    $buyer = $stmt->fetch();
+    if (!$buyer || !$buyer['email']) return false;
+
+    [$subj, $html] = render_email_template($pdo, $template, $tokens + [
+        'name'    => htmlspecialchars($buyer['name']),
+        'cta_url' => 'https://teepsaa.com/contact/',
+    ]);
+    if ($html === '') return false;
+
+    try {
+        send_email($buyer['email'], $subj, $html);
+        return true;
+    } catch (Throwable $e) {
+        return false;
+    }
+};
+
 if ($action === 'ban') {
     $reason = trim($_POST['ban_reason'] ?? '');
     if (!$reason) {
@@ -44,12 +69,28 @@ if ($action === 'ban') {
     }
     $pdo->prepare('UPDATE buyers SET banned = 1, ban_reason = ?, banned_at = NOW() WHERE id = ?')
         ->execute([$reason, $buyerId]);
-    $_SESSION['admin_success'] = 'Account suspended.';
+
+    if (!empty($_POST['notify_user'])) {
+        $sent = $notifyBuyer('buyer_suspended', ['reason' => htmlspecialchars($reason)]);
+        $_SESSION['admin_success'] = $sent
+            ? 'Account suspended. The buyer has been emailed.'
+            : 'Account suspended, but the email could not be sent.';
+    } else {
+        $_SESSION['admin_success'] = 'Account suspended (no email sent).';
+    }
 
 } elseif ($action === 'unban') {
     $pdo->prepare('UPDATE buyers SET banned = 0, ban_reason = NULL, banned_at = NULL WHERE id = ?')
         ->execute([$buyerId]);
-    $_SESSION['admin_success'] = 'Suspension lifted.';
+
+    if (!empty($_POST['notify_user'])) {
+        $sent = $notifyBuyer('buyer_reinstated', ['cta_url' => 'https://teepsaa.com/login-buyer/']);
+        $_SESSION['admin_success'] = $sent
+            ? 'Suspension lifted. The buyer has been emailed.'
+            : 'Suspension lifted, but the email could not be sent.';
+    } else {
+        $_SESSION['admin_success'] = 'Suspension lifted (no email sent).';
+    }
 
 } elseif ($action === 'note') {
     $note = trim($_POST['admin_note'] ?? '');

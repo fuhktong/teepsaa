@@ -152,6 +152,10 @@ $adminTab     = 'buyers';
                     <?= csrf_input() ?>
                     <input type="hidden" name="action" value="unban">
                     <input type="hidden" name="buyer_id" value="<?= $b['id'] ?>">
+                    <label class="notify-check">
+                        <input type="checkbox" name="notify_user" value="1" checked>
+                        Email the buyer that they can sign in again
+                    </label>
                     <button type="submit" class="btn-approve" style="width:100%;">Lift suspension</button>
                 </form>
                 <?php else: ?>
@@ -160,7 +164,12 @@ $adminTab     = 'buyers';
                     <?= csrf_input() ?>
                     <input type="hidden" name="action" value="ban">
                     <input type="hidden" name="buyer_id" value="<?= $b['id'] ?>">
-                    <textarea name="ban_reason" rows="2" class="penalty-textarea" placeholder="Reason for suspension (internal only)…" required></textarea>
+                    <textarea name="ban_reason" rows="2" class="penalty-textarea" placeholder="Reason for suspension…" required></textarea>
+                    <label class="notify-check">
+                        <input type="checkbox" name="notify_user" value="1" checked>
+                        Email the buyer, including the reason above
+                    </label>
+                    <p class="notify-check-hint">Untick to suspend silently — use for spam and bot accounts.</p>
                     <button type="submit" class="btn-reject" style="margin-top:0.5rem;width:100%;">Suspend account</button>
                 </form>
                 <?php endif; ?>

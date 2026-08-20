@@ -138,19 +138,19 @@ accounts/orders created earlier.
 - [x] Notifications: new order, low stock, refund request all arrive
       (refund request bell confirmed in the refund run-through;
       still verify new-order + low-stock bells)
-- [ ] Settings: profile, avatar, banner, business info edit, business
+- [x] Settings: profile, avatar, banner, business info edit, business
       address + map pin, password change, delete account
-- [ ] Vendor CANNOT open /cart/, /checkout/, /dashboard-buyer/, /wishlist/
+- [x] Vendor CANNOT open /cart/, /checkout/, /dashboard-buyer/, /wishlist/
       (rejected), nor /admin/
 
 ## Admin
 
-- [ ] Login: only admin accounts work; buyer/vendor creds rejected;
+- [x] Login: only admin accounts work; buyer/vendor creds rejected;
       rate-limited
-- [ ] Vendor approvals: pending list, approve (vendor + business go live),
+- [x] Vendor approvals: pending list, approve (vendor + business go live),
       reject
-- [ ] Vendor detail page + vendor map load
-- [ ] Buyers: list, search, detail, ban/unban (banned buyer can't log in),
+- [x] Vendor detail page + vendor map load
+- [x] Buyers: list, search, detail, ban/unban (banned buyer can't log in),
       notes
 - [ ] Products: list, search, view, moderate (deactivate a product → gone
       from buyer side)

@@ -36,6 +36,30 @@ if (!$vendorId) {
 
 $returnUrl = '/admin/vendor.php?id=' . $vendorId;
 
+// Email the vendor about a suspension change, if the admin ticked "notify".
+// Unticked is the silent path. Returns false when there is nobody to mail or
+// no template; send_email() handles SMTP failure itself by logging to
+// mail.log, so a bad mailbox never blocks the suspension.
+$notifyVendor = function (string $template, array $tokens) use ($pdo, $vendorId): bool {
+    $stmt = $pdo->prepare('SELECT name, email FROM vendors WHERE id = ?');
+    $stmt->execute([$vendorId]);
+    $vendor = $stmt->fetch();
+    if (!$vendor || !$vendor['email']) return false;
+
+    [$subj, $html] = render_email_template($pdo, $template, $tokens + [
+        'name'    => htmlspecialchars($vendor['name']),
+        'cta_url' => 'https://teepsaa.com/contact/',
+    ]);
+    if ($html === '') return false;
+
+    try {
+        send_email($vendor['email'], $subj, $html);
+        return true;
+    } catch (Throwable $e) {
+        return false;
+    }
+};
+
 if ($action === 'suspend') {
     $reason = trim($_POST['ban_reason'] ?? '');
     if (!$reason) {
@@ -45,12 +69,28 @@ if ($action === 'suspend') {
     }
     $pdo->prepare('UPDATE vendors SET banned = 1, ban_reason = ?, banned_at = NOW() WHERE id = ?')
         ->execute([$reason, $vendorId]);
-    $_SESSION['admin_success'] = 'Vendor account suspended.';
+
+    if (!empty($_POST['notify_user'])) {
+        $sent = $notifyVendor('vendor_suspended', ['reason' => htmlspecialchars($reason)]);
+        $_SESSION['admin_success'] = $sent
+            ? 'Vendor account suspended. The vendor has been emailed.'
+            : 'Vendor account suspended, but the email could not be sent.';
+    } else {
+        $_SESSION['admin_success'] = 'Vendor account suspended (no email sent).';
+    }
 
 } elseif ($action === 'unsuspend') {
     $pdo->prepare('UPDATE vendors SET banned = 0, ban_reason = NULL, banned_at = NULL WHERE id = ?')
         ->execute([$vendorId]);
-    $_SESSION['admin_success'] = 'Vendor suspension lifted.';
+
+    if (!empty($_POST['notify_user'])) {
+        $sent = $notifyVendor('vendor_reinstated', ['cta_url' => 'https://vendor.teepsaa.com/login-vendor/']);
+        $_SESSION['admin_success'] = $sent
+            ? 'Vendor suspension lifted. The vendor has been emailed.'
+            : 'Vendor suspension lifted, but the email could not be sent.';
+    } else {
+        $_SESSION['admin_success'] = 'Vendor suspension lifted (no email sent).';
+    }
 
 } elseif ($action === 'save_note') {
     $note = trim($_POST['admin_note'] ?? '');
