@@ -935,6 +935,29 @@ main h1 {
   background: #fafafa;
 }
 
+/* Inline-edit inputs inside a table row — same look as the filter row's
+   .admin-search-input, so an edit row and the create form above it match.
+   Width stays on the element: it varies per column. */
+.admin-table td input[type="text"],
+.admin-table td input[type="number"],
+.admin-table td input[type="date"],
+.admin-table td input[type="email"] {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-family: inherit;
+  background-color: #fff;
+}
+
+.admin-table td input[type="text"]:focus,
+.admin-table td input[type="number"]:focus,
+.admin-table td input[type="date"]:focus,
+.admin-table td input[type="email"]:focus {
+  outline: none;
+  border-color: var(--text-muted);
+}
+
 /* Count chip next to h1 */
 .admin-count-chip {
   display: inline-block;

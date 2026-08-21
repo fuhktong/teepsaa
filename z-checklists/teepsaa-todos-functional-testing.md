@@ -170,7 +170,7 @@ accounts/orders created earlier.
       dispatches → vendor received → mark refunded; also test reject
       (full happy-path cycle verified live Jul 2026; confirm the reject path
       was also exercised)
-- [ ] Penalties: add a vendor penalty, verify it raises the effective
+- [x] Penalties: add a vendor penalty, verify it raises the effective
       royalty on the vendor's next order
 - [ ] Coupons + promo codes: create sitewide coupon, limits (max uses,
       expiry, min subtotal) all enforced at checkout

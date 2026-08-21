@@ -128,12 +128,12 @@ $adminTab     = 'coupons';
                     <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
                     <td><strong><?= htmlspecialchars($c['code']) ?></strong> <span style="color:#9ca3af;font-size:0.8em"><?= $c['type'] === 'percent' ? '% off' : '$ off' ?></span></td>
                     <td><?= $c['business_name'] ? htmlspecialchars($c['business_name']) : '<span style="color:#9ca3af">—</span>' ?></td>
-                    <td><input type="number" name="value" min="0.01" step="0.01" value="<?= number_format($c['value'], 2) ?>" required style="width:80px"></td>
-                    <td><input type="number" name="min_order" min="0" step="0.01" value="<?= number_format($c['min_order'], 2) ?>" style="width:90px"></td>
-                    <td><input type="number" name="max_uses" min="1" value="<?= htmlspecialchars($c['max_uses'] ?? '') ?>" placeholder="∞" style="width:80px"></td>
+                    <td><input type="number" name="value" min="0.01" step="0.01" value="<?= number_format($c['value'], 2) ?>" required style="width:100px"></td>
+                    <td><input type="number" name="min_order" min="0" step="0.01" value="<?= number_format($c['min_order'], 2) ?>" style="width:110px"></td>
+                    <td><input type="number" name="max_uses" min="1" value="<?= htmlspecialchars($c['max_uses'] ?? '') ?>" placeholder="∞" style="width:100px"></td>
                     <td><?= (int)$c['used_count'] ?><?= $c['max_uses'] ? ' / ' . (int)$c['max_uses'] : '' ?></td>
-                    <td><input type="date" name="starts_at" value="<?= $c['starts_at'] ? date('Y-m-d', strtotime($c['starts_at'])) : '' ?>" style="width:135px"></td>
-                    <td><input type="date" name="expires_at" value="<?= $c['expires_at'] ? date('Y-m-d', strtotime($c['expires_at'])) : '' ?>" style="width:135px"></td>
+                    <td><input type="date" name="starts_at" value="<?= $c['starts_at'] ? date('Y-m-d', strtotime($c['starts_at'])) : '' ?>" style="width:150px"></td>
+                    <td><input type="date" name="expires_at" value="<?= $c['expires_at'] ? date('Y-m-d', strtotime($c['expires_at'])) : '' ?>" style="width:150px"></td>
                     <td>
                         <?php if ($c['active']): ?>
                             <span class="status status-approved">Active</span>

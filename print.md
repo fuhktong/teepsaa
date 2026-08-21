@@ -1,245 +1,227 @@
-# Vendor access-control test — URL list
+# Coupons + promo codes — test instructions
 
 Checklist item:
 
-> Vendor CANNOT open /cart/, /checkout/, /dashboard-buyer/, /wishlist/
-> (rejected), nor /admin/
+> Coupons + promo codes: create sitewide coupon, limits (max uses,
+> expiry, min subtotal) all enforced at checkout
 
-**Setup:** log in as a vendor. Stay logged in as that vendor the whole time.
-Paste each URL into the address bar by hand. Nothing below should ever show
-you the actual page.
+These are **two different things** that happen to sit in the same admin
+section. Do Part A, then Part B.
 
----
+| | What it is | Who uses it | Where |
+|---|---|---|---|
+| **Coupon** | Money off an order | Buyer, at checkout | Admin → Marketing → **Coupons** |
+| **Promo code** | 3-month royalty-free trial | Vendor, at signup | Admin → Marketing → **Promo Codes** |
 
-## 1. Buyer-only pages
+**Before you start:** you need a buyer account you can log in as, and at
+least one product in its cart. Read the two "gotchas" below first — they
+will save you from thinking something is broken when it isn't.
 
-| URL | Expected result |
-|---|---|
-| `https://teepsaa.com/cart/` | bounced to vendor dashboard |
-| `https://teepsaa.com/checkout/` | bounced to vendor dashboard |
-| `https://teepsaa.com/dashboard-buyer/` | bounced to vendor dashboard |
-| `https://teepsaa.com/wishlist/` | bounced to vendor dashboard |
-| `https://teepsaa.com/dashboard-buyer/settings/` | bounced to vendor dashboard |
-| `https://teepsaa.com/orders/` | bounced to vendor dashboard |
-| `https://teepsaa.com/messages-buyer/` | bounced to vendor dashboard |
+### Gotcha 1 — the coupon box hides itself
 
-Each of these is a three-hop redirect chain, so it happens fast and may just
-look like the URL snapped to the dashboard:
+On `/checkout/` the "enter a code" box **only appears when at least one
+usable coupon exists** for that cart (active, started, not expired, uses
+left). So when you test an expired or used-up code, the box vanishes
+instead of showing an error.
 
-1. page sees `role !== 'buyer'` → sends you to `/login-buyer/`
-2. `/login-buyer/` sees you're already a vendor → sends you to `/dashboard-vendor/`
-3. `/dashboard-vendor/` is a vendor path → sends you to `vendor.teepsaa.com`
+**Fix:** always keep one plain valid coupon (e.g. `KEEPBOX`, 5% off, no
+limits) active the whole time you test. It keeps the box on screen so you
+can type the bad codes into it.
 
-**Pass** = you land on the vendor dashboard and never see cart/checkout
-contents. **Fail** = the page renders, OR the browser says "too many
-redirects" (that chain is the kind that loops if one side is wrong).
+### Gotcha 2 — one use per buyer, forever
 
-Also try them on the vendor subdomain — same expected result:
-
-- `https://vendor.teepsaa.com/cart/`
-- `https://vendor.teepsaa.com/checkout/`
-- `https://vendor.teepsaa.com/dashboard-buyer/`
-- `https://vendor.teepsaa.com/wishlist/`
-
-## 2. Admin — from the wrong host
-
-Admin paths only exist on the admin subdomain. Everywhere else they are a
-hard **404**, not a redirect.
-
-| URL | Expected result |
-|---|---|
-| `https://teepsaa.com/admin/` | 404 Not Found |
-| `https://teepsaa.com/login-admin/` | 404 Not Found |
-| `https://vendor.teepsaa.com/admin/` | 404 Not Found |
-| `https://vendor.teepsaa.com/login-admin/` | 404 Not Found |
-
-## 3. Admin — from the admin subdomain
-
-Here the guard is the session check: admin pages require `admin_id`, which a
-vendor session never has. Expect the admin login page every time.
-
-Top level:
-
-- `https://admin.teepsaa.com/admin/`
-
-Deeper pages — test these too, since a missed guard hides on a child page,
-not the index:
-
-- `https://admin.teepsaa.com/admin/orders.php`
-- `https://admin.teepsaa.com/admin/buyers.php`
-- `https://admin.teepsaa.com/admin/products.php`
-- `https://admin.teepsaa.com/admin/payouts.php`
-- `https://admin.teepsaa.com/admin/payments.php`
-- `https://admin.teepsaa.com/admin/accounting.php`
-- `https://admin.teepsaa.com/admin/refunds.php`
-- `https://admin.teepsaa.com/admin/coupons.php`
-- `https://admin.teepsaa.com/admin/promo-codes.php`
-- `https://admin.teepsaa.com/admin/admins.php`
-- `https://admin.teepsaa.com/admin/settings.php`
-- `https://admin.teepsaa.com/admin/vendor-map.php`
-- `https://admin.teepsaa.com/admin/buyer-map.php`
-- `https://admin.teepsaa.com/admin/careers.php`
-- `https://admin.teepsaa.com/admin/careers-applications.php`
-- `https://admin.teepsaa.com/admin/content.php`
-- `https://admin.teepsaa.com/admin/banners.php`
-- `https://admin.teepsaa.com/admin/categories.php`
-- `https://admin.teepsaa.com/admin/faq.php`
-- `https://admin.teepsaa.com/admin/reviews.php`
-- `https://admin.teepsaa.com/admin/messages/`
-- `https://admin.teepsaa.com/admin/messages/emails.php`
-
-**Pass** = admin login page, no admin content, no data visible behind it.
-
-**The one to watch:** `admin/resume.php` serves job-applicant CVs from a
-private folder. Confirm it does not hand back a file:
-
-- `https://admin.teepsaa.com/admin/resume.php?id=1`
-
-## 4. API endpoints — the `as=admin` flag
-
-These three accept `as=admin`, but must only honour it when `admin_id` is
-set. As a vendor the flag should be **silently ignored** — you get normal
-vendor-level data back, never admin data, and never an error that leaks
-whether the record exists.
-
-- `https://teepsaa.com/api/order-status.php?id=1&as=admin`
-- `https://teepsaa.com/api/messages/poll.php?as=admin`
-
-`api/messages/reply.php` is POST-only, so it can't be tested from the address
-bar. Skip it here, or test it from the browser console on a page that already
-has your CSRF token.
-
-## 5. Sanity check (make sure the test is real)
-
-If every URL above "passes" but you were actually logged out the whole time,
-you proved nothing. Before starting, confirm your vendor session is live:
-
-- `https://vendor.teepsaa.com/dashboard-vendor/` → should load normally
-
-Re-check this at the end too. A vendor session should survive the whole test;
-if you got silently logged out partway, run the list again.
+A buyer can never reuse a code they've already ordered with. Every test
+below that places an order needs a **fresh code**, not the same one again.
 
 ---
 
-# Part B — same URLs, admin session
+## Part A — Sitewide coupon
 
-Yes, reuse the addresses. **No, do not reuse the expected results** — an
-admin session behaves differently from a vendor session, so copying Part A's
-"pass" conditions would give you false passes.
+### A1. Create the coupons
 
-**Setup:** log in as an admin, and be logged in as *nothing else*. Admin and
-buyer sessions can be active at the same time by design, so if a buyer login
-is lingering, the buyer pages will open and that is correct behaviour — but
-it isn't the thing you're testing. Use a fresh browser or a private window.
+Log in as admin → **Marketing → Coupons** (`/admin/coupons.php`).
 
-## B1. Buyer + vendor pages — expect a login *form*
+Create these six with the row of boxes at the top. Leave any box blank
+that isn't listed. Dates are set with the little calendar pickers.
 
-An admin session sets `admin_id` only. It never sets `user_id`, so buyer and
-vendor pages see a logged-out visitor and show their login page. There is no
-bounce back to a dashboard, because there's no buyer/vendor session to bounce.
+| Code | Type | Value | Min order | Max uses | Starts | Expires |
+|---|---|---|---|---|---|---|
+| `KEEPBOX` | % off | 5 | — | — | — | — |
+| `SAVE10` | % off | 10 | — | — | — | — |
+| `MIN50` | $ off | 5 | 50 | — | — | — |
+| `ONEUSE` | $ off | 3 | — | 1 | — | — |
+| `GONE` | % off | 20 | — | — | — | **yesterday** |
+| `SOON` | % off | 20 | — | — | **tomorrow** | — |
 
-| URL | Expected result |
-|---|---|
-| `https://teepsaa.com/cart/` | buyer login form |
-| `https://teepsaa.com/checkout/` | buyer login form |
-| `https://teepsaa.com/dashboard-buyer/` | buyer login form |
-| `https://teepsaa.com/wishlist/` | buyer login form |
-| `https://vendor.teepsaa.com/dashboard-vendor/` | vendor login form |
-| `https://vendor.teepsaa.com/products/` | vendor login form |
-| `https://vendor.teepsaa.com/orders-vendor/` | vendor login form |
+**Check after creating:** every row's **Shop** column shows a dash `—`.
+That dash is what makes it sitewide. A row with a shop name in it is a
+vendor's own coupon, not yours.
 
-**Pass** = a login form. **Fail** = cart contents, a dashboard, or any real
-data. Contrast with Part A, where a vendor gets bounced to their dashboard —
-if you see that here, you still have a vendor session open.
+`GONE` should immediately show a red **Expired** badge and only have a
+Delete button.
 
-**Also check the chrome:** on any of those buyer pages, the admin nav must
-NOT appear. Admin chrome follows the URL, not the session, so a buyer page
-should look like an ordinary buyer page even while you're signed in as admin.
+### A2. The basic discount works
 
-## B2. Admin pages — expect them to WORK
+As the buyer, put something in the cart and go to `/checkout/`.
 
-Part A section 3 flips over here. As a super admin every page in that list
-should load normally. Walk the same list and confirm each one renders with
-its data:
+1. Type `SAVE10` → Apply.
+2. Green message "Code applied — 10% off."
+3. The order summary shows a **−$x.xx** discount line and the total drops
+   by 10% of the subtotal.
+4. Click **Remove** → discount disappears, total goes back up.
 
-`/admin/` · `orders.php` · `buyers.php` · `products.php` · `payouts.php` ·
-`payments.php` · `accounting.php` · `refunds.php` · `coupons.php` ·
-`promo-codes.php` · `admins.php` · `settings.php` · `vendor-map.php` ·
-`buyer-map.php` · `careers.php` · `careers-applications.php` · `content.php` ·
-`banners.php` · `categories.php` · `faq.php` · `reviews.php` ·
-`messages/` · `messages/emails.php`
+**Note:** the discount comes off the **product subtotal only**. Delivery
+is paid in cash to the driver and is never discounted.
 
-## B3. Permission levels — the real admin test
+### A3. Minimum subtotal is enforced
 
-This is the part Part A doesn't cover at all, and it's where the bugs live.
-Every admin page guards on a named permission. A non-super admin who lacks a
-section must be turned away and sent to their own home page with `?denied=1`
-in the URL.
+1. Get the cart subtotal **under $50**. Apply `MIN50`.
+   → Red: "Minimum order of $50.00 required." No discount.
+2. Add items so the subtotal is **over $50**. Apply `MIN50` again.
+   → Works, $5 off.
 
-The permission names, one per page:
+### A4. Expiry is enforced
 
-`vendors` · `buyers` · `products` · `categories` · `reviews` · `orders` ·
-`refunds` · `accounting` · `payments` · `payouts` · `promo-codes` ·
-`coupons` · `banners` · `careers` · `vendor-map` · `buyer-map` · `content` ·
-`faq` · `messages`
+Cart with anything in it, at `/checkout/`:
 
-How to test: create a limited admin in `/admin/admins.php` with only one or
-two permissions ticked — say `orders` only. Log in as that admin, then:
+1. Apply `GONE` → red "This code has expired."
+2. Apply `SOON` → red "This code is not active yet."
 
-- `https://admin.teepsaa.com/admin/orders.php` → loads (they have it)
-- `https://admin.teepsaa.com/admin/payouts.php` → denied, redirected to
-  `/admin/orders.php?denied=1`
-- `https://admin.teepsaa.com/admin/accounting.php` → denied
-- `https://admin.teepsaa.com/admin/buyers.php` → denied
+Neither should ever discount anything.
 
-Three rules worth confirming separately:
+**Also check the day boundary:** a coupon expiring *today* must still
+work today (it dies at 23:59:59, not at midnight this morning). Edit
+`SOON`'s expiry to today's date, save, then apply it — it should be
+accepted.
 
-- **`admins.php` is super-admin only.** A limited admin is refused even if
-  someone ticks every box for them — the code hard-denies it for non-supers.
-- **`settings.php` is always allowed**, for every admin, no permission needed.
-  That's intentional (they need to change their own password).
-- **The nav should match.** A limited admin's admin tabs should only show
-  sections they can reach. A visible tab that then denies you is a bug.
+### A5. Max uses is enforced
 
-**Worth confirming in the browser:** `admin/resume.php` serves applicant CVs.
-The code guards it with `admin_require('careers')`, so an admin without that
-permission should be refused:
+`ONEUSE` has max uses = 1.
 
-- `https://admin.teepsaa.com/admin/resume.php?id=1`
+1. As buyer #1, apply `ONEUSE` and **place the order for real**.
+2. Admin → Coupons: the `ONEUSE` row now reads **1 / 1** under Uses.
+3. Log in as a **second buyer** (you must use a different buyer account —
+   buyer #1 is blocked by the one-use-per-buyer rule instead, which would
+   be the wrong error). Apply `ONEUSE`.
+   → Red: "This code has reached its usage limit."
 
-## B4. Action endpoints — already audited, no action needed
+### A6. One use per buyer
 
-The `*-action.php` files do the writes, and a guard on the page but not on
-the action is the classic miss. This was checked in code across all 22 action
-endpoints — **every one is guarded**, each with the same permission as its
-page (`order-action.php` → `orders`, `payouts-action.php` → `payouts`, and
-so on). `admin/resume.php`, `admin/messages/reply.php` and
-`admin/messages/status.php` are guarded too.
+Still as buyer #1, put a new item in the cart and try `SAVE10` — the code
+you already ordered with in A2 (if you completed that order; if you only
+previewed it, place an order with `SAVE10` first).
 
-Two files have no `admin_require()`, and both are correct that way — they act
-on your own account, not on a permissioned section, and both still check
-`admin_id`:
+→ Red: "You have already used this code."
 
-- `admin/avatar-action.php` — your own admin avatar
-- `admin/settings-password-action.php` — your own password (matches the rule
-  that `settings` is open to every admin)
+### A7. The money lands in the right place — the important one
 
-Nothing to test by hand here. Re-run the check if new action files get added.
+This is the part that matters most. A sitewide coupon is a **platform
+marketing cost** — the vendor must still be paid in full.
+
+After the `SAVE10` order, open Admin → **Orders** → that order.
+
+- Buyer paid = subtotal **minus** the discount ✅
+- **Vendor payout is calculated on the pre-discount subtotal** ✅
+- **Royalty is calculated on the pre-discount subtotal** ✅
+
+If the vendor's payout dropped because of your coupon, that's a bug —
+write it down.
+
+**Multi-vendor version:** build a cart with items from **two different
+shops**, apply `SAVE10`, place the order. It splits into two orders. The
+discount should be **split proportionally** between them (bigger order
+absorbs the bigger share) and the two discount amounts should add up to
+exactly the discount shown at checkout.
+
+### A8. Admin housekeeping
+
+Back on Admin → Coupons:
+
+- A coupon **that has been used** has no Delete button — only
+  **Deactivate**. Deactivate `ONEUSE`, then try applying it at checkout
+  → "Invalid code."
+- An **unused** coupon can be deleted. Delete one.
+- Edit a live coupon's value/min order/max uses inline and hit **Save** →
+  the change takes effect at checkout straight away.
+- An **expired** coupon can't be edited, only deleted.
+- Try creating a % coupon with value `150` → rejected, "percent must be
+  100 or less."
+- Try creating a coupon with a code that already exists → "That code
+  already exists."
 
 ---
 
-## Note on localhost
+## Part B — Promo codes (vendor signup)
 
-On localhost the subdomain layer is switched off entirely — everything is one
-host. So the section 2 "404 from the wrong host" behaviour **cannot be tested
-locally**, and the redirect chains are shorter (no hop to another domain).
-Test sections 2 and 3 on the live domains.
+Completely separate feature. A promo code gives a **new vendor** a
+3-month royalty-free trial (or until their first $100 of completed
+sales, whichever lasts longer). It does nothing at checkout for buyers.
 
-Local equivalents for sections 1, 4, 5:
+### B1. Create it
 
-- `http://localhost/cart/`
-- `http://localhost/checkout/`
-- `http://localhost/dashboard-buyer/`
-- `http://localhost/wishlist/`
-- `http://localhost/admin/`
-- `http://localhost/api/order-status.php?id=1&as=admin`
+Admin → **Marketing → Promo Codes** (`/admin/promo-codes.php`).
+
+Create: code `LAUNCH2026`, description "Test run", max uses `1`.
+
+### B2. Use it
+
+1. Register a **brand-new vendor** at `/register-vendor/` and enter
+   `LAUNCH2026` in the promo code field.
+2. Complete the signup and **submit a business**.
+3. Admin → Vendor approvals → **approve** that vendor.
+
+### B3. Check it took effect
+
+- Admin → Promo Codes: `LAUNCH2026` now shows **1 / 1** uses.
+- Log in as that vendor → the dashboard shows a **trial banner** with an
+  end date roughly 3 months out and a $100 threshold.
+- Buy something from that vendor as a buyer, then open the order in
+  Admin → Orders: the **royalty is $0.00** and the vendor payout equals
+  the full subtotal.
+
+### B4. Limits
+
+- Try registering another new vendor with `LAUNCH2026` → the code is now
+  used up. It is **silently ignored** (signup still succeeds, the vendor
+  just gets no trial). That's intended, not a bug — confirm no trial
+  banner appears for them.
+- **Deactivate** `LAUNCH2026`, register another new vendor with it →
+  again ignored, no trial.
+- A typo'd / nonexistent code is also silently ignored.
+
+---
+
+## Optional — vendor's own coupons
+
+Not required by the checklist item, but it's the same screen so it's
+cheap to check. A vendor creates their own codes at
+`/products/?tab=coupons`.
+
+The one thing that must be true: a **vendor coupon comes out of that
+vendor's own payout**, unlike a sitewide one.
+
+1. As a vendor, create `MYSHOP10` (10% off).
+2. Admin → Coupons: it appears with the **shop's name** in the Shop
+   column, not a dash.
+3. As a buyer with a cart containing **that shop plus another shop**,
+   apply `MYSHOP10`. The discount should only be calculated on that one
+   shop's items, and checkout labels it "(Shop Name only)".
+4. Place the order → in Admin, **that vendor's payout is reduced by the
+   discount**; the other shop's order is untouched.
+5. With a cart containing **none** of that shop's items, applying it
+   gives: "This code only applies to items from a specific shop, which
+   isn't in your cart."
+
+---
+
+## Tick the box when
+
+- [ ] Sitewide coupon created and discounts an order correctly
+- [ ] Min subtotal blocks below, allows above
+- [ ] Expired rejected, not-yet-started rejected, expires-today accepted
+- [ ] Max uses stops the code after the limit
+- [ ] Same buyer can't reuse a code
+- [ ] Vendor payout + royalty unaffected by a sitewide discount
+- [ ] Multi-vendor discount splits proportionally and adds up
+- [ ] Promo code gives a new vendor a trial, and $0 royalty on their sale
+- [ ] Promo code stops working past its use limit / when deactivated

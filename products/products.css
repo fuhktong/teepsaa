@@ -17,8 +17,38 @@
   max-width: 580px;
 }
 
+/* Edit view: card sections flow two across so the page stays short.
+   display:contents lifts the form's sections into the wrap's grid. */
 #edit-form-wrap {
+  max-width: 1200px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+#edit-form-wrap .product-form {
+  display: contents;
+}
+
+#edit-form-wrap .form-section {
+  margin-bottom: 0;
+}
+
+#edit-form-wrap .form-actions {
+  grid-column: 1 / -1;
+  margin-top: 0;
+}
+
+#edit-form-wrap .form-actions .btn {
   max-width: 580px;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  #edit-form-wrap {
+    grid-template-columns: 1fr;
+  }
 }
 
 .product-preview-media {
