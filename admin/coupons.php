@@ -80,10 +80,9 @@ $adminTab     = 'coupons';
     <?php else: ?>
 
     <?php
-    // Row forms live outside the table on purpose. A <form> as a direct child
-    // of <tr> is invalid — the parser hoists it out of the table — and keeping
-    // them here lets one row's Save / Deactivate / Delete share a single cell
-    // instead of spilling onto a second row. The cells bind to them by id.
+    // One form per action, kept out of the row markup and bound to the row's
+    // inputs and buttons by id. That keeps each .coupon-row a plain flex
+    // container that can wrap freely, with no form boxes breaking the layout.
     ?>
     <?php foreach ($coupons as $c):
         $cid       = (int)$c['id'];
@@ -110,23 +109,7 @@ $adminTab     = 'coupons';
         <?php endif; ?>
     <?php endforeach; ?>
 
-    <div class="admin-table-wrap">
-    <table class="admin-table admin-table--coupons">
-        <thead>
-            <tr>
-                <th>Code</th>
-                <th>Shop</th>
-                <th>Discount</th>
-                <th>Min Order</th>
-                <th>Max Uses</th>
-                <th>Uses</th>
-                <th>Starts</th>
-                <th>Expires</th>
-                <th>Status</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
+    <div class="coupon-list">
         <?php foreach ($coupons as $c):
             $cid       = (int)$c['id'];
             $isExpired = $c['expires_at'] && strtotime($c['expires_at']) < time();
@@ -134,59 +117,118 @@ $adminTab     = 'coupons';
             $discountLabel = $c['type'] === 'percent'
                 ? rtrim(rtrim(number_format($c['value'], 2), '0'), '.') . '%'
                 : '$' . number_format($c['value'], 2);
+            $dash = '<span class="admin-dash">&mdash;</span>';
         ?>
-        <tr>
-            <td class="admin-cell-code"><strong><?= htmlspecialchars($c['code']) ?></strong></td>
-            <td><?= $c['business_name'] ? htmlspecialchars($c['business_name']) : '<span class="admin-dash">&mdash;</span>' ?></td>
+        <div class="coupon-row">
+
+            <div class="coupon-cell coupon-cell--code">
+                <span class="coupon-label">Code</span>
+                <span class="coupon-value"><strong><?= htmlspecialchars($c['code']) ?></strong></span>
+            </div>
+
+            <div class="coupon-cell coupon-cell--shop">
+                <span class="coupon-label">Shop</span>
+                <span class="coupon-value"><?= $c['business_name'] ? htmlspecialchars($c['business_name']) : $dash ?></span>
+            </div>
 
             <?php if ($isExpired): ?>
-            <td><?= $discountLabel ?></td>
-            <td>$<?= number_format($c['min_order'], 2) ?></td>
-            <td><?= $c['max_uses'] !== null ? (int)$c['max_uses'] : '<span class="admin-dash">&mdash;</span>' ?></td>
-            <td><?= (int)$c['used_count'] ?></td>
-            <td><?= $c['starts_at'] ? date('d M Y', strtotime($c['starts_at'])) : '<span class="admin-dash">&mdash;</span>' ?></td>
-            <td><?= date('d M Y', strtotime($c['expires_at'])) ?></td>
-            <td><span class="status status-rejected">Expired</span></td>
-            <td class="admin-row-actions">
-                <button type="submit" form="coupon-delete-<?= $cid ?>" class="btn-admin-sm">Delete</button>
-            </td>
+
+            <div class="coupon-cell">
+                <span class="coupon-label">Discount</span>
+                <span class="coupon-value"><?= $discountLabel ?></span>
+            </div>
+            <div class="coupon-cell">
+                <span class="coupon-label">Min Order</span>
+                <span class="coupon-value">$<?= number_format($c['min_order'], 2) ?></span>
+            </div>
+            <div class="coupon-cell">
+                <span class="coupon-label">Max Uses</span>
+                <span class="coupon-value"><?= $c['max_uses'] !== null ? (int)$c['max_uses'] : $dash ?></span>
+            </div>
+            <div class="coupon-cell">
+                <span class="coupon-label">Uses</span>
+                <span class="coupon-value"><?= (int)$c['used_count'] ?></span>
+            </div>
+            <div class="coupon-cell">
+                <span class="coupon-label">Starts</span>
+                <span class="coupon-value"><?= $c['starts_at'] ? date('d M Y', strtotime($c['starts_at'])) : $dash ?></span>
+            </div>
+            <div class="coupon-cell">
+                <span class="coupon-label">Expires</span>
+                <span class="coupon-value"><?= date('d M Y', strtotime($c['expires_at'])) ?></span>
+            </div>
+            <div class="coupon-cell">
+                <span class="coupon-label">Status</span>
+                <span class="coupon-value"><span class="status status-rejected">Expired</span></span>
+            </div>
+            <div class="coupon-cell coupon-cell--actions">
+                <span class="coupon-value">
+                    <button type="submit" form="coupon-delete-<?= $cid ?>" class="btn-admin-sm">Delete</button>
+                </span>
+            </div>
 
             <?php else: ?>
-            <td>
-                <div class="admin-field">
-                    <input type="number" form="coupon-edit-<?= $cid ?>" name="value" min="0.01" step="0.01" value="<?= number_format($c['value'], 2) ?>" required class="admin-cell-num">
-                    <span class="admin-field-unit"><?= $unit ?></span>
-                </div>
-            </td>
-            <td>
-                <div class="admin-field">
-                    <span class="admin-field-unit">$</span>
-                    <input type="number" form="coupon-edit-<?= $cid ?>" name="min_order" min="0" step="0.01" value="<?= number_format($c['min_order'], 2) ?>" class="admin-cell-num">
-                </div>
-            </td>
-            <td><input type="number" form="coupon-edit-<?= $cid ?>" name="max_uses" min="1" value="<?= htmlspecialchars($c['max_uses'] ?? '') ?>" placeholder="&#8734;" class="admin-cell-num"></td>
-            <td><?= (int)$c['used_count'] ?><?= $c['max_uses'] ? ' / ' . (int)$c['max_uses'] : '' ?></td>
-            <td><input type="date" form="coupon-edit-<?= $cid ?>" name="starts_at" value="<?= $c['starts_at'] ? date('Y-m-d', strtotime($c['starts_at'])) : '' ?>" class="admin-cell-date"></td>
-            <td><input type="date" form="coupon-edit-<?= $cid ?>" name="expires_at" value="<?= $c['expires_at'] ? date('Y-m-d', strtotime($c['expires_at'])) : '' ?>" class="admin-cell-date"></td>
-            <td>
-                <?php if ($c['active']): ?>
-                    <span class="status status-approved">Active</span>
-                <?php else: ?>
-                    <span class="status status-rejected">Inactive</span>
-                <?php endif; ?>
-            </td>
-            <td class="admin-row-actions">
-                <button type="submit" form="coupon-edit-<?= $cid ?>" class="btn-admin-sm">Save</button>
-                <button type="submit" form="coupon-toggle-<?= $cid ?>" class="btn-admin-sm"><?= $c['active'] ? 'Deactivate' : 'Activate' ?></button>
-                <?php if ((int)$c['used_count'] === 0): ?>
-                <button type="submit" form="coupon-delete-<?= $cid ?>" class="btn-admin-sm">Delete</button>
-                <?php endif; ?>
-            </td>
+
+            <div class="coupon-cell">
+                <span class="coupon-label">Discount</span>
+                <span class="coupon-value">
+                    <input type="number" form="coupon-edit-<?= $cid ?>" name="value" min="0.01" step="0.01" value="<?= number_format($c['value'], 2) ?>" required class="coupon-num">
+                    <span class="coupon-unit"><?= $unit ?></span>
+                </span>
+            </div>
+            <div class="coupon-cell">
+                <span class="coupon-label">Min Order</span>
+                <span class="coupon-value">
+                    <span class="coupon-unit">$</span>
+                    <input type="number" form="coupon-edit-<?= $cid ?>" name="min_order" min="0" step="0.01" value="<?= number_format($c['min_order'], 2) ?>" class="coupon-num">
+                </span>
+            </div>
+            <div class="coupon-cell">
+                <span class="coupon-label">Max Uses</span>
+                <span class="coupon-value">
+                    <input type="number" form="coupon-edit-<?= $cid ?>" name="max_uses" min="1" value="<?= htmlspecialchars($c['max_uses'] ?? '') ?>" placeholder="&#8734;" class="coupon-num">
+                </span>
+            </div>
+            <div class="coupon-cell">
+                <span class="coupon-label">Uses</span>
+                <span class="coupon-value"><?= (int)$c['used_count'] ?><?= $c['max_uses'] ? ' / ' . (int)$c['max_uses'] : '' ?></span>
+            </div>
+            <div class="coupon-cell">
+                <span class="coupon-label">Starts</span>
+                <span class="coupon-value">
+                    <input type="date" form="coupon-edit-<?= $cid ?>" name="starts_at" value="<?= $c['starts_at'] ? date('Y-m-d', strtotime($c['starts_at'])) : '' ?>" class="coupon-date">
+                </span>
+            </div>
+            <div class="coupon-cell">
+                <span class="coupon-label">Expires</span>
+                <span class="coupon-value">
+                    <input type="date" form="coupon-edit-<?= $cid ?>" name="expires_at" value="<?= $c['expires_at'] ? date('Y-m-d', strtotime($c['expires_at'])) : '' ?>" class="coupon-date">
+                </span>
+            </div>
+            <div class="coupon-cell">
+                <span class="coupon-label">Status</span>
+                <span class="coupon-value">
+                    <?php if ($c['active']): ?>
+                        <span class="status status-approved">Active</span>
+                    <?php else: ?>
+                        <span class="status status-rejected">Inactive</span>
+                    <?php endif; ?>
+                </span>
+            </div>
+            <div class="coupon-cell coupon-cell--actions">
+                <span class="coupon-value">
+                    <button type="submit" form="coupon-edit-<?= $cid ?>" class="btn-admin-sm">Save</button>
+                    <button type="submit" form="coupon-toggle-<?= $cid ?>" class="btn-admin-sm"><?= $c['active'] ? 'Deactivate' : 'Activate' ?></button>
+                    <?php if ((int)$c['used_count'] === 0): ?>
+                    <button type="submit" form="coupon-delete-<?= $cid ?>" class="btn-admin-sm">Delete</button>
+                    <?php endif; ?>
+                </span>
+            </div>
+
             <?php endif; ?>
-        </tr>
+
+        </div>
         <?php endforeach; ?>
-        </tbody>
-    </table>
     </div>
     <?php endif; ?>
 </main>
