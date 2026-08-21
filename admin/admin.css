@@ -935,9 +935,27 @@ main h1 {
   background: #fafafa;
 }
 
+/* Wide tables scroll instead of clipping — a <table> can't wrap, so on a
+   narrow window the right-hand columns would just disappear off the edge. */
+.admin-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* The coupons table carries inputs in five columns, so it needs a floor
+   before the columns start crushing each other. Below this it scrolls. */
+.admin-table--coupons {
+  min-width: 1140px;
+}
+
+/* Hidden per-row forms: the cells bind to these by id, so the form element
+   itself holds nothing but its hidden fields and renders nothing. */
+.admin-row-form {
+  display: none;
+}
+
 /* Inline-edit inputs inside a table row — same look as the filter row's
-   .admin-search-input, so an edit row and the create form above it match.
-   Width stays on the element: it varies per column. */
+   .admin-search-input, so an edit row and the create form above it match. */
 .admin-table td input[type="text"],
 .admin-table td input[type="number"],
 .admin-table td input[type="date"],
@@ -956,6 +974,39 @@ main h1 {
 .admin-table td input[type="email"]:focus {
   outline: none;
   border-color: var(--text-muted);
+}
+
+/* box-sizing is border-box globally, so these widths include the 0.75rem
+   side padding above — a date field needs the extra room for its picker. */
+.admin-cell-code { white-space: nowrap; }
+.admin-cell-num  { width: 96px; }
+.admin-cell-date { width: 158px; }
+
+/* An input with its unit ($ or "% off") pinned beside it, kept on one line
+   so the unit can never wrap away from the number it belongs to. */
+.admin-field {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.admin-field-unit {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.admin-dash {
+  color: #9ca3af;
+}
+
+/* All of a row's buttons share one cell, on one line. */
+.admin-row-actions {
+  white-space: nowrap;
+}
+
+.admin-row-actions .btn-admin-sm + .btn-admin-sm {
+  margin-left: 0.35rem;
 }
 
 /* Count chip next to h1 */
