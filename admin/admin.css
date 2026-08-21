@@ -957,6 +957,12 @@ main h1 {
   background: #fafafa;
 }
 
+/* The single row opened via ?edit=<id>. */
+.coupon-row--editing,
+.coupon-row--editing:hover {
+  background: #fffbeb;
+}
+
 .coupon-cell {
   display: flex;
   flex-direction: column;
@@ -1084,6 +1090,8 @@ main h1 {
 
 /* Small action buttons (table rows) */
 .btn-admin-sm {
+  display: inline-block;
+  text-decoration: none;
   padding: 0.25rem 0.65rem;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
