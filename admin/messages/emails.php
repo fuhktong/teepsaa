@@ -69,6 +69,7 @@ try {
         <a href="/admin/messages/?role=buyer&status=pending" class="amsg-role-tab">Buyers</a>
         <a href="/admin/messages/?role=vendor&status=pending" class="amsg-role-tab">Vendors</a>
         <a href="/admin/messages/?role=guest&status=pending" class="amsg-role-tab">Contact Form</a>
+        <a href="/admin/messages/announcements.php" class="amsg-role-tab">Announcements</a>
         <a href="/admin/messages/emails.php" class="amsg-role-tab active">Email templates</a>
     </div>
 

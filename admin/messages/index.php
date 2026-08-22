@@ -111,6 +111,7 @@ $adminTab     = '';
         <a href="<?= msgUrl('buyer', $statusFilter) ?>" class="amsg-role-tab <?= $roleFilter === 'buyer' ? 'active' : '' ?>">Buyers<?php if ($roleCounts['buyer'] > 0): ?> <span class="admin-tab-badge"><?= $roleCounts['buyer'] ?></span><?php endif; ?></a>
         <a href="<?= msgUrl('vendor', $statusFilter) ?>" class="amsg-role-tab <?= $roleFilter === 'vendor' ? 'active' : '' ?>">Vendors<?php if ($roleCounts['vendor'] > 0): ?> <span class="admin-tab-badge"><?= $roleCounts['vendor'] ?></span><?php endif; ?></a>
         <a href="<?= msgUrl('guest', $statusFilter) ?>" class="amsg-role-tab <?= $roleFilter === 'guest' ? 'active' : '' ?>">Contact Form<?php if ($roleCounts['guest'] > 0): ?> <span class="admin-tab-badge"><?= $roleCounts['guest'] ?></span><?php endif; ?></a>
+        <a href="/admin/messages/announcements.php" class="amsg-role-tab">Announcements</a>
         <a href="/admin/messages/emails.php" class="amsg-role-tab">Email templates</a>
     </div>
 

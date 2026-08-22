@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/mail.php';
+require_once __DIR__ . '/unsubscribe.php';
 
 // $message is the English fallback (shown for old rows or unknown types).
 // $data holds the dynamic parts (order ref, product name…) so the notification
@@ -65,10 +66,13 @@ function notification_email_html(string $heading, string $body, ?string $ctaText
 
 // Bilingual email: Khmer block on top, English block below, one shared CTA
 // button (Khmer · English) and a bilingual footer. Bodies are raw HTML.
+// $footerExtra is an optional extra line under the standard footer note —
+// used by promotional announcements to carry the unsubscribe link. Raw HTML.
 function notification_email_html_bi(
     string $headingKm, string $bodyKm,
     string $headingEn, string $bodyEn,
-    ?string $ctaKm = null, ?string $ctaEn = null, ?string $ctaUrl = null
+    ?string $ctaKm = null, ?string $ctaEn = null, ?string $ctaUrl = null,
+    ?string $footerExtra = null
 ): string {
     $cta = '';
     if ($ctaUrl && ($ctaKm || $ctaEn)) {
@@ -90,7 +94,9 @@ function notification_email_html_bi(
         . $block($headingEn, $bodyEn)
         . $cta
         . '<p style="font-size:0.78rem;color:#aaa;margin-top:36px;border-top:1px solid #eee;padding-top:14px">'
-        . 'នេះជាសារស្វ័យប្រវត្តិពីទីផ្សារ។ សូមកុំឆ្លើយតប។<br>This is an automated message from teepsaa. Please do not reply.</p>'
+        . 'នេះជាសារស្វ័យប្រវត្តិពីទីផ្សារ។ សូមកុំឆ្លើយតប។<br>This is an automated message from teepsaa. Please do not reply.'
+        . ($footerExtra ? '<br><br>' . $footerExtra : '')
+        . '</p>'
         . '</body></html>';
 }
 
@@ -140,7 +146,9 @@ function render_email_template(PDO $pdo, string $key, array $data = []): array {
         $sub($tpl['heading_en']), $sub($tpl['body_en']),
         $sub($tpl['cta_km'] ?? null) ?: null,
         $sub($tpl['cta_en'] ?? null) ?: null,
-        $data['cta_url'] ?? null
+        $data['cta_url'] ?? null,
+        // Promotional templates pass this; transactional ones never do.
+        !empty($data['unsubscribe_url']) ? unsubscribe_footer_html($data['unsubscribe_url']) : null
     );
     return [$subject, $html];
 }

@@ -418,3 +418,233 @@
     padding: 0.75rem 1.5rem;
   }
 }
+
+/* ── Announcements ───────────────────────────────────────────────────── */
+
+.admin-alert {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.admin-alert--error   { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+.admin-alert--success { background: #f0fdf4; color: #15803d; border: 1px solid #86efac; }
+.admin-alert--info    { background: #f6f8fc; color: #334155; border: 1px solid var(--border); }
+
+.ann-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 2rem;
+}
+
+.ann-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  text-decoration: none;
+  color: inherit;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.85rem 1.1rem;
+  transition: border-color .12s, background .12s;
+}
+
+.ann-row:hover { border-color: var(--primary); background: #fafbff; }
+
+.ann-row-main { flex: 1; min-width: 220px; }
+.ann-row-main strong { display: block; font-size: 0.95rem; }
+
+.ann-row-sub {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+.ann-row-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 160px;
+}
+
+.ann-badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ann-badge--draft     { background: #f1f5f9; color: #475569; }
+.ann-badge--sending   { background: #fef3c7; color: #92400e; }
+.ann-badge--sent      { background: #dcfce7; color: #15803d; }
+.ann-badge--cancelled { background: #fee2e2; color: #b91c1c; }
+
+.ann-progress-text { font-size: 0.75rem; color: var(--text-muted); }
+
+.ann-progress {
+  display: block;
+  width: 150px;
+  height: 5px;
+  border-radius: 999px;
+  background: #e8edf7;
+  overflow: hidden;
+}
+
+.ann-progress-bar { display: block; height: 100%; background: var(--primary); }
+
+.ann-arrow { color: var(--text-muted); font-size: 1.2rem; flex-shrink: 0; }
+
+/* Compose */
+
+.ann-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.ann-field { margin-bottom: 1rem; }
+
+.ann-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.ann-field input,
+.ann-field textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.ann-field textarea { min-height: 130px; resize: vertical; line-height: 1.5; }
+
+/* Width only — the chevron, padding and appearance come from style.css. */
+.ann-field select { width: 100%; }
+
+.ann-field input:disabled,
+.ann-field textarea:disabled,
+.ann-field select:disabled { background-color: #f8fafc; color: #64748b; }
+
+.ann-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+.ann-langtag { font-weight: 400; color: var(--text-muted); font-size: 0.78rem; }
+
+.ann-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 0.35rem 0 0;
+}
+
+.ann-hint code { background: #eef1f7; padding: 1px 4px; border-radius: 3px; }
+
+/* Buttons — .btn isn't global; email-edit.php declares its own copy inline. */
+.btn {
+  display: inline-block;
+  padding: 0.5rem 1.1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+  color: inherit;
+}
+
+.btn:hover { background: #f4f6fb; }
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+
+.ann-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.ann-send-form {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.ann-send-form .ann-hint { display: block; }
+
+.btn-send {
+  background: #15803d;
+  border-color: #15803d;
+  color: #fff;
+}
+
+.btn-send:hover { background: #166534; border-color: #166534; }
+
+.ann-preview { position: sticky; top: 1rem; }
+
+.ann-preview iframe {
+  width: 100%;
+  height: 640px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.ann-preview h2,
+.ann-col h2 { font-size: 0.95rem; margin-bottom: 0.75rem; }
+
+.ann-problems {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+}
+
+.ann-problem {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.4rem 0.6rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.ann-problem-status {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ann-problem-status--failed  { color: #b91c1c; }
+.ann-problem-status--skipped { color: #92400e; }
+.ann-problem-email { flex: 1; min-width: 160px; }
+.ann-problem-why { color: var(--text-muted); }
+
+@media (max-width: 900px) {
+  .ann-grid { grid-template-columns: 1fr; }
+  .ann-preview { position: static; }
+}

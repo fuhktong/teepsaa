@@ -1,0 +1,62 @@
+.unsub-box {
+  max-width: 560px;
+  margin: 3rem auto;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem 1.75rem;
+}
+
+.unsub-box h1 {
+  font-size: 1.25rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.4;
+}
+
+/* English half of the bilingual heading, on its own line under the Khmer. */
+.unsub-box h1 .unsub-en {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.unsub-box p {
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: #444;
+  margin-bottom: 0.9rem;
+}
+
+.unsub-en-block {
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  padding-top: 0.9rem;
+}
+
+.unsub-btn {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.6rem 1.4rem;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.unsub-btn:hover { background: var(--primary-hover); }
+
+.unsub-btn--secondary {
+  background: #fff;
+  color: var(--primary);
+}
+
+.unsub-btn--secondary:hover { background: #f4f6fb; }
+
+@media (max-width: 600px) {
+  .unsub-box { margin: 1.5rem 0.75rem; padding: 1.5rem 1.1rem; }
+}

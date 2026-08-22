@@ -5,13 +5,13 @@ require __DIR__ . '/../config/notify.php';
 
 // Buyers with cart items added 24h+ ago who haven't been notified yet
 $stmt = $pdo->query("
-    SELECT bu.id, bu.email, bu.name,
+    SELECT bu.id, bu.email, bu.name, bu.unsubscribed_at,
            MIN(ci.added_at) AS oldest_item
     FROM cart_items ci
     JOIN buyers bu ON bu.id = ci.buyer_user_id
     WHERE ci.added_at <= NOW() - INTERVAL 24 HOUR
       AND bu.abandoned_cart_notified_at IS NULL
-    GROUP BY bu.id, bu.email, bu.name
+    GROUP BY bu.id, bu.email, bu.name, bu.unsubscribed_at
 ");
 $buyers = $stmt->fetchAll();
 
@@ -41,12 +41,18 @@ foreach ($buyers as $buyer) {
     }
 
     $cartList = "<ul style=\"margin:12px 0;padding-left:20px\">{$rows}</ul>";
-    [$subj, $html] = render_email_template($pdo, 'abandoned_cart', [
-        'name'      => $buyer['name'] ? htmlspecialchars($buyer['name']) : 'អ្នក',
-        'cart_list' => $cartList,
-        'cta_url'   => SITE_URL . '/cart/',
-    ]);
-    if ($html !== '') send_email($buyer['email'], $subj, $html);
+
+    // This nudge is promotional, so it honours the opt-out — but only for the
+    // email. The in-app notification is part of using the site and still fires.
+    if (!$buyer['unsubscribed_at']) {
+        [$subj, $html] = render_email_template($pdo, 'abandoned_cart', [
+            'name'            => $buyer['name'] ? htmlspecialchars($buyer['name']) : 'អ្នក',
+            'cart_list'       => $cartList,
+            'cta_url'         => SITE_URL . '/cart/',
+            'unsubscribe_url' => unsubscribe_link($pdo, 'buyer', (int)$buyer['id']),
+        ]);
+        if ($html !== '') send_email($buyer['email'], $subj, $html);
+    }
     notify($pdo, 'buyer', $buyer['id'], 'abandoned_cart', 'You have items waiting in your cart.', '/cart/');
     $pdo->prepare('UPDATE buyers SET abandoned_cart_notified_at = NOW() WHERE id = ?')->execute([$buyer['id']]);
 }

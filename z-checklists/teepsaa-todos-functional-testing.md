@@ -175,13 +175,13 @@ accounts/orders created earlier.
 - [x] Coupons + promo codes: create sitewide coupon, limits (max uses,
       expiry, min subtotal) all enforced at checkout
 - [x] Banners: create/edit/delete, en + km, ordering, live on homepage
-- [ ] Categories: create/edit, hierarchy (parent/child), Khmer names,
+- [x] Categories: create/edit, hierarchy (parent/child), Khmer names,
       royalty rate set per category
-- [ ] Content: edit a page (e.g. About) in both languages, verify live
-- [ ] FAQ: add/edit/delete, verify on Help page
-- [ ] Careers: post a job (en + km), see application + resume download
-- [ ] Reviews: moderate/remove a review, gone from product page
-- [ ] Messages (support desk): all support threads visible — guest (via
+- [x] Content: edit a page (e.g. About) in both languages, verify live
+- [x] FAQ: add/edit/delete, verify on Help page
+- [x] Careers: post a job (en + km), see application + resume download
+- [x] Reviews: moderate/remove a review, gone from product page
+- [x] Messages (support desk): all support threads visible — guest (via
       /contact/, replies to a token link at /support-thread/), buyer, and
       vendor; admin reply reaches the sender (buyer in /messages-buyer/,
       vendor in /messages-vendor/, guest by email/token link); status
