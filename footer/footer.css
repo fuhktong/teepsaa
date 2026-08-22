@@ -210,18 +210,22 @@ footer {
   white-space: nowrap;
 }
 
-/* --- mobile: stack + center, no wrapping --- */
+/* --- mobile: stack, everything on one left edge --- */
 @media (max-width: 600px) {
-  /* logo on top, tagline centered below it */
+  /* The 2px + 0.5rem inherited from the desktop rules is the width of the
+     link bullet bar plus its gap, which is what .footer-col-head is indented
+     by. Keeping it here is what puts the logo, the icons, the headings and
+     the links all on the same left edge. */
+
+  /* logo on top, tagline left-aligned below it */
   .footer-brandrow {
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     gap: 2rem;
-    padding-left: 0;
   }
 
   .footer-tagline {
-    text-align: center;
+    text-align: left;
     font-size: clamp(1.75rem, 11vw, 3rem);
     line-height: 1;
     margin-bottom: 0;
@@ -232,19 +236,22 @@ footer {
     margin-bottom: 0;
   }
 
-  /* center the social icons */
   .footer-social {
-    justify-content: center;
-    padding-left: 0;
+    justify-content: flex-start;
   }
 
-  /* single column; the whole block centers as one unit at a shared
-     width, so every column lines up on the same left edge */
+  /* single full-width column, so each block starts at the same left edge
+     instead of the group being centred as one unit */
   .footer-columns {
     grid-template-columns: 1fr;
-    width: fit-content;
-    max-width: 100%;
-    margin-inline: auto;
     gap: 1.75rem;
+  }
+
+  /* selects above the copyright, both hard left, indented to match the
+     band above (the bottom bar has no bullet bars of its own to offset) */
+  .footer-bottom-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-left: calc(2px + 0.5rem);
   }
 }
