@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/rate-limit.php';
+require __DIR__ . '/../config/admin-device.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: /login-admin/');
@@ -58,5 +59,12 @@ $_SESSION['admin_permissions'] = $permissions;
 if (empty($_SESSION['user_id'])) {
     $_SESSION['lang'] = 'en';
 }
+
+// Keeps this browser signed in for 30 days. Mostly for the phone: an iOS
+// home-screen app loses its session every time it is closed for a while.
+if (!empty($_POST['remember'])) {
+    admin_device_issue($pdo, (int)$user['id']);
+}
+
 header('Location: /admin/');
 exit;

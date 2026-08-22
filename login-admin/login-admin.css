@@ -48,3 +48,22 @@
     font-size: 0.9rem;
     margin-bottom: 0.75rem;
 }
+
+/* Sits between the password field and the button, so it must opt out of the
+   full-width/padded rule that .auth-box input applies to text fields. */
+.auth-remember {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+    font-size: 0.88rem;
+    color: var(--text-soft);
+    cursor: pointer;
+}
+
+.auth-remember input[type="checkbox"] {
+    width: auto;
+    flex: none;
+    margin: 0;
+    padding: 0;
+}

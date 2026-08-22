@@ -1,0 +1,16 @@
+{
+  "name": "teepsaa Canvassing",
+  "short_name": "Canvassing",
+  "description": "Track shops pitched in the field.",
+  "start_url": "/admin/prospects/",
+  "scope": "/admin/prospects/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f9f9f9",
+  "theme_color": "#cc8a6c",
+  "icons": [
+    { "src": "/images/teepsaa-icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/images/teepsaa-icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/images/teepsaa-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

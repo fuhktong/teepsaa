@@ -63,6 +63,7 @@ if ($prospects) {
     <link rel="stylesheet" href="/footer/footer.css">
     <link rel="stylesheet" href="/admin/admin.css">
     <link rel="stylesheet" href="/admin/prospects/prospects.css">
+    <?php require __DIR__ . '/app-head.php'; ?>
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 </head>

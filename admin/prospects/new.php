@@ -49,6 +49,7 @@ $categories = $pdo->query('SELECT name FROM categories ORDER BY name')->fetchAll
     <link rel="stylesheet" href="/footer/footer.css">
     <link rel="stylesheet" href="/admin/admin.css">
     <link rel="stylesheet" href="/admin/prospects/prospects.css">
+    <?php require __DIR__ . '/app-head.php'; ?>
 </head>
 <body>
 

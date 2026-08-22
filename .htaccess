@@ -7,6 +7,10 @@ RewriteCond %{HTTP_HOST} ^(www\.)?teepsaa\.com$ [NC]
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [L,R=301]
 
+# The home-screen app manifest (/admin/prospects/manifest.webmanifest) —
+# Apache does not know this extension out of the box.
+AddType application/manifest+json .webmanifest
+
 # Block direct access to sensitive files (.md/.sql: checklists and DB
 # schema are never meant to be served, even if a stray copy deploys)
 <FilesMatch "^\.env|\.gitignore|\.htpasswd|\.user\.ini|\.log$|\.md$|\.sql$">

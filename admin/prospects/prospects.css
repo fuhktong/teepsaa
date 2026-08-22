@@ -591,3 +591,12 @@
     .psp-sorts { overflow-x: auto; }
     .psp-card { padding: 0.85rem; }
 }
+
+.psp-export {
+    margin: -1rem 0 2rem;
+    font-size: 0.82rem;
+}
+
+.psp-export a {
+    color: var(--text-muted);
+}

@@ -8,6 +8,11 @@ session_start([
 ]);
 
 require __DIR__ . '/../config/csrf.php';
+require __DIR__ . '/../config/db.php';
+// Including this is what gives a remembered device a session — see the tail
+// of config/admin-auth.php — so arriving here on a known phone lands you
+// straight on the dashboard instead of the form.
+require __DIR__ . '/../config/admin-auth.php';
 
 if (!empty($_SESSION['admin_id'])) {
     header('Location: /admin/');
@@ -46,6 +51,10 @@ unset($_SESSION['auth_error']);
             <input type="email" id="email" name="email" required autofocus autocomplete="username">
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required autocomplete="current-password">
+            <label class="auth-remember">
+                <input type="checkbox" name="remember" value="1">
+                Remember this device for 30 days
+            </label>
             <button type="submit">Log in</button>
         </form>
     </div>

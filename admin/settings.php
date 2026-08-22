@@ -129,6 +129,58 @@ $adminTab     = '';
             <button type="submit" class="btn-save">Update password</button>
         </form>
     </div>
+
+    <?php
+    $devices          = admin_device_list($pdo, (int)$_SESSION['admin_id']);
+    $currentSelector  = admin_device_current_selector();
+    ?>
+    <div class="settings-form" style="margin-top:2rem">
+        <h2>Remembered devices</h2>
+        <p class="field-hint" style="margin-bottom:0.85rem">
+            Devices that stay signed in for 30 days without a password. Remove any you
+            do not recognise, or any phone you no longer carry.
+        </p>
+
+        <?php if (!$devices): ?>
+            <p class="field-hint">No remembered devices. Tick “Remember this device” when you log in to add one.</p>
+        <?php else: ?>
+            <ul class="device-list">
+                <?php foreach ($devices as $d): ?>
+                    <li>
+                        <div>
+                            <strong><?= htmlspecialchars($d['label'] ?: 'Unknown device') ?></strong>
+                            <?php if ($d['selector'] === $currentSelector): ?>
+                                <span class="device-current">this device</span>
+                            <?php endif; ?>
+                            <span class="field-hint">
+                                Added <?= date('j M Y', strtotime($d['created_at'])) ?>
+                                <?php if ($d['last_used_at']): ?>
+                                    · last used <?= date('j M Y', strtotime($d['last_used_at'])) ?>
+                                <?php endif; ?>
+                                · expires <?= date('j M Y', strtotime($d['expires_at'])) ?>
+                                <?php if ($d['ip']): ?>· <?= htmlspecialchars($d['ip']) ?><?php endif; ?>
+                            </span>
+                        </div>
+                        <form method="POST" action="/admin/settings-devices-action.php">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="action" value="revoke">
+                            <input type="hidden" name="device_id" value="<?= (int)$d['id'] ?>">
+                            <button type="submit" class="btn-remove-avatar">Remove</button>
+                        </form>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+
+            <?php if (count($devices) > 1 || $currentSelector === ''): ?>
+                <form method="POST" action="/admin/settings-devices-action.php" style="margin-top:0.9rem"
+                      onsubmit="return confirm('Sign out of every other remembered device?');">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="action" value="revoke-others">
+                    <button type="submit" class="btn-save">Sign out other devices</button>
+                </form>
+            <?php endif; ?>
+        <?php endif; ?>
+    </div>
 </main>
 
 <?php require __DIR__ . '/../footer/footer.php'; ?>

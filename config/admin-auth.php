@@ -89,3 +89,22 @@ function admin_require(string $section): void {
         exit;
     }
 }
+
+// ── Remembered devices ────────────────────────────────────────────────
+require_once __DIR__ . '/admin-device.php';
+
+// Rebuild an admin session from a "remember this device" cookie.
+//
+// This runs at include time so the ~60 admin pages that already do
+// `if (empty($_SESSION['admin_id'])) redirect` need no change at all. It is
+// guarded hard on purpose: only inside the admin area, only when nobody is
+// signed in, only when the cookie is actually there, and only when the page
+// has already loaded a database handle. A buyer page can never mint an admin
+// session as a side effect of including this file.
+if (empty($_SESSION['admin_id'])
+    && isset($_COOKIE[ADMIN_DEVICE_COOKIE])
+    && session_status() === PHP_SESSION_ACTIVE
+    && isset($pdo) && $pdo instanceof PDO
+    && admin_area_request()) {
+    admin_device_restore($pdo);
+}

@@ -126,6 +126,7 @@ $today = date('Y-m-d');
     <link rel="stylesheet" href="/footer/footer.css">
     <link rel="stylesheet" href="/admin/admin.css">
     <link rel="stylesheet" href="/admin/prospects/prospects.css">
+    <?php require __DIR__ . '/app-head.php'; ?>
 </head>
 <body>
 
@@ -178,6 +179,12 @@ $today = date('Y-m-d');
         </div>
     </div>
 
+    <?php
+    // Export hands back whatever the status chip and the search box are
+    // showing, so "the Toul Kork list" is one click rather than a re-query.
+    $exportQuery = array_filter(['status' => $statusFilter, 'q' => $q], fn($v) => $v !== '');
+    ?>
+
     <?php if (!$prospects): ?>
         <p class="psp-empty">
             <?= $q !== '' || $statusFilter !== '' ? 'Nothing matches that filter.' : 'No prospects yet. Tap "Add prospect" outside the first shop you pitch.' ?>
@@ -228,8 +235,14 @@ $today = date('Y-m-d');
             <?php endforeach; ?>
         </div>
         <?php if (count($prospects) === 500): ?>
-            <p class="psp-empty">Showing the first 500 — narrow it down with a search.</p>
+            <p class="psp-empty">Showing the first 500 — narrow it down with a search. Export gives you all of them.</p>
         <?php endif; ?>
+
+        <p class="psp-export">
+            <a href="/admin/prospects/export.php<?= $exportQuery ? '?' . htmlspecialchars(http_build_query($exportQuery)) : '' ?>">
+                Export <?= $statusFilter !== '' || $q !== '' ? 'these' : 'all' ?> as CSV
+            </a>
+        </p>
     <?php endif; ?>
 </main>
 

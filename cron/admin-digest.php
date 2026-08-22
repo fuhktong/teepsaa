@@ -18,6 +18,10 @@ $pendingBiz      = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE appro
 $unreadSupport   = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM support_messages WHERE sender IN ('buyer','vendor','guest') AND read_at IS NULL")->fetchColumn();
 $payoutsDue      = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();
 $spotChecksDue   = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 1 AND deleted_at IS NULL AND approved_at <= NOW() - INTERVAL 7 DAY AND spot_checked_at IS NULL")->fetchColumn();
+// Canvassing follow-ups ride along in this digest rather than getting a cron
+// and an email of their own — one morning email is easier to actually read.
+// A prospect that signed up or said no is finished, whatever date is on it.
+$followupsDue    = (int)$pdo->query("SELECT COUNT(*) FROM prospects WHERE next_followup_at IS NOT NULL AND next_followup_at <= CURDATE() AND status NOT IN ('signed_up','not_interested','closed_down')")->fetchColumn();
 
 $rows = [
     ['Payments awaiting confirmation', $pendingPayments, '/admin/payments.php'],
@@ -27,9 +31,10 @@ $rows = [
     ['Unread support threads',         $unreadSupport,   '/admin/messages/'],
     ['Payouts due',                    $payoutsDue,      '/admin/payouts.php'],
     ['Vendor spot-checks due',         $spotChecksDue,   '/admin/?status=spot_check'],
+    ['Canvassing follow-ups due',      $followupsDue,    '/admin/prospects/?sort=followup'],
 ];
 
-$total = $pendingPayments + $refundRequests + $refundsToPay + $pendingBiz + $unreadSupport + $payoutsDue + $spotChecksDue;
+$total = $pendingPayments + $refundRequests + $refundsToPay + $pendingBiz + $unreadSupport + $payoutsDue + $spotChecksDue + $followupsDue;
 if ($total === 0) {
     exit; // nothing pending — no email today
 }
