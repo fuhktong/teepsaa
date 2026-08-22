@@ -79,6 +79,8 @@ foreach ($pdo->query("SELECT sender_role, COUNT(*) AS c FROM support_threads WHE
 function msgUrl(string $role, string $status): string {
     return '/admin/messages/?role=' . urlencode($role) . '&status=' . urlencode($status);
 }
+$amsgTab    = $roleFilter;
+$amsgStatus = $statusFilter;
 $adminSection = 'messages';
 $adminTab     = '';
 ?>
@@ -101,19 +103,9 @@ $adminTab     = '';
 <?php require __DIR__ . '/../../header/header.php'; ?>
 
 <main>
-    <div class="amsg-page-head">
-        <h1>Messages</h1>
-    </div>
+    <?php require __DIR__ . '/tabs.php'; ?>
 
     <?php if ($success): ?><p class="admin-success"><?= htmlspecialchars($success) ?></p><?php endif; ?>
-
-    <div class="amsg-role-tabs">
-        <a href="<?= msgUrl('buyer', $statusFilter) ?>" class="amsg-role-tab <?= $roleFilter === 'buyer' ? 'active' : '' ?>">Buyers<?php if ($roleCounts['buyer'] > 0): ?> <span class="admin-tab-badge"><?= $roleCounts['buyer'] ?></span><?php endif; ?></a>
-        <a href="<?= msgUrl('vendor', $statusFilter) ?>" class="amsg-role-tab <?= $roleFilter === 'vendor' ? 'active' : '' ?>">Vendors<?php if ($roleCounts['vendor'] > 0): ?> <span class="admin-tab-badge"><?= $roleCounts['vendor'] ?></span><?php endif; ?></a>
-        <a href="<?= msgUrl('guest', $statusFilter) ?>" class="amsg-role-tab <?= $roleFilter === 'guest' ? 'active' : '' ?>">Contact Form<?php if ($roleCounts['guest'] > 0): ?> <span class="admin-tab-badge"><?= $roleCounts['guest'] ?></span><?php endif; ?></a>
-        <a href="/admin/messages/announcements.php" class="amsg-role-tab">Announcements</a>
-        <a href="/admin/messages/emails.php" class="amsg-role-tab">Email templates</a>
-    </div>
 
     <div class="order-filters" style="margin-bottom:1.25rem;">
         <a href="<?= msgUrl($roleFilter, 'all') ?>" class="filter-btn <?= $statusFilter === 'all' ? 'active' : '' ?>">All</a>

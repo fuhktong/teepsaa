@@ -18,6 +18,8 @@ if (empty($_SESSION['admin_id'])) {
 
 admin_require('messages');
 
+$amsgTab = 'emails';
+
 $success = $_SESSION['email_tpl_success'] ?? '';
 unset($_SESSION['email_tpl_success']);
 
@@ -61,17 +63,7 @@ try {
 <body>
 <?php require __DIR__ . '/../../header/header.php'; ?>
 <main>
-    <div class="amsg-page-head">
-        <h1>Messages</h1>
-    </div>
-
-    <div class="amsg-role-tabs">
-        <a href="/admin/messages/?role=buyer&status=pending" class="amsg-role-tab">Buyers</a>
-        <a href="/admin/messages/?role=vendor&status=pending" class="amsg-role-tab">Vendors</a>
-        <a href="/admin/messages/?role=guest&status=pending" class="amsg-role-tab">Contact Form</a>
-        <a href="/admin/messages/announcements.php" class="amsg-role-tab">Announcements</a>
-        <a href="/admin/messages/emails.php" class="amsg-role-tab active">Email templates</a>
-    </div>
+    <?php require __DIR__ . '/tabs.php'; ?>
 
     <p style="color:#6b7280;font-size:0.9rem;margin-bottom:1.25rem;">Edit the wording of automated emails. Every email is sent bilingually — Khmer on top, English below. Keep the <code>{tokens}</code> intact; they are replaced with real values (name, order number, etc.) when the email is sent.</p>
 

@@ -63,6 +63,7 @@ $lastId   = !empty($messages) ? (int)end($messages)['id'] : 0;
 $refundCount        = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn();
 $pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();
 $unreadMsgCount     = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM support_messages WHERE sender IN ('buyer','vendor','guest') AND read_at IS NULL")->fetchColumn();
+$amsgTab = $thread['sender_role'];
 $adminSection = 'messages';
 $adminTab     = '';
 
@@ -91,11 +92,7 @@ unset($_SESSION['admin_msg_success'], $_SESSION['admin_msg_error']);
 <?php require __DIR__ . '/../../header/header.php'; ?>
 
 <main>
-    <div class="amsg-role-tabs">
-        <a href="/admin/messages/?role=buyer" class="amsg-role-tab <?= $thread['sender_role'] === 'buyer' ? 'active' : '' ?>">Buyers</a>
-        <a href="/admin/messages/?role=vendor" class="amsg-role-tab <?= $thread['sender_role'] === 'vendor' ? 'active' : '' ?>">Vendors</a>
-        <a href="/admin/messages/?role=guest" class="amsg-role-tab <?= $thread['sender_role'] === 'guest' ? 'active' : '' ?>">Contact Form</a>
-    </div>
+    <?php require __DIR__ . '/tabs.php'; ?>
 
     <?php if ($flashSuccess): ?><p class="admin-success"><?= htmlspecialchars($flashSuccess) ?></p><?php endif; ?>
     <?php if ($flashError): ?><p class="admin-error"><?= htmlspecialchars($flashError) ?></p><?php endif; ?>

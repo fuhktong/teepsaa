@@ -9,15 +9,27 @@
   font-size: 1.5rem;
 }
 
+/* Per-page title on a sub-page (a template, a thread, an announcement). The
+   shared head above it already says "Messages", so this steps down a size. */
+.amsg-subhead {
+  font-size: 1.15rem;
+  margin-bottom: 1rem;
+}
+
 .amsg-role-tabs {
   display: flex;
   gap: 0;
   border-bottom: 2px solid var(--border);
   margin-bottom: 1.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+
+.amsg-role-tabs::-webkit-scrollbar { display: none; }
 
 .amsg-role-tab {
   padding: 0.6rem 1.4rem;
+  white-space: nowrap;
   font-size: 1rem;
   font-weight: 700;
   color: #666;

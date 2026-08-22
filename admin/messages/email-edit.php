@@ -19,6 +19,8 @@ if (empty($_SESSION['admin_id'])) {
 
 admin_require('messages');
 
+$amsgTab = 'emails';
+
 $key = $_GET['key'] ?? '';
 $stmt = $pdo->prepare('SELECT * FROM email_templates WHERE template_key = ?');
 $stmt->execute([$key]);
@@ -62,6 +64,7 @@ $sample = [
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
     <link rel="stylesheet" href="/admin/admin.css">
+    <link rel="stylesheet" href="/admin/messages/messages-admin.css">
     <style>
         .et-edit-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start; }
         .et-field { margin-bottom:1rem; }
@@ -89,8 +92,9 @@ $sample = [
 <body>
 <?php require __DIR__ . '/../../header/header.php'; ?>
 <main>
-    <p style="margin-bottom:0.75rem;"><a href="/admin/messages/emails.php" style="color:var(--text-muted);font-size:0.85rem;text-decoration:none;">&larr; All email templates</a></p>
-    <h1><?= htmlspecialchars($tpl['label']) ?></h1>
+    <?php require __DIR__ . '/tabs.php'; ?>
+
+    <h1 class="amsg-subhead"><?= htmlspecialchars($tpl['label']) ?></h1>
 
     <?php if ($tpl['tokens']): ?>
     <div class="et-tokens">

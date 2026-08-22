@@ -19,6 +19,8 @@ if (empty($_SESSION['admin_id'])) {
 
 admin_require('messages');
 
+$amsgTab = 'announcements';
+
 $success = $_SESSION['ann_success'] ?? '';
 $error   = $_SESSION['ann_error']   ?? '';
 unset($_SESSION['ann_success'], $_SESSION['ann_error']);
@@ -63,17 +65,7 @@ $audienceLabel = ['buyers' => 'Buyers', 'vendors' => 'Vendors', 'both' => 'Buyer
 <body>
 <?php require __DIR__ . '/../../header/header.php'; ?>
 <main>
-    <div class="amsg-page-head">
-        <h1>Messages</h1>
-    </div>
-
-    <div class="amsg-role-tabs">
-        <a href="/admin/messages/?role=buyer&status=pending" class="amsg-role-tab">Buyers</a>
-        <a href="/admin/messages/?role=vendor&status=pending" class="amsg-role-tab">Vendors</a>
-        <a href="/admin/messages/?role=guest&status=pending" class="amsg-role-tab">Contact Form</a>
-        <a href="/admin/messages/announcements.php" class="amsg-role-tab active">Announcements</a>
-        <a href="/admin/messages/emails.php" class="amsg-role-tab">Email templates</a>
-    </div>
+    <?php require __DIR__ . '/tabs.php'; ?>
 
     <p style="color:#6b7280;font-size:0.9rem;margin-bottom:1.25rem;">One-off emails to every buyer and/or vendor — a new feature, a policy change, a sale. Automated per-order emails live under <a href="/admin/messages/emails.php">Email templates</a>. Promotional announcements carry an unsubscribe link and skip anyone who has opted out; service announcements go to everyone.</p>
 

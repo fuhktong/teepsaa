@@ -19,6 +19,8 @@ if (empty($_SESSION['admin_id'])) {
 
 admin_require('messages');
 
+$amsgTab = 'announcements';
+
 $id = (int)($_GET['id'] ?? 0);
 
 $blank = [
@@ -107,8 +109,9 @@ $audienceLabel = ['buyers' => 'Buyers', 'vendors' => 'Vendors', 'both' => 'Buyer
 <body>
 <?php require __DIR__ . '/../../header/header.php'; ?>
 <main>
-    <p style="margin-bottom:0.75rem;"><a href="/admin/messages/announcements.php" style="color:var(--text-muted);font-size:0.85rem;text-decoration:none;">&larr; All announcements</a></p>
-    <h1><?= $id ? 'Announcement' : 'New announcement' ?></h1>
+    <?php require __DIR__ . '/tabs.php'; ?>
+
+    <h1 class="amsg-subhead"><?= $id ? 'Announcement' : 'New announcement' ?></h1>
 
     <?php if ($error): ?>
     <div class="admin-alert admin-alert--error"><?= htmlspecialchars($error) ?></div>
