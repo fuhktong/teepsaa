@@ -35,6 +35,7 @@ $_atPendingPayout  = admin_can('payouts') ? (int)$pdo->query("SELECT COUNT(*) FR
     <?php if (admin_can('careers')): ?><a href="/admin/careers.php"     class="admin-tab <?= $_atTab === 'careers'     ? 'active' : '' ?>">Careers</a><?php endif; ?>
     <?php if (admin_can('vendor-map')): ?><a href="/admin/vendor-map.php"  class="admin-tab <?= $_atTab === 'vendor-map'  ? 'active' : '' ?>">Vendor Map</a><?php endif; ?>
     <?php if (admin_can('buyer-map')): ?><a href="/admin/buyer-map.php"   class="admin-tab <?= $_atTab === 'buyer-map'   ? 'active' : '' ?>">Buyer Map</a><?php endif; ?>
+    <?php if (admin_can('prospects')): ?><a href="/admin/prospects/"      class="admin-tab <?= $_atTab === 'prospects'   ? 'active' : '' ?>">Canvassing</a><?php endif; ?>
 </nav>
 <?php elseif ($_atSection === 'content'): ?>
 <nav class="admin-tabs">

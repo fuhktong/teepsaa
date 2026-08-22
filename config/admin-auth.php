@@ -6,7 +6,7 @@
 const ADMIN_SECTION_GROUPS = [
     'Admin'     => ['vendors' => 'Vendors', 'buyers' => 'Buyers', 'products' => 'Products', 'categories' => 'Categories', 'reviews' => 'Reviews'],
     'Orders'    => ['orders' => 'Orders', 'refunds' => 'Refunds', 'accounting' => 'Accounting', 'payments' => 'Payments', 'payouts' => 'Payouts'],
-    'Marketing' => ['promo-codes' => 'Promo Codes', 'coupons' => 'Coupons', 'banners' => 'Banners', 'careers' => 'Careers', 'vendor-map' => 'Vendor Map', 'buyer-map' => 'Buyer Map'],
+    'Marketing' => ['promo-codes' => 'Promo Codes', 'coupons' => 'Coupons', 'banners' => 'Banners', 'careers' => 'Careers', 'vendor-map' => 'Vendor Map', 'buyer-map' => 'Buyer Map', 'prospects' => 'Canvassing'],
     'Content'   => ['content' => 'Pages', 'faq' => 'FAQ'],
     'Messages'  => ['messages' => 'Messages'],
 ];
@@ -19,6 +19,7 @@ const ADMIN_SECTION_HOME = [
     'payments' => '/admin/payments.php', 'payouts' => '/admin/payouts.php',
     'promo-codes' => '/admin/promo-codes.php', 'coupons' => '/admin/coupons.php', 'banners' => '/admin/banners.php',
     'careers' => '/admin/careers.php', 'vendor-map' => '/admin/vendor-map.php', 'buyer-map' => '/admin/buyer-map.php',
+    'prospects' => '/admin/prospects/',
     'content' => '/admin/content.php', 'faq' => '/admin/faq.php',
     'messages' => '/admin/messages/',
 ];

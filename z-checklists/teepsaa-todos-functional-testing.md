@@ -186,12 +186,12 @@ accounts/orders created earlier.
       vendor; admin reply reaches the sender (buyer in /messages-buyer/,
       vendor in /messages-vendor/, guest by email/token link); status
       transitions pending → open → closed work
-- [ ] Email templates: edit one, send test, verify the change
-- [ ] Accounting: totals match the test orders you placed
-- [ ] Admins: create a second admin, role restrictions apply
+- [x] Email templates: edit one, send test, verify the change
+- [x] Accounting: totals match the test orders you placed
+- [x] Admins: create a second admin, role restrictions apply
       (non-super admin only sees allowed sections), deactivate admin
-- [ ] Admin password change
-- [ ] Admin session CANNOT access buyer or vendor portals
+- [x] Admin password change
+- [x] Admin session CANNOT access buyer or vendor portals
 
 ## Cron jobs (run each one manually on the server, check the effect)
 

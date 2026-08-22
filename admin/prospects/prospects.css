@@ -1,0 +1,593 @@
+/* Canvassing — used on a phone in the street far more than at a desk, so
+   touch targets are large and the layout is a single column until it has room. */
+
+/* ── Page head ───────────────────────────────────────────────────── */
+
+.psp-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 1.25rem 0 0.75rem;
+}
+
+.psp-head h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.psp-subhead {
+    font-size: 1.25rem;
+}
+
+.psp-head-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
+
+.psp-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.55rem 0.9rem;
+    min-height: 42px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background-color: var(--surface);
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.psp-btn:hover {
+    background-color: var(--bg-subtle);
+    border-color: var(--text-muted);
+}
+
+.psp-btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.psp-btn-primary:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.psp-btn-big {
+    width: 100%;
+    min-height: 52px;
+    font-size: 1rem;
+}
+
+.psp-btn-danger {
+    background-color: var(--surface);
+    border-color: #f0b4ae;
+    color: var(--error-fg);
+}
+
+.psp-btn-danger:hover {
+    background-color: var(--error-bg);
+    border-color: var(--error-fg);
+}
+
+/* ── Alerts ──────────────────────────────────────────────────────── */
+
+.psp-alert {
+    display: block;
+    padding: 0.7rem 0.9rem;
+    margin-bottom: 0.9rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.psp-alert-success { background-color: var(--success-bg); color: var(--success-fg); }
+.psp-alert-error   { background-color: var(--error-bg);   color: var(--error-fg); }
+.psp-alert-info    { background-color: #fff7ed;           color: #9a3412; }
+
+/* ── Status chips ────────────────────────────────────────────────── */
+
+.psp-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.85rem;
+}
+
+.psp-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background-color: var(--surface);
+    color: var(--text-soft);
+    font-size: 0.82rem;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.psp-chip:hover {
+    border-color: var(--border-strong);
+}
+
+.psp-chip.active {
+    background-color: var(--text);
+    border-color: var(--text);
+    color: #fff;
+}
+
+.psp-chip span:last-child {
+    opacity: 0.65;
+    font-variant-numeric: tabular-nums;
+}
+
+.psp-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+    flex: none;
+}
+
+.psp-dot-vendor {
+    background-color: #fff;
+    box-shadow: inset 0 0 0 2px #16a34a;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────── */
+
+.psp-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+.psp-search {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 1 1 260px;
+}
+
+.psp-search input[type="search"] {
+    flex: 1;
+    min-width: 0;
+    padding: 0.55rem 0.75rem;
+    min-height: 42px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+}
+
+.psp-clear {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.psp-sorts {
+    display: flex;
+    gap: 0.3rem;
+}
+
+.psp-sort {
+    padding: 0.45rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background-color: var(--surface);
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.psp-sort.active {
+    background-color: var(--bg-subtle);
+    border-color: var(--border-strong);
+    color: var(--text);
+}
+
+/* ── List ────────────────────────────────────────────────────────── */
+
+.psp-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+.psp-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.5rem;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.psp-row-main {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex: 1;
+    min-width: 0;
+    padding: 0.6rem;
+    text-decoration: none;
+    color: inherit;
+}
+
+.psp-row-main:hover {
+    background-color: var(--bg-subtle);
+}
+
+.psp-thumb {
+    width: 62px;
+    height: 62px;
+    flex: none;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    background-color: var(--bg-subtle);
+}
+
+.psp-thumb-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 0.65rem;
+    line-height: 1.2;
+    color: var(--text-muted);
+    border: 1px dashed var(--border-strong);
+}
+
+.psp-row-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.psp-row-name {
+    font-weight: 600;
+    font-size: 0.98rem;
+    /* Long shop names wrap rather than being clipped — on a phone the whole
+       name is the only way to tell two branches apart. */
+    overflow-wrap: anywhere;
+}
+
+.psp-row-km {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
+}
+
+.psp-row-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.psp-row-addr {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
+}
+
+.psp-meta-bit {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+}
+
+.psp-due {
+    color: var(--error-fg);
+    font-weight: 600;
+}
+
+.psp-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-pill);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.psp-badge-sm {
+    font-size: 0.68rem;
+}
+
+.psp-call {
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    flex: none;
+    border-left: 1px solid var(--border);
+    background-color: var(--bg-subtle);
+    color: var(--primary-hover);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.psp-call:hover {
+    background-color: var(--border);
+}
+
+.psp-empty {
+    padding: 1.5rem 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* ── Cards and forms ─────────────────────────────────────────────── */
+
+.psp-quick {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.psp-card {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.psp-card h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.05rem;
+}
+
+.psp-card summary {
+    cursor: pointer;
+    list-style: none;
+}
+
+.psp-card summary::-webkit-details-marker {
+    display: none;
+}
+
+/* An <h2> inside <summary> is the click target, so it carries the affordance. */
+.psp-card summary h2 {
+    display: inline;
+    margin: 0;
+    color: var(--primary-hover);
+}
+
+.psp-card details[open] summary h2 {
+    color: var(--text);
+}
+
+.psp-form {
+    max-width: 560px;
+}
+
+.psp-field {
+    margin-bottom: 0.9rem;
+}
+
+.psp-field label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-soft);
+}
+
+.psp-field input[type="text"],
+.psp-field input[type="tel"],
+.psp-field input[type="date"],
+.psp-field textarea {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    min-height: 44px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;      /* 16px keeps iOS from zooming the page on focus */
+    font-family: inherit;
+    background-color: var(--surface);
+    color: var(--text);
+}
+
+.psp-field textarea {
+    resize: vertical;
+}
+
+/* The chevron, padding and appearance come from the global select rule in
+   style.css — only the width belongs here. */
+.psp-select {
+    width: 100%;
+}
+
+.psp-field-pair {
+    display: flex;
+    gap: 0.6rem;
+}
+
+.psp-field-pair > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.psp-hint {
+    margin: 0.3rem 0 0;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.psp-more {
+    margin-bottom: 1rem;
+}
+
+.psp-more summary {
+    cursor: pointer;
+    padding: 0.5rem 0;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--primary-hover);
+}
+
+.psp-actions {
+    margin-top: 1rem;
+}
+
+.psp-geo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.9rem;
+}
+
+.psp-geo .psp-hint {
+    margin: 0;
+}
+
+/* ── Photos ──────────────────────────────────────────────────────── */
+
+.psp-photo input[type="file"],
+.psp-photo-add input[type="file"] {
+    display: block;
+    width: 100%;
+    font-size: 0.85rem;
+}
+
+.psp-photo [data-photo-preview],
+.psp-photo-add [data-photo-preview] {
+    display: block;
+    max-width: 220px;
+    width: 100%;
+    margin-top: 0.5rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+}
+
+.psp-photo-add {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--divider);
+}
+
+.psp-photo-add input[type="file"] {
+    flex: 1 1 220px;
+    width: auto;
+}
+
+.psp-photos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.6rem;
+}
+
+.psp-photo-cell {
+    position: relative;
+}
+
+.psp-photo-cell img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    display: block;
+}
+
+.psp-photo-date {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.psp-photo-del {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.psp-photo-del:hover {
+    background-color: var(--error-fg);
+}
+
+/* ── Visit log ───────────────────────────────────────────────────── */
+
+.psp-visits {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.psp-visits li {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--divider);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.psp-visits li:last-child {
+    border-bottom: none;
+}
+
+.psp-visit-when {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-soft);
+}
+
+.psp-visit-note {
+    flex-basis: 100%;
+    margin: 0.15rem 0 0;
+    font-size: 0.87rem;
+    color: var(--text-soft);
+    overflow-wrap: anywhere;
+}
+
+/* ── Danger zone ─────────────────────────────────────────────────── */
+
+.psp-danger {
+    margin: 1.5rem 0 2.5rem;
+}
+
+@media (max-width: 600px) {
+    .psp-head h1 { font-size: 1.3rem; }
+    .psp-toolbar { flex-direction: column; align-items: stretch; }
+    .psp-sorts { overflow-x: auto; }
+    .psp-card { padding: 0.85rem; }
+}
