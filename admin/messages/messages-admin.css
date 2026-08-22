@@ -210,18 +210,6 @@
   border-bottom: 1px solid var(--border);
 }
 
-.chat-back {
-  font-size: 1.25rem;
-  color: var(--text-soft);
-  text-decoration: none;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.chat-back:hover {
-  color: #111;
-}
-
 .chat-topbar-info {
   flex: 1;
   min-width: 0;

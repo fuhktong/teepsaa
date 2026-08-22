@@ -98,7 +98,6 @@ unset($_SESSION['admin_msg_success'], $_SESSION['admin_msg_error']);
     <?php if ($flashError): ?><p class="admin-error"><?= htmlspecialchars($flashError) ?></p><?php endif; ?>
 
     <div class="chat-topbar">
-        <a href="/admin/messages/" class="chat-back">←</a>
         <div class="chat-topbar-info">
             <div class="chat-topbar-title"><?= htmlspecialchars($thread['subject']) ?></div>
             <div class="chat-topbar-sub">
