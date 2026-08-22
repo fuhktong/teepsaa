@@ -24,6 +24,12 @@ unset($_SESSION['admin_success'], $_SESSION['admin_error']);
 
 $allCats = $pdo->query('SELECT id, parent_id, name, name_km, royalty_rate FROM categories ORDER BY name ASC')->fetchAll();
 
+// Products still pointing at each category. Any at all blocks deletion — the
+// FK is ON DELETE SET NULL, so the delete would quietly uncategorise them.
+$prodCounts = $pdo->query(
+    'SELECT category_id, COUNT(*) FROM products WHERE category_id IS NOT NULL GROUP BY category_id'
+)->fetchAll(PDO::FETCH_KEY_PAIR);
+
 function buildCatTree(array $cats, $parentId = null): array {
     $branch = [];
     foreach ($cats as $cat) {
@@ -109,6 +115,22 @@ $adminTab     = 'categories';
     <?php endif; ?>
 
     <?php if (!empty($flat)): ?>
+
+    <?php
+    // A <form> cannot nest inside the row's edit form, so each delete lives
+    // out here and its button binds back to it by id.
+    ?>
+    <?php foreach ($flat as $cat):
+        $isLeafOpt = !in_array($cat['id'], $parentIds);
+        if (!$isLeafOpt || (int)($prodCounts[$cat['id']] ?? 0) > 0) continue;
+    ?>
+    <form id="cat-delete-<?= $cat['id'] ?>" method="POST" action="/admin/category-action.php" class="admin-row-form" onsubmit="return confirm('Delete this category?');">
+        <?= csrf_input() ?>
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="id" value="<?= $cat['id'] ?>">
+    </form>
+    <?php endforeach; ?>
+
     <table class="cat-tree-table">
         <thead>
             <tr>
@@ -122,6 +144,8 @@ $adminTab     = 'categories';
         <?php foreach ($flat as $cat):
             $excludeIds = array_merge([$cat['id']], getDescendantIds($flat, $cat['id']));
             $isLeaf = !in_array($cat['id'], $parentIds);
+            $productCount = (int)($prodCounts[$cat['id']] ?? 0);
+            $canDelete    = $isLeaf && $productCount === 0;
         ?>
         <tr>
             <form method="POST" action="/admin/category-action.php">
@@ -161,7 +185,16 @@ $adminTab     = 'categories';
                         <?php endforeach; ?>
                     </select>
                 </td>
-                <td><button type="submit" class="btn-save">Save</button></td>
+                <td class="cat-actions">
+                    <button type="submit" class="btn-save">Save</button>
+                    <?php if ($canDelete): ?>
+                        <button type="submit" form="cat-delete-<?= $cat['id'] ?>" class="btn-admin-sm btn-admin-sm--danger">Delete</button>
+                    <?php else: ?>
+                        <span class="cat-delete-blocked" title="Only an empty category can be deleted — re-parent or reassign these first.">
+                            <?= $isLeaf ? $productCount . ' product' . ($productCount === 1 ? '' : 's') : 'has sub-categories' ?>
+                        </span>
+                    <?php endif; ?>
+                </td>
             </form>
         </tr>
         <?php endforeach; ?>

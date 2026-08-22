@@ -26,6 +26,55 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 csrf_verify();
 
 $action   = $_POST['action'] ?? '';
+
+// Delete is handled before the add/edit field validation below, since a
+// delete POST carries no name or rate to validate.
+if ($action === 'delete') {
+    $id = (int)($_POST['id'] ?? 0);
+
+    $catStmt = $pdo->prepare('SELECT name FROM categories WHERE id = ?');
+    $catStmt->execute([$id]);
+    $catName = $catStmt->fetchColumn();
+
+    if ($catName === false) {
+        $_SESSION['admin_error'] = 'Category not found.';
+        header('Location: /admin/categories.php');
+        exit;
+    }
+
+    $childStmt = $pdo->prepare('SELECT COUNT(*) FROM categories WHERE parent_id = ?');
+    $childStmt->execute([$id]);
+    $childCount = (int)$childStmt->fetchColumn();
+
+    $prodStmt = $pdo->prepare('SELECT COUNT(*) FROM products WHERE category_id = ?');
+    $prodStmt->execute([$id]);
+    $productCount = (int)$prodStmt->fetchColumn();
+
+    // Both foreign keys are ON DELETE SET NULL, so deleting a category that is
+    // still in use would silently orphan its rows rather than fail loudly:
+    // children would jump to top level, and products would lose their category.
+    // A product with no category reads as a 0% royalty rate at checkout
+    // (COALESCE(cat.royalty_rate, 0) in checkout/confirm.php), so it would earn
+    // nothing from then on with nothing on screen to say why. Refuse instead.
+    if ($childCount > 0 || $productCount > 0) {
+        $blockers = [];
+        if ($childCount > 0) {
+            $blockers[] = $childCount . ' sub-categor' . ($childCount === 1 ? 'y' : 'ies');
+        }
+        if ($productCount > 0) {
+            $blockers[] = $productCount . ' product' . ($productCount === 1 ? '' : 's');
+        }
+        $_SESSION['admin_error'] = 'Cannot delete "' . $catName . '" — it still has '
+            . implode(' and ', $blockers) . '. Re-parent or reassign them first.';
+    } else {
+        $pdo->prepare('DELETE FROM categories WHERE id = ?')->execute([$id]);
+        $_SESSION['admin_success'] = 'Category "' . $catName . '" deleted.';
+    }
+
+    header('Location: /admin/categories.php');
+    exit;
+}
+
 $name     = trim($_POST['name'] ?? '');
 $nameKm   = trim($_POST['name_km'] ?? '');
 $rate     = round((float)($_POST['royalty_rate'] ?? 0) / 100, 4);

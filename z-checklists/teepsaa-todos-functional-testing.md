@@ -172,9 +172,9 @@ accounts/orders created earlier.
       was also exercised)
 - [x] Penalties: add a vendor penalty, verify it raises the effective
       royalty on the vendor's next order
-- [ ] Coupons + promo codes: create sitewide coupon, limits (max uses,
+- [x] Coupons + promo codes: create sitewide coupon, limits (max uses,
       expiry, min subtotal) all enforced at checkout
-- [ ] Banners: create/edit/delete, en + km, ordering, live on homepage
+- [x] Banners: create/edit/delete, en + km, ordering, live on homepage
 - [ ] Categories: create/edit, hierarchy (parent/child), Khmer names,
       royalty rate set per category
 - [ ] Content: edit a page (e.g. About) in both languages, verify live

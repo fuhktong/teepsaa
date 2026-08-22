@@ -669,6 +669,24 @@ main h1 {
   font-size: 0.875rem;
 }
 
+/* Save + Delete share the last cell; when a category is not empty, the
+   Delete button is replaced by the reason it cannot go. */
+.cat-actions {
+  white-space: nowrap;
+}
+
+.cat-actions .btn-admin-sm {
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+
+.cat-delete-blocked {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 /* Penalty management (vendor popup) */
 .penalty-list {
   display: flex;
