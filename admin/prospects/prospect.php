@@ -80,10 +80,6 @@ $facts = array_filter([
     'Follow up'  => $p['next_followup_at'] ? date('j M Y', strtotime($p['next_followup_at'])) : null,
     'Khmer name' => $p['business_name_km'],
     'Telegram'   => $p['telegram'] ? '@' . ltrim($p['telegram'], '@') : null,
-    'Map pin'    => ($p['lat'] !== null && $p['lng'] !== null)
-                    ? round((float)$p['lat'], 5) . ', ' . round((float)$p['lng'], 5) : null,
-    'Visits'     => count($visits) ?: null,
-    'Added'      => date('j M Y', strtotime($p['created_at'])),
 ], fn($v) => $v !== null && $v !== '');
 ?>
 <!DOCTYPE html>
