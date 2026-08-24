@@ -53,7 +53,7 @@ unset($_SESSION['psp_old']);
 
 $v = fn(string $f) => htmlspecialchars((string)($old[$f] ?? $p[$f] ?? ''));
 
-// The same tree vendors pick from on /submit/. Read-only: the chosen name is
+// The same tree vendors pick from on /submit/. Read-only: the chosen names are
 // stored on the prospect row, so a prospect never lands in `businesses`.
 $catTree = $pdo->query('SELECT id, parent_id, name FROM categories ORDER BY name ASC')->fetchAll(PDO::FETCH_ASSOC);
 
@@ -65,12 +65,15 @@ $followupDue = $p['next_followup_at'] !== null
     && $p['next_followup_at'] <= date('Y-m-d')
     && !in_array($p['status'], ['signed_up', 'not_interested', 'closed_down'], true);
 
-// Everything you would ask a shop for, readable without opening the edit form.
-// A field with nothing in it is left out entirely rather than shown as blank —
-// the panel is for reading at a glance, and the edit form is where the gaps are
-// obvious anyway.
+// Stored comma separated; shown as separate tags so three categories read as
+// three things rather than one long string.
+$catList = array_values(array_filter(array_map('trim', explode(',', (string)$p['category'])), fn($c) => $c !== ''));
+
+// Everything else you would ask a shop for, readable without opening the edit
+// form. A field with nothing in it is left out entirely rather than shown as
+// blank — the panel is for reading at a glance, and the edit form is where the
+// gaps are obvious anyway.
 $facts = array_filter([
-    'Category'   => $p['category'],
     'Owner'      => $p['owner_name'],
     'Phone'      => $p['phone'],
     'Address'    => $p['address'],
@@ -150,8 +153,18 @@ $facts = array_filter([
         <?php endif; ?>
     </div>
 
-    <?php if ($facts || $p['notes']): ?>
+    <?php if ($catList || $facts || $p['notes']): ?>
     <dl class="psp-facts">
+        <?php if ($catList): ?>
+            <div class="psp-fact">
+                <dt><?= count($catList) === 1 ? 'Category' : 'Categories' ?></dt>
+                <dd>
+                    <ul class="psp-fact-tags">
+                        <?php foreach ($catList as $c): ?><li><?= htmlspecialchars($c) ?></li><?php endforeach; ?>
+                    </ul>
+                </dd>
+            </div>
+        <?php endif; ?>
         <?php foreach ($facts as $label => $val): $due = ($label === 'Follow up' && $followupDue); ?>
             <div class="psp-fact">
                 <dt><?= $label ?></dt>
@@ -283,12 +296,14 @@ $facts = array_filter([
                 </div>
 
                 <div class="psp-field">
-                    <label>Category
-                        <button type="button" class="psp-link-btn" data-cat-clear>Clear</button>
+                    <label>Categories
+                        <button type="button" class="psp-link-btn" data-cat-clear>Clear all</button>
                     </label>
+                    <ul class="psp-cat-chosen" data-cat-chosen hidden></ul>
                     <div class="psp-cat" data-cat-cascade data-target="edit-category"></div>
+                    <button type="button" class="psp-btn psp-btn-sm" data-cat-add>Add category</button>
                     <input type="hidden" id="edit-category" name="category" value="<?= $v('category') ?>">
-                    <p class="psp-hint">The same list vendors choose from. Stop at any level.</p>
+                    <p class="psp-hint">The same list vendors choose from. Stop at any level, and add as many as the shop sells.</p>
                 </div>
 
                 <div class="psp-field">

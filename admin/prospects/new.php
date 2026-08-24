@@ -33,7 +33,7 @@ $v = fn(string $f, string $default = '') => htmlspecialchars((string)($old[$f] ?
 // default; "To visit" is for shops added from a list at the desk.
 $status = $old['status'] ?? 'pitched';
 
-// The same tree vendors pick from on /submit/. Read-only: the chosen name is
+// The same tree vendors pick from on /submit/. Read-only: the chosen names are
 // stored on the prospect row, so a prospect never lands in `businesses`.
 $catTree = $pdo->query('SELECT id, parent_id, name FROM categories ORDER BY name ASC')->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -149,12 +149,14 @@ $catTree = $pdo->query('SELECT id, parent_id, name FROM categories ORDER BY name
             </div>
 
             <div class="psp-field">
-                <label>Category
-                    <button type="button" class="psp-link-btn" data-cat-clear>Clear</button>
+                <label>Categories
+                    <button type="button" class="psp-link-btn" data-cat-clear>Clear all</button>
                 </label>
+                <ul class="psp-cat-chosen" data-cat-chosen hidden></ul>
                 <div class="psp-cat" data-cat-cascade data-target="category"></div>
+                <button type="button" class="psp-btn psp-btn-sm" data-cat-add>Add category</button>
                 <input type="hidden" id="category" name="category" value="<?= $v('category') ?>">
-                <p class="psp-hint">The same list vendors choose from. Stop at any level.</p>
+                <p class="psp-hint">The same list vendors choose from. Stop at any level, and add as many as the shop sells.</p>
             </div>
 
             <div class="psp-field">

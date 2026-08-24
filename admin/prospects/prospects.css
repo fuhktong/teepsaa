@@ -398,6 +398,24 @@
   padding-top: 0.6rem;
 }
 
+.psp-fact-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+}
+
+.psp-fact-tags li {
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background-color: var(--bg-subtle);
+  font-size: 0.82rem;
+  color: var(--text-soft);
+}
+
 .psp-facts dt {
   font-size: 0.72rem;
   font-weight: 600;
@@ -567,7 +585,67 @@
 }
 
 .psp-cat-level:last-of-type {
-  margin-bottom: 0;
+  margin-bottom: 0.6rem;
+}
+
+/* What you have picked so far, above the picker. */
+.psp-cat-chosen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0 0 0.6rem;
+  padding: 0;
+}
+
+/* The flex rule above would otherwise beat the hidden attribute. */
+.psp-cat-chosen[hidden] {
+  display: none;
+}
+
+.psp-cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.4rem 0.3rem 0.65rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background-color: var(--surface);
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+/* A name the tree cannot place — saving drops it, so it should not look settled. */
+.psp-cat-chip-unknown {
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.psp-cat-chip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--bg-subtle);
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.psp-cat-chip-x:hover {
+  background-color: var(--error-bg);
+  color: var(--error-fg);
+}
+
+/* Nothing selected in the cascade yet — there is nothing to add. */
+[data-cat-add][disabled] {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .psp-more {

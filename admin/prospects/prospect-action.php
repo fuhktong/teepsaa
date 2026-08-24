@@ -60,16 +60,38 @@ $date = function (string $field): ?string {
     return preg_match('/^\d{4}-\d{2}-\d{2}$/', $v) ? $v : null;
 };
 
-// The picker only ever offers real category names, so anything else arrived by
-// hand — store nothing rather than a name no filter will ever match. Reading
-// `categories` is the whole extent of the overlap with vendors: the name lands
-// on the prospect row and `businesses` is never touched.
+// One or more category names, comma separated — the shape businesses.category
+// already uses, so a prospect that signs up converts across untranslated.
+//
+// The picker only ever offers real names, so anything else arrived by hand:
+// each one is checked, unknowns and duplicates are dropped, and the order you
+// added them in survives. Reading `categories` is the whole extent of the
+// overlap with vendors — the names land on the prospect row and `businesses`
+// is never touched.
 $category = function () use ($pdo): ?string {
-    $v = trim((string)($_POST['category'] ?? ''));
-    if ($v === '') return null;
+    $raw = trim((string)($_POST['category'] ?? ''));
+    if ($raw === '') return null;
+
     static $names = null;
     $names ??= $pdo->query('SELECT name FROM categories')->fetchAll(PDO::FETCH_COLUMN);
-    return in_array($v, $names, true) ? mb_substr($v, 0, 80) : null;
+
+    $keep = [];
+    foreach (explode(',', $raw) as $one) {
+        $one = trim($one);
+        if ($one !== '' && in_array($one, $names, true) && !in_array($one, $keep, true)) {
+            $keep[] = $one;
+        }
+    }
+
+    // The column holds 255 (database/migration-prospect-categories.sql). Drop
+    // whole names off the end rather than storing half of one.
+    $out = '';
+    foreach ($keep as $one) {
+        $next = $out === '' ? $one : $out . ', ' . $one;
+        if (mb_strlen($next) > 255) break;
+        $out = $next;
+    }
+    return $out === '' ? null : $out;
 };
 
 $load = function (int $i) use ($pdo, $done, $list): array {

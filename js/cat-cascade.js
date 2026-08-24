@@ -1,67 +1,113 @@
-/* Cascading category picker — one <select> per level of the categories tree,
-   writing the chosen category's name into a hidden input.
+/* Cascading category picker, multi-select.
 
    This is the same tree vendors pick from, read straight from `categories`.
-   It only reads: canvassing stores the category *name* on the prospect row, so
+   It only reads: canvassing stores category *names* on the prospect row, so
    nothing here touches `businesses` and no prospect can surface as a vendor.
+   Names are held comma separated, the same shape businesses.category uses.
 
    Markup expected on the page:
      <script type="application/json" id="cat-tree-data">
        [{"id":1,"parent_id":null,"name":"Food"}, ...]
      </script>
-     <div class="psp-cat" data-cat-cascade data-target="category"></div>
-     <input type="hidden" id="category" name="category" value="Bakery">
+     <div class="psp-field">
+       <ul class="psp-cat-chosen" data-cat-chosen></ul>
+       <div class="psp-cat" data-cat-cascade data-target="category"></div>
+       <button type="button" data-cat-add>Add category</button>
+       <input type="hidden" id="category" name="category" value="Bakery, Coffee">
+     </div>
 
    Unlike the vendor signup form this does not insist on a leaf. A shop you are
    standing outside is worth filing under "Food" when you have not yet asked
-   what kind — whatever the deepest chosen level says is the category. */
+   what kind — whatever the deepest chosen level says is what Add takes. */
 (function () {
+    'use strict';
+
     var data = document.getElementById('cat-tree-data');
     if (!data) return;
 
     var cats;
     try { cats = JSON.parse(data.textContent || '[]'); } catch (e) { return; }
 
-    var byParent = {}, byId = {};
+    var byParent = {}, byId = {}, byName = {};
     cats.forEach(function (c) {
         byId[c.id] = c;
+        byName[c.name.toLowerCase()] = c;
         var key = (c.parent_id === null || c.parent_id === undefined) ? 'root' : String(c.parent_id);
         (byParent[key] = byParent[key] || []).push(c);
     });
 
-    // The stored value is a name, so the path back to the root has to be found
-    // by name. First match wins — duplicate names across branches are the
-    // category admin's problem, not this picker's.
-    function pathTo(name) {
-        if (!name) return [];
-        var found = null;
-        cats.forEach(function (c) {
-            if (!found && c.name.toLowerCase() === name.toLowerCase()) found = c;
-        });
-        if (!found) return [];
-        var path = [], node = found;
-        while (node) {
-            path.unshift(node);
-            node = node.parent_id ? byId[node.parent_id] : null;
-        }
-        return path;
+    function splitNames(raw) {
+        return String(raw || '').split(',').map(function (n) {
+            return n.trim();
+        }).filter(function (n) { return n !== ''; });
     }
 
     Array.prototype.forEach.call(document.querySelectorAll('[data-cat-cascade]'), function (box) {
         var hidden = document.getElementById(box.getAttribute('data-target'));
         if (!hidden) return;
 
+        var field  = box.closest('.psp-field') || box.parentNode;
+        var chips  = field.querySelector('[data-cat-chosen]');
+        var addBtn = field.querySelector('[data-cat-add]');
+        var clrBtn = field.querySelector('[data-cat-clear]');
+        var chosen = splitNames(hidden.value);
+
+        function has(name) {
+            var lower = name.toLowerCase();
+            return chosen.some(function (n) { return n.toLowerCase() === lower; });
+        }
+
         function levels() {
             return Array.prototype.slice.call(box.querySelectorAll('select'));
         }
 
-        function sync() {
-            var chosen = '';
-            levels().forEach(function (s) { if (s.value) chosen = byId[s.value].name; });
-            hidden.value = chosen;
+        // The deepest level with something selected is what Add would take.
+        function candidate() {
+            var pick = null;
+            levels().forEach(function (s) { if (s.value) pick = byId[s.value]; });
+            return pick;
         }
 
-        function render(parentKey, level, selectedId) {
+        function refreshAdd() {
+            if (!addBtn) return;
+            var c = candidate();
+            addBtn.disabled = !c || has(c.name);
+        }
+
+        function paint() {
+            if (!chips) return;
+            chips.textContent = '';
+            chosen.forEach(function (name, i) {
+                var known = Object.prototype.hasOwnProperty.call(byName, name.toLowerCase());
+                var li = document.createElement('li');
+                li.className = 'psp-cat-chip' + (known ? '' : ' psp-cat-chip-unknown');
+                // A name typed before this list existed, or one since renamed.
+                // Say so, because saving will drop it.
+                if (!known) li.title = 'Not in the category list any more — saving will drop it.';
+                li.appendChild(document.createTextNode(name));
+
+                var x = document.createElement('button');
+                x.type = 'button';
+                x.className = 'psp-cat-chip-x';
+                x.setAttribute('aria-label', 'Remove ' + name);
+                x.textContent = '×';
+                x.addEventListener('click', function () {
+                    chosen.splice(i, 1);
+                    commit();
+                });
+                li.appendChild(x);
+                chips.appendChild(li);
+            });
+            chips.hidden = chosen.length === 0;
+        }
+
+        function commit() {
+            hidden.value = chosen.join(', ');
+            paint();
+            refreshAdd();
+        }
+
+        function render(parentKey, level) {
             var children = byParent[parentKey] || [];
             if (!children.length) return;
 
@@ -77,47 +123,47 @@
                 var opt = document.createElement('option');
                 opt.value = c.id;
                 opt.textContent = c.name;
-                if (selectedId && String(c.id) === String(selectedId)) opt.selected = true;
                 sel.appendChild(opt);
             });
 
             sel.addEventListener('change', function () {
                 levels().slice(level + 1).forEach(function (s) { s.remove(); });
-                if (sel.value) render(sel.value, level + 1, null);
-                sync();
+                if (sel.value) render(sel.value, level + 1);
+                refreshAdd();
             });
 
             box.appendChild(sel);
         }
 
-        var path = pathTo(hidden.value);
-        var parentKey = 'root';
-        for (var i = 0; i <= path.length; i++) {
-            render(parentKey, i, path[i] ? path[i].id : null);
-            if (!path[i]) break;
-            parentKey = String(path[i].id);
+        // Back to the top level, ready for the next one.
+        function reset() {
+            levels().slice(1).forEach(function (s) { s.remove(); });
+            var first = levels()[0];
+            if (first) first.value = '';
+            refreshAdd();
         }
 
-        // A name the picker cannot place — typed before this list existed, or
-        // since renamed. Say so, because saving the form will drop it.
-        if (hidden.value && !path.length) {
-            var warn = document.createElement('p');
-            warn.className = 'psp-hint psp-cat-orphan';
-            warn.textContent = 'Currently saved as "' + hidden.value + '", which is not in the category list any more. '
-                             + 'Pick one above — saving without a pick clears it.';
-            box.appendChild(warn);
-        }
-
-        var clear = box.parentNode.querySelector('[data-cat-clear]');
-        if (clear) {
-            clear.addEventListener('click', function () {
-                levels().slice(1).forEach(function (s) { s.remove(); });
-                var first = levels()[0];
-                if (first) first.value = '';
-                var orphan = box.querySelector('.psp-cat-orphan');
-                if (orphan) orphan.remove();
-                hidden.value = '';
+        if (addBtn) {
+            addBtn.addEventListener('click', function () {
+                var c = candidate();
+                if (c && !has(c.name)) {
+                    chosen.push(c.name);
+                    commit();
+                }
+                reset();
             });
         }
+
+        if (clrBtn) {
+            clrBtn.addEventListener('click', function () {
+                chosen = [];
+                commit();
+                reset();
+            });
+        }
+
+        render('root', 0);
+        paint();
+        refreshAdd();
     });
 })();
