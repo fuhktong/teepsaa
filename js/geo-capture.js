@@ -1,11 +1,15 @@
 // Fills lat/lng from the device GPS.
 //
-// Two jobs, both used by the canvassing pages:
+// Three jobs, all used by the canvassing pages:
 //   1. data-geo-capture — a button inside a form; writes into that form's
 //      hidden lat/lng inputs. Add data-geo-auto to fire once on page load, so
 //      standing outside a shop and tapping "Add" already has the pin.
 //   2. data-geo-goto — a button that reloads the current page with lat/lng in
 //      the query string, used to sort the list by nearest.
+//   3. data-geo-directions — a Google Maps link; adds ?origin= from the device
+//      GPS on click. Leave the origin out of the href and Google chooses a
+//      start itself, which on a signed-in browser is usually your saved Home,
+//      not the pavement you are standing on.
 //
 // Needs HTTPS, which production is. Safari shows its own permission prompt the
 // first time and remembers the answer per site.
@@ -75,8 +79,28 @@
         });
     }
 
+    function wireDirections(link) {
+        link.addEventListener('click', function (e) {
+            if (!navigator.geolocation) return;   // let the plain link through
+            e.preventDefault();
+
+            // Opened synchronously inside the click so the popup blocker treats
+            // it as user-initiated; the fix arrives later and just sets its URL.
+            var tab = window.open('', '_blank');
+            if (!tab) return;                     // blocked anyway — do nothing
+            var base = link.href;
+
+            locate(function (lat, lng) {
+                tab.location = base + '&origin=' + lat.toFixed(7) + ',' + lng.toFixed(7);
+            }, function () {
+                tab.location = base;              // no fix: Google's guess beats nothing
+            });
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('[data-geo-capture]').forEach(wireCapture);
         document.querySelectorAll('[data-geo-goto]').forEach(wireGoto);
+        document.querySelectorAll('[data-geo-directions]').forEach(wireDirections);
     });
 })();

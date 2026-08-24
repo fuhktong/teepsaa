@@ -27,6 +27,29 @@
   gap: 0.5rem;
 }
 
+/* A full-width row of the shop's photos, under the name. Scrolls sideways
+   rather than wrapping, so a prospect with eight photos does not push the
+   whole page down before you have read anything. */
+.psp-head-photos {
+  flex-basis: 100%;
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.psp-head-photos img {
+  display: block;
+  width: 78px;
+  height: 78px;
+  flex: none;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-subtle);
+}
+
 /* ── Buttons ─────────────────────────────────────────────────────── */
 
 .psp-btn {
@@ -390,11 +413,6 @@
   overflow-wrap: anywhere;
 }
 
-.psp-fact-blank {
-  color: var(--text-muted);
-  font-style: italic;
-}
-
 /* ── Cards and forms ─────────────────────────────────────────────── */
 
 .psp-quick {
@@ -440,6 +458,19 @@
 
 .psp-form {
   max-width: 560px;
+}
+
+.psp-subdivider {
+  margin: 1.4rem 0 1rem;
+  border: none;
+  border-top: 1px solid var(--divider);
+}
+
+.psp-subhead-h3 {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-soft);
 }
 
 .psp-field {

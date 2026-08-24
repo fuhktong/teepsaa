@@ -59,23 +59,22 @@ $catTree = $pdo->query('SELECT id, parent_id, name FROM categories ORDER BY name
 
 $tel = $p['phone'] ? preg_replace('/[^0-9+]/', '', $p['phone']) : '';
 
-// Everything you would ask a shop for, readable without opening the edit form.
-// These five show even when empty — a blank one is a gap worth spotting before
-// you walk back in.
-$facts = [
-    'Category'  => $p['category'],
-    'Owner'     => $p['owner_name'],
-    'Phone'     => $p['phone'],
-    'Address'   => $p['address'],
-    'Follow up' => $p['next_followup_at'] ? date('j M Y', strtotime($p['next_followup_at'])) : null,
-];
 // Overdue only counts while the prospect is still worth chasing — the digest
 // makes the same exclusion, so the two never disagree.
 $followupDue = $p['next_followup_at'] !== null
     && $p['next_followup_at'] <= date('Y-m-d')
     && !in_array($p['status'], ['signed_up', 'not_interested', 'closed_down'], true);
-// These only earn their space when they hold something.
-$extraFacts = array_filter([
+
+// Everything you would ask a shop for, readable without opening the edit form.
+// A field with nothing in it is left out entirely rather than shown as blank —
+// the panel is for reading at a glance, and the edit form is where the gaps are
+// obvious anyway.
+$facts = array_filter([
+    'Category'   => $p['category'],
+    'Owner'      => $p['owner_name'],
+    'Phone'      => $p['phone'],
+    'Address'    => $p['address'],
+    'Follow up'  => $p['next_followup_at'] ? date('j M Y', strtotime($p['next_followup_at'])) : null,
     'Khmer name' => $p['business_name_km'],
     'Telegram'   => $p['telegram'] ? '@' . ltrim($p['telegram'], '@') : null,
     'Map pin'    => ($p['lat'] !== null && $p['lng'] !== null)
@@ -119,6 +118,17 @@ $extraFacts = array_filter([
             </span>
             <a href="/admin/prospects/" class="psp-btn">All prospects</a>
         </div>
+        <?php if ($photos): ?>
+            <!-- Recognising the shopfront is most of the job, so the photos sit
+                 with the name. Managing them lives in Edit details. -->
+            <div class="psp-head-photos">
+                <?php foreach ($photos as $ph): ?>
+                    <a href="/uploads/<?= htmlspecialchars($ph['filename']) ?>" target="_blank" rel="noopener">
+                        <img src="/uploads/<?= htmlspecialchars($ph['filename']) ?>" alt="" loading="lazy">
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </div>
 
     <?php if ($note): ?><div class="psp-alert psp-alert-success"><?= htmlspecialchars($note) ?></div><?php endif; ?>
@@ -132,25 +142,20 @@ $extraFacts = array_filter([
             <a class="psp-btn" href="https://t.me/<?= htmlspecialchars(ltrim($p['telegram'], '@')) ?>" target="_blank" rel="noopener">Telegram</a>
         <?php endif; ?>
         <?php if ($p['lat'] !== null && $p['lng'] !== null): ?>
-            <a class="psp-btn" target="_blank" rel="noopener"
-               href="https://www.google.com/maps/dir/?api=1&destination=<?= (float)$p['lat'] ?>,<?= (float)$p['lng'] ?>">Directions</a>
+            <!-- No origin in the href on purpose: js/geo-capture.js adds one from
+                 the device GPS on click. Without it Google picks a start itself,
+                 which on a signed-in browser is usually your saved Home. -->
+            <a class="psp-btn" target="_blank" rel="noopener" data-geo-directions
+               href="https://www.google.com/maps/dir/?api=1&amp;destination=<?= (float)$p['lat'] ?>,<?= (float)$p['lng'] ?>">Directions</a>
         <?php endif; ?>
     </div>
 
+    <?php if ($facts || $p['notes']): ?>
     <dl class="psp-facts">
-        <?php foreach ($facts as $label => $val):
-            $blank = ($val === null || $val === '');
-            $cls   = $blank ? 'psp-fact-blank' : ($label === 'Follow up' && $followupDue ? 'psp-due' : '');
-        ?>
+        <?php foreach ($facts as $label => $val): $due = ($label === 'Follow up' && $followupDue); ?>
             <div class="psp-fact">
                 <dt><?= $label ?></dt>
-                <dd<?= $cls ? ' class="' . $cls . '"' : '' ?>><?= $blank ? 'Not set' : htmlspecialchars((string)$val) ?><?= $label === 'Follow up' && $followupDue ? ' — due' : '' ?></dd>
-            </div>
-        <?php endforeach; ?>
-        <?php foreach ($extraFacts as $label => $val): ?>
-            <div class="psp-fact">
-                <dt><?= $label ?></dt>
-                <dd><?= htmlspecialchars((string)$val) ?></dd>
+                <dd<?= $due ? ' class="psp-due"' : '' ?>><?= htmlspecialchars((string)$val) ?><?= $due ? ' — due' : '' ?></dd>
             </div>
         <?php endforeach; ?>
         <?php if ($p['notes']): ?>
@@ -160,6 +165,7 @@ $extraFacts = array_filter([
             </div>
         <?php endif; ?>
     </dl>
+    <?php endif; ?>
 
     <!-- ── Log a visit ─────────────────────────────────────────────── -->
     <section class="psp-card">
@@ -204,44 +210,6 @@ $extraFacts = array_filter([
             <div class="psp-actions">
                 <button type="submit" class="psp-btn psp-btn-primary psp-btn-big">Log visit</button>
             </div>
-        </form>
-    </section>
-
-    <!-- ── Photos ──────────────────────────────────────────────────── -->
-    <section class="psp-card">
-        <h2>Photos<?= $photos ? ' (' . count($photos) . ')' : '' ?></h2>
-        <?php if (!$photos): ?>
-            <p class="psp-hint">No photos yet.</p>
-        <?php else: ?>
-            <div class="psp-photos">
-                <?php foreach ($photos as $ph): ?>
-                    <div class="psp-photo-cell">
-                        <a href="/uploads/<?= htmlspecialchars($ph['filename']) ?>" target="_blank" rel="noopener">
-                            <img src="/uploads/<?= htmlspecialchars($ph['filename']) ?>" alt="" loading="lazy">
-                        </a>
-                        <span class="psp-photo-date"><?= date('j M Y', strtotime($ph['created_at'])) ?></span>
-                        <form method="post" action="/admin/prospects/prospect-action.php"
-                              onsubmit="return confirm('Delete this photo?');">
-                            <?= csrf_input() ?>
-                            <input type="hidden" name="action" value="delete-photo">
-                            <input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
-                            <input type="hidden" name="photo_id" value="<?= (int)$ph['id'] ?>">
-                            <button type="submit" class="psp-photo-del" title="Delete photo">&times;</button>
-                        </form>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-
-        <form method="post" action="/admin/prospects/prospect-action.php" enctype="multipart/form-data" class="psp-photo-add">
-            <?= csrf_input() ?>
-            <input type="hidden" name="action" value="add-photo">
-            <input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
-            <input type="file" name="photo" accept="image/*" capture="environment" data-photo-shrink>
-            <input type="hidden" name="photo_data">
-            <img data-photo-preview hidden alt="">
-            <span class="psp-hint" data-photo-info></span>
-            <button type="submit" class="psp-btn">Add photo</button>
         </form>
     </section>
 
@@ -361,6 +329,46 @@ $extraFacts = array_filter([
                 <div class="psp-actions">
                     <button type="submit" class="psp-btn psp-btn-primary">Save changes</button>
                 </div>
+            </form>
+
+            <!-- Sibling forms, never nested inside the one above — a form inside
+                 a form is invalid and the inner one silently stops submitting.
+                 Viewing the photos happens up in the head; this is the managing. -->
+            <hr class="psp-subdivider">
+            <h3 class="psp-subhead-h3">Photos<?= $photos ? ' (' . count($photos) . ')' : '' ?></h3>
+
+            <?php if (!$photos): ?>
+                <p class="psp-hint">No photos yet.</p>
+            <?php else: ?>
+                <div class="psp-photos">
+                    <?php foreach ($photos as $ph): ?>
+                        <div class="psp-photo-cell">
+                            <a href="/uploads/<?= htmlspecialchars($ph['filename']) ?>" target="_blank" rel="noopener">
+                                <img src="/uploads/<?= htmlspecialchars($ph['filename']) ?>" alt="" loading="lazy">
+                            </a>
+                            <span class="psp-photo-date"><?= date('j M Y', strtotime($ph['created_at'])) ?></span>
+                            <form method="post" action="/admin/prospects/prospect-action.php"
+                                  onsubmit="return confirm('Delete this photo?');">
+                                <?= csrf_input() ?>
+                                <input type="hidden" name="action" value="delete-photo">
+                                <input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
+                                <input type="hidden" name="photo_id" value="<?= (int)$ph['id'] ?>">
+                                <button type="submit" class="psp-photo-del" title="Delete photo">&times;</button>
+                            </form>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="post" action="/admin/prospects/prospect-action.php" enctype="multipart/form-data" class="psp-photo-add">
+                <?= csrf_input() ?>
+                <input type="hidden" name="action" value="add-photo">
+                <input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
+                <input type="file" name="photo" accept="image/*" capture="environment" data-photo-shrink>
+                <input type="hidden" name="photo_data">
+                <img data-photo-preview hidden alt="">
+                <span class="psp-hint" data-photo-info></span>
+                <button type="submit" class="psp-btn">Add photo</button>
             </form>
         </details>
     </section>
