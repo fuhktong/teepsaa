@@ -60,6 +60,18 @@ $date = function (string $field): ?string {
     return preg_match('/^\d{4}-\d{2}-\d{2}$/', $v) ? $v : null;
 };
 
+// The picker only ever offers real category names, so anything else arrived by
+// hand — store nothing rather than a name no filter will ever match. Reading
+// `categories` is the whole extent of the overlap with vendors: the name lands
+// on the prospect row and `businesses` is never touched.
+$category = function () use ($pdo): ?string {
+    $v = trim((string)($_POST['category'] ?? ''));
+    if ($v === '') return null;
+    static $names = null;
+    $names ??= $pdo->query('SELECT name FROM categories')->fetchAll(PDO::FETCH_COLUMN);
+    return in_array($v, $names, true) ? mb_substr($v, 0, 80) : null;
+};
+
 $load = function (int $i) use ($pdo, $done, $list): array {
     $stmt = $pdo->prepare('SELECT * FROM prospects WHERE id = ?');
     $stmt->execute([$i]);
@@ -105,7 +117,7 @@ switch ($action) {
             $str('owner_name', 120),
             $str('phone', 30),
             $str('telegram', 60),
-            $str('category', 80),
+            $category(),
             $str('address', 255),
             $lat, $lng, $status,
             $date('next_followup_at'),
@@ -153,7 +165,7 @@ switch ($action) {
             $str('owner_name', 120),
             $str('phone', 30),
             $str('telegram', 60),
-            $str('category', 80),
+            $category(),
             $str('address', 255),
             $num('lat'), $num('lng'),
             prospect_valid_status($_POST['status'] ?? null),

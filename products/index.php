@@ -58,6 +58,14 @@ $categories = array_values(array_filter($allFlat, fn($c) => !in_array($c['id'], 
 $stmt = $pdo->prepare('SELECT id, name, royalty_add_on, royalty_waived FROM businesses WHERE user_id = ? AND approved = 1 ORDER BY name ASC');
 $stmt->execute([$userId]);
 $businesses = $stmt->fetchAll();
+
+// $businesses holds APPROVED businesses only, so an empty list means either
+// "never submitted" or "submitted and still waiting". The empty state has to
+// tell those apart — otherwise a pending vendor is invited to submit a second
+// business. -1 rejected, 0 pending, 1 approved, false when there is none.
+$stmt = $pdo->prepare('SELECT approved FROM businesses WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1');
+$stmt->execute([$userId]);
+$latestBizApproved = $stmt->fetchColumn();
 $companyAddOn   = !empty($businesses) ? (float)$businesses[0]['royalty_add_on'] : 0.0;
 $royaltyWaived  = !empty($businesses) && (bool)$businesses[0]['royalty_waived'];
 $bizIds             = array_column($businesses, 'id');
@@ -1036,8 +1044,12 @@ if ($editing) {
             <p class="form-error"><?= htmlspecialchars($error) ?></p>
         <?php endif; ?>
 
-        <?php if (empty($businesses)): ?>
+        <?php if (empty($businesses) && $latestBizApproved === false): ?>
             <p class="notice"><?= $t['prod_need_business'] ?> <a href="/submit/"><?= $t['prod_submit_business'] ?></a>.</p>
+        <?php elseif (empty($businesses) && (int)$latestBizApproved === -1): ?>
+            <p class="notice"><?= $t['vendor_products_rejected'] ?></p>
+        <?php elseif (empty($businesses)): ?>
+            <p class="notice"><?= $t['vendor_products_pending'] ?></p>
         <?php elseif (empty($products)): ?>
             <p class="notice"><?= $t['vendor_no_products'] ?> <a href="/products/?action=add"><?= $t['vendor_add_product'] ?></a>.</p>
         <?php else: ?>

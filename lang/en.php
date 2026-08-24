@@ -403,6 +403,8 @@ return [
     'vendor_total_orders'  => 'Total orders',
     'vendor_units_sold'    => 'Units sold',
     'vendor_submit_to_add' => 'Submit a business to start adding products.',
+    'vendor_products_pending'  => 'Your business is awaiting approval. You can add products as soon as it is approved.',
+    'vendor_products_rejected' => 'Your business submission was rejected. Check your business settings for details.',
     'vendor_status_active' => 'Active',
     'vendor_status_inactive' => 'Inactive',
     'vendor_stock_low'     => 'Low',

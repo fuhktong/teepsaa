@@ -256,6 +256,10 @@ if ($business) {
 
         <?php if (!$business): ?>
             <p class="empty"><?= $t['vendor_submit_to_add'] ?></p>
+        <?php elseif ($business['approved'] === -1): ?>
+            <p class="empty"><?= $t['vendor_products_rejected'] ?></p>
+        <?php elseif ($business['approved'] !== 1): ?>
+            <p class="empty"><?= $t['vendor_products_pending'] ?></p>
         <?php elseif (empty($products)): ?>
             <p class="empty"><?= $t['vendor_no_products'] ?> <a href="/products/?action=add"><?= $t['vendor_add_product'] ?></a>.</p>
         <?php else: ?>

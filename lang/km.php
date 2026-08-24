@@ -403,6 +403,8 @@ return [
     'vendor_total_orders'  => 'កម្មង់សរុប',
     'vendor_units_sold'    => 'ចំនួនលក់',
     'vendor_submit_to_add' => 'ដាក់ស្នើអាជីវកម្មដើម្បីចាប់ផ្តើមបន្ថែមផលិតផល។',
+    'vendor_products_pending'  => 'អាជីវកម្មរបស់អ្នកកំពុងរង់ចាំការអនុម័ត។ អ្នកអាចបន្ថែមផលិតផលបាន នៅពេលវាត្រូវបានអនុម័ត។',
+    'vendor_products_rejected' => 'ការដាក់ស្នើអាជីវកម្មរបស់អ្នកត្រូវបានបដិសេធ។ សូមពិនិត្យការកំណត់អាជីវកម្មសម្រាប់ព័ត៌មានលម្អិត។',
     'vendor_status_active' => 'សកម្ម',
     'vendor_status_inactive' => 'អសកម្ម',
     'vendor_stock_low'     => 'ជិតអស់',

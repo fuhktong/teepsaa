@@ -53,9 +53,36 @@ unset($_SESSION['psp_old']);
 
 $v = fn(string $f) => htmlspecialchars((string)($old[$f] ?? $p[$f] ?? ''));
 
-$categories = $pdo->query('SELECT name FROM categories ORDER BY name')->fetchAll(PDO::FETCH_COLUMN);
+// The same tree vendors pick from on /submit/. Read-only: the chosen name is
+// stored on the prospect row, so a prospect never lands in `businesses`.
+$catTree = $pdo->query('SELECT id, parent_id, name FROM categories ORDER BY name ASC')->fetchAll(PDO::FETCH_ASSOC);
 
 $tel = $p['phone'] ? preg_replace('/[^0-9+]/', '', $p['phone']) : '';
+
+// Everything you would ask a shop for, readable without opening the edit form.
+// These five show even when empty — a blank one is a gap worth spotting before
+// you walk back in.
+$facts = [
+    'Category'  => $p['category'],
+    'Owner'     => $p['owner_name'],
+    'Phone'     => $p['phone'],
+    'Address'   => $p['address'],
+    'Follow up' => $p['next_followup_at'] ? date('j M Y', strtotime($p['next_followup_at'])) : null,
+];
+// Overdue only counts while the prospect is still worth chasing — the digest
+// makes the same exclusion, so the two never disagree.
+$followupDue = $p['next_followup_at'] !== null
+    && $p['next_followup_at'] <= date('Y-m-d')
+    && !in_array($p['status'], ['signed_up', 'not_interested', 'closed_down'], true);
+// These only earn their space when they hold something.
+$extraFacts = array_filter([
+    'Khmer name' => $p['business_name_km'],
+    'Telegram'   => $p['telegram'] ? '@' . ltrim($p['telegram'], '@') : null,
+    'Map pin'    => ($p['lat'] !== null && $p['lng'] !== null)
+                    ? round((float)$p['lat'], 5) . ', ' . round((float)$p['lng'], 5) : null,
+    'Visits'     => count($visits) ?: null,
+    'Added'      => date('j M Y', strtotime($p['created_at'])),
+], fn($v) => $v !== null && $v !== '');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -108,12 +135,31 @@ $tel = $p['phone'] ? preg_replace('/[^0-9+]/', '', $p['phone']) : '';
             <a class="psp-btn" target="_blank" rel="noopener"
                href="https://www.google.com/maps/dir/?api=1&destination=<?= (float)$p['lat'] ?>,<?= (float)$p['lng'] ?>">Directions</a>
         <?php endif; ?>
-        <?php if ($p['next_followup_at']): ?>
-            <span class="psp-meta-bit <?= $p['next_followup_at'] <= date('Y-m-d') ? 'psp-due' : '' ?>">
-                Follow up <?= date('j M Y', strtotime($p['next_followup_at'])) ?>
-            </span>
-        <?php endif; ?>
     </div>
+
+    <dl class="psp-facts">
+        <?php foreach ($facts as $label => $val):
+            $blank = ($val === null || $val === '');
+            $cls   = $blank ? 'psp-fact-blank' : ($label === 'Follow up' && $followupDue ? 'psp-due' : '');
+        ?>
+            <div class="psp-fact">
+                <dt><?= $label ?></dt>
+                <dd<?= $cls ? ' class="' . $cls . '"' : '' ?>><?= $blank ? 'Not set' : htmlspecialchars((string)$val) ?><?= $label === 'Follow up' && $followupDue ? ' — due' : '' ?></dd>
+            </div>
+        <?php endforeach; ?>
+        <?php foreach ($extraFacts as $label => $val): ?>
+            <div class="psp-fact">
+                <dt><?= $label ?></dt>
+                <dd><?= htmlspecialchars((string)$val) ?></dd>
+            </div>
+        <?php endforeach; ?>
+        <?php if ($p['notes']): ?>
+            <div class="psp-fact psp-fact-wide">
+                <dt>Notes</dt>
+                <dd><?= nl2br(htmlspecialchars($p['notes'])) ?></dd>
+            </div>
+        <?php endif; ?>
+    </dl>
 
     <!-- ── Log a visit ─────────────────────────────────────────────── -->
     <section class="psp-card">
@@ -269,11 +315,12 @@ $tel = $p['phone'] ? preg_replace('/[^0-9+]/', '', $p['phone']) : '';
                 </div>
 
                 <div class="psp-field">
-                    <label for="edit-category">Category</label>
-                    <input type="text" id="edit-category" name="category" value="<?= $v('category') ?>" list="psp-categories">
-                    <datalist id="psp-categories">
-                        <?php foreach ($categories as $c): ?><option value="<?= htmlspecialchars($c) ?>"><?php endforeach; ?>
-                    </datalist>
+                    <label>Category
+                        <button type="button" class="psp-link-btn" data-cat-clear>Clear</button>
+                    </label>
+                    <div class="psp-cat" data-cat-cascade data-target="edit-category"></div>
+                    <input type="hidden" id="edit-category" name="category" value="<?= $v('category') ?>">
+                    <p class="psp-hint">The same list vendors choose from. Stop at any level.</p>
                 </div>
 
                 <div class="psp-field">
@@ -283,7 +330,12 @@ $tel = $p['phone'] ? preg_replace('/[^0-9+]/', '', $p['phone']) : '';
 
                 <div class="psp-field">
                     <label for="edit-followup">Follow up on</label>
-                    <input type="date" id="edit-followup" name="next_followup_at" value="<?= $v('next_followup_at') ?>">
+                    <div class="psp-date-row">
+                        <input type="date" id="edit-followup" name="next_followup_at" value="<?= $v('next_followup_at') ?>">
+                        <button type="button" class="psp-btn psp-btn-sm"
+                                onclick="document.getElementById('edit-followup').value = ''">Clear</button>
+                    </div>
+                    <p class="psp-hint">Clear it and save to drop this prospect out of the daily digest.</p>
                 </div>
 
                 <div class="psp-field">
@@ -322,8 +374,11 @@ $tel = $p['phone'] ? preg_replace('/[^0-9+]/', '', $p['phone']) : '';
     </form>
 </main>
 
+<script type="application/json" id="cat-tree-data"><?= json_encode($catTree, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?></script>
+
 <?php require __DIR__ . '/../../footer/footer.php'; ?>
 <script src="/js/geo-capture.js"></script>
 <script src="/js/photo-shrink.js"></script>
+<script src="/js/cat-cascade.js"></script>
 </body>
 </html>

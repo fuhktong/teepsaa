@@ -33,8 +33,9 @@ $v = fn(string $f, string $default = '') => htmlspecialchars((string)($old[$f] ?
 // default; "To visit" is for shops added from a list at the desk.
 $status = $old['status'] ?? 'pitched';
 
-// Doubles as the category picker — the same list buyers browse.
-$categories = $pdo->query('SELECT name FROM categories ORDER BY name')->fetchAll(PDO::FETCH_COLUMN);
+// The same tree vendors pick from on /submit/. Read-only: the chosen name is
+// stored on the prospect row, so a prospect never lands in `businesses`.
+$catTree = $pdo->query('SELECT id, parent_id, name FROM categories ORDER BY name ASC')->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -126,7 +127,12 @@ $categories = $pdo->query('SELECT name FROM categories ORDER BY name')->fetchAll
 
         <div class="psp-field">
             <label for="next_followup_at">Follow up on</label>
-            <input type="date" id="next_followup_at" name="next_followup_at" value="<?= $v('next_followup_at') ?>">
+            <div class="psp-date-row">
+                <input type="date" id="next_followup_at" name="next_followup_at" value="<?= $v('next_followup_at') ?>">
+                <button type="button" class="psp-btn psp-btn-sm"
+                        onclick="document.getElementById('next_followup_at').value = ''">Clear</button>
+            </div>
+            <p class="psp-hint">Leave this empty and the prospect stays out of the daily digest.</p>
         </div>
 
         <details class="psp-more">
@@ -143,11 +149,12 @@ $categories = $pdo->query('SELECT name FROM categories ORDER BY name')->fetchAll
             </div>
 
             <div class="psp-field">
-                <label for="category">Category</label>
-                <input type="text" id="category" name="category" value="<?= $v('category') ?>" list="psp-categories" autocomplete="off">
-                <datalist id="psp-categories">
-                    <?php foreach ($categories as $c): ?><option value="<?= htmlspecialchars($c) ?>"><?php endforeach; ?>
-                </datalist>
+                <label>Category
+                    <button type="button" class="psp-link-btn" data-cat-clear>Clear</button>
+                </label>
+                <div class="psp-cat" data-cat-cascade data-target="category"></div>
+                <input type="hidden" id="category" name="category" value="<?= $v('category') ?>">
+                <p class="psp-hint">The same list vendors choose from. Stop at any level.</p>
             </div>
 
             <div class="psp-field">
@@ -162,8 +169,11 @@ $categories = $pdo->query('SELECT name FROM categories ORDER BY name')->fetchAll
     </form>
 </main>
 
+<script type="application/json" id="cat-tree-data"><?= json_encode($catTree, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?></script>
+
 <?php require __DIR__ . '/../../footer/footer.php'; ?>
 <script src="/js/geo-capture.js"></script>
 <script src="/js/photo-shrink.js"></script>
+<script src="/js/cat-cascade.js"></script>
 </body>
 </html>
