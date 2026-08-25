@@ -41,7 +41,7 @@ if ($isAdmin) {
     $stmt = $pdo->prepare('
         SELECT o.status FROM orders o
         JOIN businesses b ON b.id = o.business_id
-        WHERE o.id = ? AND b.user_id = ?
+        WHERE o.id = ? AND b.user_id = ? AND b.deleted_at IS NULL
     ');
     $stmt->execute([$orderId, $userId]);
 } else {

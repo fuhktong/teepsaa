@@ -35,7 +35,7 @@ $stmt = $pdo->prepare("
     UPDATE orders o
     JOIN businesses b ON b.id = o.business_id
     SET o.status = 'return_received'
-    WHERE o.id = ? AND b.user_id = ? AND o.status = 'return_dispatched'
+    WHERE o.id = ? AND b.user_id = ? AND b.deleted_at IS NULL AND o.status = 'return_dispatched'
 ");
 $stmt->execute([$orderId, $userId]);
 

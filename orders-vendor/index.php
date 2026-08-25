@@ -16,7 +16,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 }
 
 $userId = $_SESSION['user_id'];
-$tab    = ($_GET['tab'] ?? '') === 'refunds' ? 'refunds' : 'orders';
+$tab    = in_array($_GET['tab'] ?? '', ['refunds', 'history'], true) ? $_GET['tab'] : 'orders';
 
 $stmt = $pdo->prepare('SELECT id, name FROM businesses WHERE user_id = ? AND approved = 1 ORDER BY name ASC');
 $stmt->execute([$userId]);
@@ -51,6 +51,11 @@ if (!empty($bizIds)) {
     $vendorRefundCount = (int)$cntStmt->fetchColumn();
 }
 
+// The orders tab is a work queue and the history tab is a record, so they scope
+// differently. The queue is work the vendor still owes someone, so it covers live
+// businesses only — a closed business has no outstanding obligations and its
+// orders must never sit in a to-do list. History is the vendor's own sales record
+// and deliberately includes closed businesses, flagged as such in the listing.
 $orders = [];
 if ($tab === 'orders') {
     $stmt = $pdo->prepare('
@@ -63,12 +68,32 @@ if ($tab === 'orders') {
         JOIN businesses b ON b.id = o.business_id
         JOIN buyers u ON u.id = o.buyer_user_id
         JOIN order_items oi ON oi.order_id = o.id
-        WHERE b.user_id = ? AND o.status IN (\'pending\', \'paid\', \'dispatched\', \'delivered\', \'completed\')
+        WHERE b.user_id = ? AND b.deleted_at IS NULL AND o.status IN (\'pending\', \'paid\', \'dispatched\')
         GROUP BY o.id
         ORDER BY o.created_at DESC
     ');
     $stmt->execute([$userId]);
     $orders = $stmt->fetchAll();
+}
+
+$historyOrders = [];
+if ($tab === 'history') {
+    $stmt = $pdo->prepare('
+        SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.discount_amount,
+               o.status, o.created_at,
+               b.name AS business_name, b.deleted_at AS business_closed,
+               u.name AS buyer_name, u.email AS buyer_email,
+               GROUP_CONCAT(CONCAT(oi.product_name, IFNULL(CONCAT(\' (\', oi.variant_label, \')\'), \'\'), \' x\', oi.quantity) ORDER BY oi.id SEPARATOR \', \') AS items
+        FROM orders o
+        JOIN businesses b ON b.id = o.business_id
+        JOIN buyers u ON u.id = o.buyer_user_id
+        JOIN order_items oi ON oi.order_id = o.id
+        WHERE b.user_id = ? AND o.status IN (\'delivered\', \'completed\')
+        GROUP BY o.id
+        ORDER BY o.created_at DESC
+    ');
+    $stmt->execute([$userId]);
+    $historyOrders = $stmt->fetchAll();
 }
 
 $refundOrders = [];
@@ -144,6 +169,7 @@ if ($tab === 'refunds' && !empty($bizIds)) {
 
     <nav class="products-subnav">
         <a href="/orders-vendor/" class="<?= $tab === 'orders' ? 'active' : '' ?>"><?= $t['vendor_orders'] ?></a>
+        <a href="/orders-vendor/?tab=history" class="<?= $tab === 'history' ? 'active' : '' ?>"><?= $t['vendor_orders_history'] ?></a>
         <a href="/orders-vendor/?tab=refunds" class="<?= $tab === 'refunds' ? 'active' : '' ?>"><?= $t['vendor_refunds'] ?><?php if ($vendorRefundCount > 0): ?> <span class="admin-tab-badge"><?= $vendorRefundCount ?></span><?php endif; ?></a>
     </nav>
 
@@ -172,6 +198,38 @@ if ($tab === 'refunds' && !empty($bizIds)) {
                     <span class="order-card-total">$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span>
                 </div>
                 <div class="order-card-status" data-status-bar>
+                    <?php $orderStatus = $o['status']; require __DIR__ . '/../order-status/order-status.php'; ?>
+                </div>
+            </div>
+            </a>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+
+    <?php elseif ($tab === 'history'): ?>
+
+        <div class="page-header">
+            <h1><?= $t['vendor_orders_history'] ?></h1>
+        </div>
+
+        <?php if (empty($historyOrders)): ?>
+            <p class="notice"><?= $t['vendor_no_history'] ?></p>
+        <?php else: ?>
+        <div class="order-cards">
+            <?php foreach ($historyOrders as $o): ?>
+            <?php $oid = date('ymd', strtotime($o['created_at'])) . '-' . str_pad($o['id'], 4, '0', STR_PAD_LEFT); ?>
+            <a href="/orders-vendor/order.php?id=<?= $o['public_id'] ?>" style="text-decoration:none;color:inherit;">
+            <div class="order-card">
+                <div class="order-card-head">
+                    <span class="order-card-id"><?= $oid ?></span>
+                    <span class="order-card-items"><?= htmlspecialchars($o['items']) ?></span>
+                    <span class="order-card-meta">
+                        <?= htmlspecialchars($o['business_name']) ?><?php if ($o['business_closed']): ?> <span class="order-closed-tag"><?= $t['vendor_closed_business'] ?></span><?php endif; ?>
+                    </span>
+                    <span class="order-card-date"><?= fmt_date('M j, g:ia', strtotime($o['created_at'])) ?></span>
+                    <span class="order-card-total">$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span>
+                </div>
+                <div class="order-card-status">
                     <?php $orderStatus = $o['status']; require __DIR__ . '/../order-status/order-status.php'; ?>
                 </div>
             </div>

@@ -49,7 +49,7 @@ These were the never-started tests. All need a fresh vendor registered with a
       (verified live 2026-08-23)
 - [ ] **Before approval, products cannot be created at all.** You can't add a
       product to an unapproved business — the form isn't offered. Confirm the
-      *server* enforces that too, not just the UI: with the vendor logged in and
+      _server_ enforces that too, not just the UI: with the vendor logged in and
       their business still pending, POST directly to `/products/save.php` with
       any product fields. It must redirect to `/products/` and create nothing.
       Check the products table afterwards to be sure. The gate is
@@ -129,7 +129,7 @@ through the site.
       it yourself — Claude can't launch it.
 - [ ] **Feed it in sections rather than all at once**, most-recent work first:
       `products/` and `dashboard-vendor/`, then `cart/ checkout/ product/
-    search/`, then `header/ footer/ config/ api/`.
+  search/`, then `header/ footer/ config/ api/`.
 
 ## 2b. PHP and server
 

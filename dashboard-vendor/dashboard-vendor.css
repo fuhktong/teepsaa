@@ -375,3 +375,16 @@
   font-weight: 600;
   vertical-align: middle;
 }
+
+/* Marks a history row whose business has since been closed. The sales record is
+   kept, so the row stays — the tag says why the shop is not in the picker. */
+.order-closed-tag {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    background-color: #f3f4f6;
+    color: #6b7280;
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+}

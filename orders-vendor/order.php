@@ -32,7 +32,7 @@ $stmt = $pdo->prepare('
            o.royalty_rate, o.royalty_amount, o.vendor_payout,
            o.coupon_code, o.discount_amount,
            o.status, o.created_at, o.tracking_url, o.buyer_notes,
-           b.name AS business_name,
+           b.name AS business_name, b.deleted_at AS business_closed,
            u.name AS buyer_name, u.email AS buyer_email, u.phone AS buyer_phone,
            u.house_number AS buyer_house_number, u.address AS buyer_address,
            u.address_notes AS buyer_address_notes,
@@ -77,6 +77,12 @@ $royaltyPct   = round(($o['royalty_rate'] ?? 0) * 100, 1);
 $vendorCouponDiscount = max(0, round($o['subtotal'] - $royaltyAmt - (float)$o['vendor_payout'], 2));
 $vendorPayout = round($o['subtotal'] - $royaltyAmt - $vendorCouponDiscount + $o['delivery_fee'] + $o['vendor_delivery_bonus'], 2);
 
+// Once the business is closed the vendor keeps the sales record but loses the
+// customer's contact and delivery details — they have nothing left to deliver, so
+// there is no reason for a closed shop to stay a lookup window on where past
+// customers live. The order itself stays fully visible.
+$businessClosed = !empty($o['business_closed']);
+
 $grabParts = array_filter([
     trim(($o['buyer_house_number'] ?? '') . ' ' . ($o['buyer_address'] ?? '')),
     $o['buyer_sangkat'] ?? '',
@@ -84,6 +90,8 @@ $grabParts = array_filter([
     'Phnom Penh',
 ]);
 $grabAddress = implode(', ', $grabParts);
+
+$navTab = in_array($o['status'], ['delivered', 'completed'], true) ? 'history' : 'orders';
 
 $statusClasses = [
     'pending'    => 'badge-grey',
@@ -118,7 +126,8 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
 
 <main>
     <nav class="products-subnav">
-        <a href="/orders-vendor/" class="active"><?= $t['vendor_orders'] ?></a>
+        <a href="/orders-vendor/" class="<?= $navTab === 'orders' ? 'active' : '' ?>"><?= $t['vendor_orders'] ?></a>
+        <a href="/orders-vendor/?tab=history" class="<?= $navTab === 'history' ? 'active' : '' ?>"><?= $t['vendor_orders_history'] ?></a>
         <a href="/orders-vendor/?tab=refunds"><?= $t['vendor_refunds'] ?><?php if ($vendorRefundCount > 0): ?> <span class="admin-tab-badge"><?= $vendorRefundCount ?></span><?php endif; ?></a>
     </nav>
 
@@ -131,11 +140,17 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
         <div class="popup-section-label"><?= $t['order_info'] ?></div>
         <div class="popup-row"><span class="popup-row-label"><?= $t['order_date'] ?></span><span class="popup-row-value"><?= fmt_date('M j, Y g:ia', strtotime($o['created_at'])) ?></span></div>
         <div class="popup-row"><span class="popup-row-label"><?= $t['vorder_customer'] ?></span><span class="popup-row-value"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span></div>
-        <?php if ($o['buyer_phone']): ?>
+        <?php if ($o['buyer_phone'] && !$businessClosed): ?>
         <div class="popup-row"><span class="popup-row-label"><?= $t['settings_phone'] ?></span><span class="popup-row-value"><?= htmlspecialchars($o['buyer_phone']) ?></span></div>
         <?php endif; ?>
     </div>
 
+    <?php if ($businessClosed): ?>
+    <div class="popup-section">
+        <div class="popup-section-label"><?= $t['settings_delivery_address'] ?></div>
+        <p style="font-size:0.875rem;color:#9ca3af;margin:0;"><?= $t['vorder_closed_no_details'] ?></p>
+    </div>
+    <?php else: ?>
     <div class="popup-section">
         <div class="popup-section-label"><?= $t['settings_delivery_address'] ?></div>
         <?php if ($grabAddress && $grabAddress !== 'Phnom Penh'): ?>
@@ -151,6 +166,7 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
         <p style="font-size:0.875rem;color:#9ca3af;margin:0;"><?= $t['vorder_no_address'] ?></p>
         <?php endif; ?>
     </div>
+    <?php endif; ?>
 
     <?php if (!empty($items)): ?>
     <div class="popup-section">

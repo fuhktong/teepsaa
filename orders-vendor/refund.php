@@ -37,7 +37,7 @@ $stmt = $pdo->prepare("
     FROM orders o
     JOIN businesses b ON b.id = o.business_id
     JOIN buyers u ON u.id = o.buyer_user_id
-    WHERE o.public_id = ? AND b.user_id = ? AND o.status IN ($statusIn)
+    WHERE o.public_id = ? AND b.user_id = ? AND b.deleted_at IS NULL AND o.status IN ($statusIn)
 ");
 $stmt->execute([$publicId, $userId]);
 $o = $stmt->fetch();
@@ -100,6 +100,7 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
 <main>
     <nav class="products-subnav">
         <a href="/orders-vendor/"><?= $t['vendor_orders'] ?></a>
+        <a href="/orders-vendor/?tab=history"><?= $t['vendor_orders_history'] ?></a>
         <a href="/orders-vendor/?tab=refunds" class="active"><?= $t['vendor_refunds'] ?><?php if ($vendorRefundCount > 0): ?> <span class="admin-tab-badge"><?= $vendorRefundCount ?></span><?php endif; ?></a>
     </nav>
 
