@@ -24,7 +24,7 @@ $stmt = $pdo->prepare('SELECT name, email, phone, avatar, avatar_color, aba_qr, 
 $stmt->execute([$userId]);
 $vendor = $stmt->fetch();
 
-$stmt = $pdo->prepare('SELECT id, name, name_km, description, description_km, house_number, address, address_notes, khan, sangkat, city, lat, lng, banner FROM businesses WHERE user_id = ? AND deleted_at IS NULL LIMIT 1');
+$stmt = $pdo->prepare('SELECT id, name, name_km, description, description_km, house_number, address, address_notes, khan, sangkat, city, lat, lng, banner, approved, rejection_reason FROM businesses WHERE user_id = ? AND deleted_at IS NULL LIMIT 1');
 $stmt->execute([$userId]);
 $business = $stmt->fetch();
 
@@ -294,6 +294,27 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <?php if (!$business): ?>
                 <p style="font-size:0.9rem;color:#6b7280;"><?= $t['vendor_no_business'] ?> <a href="/submit/"><?= $t['vendor_submit_one'] ?></a></p>
                 <?php else: ?>
+
+                <?php if ((int)$business['approved'] === -1): ?>
+                <!-- The only place a rejected vendor is told why, and the only way
+                     back into the review queue. -->
+                <div class="biz-rejected">
+                    <p class="biz-rejected-title"><?= $t['vendor_biz_rejected_heading'] ?></p>
+                    <?php if (!empty($business['rejection_reason'])): ?>
+                    <p class="biz-rejected-reason"><strong><?= $t['vendor_biz_rejected_reason'] ?></strong> <?= nl2br(htmlspecialchars($business['rejection_reason'])) ?></p>
+                    <?php else: ?>
+                    <p class="biz-rejected-reason"><?= $t['vendor_biz_rejected_no_reason'] ?></p>
+                    <?php endif; ?>
+                    <p class="biz-rejected-help"><?= $t['vendor_biz_rejected_help'] ?></p>
+                    <form method="POST" action="/dashboard-vendor/settings/business-resubmit-action.php"
+                          onsubmit="return confirm('<?= htmlspecialchars($t['vendor_biz_resubmit_confirm'], ENT_QUOTES) ?>')">
+                        <?= csrf_input() ?>
+                        <button type="submit" class="btn-save" style="margin-top:0"><?= $t['vendor_biz_resubmit'] ?></button>
+                    </form>
+                </div>
+                <?php elseif ((int)$business['approved'] === 0): ?>
+                <p class="settings-msg settings-msg--pending"><?= $t['vendor_biz_pending_note'] ?></p>
+                <?php endif; ?>
 
                 <form method="POST" action="/dashboard-vendor/settings/business-action.php" id="business-form">
                     <?= csrf_input() ?>

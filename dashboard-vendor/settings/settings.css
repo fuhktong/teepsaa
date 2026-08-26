@@ -134,6 +134,39 @@
   background: var(--error-bg);
   color: var(--error-fg);
 }
+.settings-msg--pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Rejection notice at the top of the Business tab — the vendor's only in-app
+   explanation of a rejection, plus the way back into the review queue. */
+.biz-rejected {
+  border: 1px solid #fca5a5;
+  background: #fef2f2;
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.biz-rejected-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+.biz-rejected-reason {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text);
+}
+
+.biz-rejected-help {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
 
 .danger-zone {
   border: 1px solid #fca5a5;

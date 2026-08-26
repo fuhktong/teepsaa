@@ -29,6 +29,9 @@ csrf_verify();
 $id       = (int) ($_POST['id'] ?? 0);
 $action   = $_POST['action'] ?? '';
 $vendorId = (int)($_POST['vendor_id'] ?? 0);
+// Optional — the vendor sees this verbatim in their Business settings and in
+// the rejection email, so it is what tells them what to fix before resubmitting.
+$reason   = mb_substr(trim($_POST['reason'] ?? ''), 0, 500);
 
 if (!$id || !in_array($action, ['approve', 'reject'], true)) {
     header('Location: /admin/');
@@ -37,11 +40,12 @@ if (!$id || !in_array($action, ['approve', 'reject'], true)) {
 
 if ($action === 'approve') {
     // Fresh approval (re-)starts the one-week spot-check clock
-    $stmt = $pdo->prepare('UPDATE businesses SET approved = 1, approved_at = NOW(), spot_checked_at = NULL WHERE id = ?');
+    $stmt = $pdo->prepare('UPDATE businesses SET approved = 1, approved_at = NOW(), spot_checked_at = NULL, rejection_reason = NULL WHERE id = ?');
+    $stmt->execute([$id]);
 } else {
-    $stmt = $pdo->prepare('UPDATE businesses SET approved = -1, approved_at = NULL WHERE id = ?');
+    $stmt = $pdo->prepare('UPDATE businesses SET approved = -1, approved_at = NULL, rejection_reason = ? WHERE id = ?');
+    $stmt->execute([$reason ?: null, $id]);
 }
-$stmt->execute([$id]);
 
 // Start vendor trial clock on approval if business has a promo code
 if ($action === 'approve') {
@@ -69,10 +73,18 @@ if ($owner && $owner['email']) {
     $ctaUrl      = $action === 'approve'
         ? 'https://teepsaa.com/products/'
         : 'https://teepsaa.com/dashboard-vendor/settings/';
+    // Rendered blocks, not raw text: an empty reason must leave no stray label
+    // behind in either language.
+    $reasonHtml = $reason === '' ? ['', ''] : [
+        '<br><br><strong>មូលហេតុ៖</strong> ' . htmlspecialchars($reason),
+        '<br><br><strong>Reason:</strong> ' . htmlspecialchars($reason),
+    ];
     [$subj, $html] = render_email_template($pdo, $templateKey, [
-        'name'     => htmlspecialchars($owner['vendor_name']),
-        'business' => htmlspecialchars($owner['business_name']),
-        'cta_url'  => $ctaUrl,
+        'name'      => htmlspecialchars($owner['vendor_name']),
+        'business'  => htmlspecialchars($owner['business_name']),
+        'reason_km' => $action === 'reject' ? $reasonHtml[0] : '',
+        'reason_en' => $action === 'reject' ? $reasonHtml[1] : '',
+        'cta_url'   => $ctaUrl,
     ]);
     if ($html !== '') send_email($owner['email'], $subj, $html);
 }

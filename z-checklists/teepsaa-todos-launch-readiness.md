@@ -47,7 +47,7 @@ These were the never-started tests. All need a fresh vendor registered with a
       a business, then in a logged-out browser search for the business name. It
       must not appear anywhere: search, homepage, category pages.
       (verified live 2026-08-23)
-- [ ] **Before approval, products cannot be created at all.** You can't add a
+- [x] **Before approval, products cannot be created at all.** You can't add a
       product to an unapproved business — the form isn't offered. Confirm the
       _server_ enforces that too, not just the UI: with the vendor logged in and
       their business still pending, POST directly to `/products/save.php` with
@@ -55,7 +55,7 @@ These were the never-started tests. All need a fresh vendor registered with a
       Check the products table afterwards to be sure. The gate is
       `SELECT ... WHERE user_id = ? AND approved = 1` followed by an early exit
       when empty, repeated in all nine product action files.
-- [ ] **Approve, and the store goes live.** As admin, approve the business.
+- [x] **Approve, and the store goes live.** As admin, approve the business.
       The vendor should get the `business_approved` email, and the business
       page should now be reachable to a logged-out visitor. Add a product as the
       vendor and confirm it appears in search and on the business page.
@@ -129,7 +129,7 @@ through the site.
       it yourself — Claude can't launch it.
 - [ ] **Feed it in sections rather than all at once**, most-recent work first:
       `products/` and `dashboard-vendor/`, then `cart/ checkout/ product/
-  search/`, then `header/ footer/ config/ api/`.
+search/`, then `header/ footer/ config/ api/`.
 
 ## 2b. PHP and server
 

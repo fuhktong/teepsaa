@@ -26,7 +26,7 @@ $stmt = $pdo->prepare('
            v.admin_note, v.aba_qr, v.aba_account_name,
            b.id AS business_id, b.name AS business_name, b.category, b.description,
            b.address, b.house_number, b.khan, b.sangkat,
-           b.approved, b.created_at AS submitted_at,
+           b.approved, b.rejection_reason, b.created_at AS submitted_at,
            b.approved_at, b.spot_checked_at,
            b.royalty_add_on AS company_royalty_add_on, b.royalty_waived
     FROM vendors v
@@ -311,10 +311,17 @@ $adminTab     = 'vendors';
                 <?php endif; ?>
             </div>
 
-            <?php if ($v['business_id'] && $v['approved'] === 0): ?>
-            <!-- Approve / Reject -->
+            <?php if ($v['business_id'] && ($v['approved'] === 0 || $v['approved'] === -1)): ?>
+            <!-- Approve / Reject. Stays available after a rejection so a wrong
+                 call can be undone without a DB edit, and so the reason can be
+                 rewritten while the vendor is fixing things. -->
             <div class="detail-card">
                 <div class="detail-card-title">Review</div>
+                <?php if ($v['approved'] === -1 && $v['rejection_reason']): ?>
+                <p style="margin:0 0 0.75rem;font-size:0.85rem;color:#6b7280;">
+                    Current reason shown to the vendor: <em><?= htmlspecialchars($v['rejection_reason']) ?></em>
+                </p>
+                <?php endif; ?>
                 <div class="popup-actions">
                     <form method="POST" action="/admin/action.php">
                         <?= csrf_input() ?>
@@ -326,7 +333,11 @@ $adminTab     = 'vendors';
                         <?= csrf_input() ?>
                         <input type="hidden" name="id" value="<?= $v['business_id'] ?>">
                         <input type="hidden" name="vendor_id" value="<?= $v['id'] ?>">
-                        <button type="submit" name="action" value="reject" class="btn-reject">Reject</button>
+                        <label for="reject-reason" style="display:block;margin:0.75rem 0 0.3rem;font-size:0.8rem;font-weight:700;">Reason for rejection</label>
+                        <textarea id="reject-reason" name="reason" rows="3" maxlength="500"
+                                  placeholder="What the vendor has to fix before resubmitting. Emailed to them and shown in their settings."
+                                  style="width:100%;max-width:420px;padding:0.5rem;border:1px solid #e5e7eb;border-radius:6px;font:inherit;font-size:0.85rem;"><?= htmlspecialchars($v['rejection_reason'] ?? '') ?></textarea>
+                        <button type="submit" name="action" value="reject" class="btn-reject" style="margin-top:0.5rem;"><?= $v['approved'] === -1 ? 'Update reason' : 'Reject' ?></button>
                     </form>
                 </div>
             </div>
