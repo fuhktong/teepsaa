@@ -1,6 +1,6 @@
 <?php
 // Landing pad for links that arrive from outside the site — today that means
-// the daily digest email, cron/admin-digest.php.
+// the two daily emails, cron/admin-digest.php and cron/admin-activity-digest.php.
 //
 // Why it exists: the session cookie and the "remember this device" cookie are
 // both SameSite=Strict, so the browser withholds them on any navigation that
@@ -37,6 +37,7 @@ const GO_TARGETS = [
     'payouts'     => '/admin/payouts.php',
     'spot-checks' => '/admin/?status=spot_check',
     'prospects'   => '/admin/prospects/?sort=followup',
+    'audit'       => '/admin/audit.php',
 ];
 
 // An unknown key is a stale email, not an attack — send them to the dashboard.

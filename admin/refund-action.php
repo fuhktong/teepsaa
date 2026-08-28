@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
+require __DIR__ . '/../config/audit.php';
 require __DIR__ . '/../config/notify.php';
 
 if (empty($_SESSION['admin_id'])) {
@@ -41,19 +42,33 @@ $emailKey = null;
 if ($action === 'approve') {
     $stmt = $pdo->prepare("UPDATE orders SET status = 'return_approved' WHERE id = ? AND status = 'refund_requested'");
     $stmt->execute([$orderId]);
-    if ($stmt->rowCount()) $emailKey = 'refund_approved';
+    if ($stmt->rowCount()) {
+        $emailKey = 'refund_approved';
+        audit_log($pdo, 'refund.approve', 'order', $orderId);
+    }
     $_SESSION['admin_success'] = 'Return approved — buyer has been notified to send item back.';
 
 } elseif ($action === 'reject') {
     $stmt = $pdo->prepare("UPDATE orders SET status = 'refund_rejected' WHERE id = ? AND status = 'refund_requested'");
     $stmt->execute([$orderId]);
-    if ($stmt->rowCount()) $emailKey = 'refund_rejected';
+    if ($stmt->rowCount()) {
+        $emailKey = 'refund_rejected';
+        audit_log($pdo, 'refund.reject', 'order', $orderId);
+    }
     $_SESSION['admin_success'] = 'Refund request rejected.';
 
 } elseif ($action === 'complete') {
     $stmt = $pdo->prepare("UPDATE orders SET status = 'refunded', refunded_at = NOW() WHERE id = ? AND status = 'return_received'");
     $stmt->execute([$orderId]);
-    if ($stmt->rowCount()) $emailKey = 'refund_sent';
+    if ($stmt->rowCount()) {
+        $emailKey = 'refund_sent';
+        // Money out — same weight as a payout, so log the amount with it.
+        $amtStmt = $pdo->prepare('SELECT subtotal FROM orders WHERE id = ?');
+        $amtStmt->execute([$orderId]);
+        audit_log($pdo, 'refund.complete', 'order', $orderId, [
+            'amount' => (float)$amtStmt->fetchColumn(),
+        ]);
+    }
     $_SESSION['admin_success'] = 'Order marked as refunded. Remember to send the buyer their subtotal via ABA.';
 }
 

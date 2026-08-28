@@ -10,6 +10,8 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
+require __DIR__ . '/../config/audit.php';
+require __DIR__ . '/../config/self-deal.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -35,17 +37,20 @@ $stmt = $pdo->prepare('
            o.delivery_distance_km,
            o.status, o.created_at, o.delivered_at, o.tracking_url,
            o.refund_reason, o.return_tracking_url, o.admin_note, o.buyer_notes,
+           o.self_deal_flags,
            b.id AS business_id, b.name AS business_name,
            b.house_number AS biz_house_number, b.address AS biz_address,
            b.khan AS biz_khan, b.sangkat AS biz_sangkat,
            v.id AS vendor_id, v.name AS vendor_name, v.email AS vendor_email, v.aba_qr AS vendor_aba_qr,
-           v.aba_account_name AS vendor_aba_account_name,
+           v.aba_account_name AS vendor_aba_account_name, v.aba_changed_at AS vendor_aba_changed_at,
+           v.phone AS vendor_phone,
            bu.id AS buyer_id, bu.name AS buyer_name, bu.email AS buyer_email,
            bu.phone AS buyer_phone,
            bu.house_number AS buyer_house_number, bu.address AS buyer_address,
            bu.address_notes AS buyer_address_notes,
            bu.khan AS buyer_khan, bu.sangkat AS buyer_sangkat,
-           p.id AS payment_id, p.status AS payment_status, p.total AS payment_total
+           p.id AS payment_id, p.status AS payment_status, p.total AS payment_total,
+           p.confirmed_by AS payment_confirmed_by
     FROM orders o
     JOIN businesses b ON b.id = o.business_id
     JOIN vendors v ON v.id = b.user_id
@@ -76,6 +81,21 @@ $vendorCouponDiscount = max(0, round($o['subtotal'] - $royaltyAmt - (float)$o['v
 $vendorPayout = round($o['subtotal'] - $royaltyAmt - $vendorCouponDiscount + $o['delivery_fee'] + $o['vendor_delivery_bonus'], 2);
 $windowPassed = $o['delivered_at'] && (time() - strtotime($o['delivered_at'])) >= PAYOUT_WINDOW_SECONDS;
 $windowTime   = $o['delivered_at'] ? date('M j, g:ia', strtotime($o['delivered_at']) + PAYOUT_WINDOW_SECONDS) : null;
+
+// ── Payout guards, mirrored from admin/payouts-action.php ─────────────────
+// The action file is the enforcement; this is only what the screen shows. Keep
+// the two in step — a button the server will reject is worse than no button.
+$selfDealCodes = $o['self_deal_flags'] ? array_filter(explode(',', $o['self_deal_flags'])) : [];
+
+$bankChangedAt   = $o['vendor_aba_changed_at'] ?? null;
+$bankHoldActive  = $bankChangedAt && (time() - strtotime($bankChangedAt)) < BANK_CHANGE_HOLD_SECONDS;
+$bankHoldUntil   = $bankChangedAt ? date('M j, g:ia', strtotime($bankChangedAt) + BANK_CHANGE_HOLD_SECONDS) : null;
+
+// Two-person rule: whoever vouched that the buyer's money arrived should not
+// also be the one sending the vendor's money out. Supers are exempt (solo
+// operation) but the exemption is logged and shown here, not hidden.
+$soloPayout   = $o['payment_confirmed_by'] !== null && (int)$o['payment_confirmed_by'] === admin_id();
+$payoutBlocked = ($soloPayout && !admin_is_super()) || ($bankHoldActive && !admin_is_super());
 
 $statusClasses = [
     'pending'          => 'badge-grey',
@@ -322,13 +342,58 @@ $adminTab     = 'orders';
                         <?php else: ?>
                             <p style="font-size:0.875rem;color:#ef4444;margin-bottom:1rem;">Vendor has not uploaded an ABA QR code yet.</p>
                         <?php endif; ?>
+                        <?php if ($selfDealCodes): ?>
+                        <div style="font-size:0.82rem;color:#7f1d1d;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;padding:0.5rem 0.75rem;margin-bottom:0.85rem;">
+                            <strong>The buyer looks like this vendor.</strong>
+                            <ul style="margin:0.35rem 0 0;padding-left:1.1rem;">
+                                <?php foreach ($selfDealCodes as $code): ?>
+                                <li><?= htmlspecialchars(self_deal_label($code)) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                            <div style="margin-top:0.35rem;">Check this is a real sale before sending money.</div>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if ($bankHoldActive): ?>
+                        <div style="font-size:0.82rem;color:#7f1d1d;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;padding:0.5rem 0.75rem;margin-bottom:0.85rem;">
+                            <strong>This vendor changed their bank details on <?= date('M j, g:ia', strtotime($bankChangedAt)) ?>.</strong>
+                            Payouts to them are held until <?= $bankHoldUntil ?>. Confirm the new account with the vendor
+                            by phone before paying — a hijacked vendor account looks exactly like this.
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if ($soloPayout && admin_is_super()): ?>
+                        <div style="font-size:0.82rem;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:4px;padding:0.5rem 0.75rem;margin-bottom:0.85rem;">
+                            You confirmed the payment on this order yourself. Releasing the payout too makes this a
+                            single-signature payout — allowed for a super admin, and recorded in the activity log.
+                            Once a second admin exists, have them release it instead.
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if ($payoutBlocked): ?>
+                        <div style="font-size:0.82rem;color:#7f1d1d;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;padding:0.5rem 0.75rem;">
+                            <?php if ($soloPayout): ?>
+                            You confirmed the payment on this order, so you cannot also release the payout.
+                            Ask another admin to complete it.
+                            <?php else: ?>
+                            This payout is on hold until <?= $bankHoldUntil ?>. A super admin can release it early.
+                            <?php endif; ?>
+                        </div>
+                        <?php else: ?>
                         <div class="popup-actions">
                             <form method="POST" action="/admin/payouts-action.php">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
+                                <?php if ($bankHoldActive && admin_is_super()): ?>
+                                <label style="display:block;font-size:0.82rem;color:#7f1d1d;margin-bottom:0.6rem;">
+                                    <input type="checkbox" name="override_bank_hold" value="1" required>
+                                    I have confirmed the new bank account with the vendor directly
+                                </label>
+                                <?php endif; ?>
                                 <button type="submit" class="btn-approve">Mark completed</button>
                             </form>
                         </div>
+                        <?php endif; ?>
                     </div>
                 </details>
                 <?php else: ?>

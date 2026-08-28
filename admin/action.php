@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
+require __DIR__ . '/../config/audit.php';
 require __DIR__ . '/../config/notify.php';
 
 if (empty($_SESSION['admin_id'])) {
@@ -40,11 +41,13 @@ if (!$id || !in_array($action, ['approve', 'reject'], true)) {
 
 if ($action === 'approve') {
     // Fresh approval (re-)starts the one-week spot-check clock
-    $stmt = $pdo->prepare('UPDATE businesses SET approved = 1, approved_at = NOW(), spot_checked_at = NULL, rejection_reason = NULL WHERE id = ?');
-    $stmt->execute([$id]);
+    $stmt = $pdo->prepare('UPDATE businesses SET approved = 1, approved_at = NOW(), approved_by = ?, spot_checked_at = NULL, rejection_reason = NULL WHERE id = ?');
+    $stmt->execute([admin_id(), $id]);
+    audit_log($pdo, 'business.approve', 'business', $id, ['vendor_id' => $vendorId ?: null]);
 } else {
-    $stmt = $pdo->prepare('UPDATE businesses SET approved = -1, approved_at = NULL, rejection_reason = ? WHERE id = ?');
-    $stmt->execute([$reason ?: null, $id]);
+    $stmt = $pdo->prepare('UPDATE businesses SET approved = -1, approved_at = NULL, approved_by = ?, rejection_reason = ? WHERE id = ?');
+    $stmt->execute([admin_id(), $reason ?: null, $id]);
+    audit_log($pdo, 'business.reject', 'business', $id, ['vendor_id' => $vendorId ?: null, 'reason' => $reason]);
 }
 
 // Start vendor trial clock on approval if business has a promo code

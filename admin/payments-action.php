@@ -11,6 +11,7 @@ require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/notify.php';
+require __DIR__ . '/../config/audit.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -30,7 +31,7 @@ $paymentId = (int)($_POST['payment_id'] ?? 0);
 $action    = $_POST['action'] ?? '';
 $orderId   = (int)($_POST['order_id'] ?? 0);
 
-$stmt = $pdo->prepare('SELECT id, status FROM payments WHERE id = ?');
+$stmt = $pdo->prepare('SELECT id, status, total FROM payments WHERE id = ?');
 $stmt->execute([$paymentId]);
 $payment = $stmt->fetch();
 
@@ -41,11 +42,18 @@ if (!$payment || $payment['status'] !== 'pending_confirmation') {
 
 if ($action === 'confirm') {
     $pdo->beginTransaction();
-    $pdo->prepare('UPDATE payments SET status = ? WHERE id = ?')
-        ->execute(['confirmed', $paymentId]);
+    // confirmed_by is what the two-person payout rule reads later — the admin
+    // who vouched that the money arrived cannot also be the one who releases
+    // the vendor's payout. See admin/payouts-action.php.
+    $pdo->prepare('UPDATE payments SET status = ?, confirmed_by = ?, confirmed_at = NOW() WHERE id = ?')
+        ->execute(['confirmed', admin_id(), $paymentId]);
     $pdo->prepare('UPDATE orders SET status = ? WHERE payment_id = ?')
         ->execute(['paid', $paymentId]);
     $pdo->commit();
+
+    audit_log($pdo, 'payment.confirm', 'payment', $paymentId, [
+        'total' => (float)$payment['total'],
+    ]);
 
     $buyerStmt = $pdo->prepare(
         'SELECT bu.id AS buyer_id, bu.email, bu.name, o.id AS order_id, o.public_id AS order_public_id, o.created_at
@@ -91,9 +99,12 @@ if ($action === 'confirm') {
     $_SESSION['admin_success'] = 'Payment confirmed. Vendors have been notified.';
 
 } elseif ($action === 'reject') {
+    audit_log($pdo, 'payment.reject', 'payment', $paymentId, [
+        'total' => (float)$payment['total'],
+    ]);
     $pdo->beginTransaction();
-    $pdo->prepare('UPDATE payments SET status = ? WHERE id = ?')
-        ->execute(['rejected', $paymentId]);
+    $pdo->prepare('UPDATE payments SET status = ?, confirmed_by = ?, confirmed_at = NOW() WHERE id = ?')
+        ->execute(['rejected', admin_id(), $paymentId]);
     $pdo->prepare('UPDATE orders SET status = ? WHERE payment_id = ?')
         ->execute(['cancelled', $paymentId]);
     // Restore stock for all items in this payment's orders

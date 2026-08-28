@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
+require __DIR__ . '/../config/audit.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -111,6 +112,12 @@ function do_save(int $id): void {
                 ->execute([$name, $email, $role, $id]);
         }
         sync_permissions($pdo, $id, $role);
+        audit_log($pdo, 'admin.update', 'admin', $id, [
+            'email'            => $email,
+            'role_from'        => $current['admin_role'],
+            'role_to'          => $role,
+            'password_changed' => $password !== '',
+        ]);
         redirect_admins('Admin updated.');
     }
 
@@ -120,7 +127,12 @@ function do_save(int $id): void {
 
     $stmt = $pdo->prepare('INSERT INTO admins (name, email, password, admin_role) VALUES (?, ?, ?, ?)');
     $stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT), $role]);
-    sync_permissions($pdo, (int) $pdo->lastInsertId(), $role);
+    $newAdminId = (int) $pdo->lastInsertId();
+    sync_permissions($pdo, $newAdminId, $role);
+    audit_log($pdo, 'admin.create', 'admin', $newAdminId, [
+        'email' => $email,
+        'role'  => $role,
+    ]);
     redirect_admins('Admin created.');
 }
 
@@ -146,6 +158,10 @@ function do_toggle_active(int $id): void {
     }
 
     $pdo->prepare('UPDATE admins SET is_active = 1 - is_active WHERE id = ?')->execute([$id]);
+    audit_log($pdo, 'admin.toggle_active', 'admin', $id, [
+        'now_active' => !$admin['is_active'],
+        'role'       => $admin['admin_role'],
+    ]);
     redirect_admins($admin['is_active'] ? 'Admin deactivated.' : 'Admin reactivated.');
 }
 
@@ -170,6 +186,9 @@ function do_delete(int $id): void {
         redirect_admins('Cannot delete the last super admin.', true);
     }
 
+    // Logged before the row goes, so the audit trail still names the role that
+    // was removed. admin_audit has no FK to admins for exactly this reason.
+    audit_log($pdo, 'admin.delete', 'admin', $id, ['role' => $admin['admin_role']]);
     $pdo->prepare('DELETE FROM admins WHERE id = ?')->execute([$id]);
     redirect_admins('Admin deleted.');
 }

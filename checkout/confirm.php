@@ -13,6 +13,7 @@ require __DIR__ . '/../config/delivery-calc.php';
 require __DIR__ . '/../config/notify.php';
 require __DIR__ . '/../config/coupon.php';
 require __DIR__ . '/../config/delivery-address.php';
+require __DIR__ . '/../config/self-deal.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -29,7 +30,7 @@ csrf_verify();
 $userId = $_SESSION['user_id'];
 
 // Require verified email and delivery address
-$stmt = $pdo->prepare('SELECT lat, lng, address, khan, sangkat, phone, email_verified_at, name, email FROM buyers WHERE id = ?');
+$stmt = $pdo->prepare('SELECT lat, lng, house_number, address, khan, sangkat, phone, email_verified_at, name, email FROM buyers WHERE id = ?');
 $stmt->execute([$userId]);
 $buyer = $stmt->fetch();
 
@@ -213,6 +214,37 @@ if ($couponCode !== '') {
     }
 }
 
+// Self-dealing check — is the buyer also the vendor on any of these orders?
+// Advisory only: the flags ride along on the order and surface on the payout
+// screen so nobody wires money to the buyer's own shop without seeing it.
+// See config/self-deal.php.
+$selfDealByBusiness = [];
+if ($grouped) {
+    $sdIds = array_keys($grouped);
+    $sdIn  = implode(',', array_fill(0, count($sdIds), '?'));
+    $sdStmt = $pdo->prepare("
+        SELECT b.id AS business_id, v.email, v.phone,
+               b.house_number AS biz_house_number, b.address AS biz_address,
+               b.khan AS biz_khan, b.sangkat AS biz_sangkat
+        FROM businesses b JOIN vendors v ON v.id = b.user_id
+        WHERE b.id IN ($sdIn)
+    ");
+    $sdStmt->execute($sdIds);
+    foreach ($sdStmt->fetchAll() as $sdRow) {
+        $sdFlags = self_deal_flags($buyer, $sdRow);
+        if ($sdFlags) {
+            $selfDealByBusiness[(int)$sdRow['business_id']] = implode(',', $sdFlags);
+        }
+    }
+}
+
+// Recorded so a future check can compare it against the vendor's own login IP.
+$buyerIp = null;
+foreach ([$_SERVER['HTTP_X_FORWARDED_FOR'] ?? '', $_SERVER['REMOTE_ADDR'] ?? ''] as $sdIpRaw) {
+    $sdIp = trim(explode(',', (string)$sdIpRaw)[0]);
+    if ($sdIp !== '' && filter_var($sdIp, FILTER_VALIDATE_IP)) { $buyerIp = $sdIp; break; }
+}
+
 try {
     $pdo->beginTransaction();
 
@@ -267,8 +299,8 @@ try {
             INSERT INTO orders
                 (payment_id, buyer_user_id, business_id, subtotal, delivery_fee, vendor_delivery_bonus,
                  delivery_distance_km, delivery_weight_g, royalty_rate, royalty_amount, vendor_payout, buyer_notes,
-                 coupon_id, coupon_code, discount_amount, status, public_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 coupon_id, coupon_code, discount_amount, status, public_id, self_deal_flags, buyer_ip)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $stmt->execute([
             $paymentId, $userId, $businessId,
@@ -286,6 +318,8 @@ try {
             $groupDiscount,
             'pending',
             uuid_v4(),
+            $selfDealByBusiness[(int)$businessId] ?? null,
+            $buyerIp,
         ]);
         $orderId = $pdo->lastInsertId();
         $grouped[$businessId]['order_id'] = (int)$orderId;

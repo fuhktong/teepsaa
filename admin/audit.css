@@ -1,0 +1,136 @@
+/* Activity log — admin/audit.php. Filter bar, dense table, pager.
+   Shared controls (.admin-date-input, .acct-filter-btn, .admin-filter-clear,
+   .empty) come from admin.css; only what's specific to this page lives here. */
+
+.audit-intro {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: -0.75rem 0 1.25rem;
+  max-width: 46rem;
+}
+
+.audit-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.audit-filters select {
+  width: auto;
+  min-width: 11rem;
+}
+
+.audit-risk-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.audit-count {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin: 0 0 0.6rem;
+}
+
+/* The table is wide by nature — scroll it inside its own box rather than
+   letting the page scroll sideways on a phone. */
+.audit-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  min-width: 52rem;
+}
+
+.audit-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+  font-weight: 700;
+  padding: 0.55rem 0.75rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.audit-table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: top;
+  color: #111827;
+}
+
+.audit-table tr:last-child td {
+  border-bottom: none;
+}
+
+.audit-table a {
+  color: #1d4ed8;
+  text-decoration: none;
+}
+
+.audit-table a:hover {
+  text-decoration: underline;
+}
+
+.audit-when,
+.audit-ip {
+  white-space: nowrap;
+  color: #6b7280;
+}
+
+.audit-detail {
+  color: #4b5563;
+  max-width: 24rem;
+}
+
+/* The entries that should never pass unread: solo payouts, bank changes,
+   anything touching admin accounts. */
+.audit-row--risk {
+  background: #fffbeb;
+}
+
+.audit-risk-flag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 3px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.audit-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.audit-pager a {
+  color: #1d4ed8;
+  text-decoration: none;
+}
+
+.audit-pager a:hover {
+  text-decoration: underline;
+}

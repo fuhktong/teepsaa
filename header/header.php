@@ -129,6 +129,7 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                         </button>
                         <div class="user-dropdown" id="user-dropdown">
                             <?php if (admin_can('admins')): ?><a href="/admin/admins.php">Manage Admins</a><?php endif; ?>
+                            <?php if (admin_can('audit')): ?><a href="/admin/audit.php">Activity Log</a><?php endif; ?>
                             <a href="/admin/settings.php"><?= $t['nav_settings'] ?></a>
                             <a href="/admin/logout.php"><?= $t['nav_logout'] ?></a>
                         </div>

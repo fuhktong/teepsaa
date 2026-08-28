@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
+require __DIR__ . '/../config/audit.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -26,10 +27,10 @@ unset($_SESSION['admin_success']);
 // completed" button live
 $stmt = $pdo->query('
     SELECT o.id, o.subtotal, o.delivery_fee, o.vendor_delivery_bonus, o.created_at,
-           o.delivered_at,
+           o.delivered_at, o.self_deal_flags,
            CASE WHEN c.business_id = o.business_id THEN o.discount_amount ELSE 0 END AS vendor_coupon_discount,
            b.name AS business_name,
-           v.email AS vendor_email
+           v.email AS vendor_email, v.aba_changed_at
     FROM orders o
     JOIN businesses b ON b.id = o.business_id
     JOIN vendors v ON v.id = b.user_id
@@ -78,6 +79,7 @@ $adminTab     = 'payouts';
         $oid          = date('ymd', strtotime($p['created_at'])) . '-' . str_pad($p['id'], 4, '0', STR_PAD_LEFT);
         $windowPassed = $p['delivered_at'] && (time() - strtotime($p['delivered_at'])) >= PAYOUT_WINDOW_SECONDS;
         $windowTime   = $p['delivered_at'] ? date('M j, g:ia', strtotime($p['delivered_at']) + PAYOUT_WINDOW_SECONDS) : null;
+        $bankHold     = $p['aba_changed_at'] && (time() - strtotime($p['aba_changed_at'])) < BANK_CHANGE_HOLD_SECONDS;
         ?>
         <a href="/admin/order.php?id=<?= $p['id'] ?>" style="text-decoration:none;color:inherit;">
         <div class="order-row">
@@ -85,7 +87,12 @@ $adminTab     = 'payouts';
                 <span class="order-row-id"><?= $oid ?></span>
                 <span class="order-row-biz"><?= htmlspecialchars($p['business_name']) ?></span>
                 <span class="order-row-customer"><?= htmlspecialchars($p['vendor_email']) ?></span>
-                <?php if ($windowPassed): ?>
+                <?php if ($p['self_deal_flags']): ?>
+                <span class="order-badge badge-red">Buyer looks like the vendor</span>
+                <?php endif; ?>
+                <?php if ($bankHold): ?>
+                <span class="order-badge badge-red">Bank details just changed</span>
+                <?php elseif ($windowPassed): ?>
                 <span class="order-badge badge-green">Ready to pay</span>
                 <?php elseif ($windowTime): ?>
                 <span class="order-badge badge-yellow">Refund window closes <?= $windowTime ?></span>

@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
+require __DIR__ . '/../config/audit.php';
 require __DIR__ . '/../config/notify.php';
 
 if (empty($_SESSION['admin_id'])) {
@@ -52,6 +53,11 @@ if ($action === 'save_note') {
         header('Location: ' . $returnUrl);
         exit;
     }
+
+    audit_log($pdo, 'order.cancel', 'order', $orderId, [
+        'from_status' => $order['status'],
+        'reason'      => trim($_POST['cancel_reason'] ?? ''),
+    ]);
 
     $pdo->beginTransaction();
     $pdo->prepare("UPDATE orders SET status = 'cancelled', admin_note = CONCAT(COALESCE(admin_note, ''), IF(admin_note IS NOT NULL, '\n', ''), ?) WHERE id = ?")

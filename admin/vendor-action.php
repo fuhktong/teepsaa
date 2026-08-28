@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
+require __DIR__ . '/../config/audit.php';
 require __DIR__ . '/../config/notify.php';
 
 if (empty($_SESSION['admin_id'])) {
@@ -69,6 +70,7 @@ if ($action === 'suspend') {
     }
     $pdo->prepare('UPDATE vendors SET banned = 1, ban_reason = ?, banned_at = NOW() WHERE id = ?')
         ->execute([$reason, $vendorId]);
+    audit_log($pdo, 'vendor.suspend', 'vendor', $vendorId, ['reason' => $reason]);
 
     if (!empty($_POST['notify_user'])) {
         $sent = $notifyVendor('vendor_suspended', ['reason' => htmlspecialchars($reason)]);
@@ -82,6 +84,7 @@ if ($action === 'suspend') {
 } elseif ($action === 'unsuspend') {
     $pdo->prepare('UPDATE vendors SET banned = 0, ban_reason = NULL, banned_at = NULL WHERE id = ?')
         ->execute([$vendorId]);
+    audit_log($pdo, 'vendor.unsuspend', 'vendor', $vendorId);
 
     if (!empty($_POST['notify_user'])) {
         $sent = $notifyVendor('vendor_reinstated', ['cta_url' => 'https://vendor.teepsaa.com/login-vendor/']);
@@ -107,6 +110,7 @@ if ($action === 'suspend') {
     $waived = isset($_POST['royalty_waived']) ? 1 : 0;
     $pdo->prepare('UPDATE businesses SET royalty_waived = ? WHERE id = ?')
         ->execute([$waived, $businessId]);
+    audit_log($pdo, 'vendor.royalty_waived', 'business', $businessId, ['waived' => (bool)$waived, 'vendor_id' => $vendorId]);
     $_SESSION['admin_success'] = $waived ? 'Royalty waived for this vendor.' : 'Royalty waiver removed.';
 
 } elseif ($action === 'set_company_royalty_add_on') {
@@ -123,6 +127,7 @@ if ($action === 'suspend') {
     }
     $pdo->prepare('UPDATE businesses SET royalty_add_on = ? WHERE id = ?')
         ->execute([$rate, $businessId]);
+    audit_log($pdo, 'vendor.royalty_add_on', 'business', $businessId, ['rate' => $rate, 'vendor_id' => $vendorId]);
     $_SESSION['admin_success'] = 'Company royalty add-on saved.';
 
 } elseif ($action === 'spot_check_done') {
@@ -175,6 +180,7 @@ if ($action === 'suspend') {
     // Soft delete: the row (and its orders, reviews, coupons, penalties) is kept for accounting
     $pdo->prepare('UPDATE businesses SET deleted_at = NOW(), approved = -1, banner = NULL WHERE id = ?')
         ->execute([$businessId]);
+    audit_log($pdo, 'business.delete', 'business', $businessId, ['vendor_id' => $vendorId, 'name' => $business['name']]);
 
     $vStmt = $pdo->prepare('SELECT name, email FROM vendors WHERE id = ?');
     $vStmt->execute([$vendorId]);

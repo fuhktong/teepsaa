@@ -3,6 +3,8 @@
 // Sections a "custom" admin can be granted, grouped the same way the nav is.
 // 'admins' (manage other admins) is intentionally excluded — that stays super-only,
 // so a super can never accidentally hand out the ability to create more supers.
+// 'audit' (the activity log) is excluded for the same reason inverted: it is the
+// oversight tool, so the people being overseen must not be able to hold it.
 const ADMIN_SECTION_GROUPS = [
     'Admin'     => ['vendors' => 'Vendors', 'buyers' => 'Buyers', 'products' => 'Products', 'categories' => 'Categories', 'reviews' => 'Reviews'],
     'Orders'    => ['orders' => 'Orders', 'refunds' => 'Refunds', 'accounting' => 'Accounting', 'payments' => 'Payments', 'payouts' => 'Payouts'],
@@ -54,8 +56,12 @@ function admin_area_request(): bool {
     return str_starts_with($path, '/admin/') || str_starts_with($path, '/login-admin/');
 }
 
+// Defaults to NOT super. Both writers of admin_role (login-admin.php and
+// admin_device_restore) always set it, so this default is unreachable today —
+// but if a future path ever sets admin_id without admin_role, the safe answer
+// is "least privilege", not "full access".
 function admin_is_super(): bool {
-    return ($_SESSION['admin_role'] ?? 'super') === 'super';
+    return ($_SESSION['admin_role'] ?? 'custom') === 'super';
 }
 
 function admin_can(string $section): bool {
@@ -65,7 +71,7 @@ function admin_can(string $section): bool {
     if (admin_is_super()) {
         return true;
     }
-    if ($section === 'admins') {
+    if ($section === 'admins' || $section === 'audit') {
         return false;
     }
     return in_array($section, $_SESSION['admin_permissions'] ?? [], true);

@@ -349,4 +349,19 @@ return [
         'cta_km' => 'ចូលគណនី',
         'cta_en' => 'Sign in',
     ],
+    // Security notice, not a courtesy one: this is how a vendor finds out that
+    // somebody changed where their money goes. It must go out on every change,
+    // including changes the vendor made themselves.
+    'vendor_bank_changed' => [
+        'label'   => 'Bank details changed (vendor)',
+        'tokens'  => '{name}, {account_name}, {changed_at}',
+        'subject_km' => 'ព័ត៌មានធនាគាររបស់អ្នកត្រូវបានផ្លាស់ប្តូរ',
+        'subject_en' => 'Your payout bank details were changed',
+        'heading_km' => 'ព័ត៌មានធនាគារត្រូវបានផ្លាស់ប្តូរ',
+        'heading_en' => 'Payout bank details changed',
+        'body_km' => 'ជម្រាបសួរ {name}, ព័ត៌មានធនាគារ ABA សម្រាប់ការទូទាត់របស់អ្នកត្រូវបានផ្លាស់ប្តូរនៅ {changed_at}។<br><br><strong>ឈ្មោះគណនីថ្មី៖</strong> {account_name}<br><br>ការទូទាត់ទាំងអស់ត្រូវបានផ្អាករយៈពេល ២៤ ម៉ោង។ <strong>ប្រសិនបើអ្នកមិនបានធ្វើការផ្លាស់ប្តូរនេះទេ សូមទាក់ទងផ្នែកជំនួយភ្លាមៗ</strong> — មានគេអាចចូលប្រើគណនីរបស់អ្នក។',
+        'body_en' => 'Hi {name}, the ABA bank details we use to pay you were changed on {changed_at}.<br><br><strong>New account name:</strong> {account_name}<br><br>Payouts to you are on hold for 24 hours. <strong>If you did not make this change, contact support immediately</strong> — someone else may have access to your account.',
+        'cta_km' => 'ទាក់ទងផ្នែកជំនួយ',
+        'cta_en' => 'Contact support',
+    ],
 ];

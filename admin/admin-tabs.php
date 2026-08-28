@@ -26,6 +26,7 @@ $_atPendingPayout  = admin_can('payouts') ? (int)$pdo->query("SELECT COUNT(*) FR
     <?php if (admin_can('accounting')): ?><a href="/admin/accounting.php" class="admin-tab <?= $_atTab === 'accounting' ? 'active' : '' ?>">Accounting</a><?php endif; ?>
     <?php if (admin_can('payments')): ?><a href="/admin/payments.php"   class="admin-tab <?= $_atTab === 'payments'   ? 'active' : '' ?>">Payments<?= $_atPendingPayment > 0 ? ' <span class="admin-tab-badge">' . $_atPendingPayment . '</span>' : '' ?></a><?php endif; ?>
     <?php if (admin_can('payouts')): ?><a href="/admin/payouts.php"    class="admin-tab <?= $_atTab === 'payouts'    ? 'active' : '' ?>">Payouts<?= $_atPendingPayout > 0 ? ' <span class="admin-tab-badge">' . $_atPendingPayout . '</span>' : '' ?></a><?php endif; ?>
+    <?php if (admin_can('audit')): ?><a href="/admin/audit.php"      class="admin-tab <?= $_atTab === 'audit'      ? 'active' : '' ?>">Activity Log</a><?php endif; ?>
 </nav>
 <?php elseif ($_atSection === 'marketing'): ?>
 <nav class="admin-tabs">
