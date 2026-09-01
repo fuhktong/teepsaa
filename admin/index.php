@@ -73,10 +73,10 @@ elseif ($statusFilter === 'spot_check')  { $vwhere[] = 'b.approved = 1 AND b.app
 
 $vsql = '
     SELECT v.id, v.name, v.email, v.created_at,
-           v.banned, v.ban_reason, v.banned_at,
+           v.suspended, v.suspension_reason, v.suspended_at,
            b.id AS business_id, b.name AS business_name,
            b.category, b.description, b.address, b.lat, b.lng,
-           b.approved, b.created_at AS submitted_at,
+           b.approved, b.suspended AS biz_suspended, b.created_at AS submitted_at,
            (SELECT COUNT(*) FROM products pc WHERE pc.business_id = b.id) AS product_count
     FROM vendors v
     LEFT JOIN businesses b ON b.user_id = v.id AND b.deleted_at IS NULL'
@@ -181,8 +181,11 @@ $adminTab     = 'vendors';
                 <?php if ($statusFilter === 'spot_check'): ?>
                 <span class="order-badge badge-grey"><?= (int)$v['product_count'] ?> product<?= (int)$v['product_count'] === 1 ? '' : 's' ?></span>
                 <?php endif; ?>
-                <?php if ($v['banned']): ?>
-                <span class="order-badge badge-red">Suspended</span>
+                <?php if ($v['suspended']): ?>
+                <span class="order-badge badge-red">Account suspended</span>
+                <?php endif; ?>
+                <?php if ($v['biz_suspended']): ?>
+                <span class="order-badge badge-red">Storefront suspended</span>
                 <?php endif; ?>
                 <span class="order-badge <?= $statusClass ?>"><?= $statusLabel ?></span>
                 <span class="vendor-row-date"><?= date('M j, Y', strtotime($v['created_at'])) ?></span>

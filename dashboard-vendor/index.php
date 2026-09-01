@@ -21,7 +21,7 @@ $userId = $_SESSION['user_id'];
 $lang = $_SESSION['lang'] ?? 'km';
 $t = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km']) ? $lang : 'en') . '.php';
 
-$stmt = $pdo->prepare('SELECT id, name, category, approved, trial_starts_at, trial_ends_at, royalty_free_threshold FROM businesses WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1');
+$stmt = $pdo->prepare('SELECT id, name, category, approved, suspended, suspension_reason, trial_starts_at, trial_ends_at, royalty_free_threshold FROM businesses WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1');
 $stmt->execute([$userId]);
 $business = $stmt->fetch();
 
@@ -101,6 +101,12 @@ if ($business && $business['approved'] === 1) {
     $bestSellers = $stmtBest->fetchAll();
 }
 
+// Review state and suspension are two separate things, so they get two separate
+// badges. An approved shop that has been suspended is still approved — it just
+// is not on the marketplace right now — and saying only "Approved" was what
+// made a suspension invisible from this page.
+$isSuspended = $business && (int)$business['suspended'] === 1;
+
 if ($business) {
     if ($business['approved'] === 1)       { $statusLabel = $t['vendor_biz_approved']; $statusClass = 'status-approved'; }
     elseif ($business['approved'] === -1)  { $statusLabel = $t['vendor_biz_rejected']; $statusClass = 'status-rejected'; }
@@ -133,6 +139,9 @@ if ($business) {
             <?php if ($business): ?>
                 <span class="status <?= $statusClass ?>"><?= $statusLabel ?></span>
             <?php endif; ?>
+            <?php if ($isSuspended): ?>
+                <span class="status status-suspended"><?= $t['vendor_biz_suspended'] ?></span>
+            <?php endif; ?>
         </h1>
         <?php if (!$business): ?>
         <div class="dashboard-actions">
@@ -140,6 +149,18 @@ if ($business) {
         </div>
         <?php endif; ?>
     </div>
+
+    <?php if ($isSuspended): ?>
+    <div class="suspended-banner">
+        <strong><?= $t['vendor_biz_suspended_heading'] ?></strong>
+        <?php if ($business['suspension_reason']): ?>
+        <p><?= $t['vendor_biz_suspended_reason'] ?> <?= htmlspecialchars($business['suspension_reason']) ?></p>
+        <?php else: ?>
+        <p><?= $t['vendor_biz_suspended_no_reason'] ?></p>
+        <?php endif; ?>
+        <p><?= $t['vendor_biz_suspended_help'] ?></p>
+    </div>
+    <?php endif; ?>
 
     <?php if ($trial): ?>
     <div class="trial-banner">
@@ -256,6 +277,8 @@ if ($business) {
 
         <?php if (!$business): ?>
             <p class="empty"><?= $t['vendor_submit_to_add'] ?></p>
+        <?php elseif ($isSuspended): ?>
+            <p class="empty"><?= $t['vendor_products_suspended'] ?></p>
         <?php elseif ($business['approved'] === -1): ?>
             <p class="empty"><?= $t['vendor_products_rejected'] ?></p>
         <?php elseif ($business['approved'] !== 1): ?>

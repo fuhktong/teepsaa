@@ -64,7 +64,7 @@ $stmt = $pdo->prepare('
            COALESCE(p.royalty_add_on, 0) AS product_royalty_add_on
     FROM cart_items ci
     JOIN products p ON p.id = ci.product_id AND p.active = 1
-    JOIN businesses b ON b.id = p.business_id AND b.approved = 1
+    JOIN businesses b ON b.id = p.business_id AND b.approved = 1 AND b.suspended = 0
     LEFT JOIN product_variants pv ON pv.id = ci.variant_id
     LEFT JOIN categories cat ON cat.id = p.category_id
     WHERE ci.buyer_user_id = ?

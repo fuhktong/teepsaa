@@ -49,7 +49,7 @@ $stmt = $pdo->prepare('
            b.id AS business_id, b.name AS business_name, b.name_km AS business_name_km, b.lat AS biz_lat, b.lng AS biz_lng
     FROM cart_items ci
     JOIN products p ON p.id = ci.product_id AND p.active = 1
-    JOIN businesses b ON b.id = p.business_id AND b.approved = 1
+    JOIN businesses b ON b.id = p.business_id AND b.approved = 1 AND b.suspended = 0
     LEFT JOIN product_variants pv ON pv.id = ci.variant_id
     LEFT JOIN product_photos pp ON pp.product_id = p.id AND pp.is_primary = 1
     WHERE ci.buyer_user_id = ?

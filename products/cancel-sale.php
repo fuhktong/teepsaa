@@ -25,7 +25,7 @@ csrf_verify();
 $userId    = $_SESSION['user_id'];
 $productId = (int)($_POST['product_id'] ?? 0);
 
-$stmt = $pdo->prepare('SELECT id FROM businesses WHERE user_id = ? AND approved = 1');
+$stmt = $pdo->prepare('SELECT id FROM businesses WHERE user_id = ? AND approved = 1 AND suspended = 0');
 $stmt->execute([$userId]);
 $bizIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
 

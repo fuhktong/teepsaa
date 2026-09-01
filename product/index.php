@@ -20,7 +20,7 @@ $stmt = $pdo->prepare('
     SELECT p.*, b.id AS business_id, b.public_id AS business_public_id, b.name AS business_name, b.name_km AS business_name_km
     FROM products p
     JOIN businesses b ON b.id = p.business_id
-    WHERE p.public_id = ? AND p.active = 1 AND p.archived = 0 AND b.approved = 1
+    WHERE p.public_id = ? AND p.active = 1 AND p.archived = 0 AND b.approved = 1 AND b.suspended = 0
 ');
 $stmt->execute([$publicId]);
 $product = $stmt->fetch();

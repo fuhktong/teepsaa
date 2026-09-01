@@ -35,7 +35,7 @@ $featured = $pdo->query(
             pp.filename AS photo,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
      FROM products p
-     JOIN businesses b ON p.business_id = b.id AND b.approved = 1
+     JOIN businesses b ON p.business_id = b.id AND b.approved = 1 AND b.suspended = 0
      LEFT JOIN product_photos pp ON pp.product_id = p.id AND pp.is_primary = 1
      $rv
      WHERE p.active = 1 AND p.archived = 0 AND p.stock > 0
@@ -50,7 +50,7 @@ $bestSellers = $pdo->query(
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
      FROM order_items oi
      JOIN products p ON oi.product_id = p.id
-     JOIN businesses b ON p.business_id = b.id AND b.approved = 1
+     JOIN businesses b ON p.business_id = b.id AND b.approved = 1 AND b.suspended = 0
      $rv
      WHERE p.active = 1 AND p.archived = 0 AND p.stock > 0
      GROUP BY p.id, p.name, p.price, p.sale_percent, p.sale_ends_at, b.name, rv.avg_rating, rv.review_count
@@ -67,7 +67,7 @@ $trending = $pdo->query(
      FROM order_items oi
      JOIN orders o ON oi.order_id = o.id
      JOIN products p ON oi.product_id = p.id
-     JOIN businesses b ON p.business_id = b.id AND b.approved = 1
+     JOIN businesses b ON p.business_id = b.id AND b.approved = 1 AND b.suspended = 0
      $rv
      WHERE p.active = 1 AND p.archived = 0 AND p.stock > 0
        AND o.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
@@ -83,7 +83,7 @@ $newArrivals = $pdo->query(
             pp.filename AS photo,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
      FROM products p
-     JOIN businesses b ON p.business_id = b.id AND b.approved = 1
+     JOIN businesses b ON p.business_id = b.id AND b.approved = 1 AND b.suspended = 0
      LEFT JOIN product_photos pp ON pp.product_id = p.id AND pp.is_primary = 1
      $rv
      WHERE p.active = 1 AND p.archived = 0 AND p.stock > 0
@@ -98,7 +98,7 @@ $topRated = $pdo->query(
             AVG(r.rating) AS avg_rating, COUNT(r.id) AS review_count
      FROM reviews r
      JOIN products p ON r.product_id = p.id AND p.active = 1 AND p.archived = 0 AND p.stock > 0
-     JOIN businesses b ON p.business_id = b.id AND b.approved = 1
+     JOIN businesses b ON p.business_id = b.id AND b.approved = 1 AND b.suspended = 0
      GROUP BY p.id, p.name, p.price, p.sale_percent, p.sale_ends_at, b.name
      HAVING review_count >= 1
      ORDER BY avg_rating DESC, review_count DESC
@@ -111,7 +111,7 @@ $underFifteen = $pdo->query(
             (SELECT filename FROM product_photos WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS photo,
             COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
      FROM products p
-     JOIN businesses b ON p.business_id = b.id AND b.approved = 1
+     JOIN businesses b ON p.business_id = b.id AND b.approved = 1 AND b.suspended = 0
      $rv
      WHERE p.active = 1 AND p.archived = 0 AND p.stock > 0 AND p.price < 15
      ORDER BY RAND()
@@ -124,12 +124,12 @@ $catTiles = $pdo->query(
             (SELECT pp.filename
              FROM products pr
              JOIN product_photos pp ON pp.product_id = pr.id AND pp.is_primary = 1
-             JOIN businesses biz ON biz.id = pr.business_id AND biz.approved = 1
+             JOIN businesses biz ON biz.id = pr.business_id AND biz.approved = 1 AND biz.suspended = 0
              WHERE pr.category_id = c.id AND pr.active = 1 AND pr.stock > 0
              LIMIT 1) AS sample_photo
      FROM categories c
      JOIN products p ON p.category_id = c.id AND p.active = 1 AND p.stock > 0
-     JOIN businesses b ON b.id = p.business_id AND b.approved = 1
+     JOIN businesses b ON b.id = p.business_id AND b.approved = 1 AND b.suspended = 0
      GROUP BY c.id, c.name
      ORDER BY product_count DESC
      LIMIT 10"
@@ -159,7 +159,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
                     pp.filename AS photo,
                     COALESCE(rv.avg_rating, 0) AS avg_rating, COALESCE(rv.review_count, 0) AS review_count
              FROM products p
-             JOIN businesses b ON p.business_id = b.id AND b.approved = 1
+             JOIN businesses b ON p.business_id = b.id AND b.approved = 1 AND b.suspended = 0
              LEFT JOIN product_photos pp ON pp.product_id = p.id AND pp.is_primary = 1
              $rv
              WHERE p.active = 1 AND p.archived = 0 AND p.stock > 0

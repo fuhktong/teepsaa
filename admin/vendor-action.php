@@ -62,37 +62,131 @@ $notifyVendor = function (string $template, array $tokens) use ($pdo, $vendorId)
 };
 
 if ($action === 'suspend') {
-    $reason = trim($_POST['ban_reason'] ?? '');
+    $reason = trim($_POST['suspension_reason'] ?? '');
     if (!$reason) {
         $_SESSION['admin_error'] = 'A reason is required to suspend an account.';
         header('Location: ' . $returnUrl);
         exit;
     }
-    $pdo->prepare('UPDATE vendors SET banned = 1, ban_reason = ?, banned_at = NOW() WHERE id = ?')
+    $pdo->prepare('UPDATE vendors SET suspended = 1, suspension_reason = ?, suspended_at = NOW() WHERE id = ?')
         ->execute([$reason, $vendorId]);
     audit_log($pdo, 'vendor.suspend', 'vendor', $vendorId, ['reason' => $reason]);
+
+    // Suspending the account takes the storefront down with it — someone who
+    // cannot sign in must not still be taking orders. This only cascades one
+    // way: lifting the account suspension does NOT put the shop back, so a
+    // business suspended on its own merits stays down until an admin lifts it
+    // deliberately. Fail closed; the vendor page shows the shop is still off.
+    $pdo->prepare('UPDATE businesses SET suspended = 1, suspension_reason = ?, suspended_at = NOW()
+                   WHERE user_id = ? AND deleted_at IS NULL AND suspended = 0')
+        ->execute([$reason, $vendorId]);
 
     if (!empty($_POST['notify_user'])) {
         $sent = $notifyVendor('vendor_suspended', ['reason' => htmlspecialchars($reason)]);
         $_SESSION['admin_success'] = $sent
-            ? 'Vendor account suspended. The vendor has been emailed.'
-            : 'Vendor account suspended, but the email could not be sent.';
+            ? 'Vendor account suspended and storefront taken down. The vendor has been emailed.'
+            : 'Vendor account suspended and storefront taken down, but the email could not be sent.';
     } else {
-        $_SESSION['admin_success'] = 'Vendor account suspended (no email sent).';
+        $_SESSION['admin_success'] = 'Vendor account suspended and storefront taken down (no email sent).';
     }
 
 } elseif ($action === 'unsuspend') {
-    $pdo->prepare('UPDATE vendors SET banned = 0, ban_reason = NULL, banned_at = NULL WHERE id = ?')
+    $pdo->prepare('UPDATE vendors SET suspended = 0, suspension_reason = NULL, suspended_at = NULL WHERE id = ?')
         ->execute([$vendorId]);
     audit_log($pdo, 'vendor.unsuspend', 'vendor', $vendorId);
 
+    // The storefront is left as it is on purpose — see the cascade note above.
+    // Say so, otherwise an admin walks away thinking the shop is back.
+    $bizStmt = $pdo->prepare('SELECT COUNT(*) FROM businesses WHERE user_id = ? AND deleted_at IS NULL AND suspended = 1');
+    $bizStmt->execute([$vendorId]);
+    $tail = $bizStmt->fetchColumn() > 0
+        ? ' The storefront is still suspended — lift that separately below.'
+        : '';
+
     if (!empty($_POST['notify_user'])) {
         $sent = $notifyVendor('vendor_reinstated', ['cta_url' => 'https://vendor.teepsaa.com/login-vendor/']);
-        $_SESSION['admin_success'] = $sent
-            ? 'Vendor suspension lifted. The vendor has been emailed.'
-            : 'Vendor suspension lifted, but the email could not be sent.';
+        $_SESSION['admin_success'] = ($sent
+            ? 'Vendor can sign in again. The vendor has been emailed.'
+            : 'Vendor can sign in again, but the email could not be sent.') . $tail;
     } else {
-        $_SESSION['admin_success'] = 'Vendor suspension lifted (no email sent).';
+        $_SESSION['admin_success'] = 'Vendor can sign in again (no email sent).' . $tail;
+    }
+
+} elseif ($action === 'suspend_business') {
+    // Storefront-level suspension. Deliberately NOT the same thing as
+    // suspending the account: the vendor keeps their login so they can read the
+    // reason, fix the business in Settings, and reply to support. What they
+    // lose is the marketplace — the shop page, every product listing, and the
+    // ability to edit listings. Existing orders stay workable so buyers who
+    // already paid still get their goods.
+    $businessId = (int)($_POST['business_id'] ?? 0);
+    $reason     = trim($_POST['suspension_reason'] ?? '');
+    if (!$businessId) {
+        header('Location: ' . $returnUrl);
+        exit;
+    }
+    if (!$reason) {
+        $_SESSION['admin_error'] = 'A reason is required to suspend a business.';
+        header('Location: ' . $returnUrl);
+        exit;
+    }
+
+    $stmt = $pdo->prepare('SELECT id, name FROM businesses WHERE id = ? AND user_id = ? AND deleted_at IS NULL');
+    $stmt->execute([$businessId, $vendorId]);
+    $business = $stmt->fetch();
+    if (!$business) {
+        $_SESSION['admin_error'] = 'Business not found.';
+        header('Location: ' . $returnUrl);
+        exit;
+    }
+
+    $pdo->prepare('UPDATE businesses SET suspended = 1, suspension_reason = ?, suspended_at = NOW() WHERE id = ?')
+        ->execute([$reason, $businessId]);
+    audit_log($pdo, 'business.suspend', 'business', $businessId, ['reason' => $reason, 'vendor_id' => $vendorId]);
+
+    if (!empty($_POST['notify_user'])) {
+        $sent = $notifyVendor('business_suspended', [
+            'business' => htmlspecialchars($business['name']),
+            'reason'   => htmlspecialchars($reason),
+            'cta_url'  => 'https://vendor.teepsaa.com/dashboard-vendor/settings/',
+        ]);
+        $_SESSION['admin_success'] = $sent
+            ? 'Business suspended. The vendor has been emailed and can still sign in to fix it.'
+            : 'Business suspended, but the email could not be sent.';
+    } else {
+        $_SESSION['admin_success'] = 'Business suspended (no email sent).';
+    }
+
+} elseif ($action === 'unsuspend_business') {
+    $businessId = (int)($_POST['business_id'] ?? 0);
+    if (!$businessId) {
+        header('Location: ' . $returnUrl);
+        exit;
+    }
+
+    $stmt = $pdo->prepare('SELECT id, name FROM businesses WHERE id = ? AND user_id = ? AND deleted_at IS NULL');
+    $stmt->execute([$businessId, $vendorId]);
+    $business = $stmt->fetch();
+    if (!$business) {
+        $_SESSION['admin_error'] = 'Business not found.';
+        header('Location: ' . $returnUrl);
+        exit;
+    }
+
+    $pdo->prepare('UPDATE businesses SET suspended = 0, suspension_reason = NULL, suspended_at = NULL WHERE id = ?')
+        ->execute([$businessId]);
+    audit_log($pdo, 'business.unsuspend', 'business', $businessId, ['vendor_id' => $vendorId]);
+
+    if (!empty($_POST['notify_user'])) {
+        $sent = $notifyVendor('business_reinstated', [
+            'business' => htmlspecialchars($business['name']),
+            'cta_url'  => 'https://vendor.teepsaa.com/dashboard-vendor/',
+        ]);
+        $_SESSION['admin_success'] = $sent
+            ? 'Business suspension lifted. The vendor has been emailed.'
+            : 'Business suspension lifted, but the email could not be sent.';
+    } else {
+        $_SESSION['admin_success'] = 'Business suspension lifted (no email sent).';
     }
 
 } elseif ($action === 'save_note') {

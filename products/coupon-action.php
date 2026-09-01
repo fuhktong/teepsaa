@@ -24,7 +24,7 @@ csrf_verify();
 
 $userId = $_SESSION['user_id'];
 
-$stmt = $pdo->prepare('SELECT id FROM businesses WHERE user_id = ? AND approved = 1 ORDER BY name ASC LIMIT 1');
+$stmt = $pdo->prepare('SELECT id FROM businesses WHERE user_id = ? AND approved = 1 AND suspended = 0 ORDER BY name ASC LIMIT 1');
 $stmt->execute([$userId]);
 $businessId = $stmt->fetchColumn();
 

@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
+require __DIR__ . '/../config/audit.php';
 require __DIR__ . '/../config/notify.php';
 
 if (empty($_SESSION['admin_id'])) {
@@ -60,15 +61,16 @@ $notifyBuyer = function (string $template, array $tokens) use ($pdo, $buyerId): 
     }
 };
 
-if ($action === 'ban') {
-    $reason = trim($_POST['ban_reason'] ?? '');
+if ($action === 'suspend') {
+    $reason = trim($_POST['suspension_reason'] ?? '');
     if (!$reason) {
         $_SESSION['admin_error'] = 'A reason is required to suspend an account.';
         header('Location: ' . $returnUrl);
         exit;
     }
-    $pdo->prepare('UPDATE buyers SET banned = 1, ban_reason = ?, banned_at = NOW() WHERE id = ?')
+    $pdo->prepare('UPDATE buyers SET suspended = 1, suspension_reason = ?, suspended_at = NOW() WHERE id = ?')
         ->execute([$reason, $buyerId]);
+    audit_log($pdo, 'buyer.suspend', 'buyer', $buyerId, ['reason' => $reason]);
 
     if (!empty($_POST['notify_user'])) {
         $sent = $notifyBuyer('buyer_suspended', ['reason' => htmlspecialchars($reason)]);
@@ -79,9 +81,10 @@ if ($action === 'ban') {
         $_SESSION['admin_success'] = 'Account suspended (no email sent).';
     }
 
-} elseif ($action === 'unban') {
-    $pdo->prepare('UPDATE buyers SET banned = 0, ban_reason = NULL, banned_at = NULL WHERE id = ?')
+} elseif ($action === 'unsuspend') {
+    $pdo->prepare('UPDATE buyers SET suspended = 0, suspension_reason = NULL, suspended_at = NULL WHERE id = ?')
         ->execute([$buyerId]);
+    audit_log($pdo, 'buyer.unsuspend', 'buyer', $buyerId);
 
     if (!empty($_POST['notify_user'])) {
         $sent = $notifyBuyer('buyer_reinstated', ['cta_url' => 'https://teepsaa.com/login-buyer/']);

@@ -27,7 +27,7 @@ $pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status
 $unreadMsgCount     = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM support_messages WHERE sender IN ('buyer','vendor','guest') AND read_at IS NULL")->fetchColumn();
 
 $search       = trim($_GET['search'] ?? '');
-$statusFilter = in_array($_GET['status'] ?? '', ['all', 'active', 'banned']) ? ($_GET['status'] ?? 'all') : 'all';
+$statusFilter = in_array($_GET['status'] ?? '', ['all', 'active', 'suspended']) ? ($_GET['status'] ?? 'all') : 'all';
 
 $bwhere  = [];
 $bparams = [];
@@ -36,12 +36,12 @@ if ($search !== '') {
     $bparams[] = '%' . $search . '%';
     $bparams[] = '%' . $search . '%';
 }
-if ($statusFilter === 'active')  { $bwhere[] = 'b.banned = 0'; }
-elseif ($statusFilter === 'banned') { $bwhere[] = 'b.banned = 1'; }
+if ($statusFilter === 'active')  { $bwhere[] = 'b.suspended = 0'; }
+elseif ($statusFilter === 'suspended') { $bwhere[] = 'b.suspended = 1'; }
 
 $bsql = '
     SELECT b.id, b.name, b.email, b.phone, b.house_number, b.address, b.khan, b.sangkat,
-           b.created_at, b.banned, b.ban_reason, b.banned_at, b.admin_note,
+           b.created_at, b.suspended, b.suspension_reason, b.suspended_at, b.admin_note,
            COUNT(DISTINCT o.id) AS order_count,
            COALESCE(SUM(CASE WHEN o.status NOT IN (\'cancelled\') THEN o.subtotal - o.discount_amount END), 0) AS total_spent,
            SUM(CASE WHEN o.status = \'refund_requested\' OR o.status LIKE \'refund%\' OR o.status LIKE \'return%\' THEN 1 ELSE 0 END) AS refund_count
@@ -54,7 +54,7 @@ $stmt = $pdo->prepare($bsql);
 $stmt->execute($bparams);
 $buyers = $stmt->fetchAll();
 
-$bcounts = $pdo->query("SELECT COUNT(*) AS total, SUM(banned) AS banned, SUM(1-banned) AS active FROM buyers")->fetch();
+$bcounts = $pdo->query("SELECT COUNT(*) AS total, SUM(suspended) AS suspended, SUM(1-suspended) AS active FROM buyers")->fetch();
 
 $adminSection = 'admin';
 $adminTab     = 'buyers';
@@ -88,7 +88,7 @@ $adminTab     = 'buyers';
             <input type="search" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Name or email…" class="admin-search-input" autocomplete="off">
         </form>
         <div class="order-filters">
-            <?php foreach (['all' => 'All', 'active' => 'Active', 'banned' => 'Banned'] as $key => $label):
+            <?php foreach (['all' => 'All', 'active' => 'Active', 'suspended' => 'Suspended'] as $key => $label):
                   $n = $key === 'all' ? ($bcounts['total'] ?? 0) : ($bcounts[$key] ?? 0); ?>
             <a href="/admin/buyers.php?status=<?= $key ?><?= $bSearchQ ?>" class="filter-btn <?= $statusFilter === $key ? 'active' : '' ?>">
                 <?= $label ?> <span class="filter-count"><?= $n ?></span>
@@ -109,8 +109,8 @@ $adminTab     = 'buyers';
     <?php else: ?>
     <div class="vendor-list">
         <?php foreach ($buyers as $b): ?>
-        <?php $statusClass = $b['banned'] ? 'badge-red' : 'badge-green';
-              $statusLabel = $b['banned'] ? 'Banned' : 'Active'; ?>
+        <?php $statusClass = $b['suspended'] ? 'badge-red' : 'badge-green';
+              $statusLabel = $b['suspended'] ? 'Suspended' : 'Active'; ?>
         <a href="/admin/buyer.php?id=<?= $b['id'] ?>" class="vendor-row" style="text-decoration:none;color:inherit;">
             <div class="vendor-row-main">
                 <span class="vendor-row-name"><?= htmlspecialchars($b['name']) ?></span>

@@ -27,13 +27,13 @@ function announcement_roles(string $audience): array {
 
 // The eligibility rule, in one place so the count shown before sending and the
 // rows frozen at queue time can never disagree.
-//   - closed, banned and unverified accounts are always excluded
+//   - closed, suspended and unverified accounts are always excluded
 //   - opted-out accounts are excluded from promotional sends only
 function announcement_audience_sql(string $role, string $kind): string {
     $table = unsubscribe_table($role);
     $sql   = "SELECT id, email FROM {$table}
               WHERE deleted_at IS NULL
-                AND banned = 0
+                AND suspended = 0
                 AND email_verified_at IS NOT NULL
                 AND email <> ''";
     if ($kind !== 'service') {
@@ -147,17 +147,17 @@ function announcement_process_batch(PDO $pdo, int $limit = ANNOUNCEMENT_BATCH): 
         $role  = $r['role'];
         $table = unsubscribe_table($role);
         $acc = $pdo->prepare(
-            "SELECT email, deleted_at, banned, unsubscribed_at FROM {$table} WHERE id = ?"
+            "SELECT email, deleted_at, suspended, unsubscribed_at FROM {$table} WHERE id = ?"
         );
         $acc->execute([$r['user_id']]);
         $u = $acc->fetch(PDO::FETCH_ASSOC);
 
         // Re-checked at send time, not just at queue time: a long list can take
-        // a while to drain and someone may close, be banned, or opt out mid-run.
+        // a while to drain and someone may close, be suspended, or opt out mid-run.
         $skipReason = null;
         if (!$u)                                                     $skipReason = 'account no longer exists';
         elseif ($u['deleted_at'])                                    $skipReason = 'account closed';
-        elseif ((int)$u['banned'] === 1)                             $skipReason = 'account banned';
+        elseif ((int)$u['suspended'] === 1)                          $skipReason = 'account suspended';
         elseif ($a['kind'] !== 'service' && $u['unsubscribed_at'])   $skipReason = 'unsubscribed';
 
         if ($skipReason) {

@@ -30,7 +30,7 @@ if ($maxPrice !== '' && !is_numeric($maxPrice)) $maxPrice = '';
 $hasActiveFilters = $minPrice !== '' || $maxPrice !== '' || $categoryId > 0 || $minRating > 0 || !empty($selectedValueIds);
 
 // ── WHERE ────────────────────────────────────────────────────────────
-$where  = 'p.active = 1 AND p.archived = 0 AND b.approved = 1';
+$where  = 'p.active = 1 AND p.archived = 0 AND b.approved = 1 AND b.suspended = 0';
 $params = [];
 if ($q !== '') {
     $where   .= ' AND (p.name LIKE ? OR p.description LIKE ?)';
@@ -155,7 +155,7 @@ if ($q !== '') {
            AND EXISTS (
                SELECT 1 FROM products p2
                JOIN businesses b2 ON b2.id = p2.business_id
-               WHERE p2.category_id = c.id AND p2.active = 1 AND p2.archived = 0 AND b2.approved = 1
+               WHERE p2.category_id = c.id AND p2.active = 1 AND p2.archived = 0 AND b2.approved = 1 AND b2.suspended = 0
            )
          ORDER BY c.name"
     )->fetchAll();

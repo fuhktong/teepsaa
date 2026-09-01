@@ -40,7 +40,7 @@ $stmt = $pdo->prepare('
            ci.quantity
     FROM cart_items ci
     JOIN products p ON p.id = ci.product_id AND p.active = 1
-    JOIN businesses b ON b.id = p.business_id AND b.approved = 1
+    JOIN businesses b ON b.id = p.business_id AND b.approved = 1 AND b.suspended = 0
     LEFT JOIN product_variants pv ON pv.id = ci.variant_id
     WHERE ci.buyer_user_id = ?
 ');

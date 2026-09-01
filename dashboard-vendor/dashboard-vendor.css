@@ -156,6 +156,13 @@
   color: var(--error-fg);
 }
 
+/* Sits next to the review-state badge rather than replacing it — a suspended
+   shop is still approved, it is just off the marketplace for now. */
+.status-suspended {
+  background: var(--error-bg);
+  color: var(--error-fg);
+}
+
 .order-cards {
   display: flex;
   flex-direction: column;
@@ -318,6 +325,20 @@
 }
 
 /* Promo trial banner */
+
+.suspended-banner {
+  background: var(--error-bg);
+  border: 1px solid #f5b7b1;
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  color: var(--error-fg);
+  font-size: 0.9rem;
+}
+
+.suspended-banner p {
+  margin: 0.5rem 0 0;
+}
 
 .trial-banner {
     background: #f0fdf4;

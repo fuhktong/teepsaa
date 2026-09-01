@@ -23,7 +23,7 @@ if (!$id) { header('Location: /admin/buyers.php'); exit; }
 
 $stmt = $pdo->prepare('
     SELECT b.id, b.name, b.email, b.phone, b.house_number, b.address, b.khan, b.sangkat,
-           b.created_at, b.banned, b.ban_reason, b.banned_at, b.admin_note,
+           b.created_at, b.suspended, b.suspension_reason, b.suspended_at, b.admin_note,
            COUNT(DISTINCT o.id) AS order_count,
            COALESCE(SUM(CASE WHEN o.status NOT IN (\'cancelled\') THEN o.subtotal - o.discount_amount END), 0) AS total_spent,
            SUM(CASE WHEN o.status = \'refund_requested\' OR o.status LIKE \'refund%\' OR o.status LIKE \'return%\' THEN 1 ELSE 0 END) AS refund_count
@@ -55,8 +55,8 @@ $refundCount        = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status
 $pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();
 $pendingVendorCount = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 0")->fetchColumn();
 
-$statusClass = $b['banned'] ? 'badge-red' : 'badge-green';
-$statusLabel = $b['banned'] ? 'Banned' : 'Active';
+$statusClass = $b['suspended'] ? 'badge-red' : 'badge-green';
+$statusLabel = $b['suspended'] ? 'Suspended' : 'Active';
 $adminSection = 'admin';
 $adminTab     = 'buyers';
 ?>
@@ -138,19 +138,19 @@ $adminTab     = 'buyers';
                 </form>
             </div>
 
-            <!-- Ban / Unban -->
+            <!-- Suspend / Unsuspend -->
             <div class="detail-card">
-                <?php if ($b['banned']): ?>
+                <?php if ($b['suspended']): ?>
                 <div class="detail-card-title">Suspended</div>
-                <?php if ($b['ban_reason']): ?>
-                <div class="detail-row"><span class="detail-row-label">Reason</span><span class="detail-row-value"><?= htmlspecialchars($b['ban_reason']) ?></span></div>
+                <?php if ($b['suspension_reason']): ?>
+                <div class="detail-row"><span class="detail-row-label">Reason</span><span class="detail-row-value"><?= htmlspecialchars($b['suspension_reason']) ?></span></div>
                 <?php endif; ?>
-                <?php if ($b['banned_at']): ?>
-                <div class="detail-row"><span class="detail-row-label">Since</span><span class="detail-row-value"><?= date('M j, Y', strtotime($b['banned_at'])) ?></span></div>
+                <?php if ($b['suspended_at']): ?>
+                <div class="detail-row"><span class="detail-row-label">Since</span><span class="detail-row-value"><?= date('M j, Y', strtotime($b['suspended_at'])) ?></span></div>
                 <?php endif; ?>
                 <form method="POST" action="/admin/buyer-action.php" style="margin-top:0.75rem;">
                     <?= csrf_input() ?>
-                    <input type="hidden" name="action" value="unban">
+                    <input type="hidden" name="action" value="unsuspend">
                     <input type="hidden" name="buyer_id" value="<?= $b['id'] ?>">
                     <label class="notify-check">
                         <input type="checkbox" name="notify_user" value="1" checked>
@@ -162,9 +162,9 @@ $adminTab     = 'buyers';
                 <div class="detail-card-title">Suspend account</div>
                 <form method="POST" action="/admin/buyer-action.php">
                     <?= csrf_input() ?>
-                    <input type="hidden" name="action" value="ban">
+                    <input type="hidden" name="action" value="suspend">
                     <input type="hidden" name="buyer_id" value="<?= $b['id'] ?>">
-                    <textarea name="ban_reason" rows="2" class="penalty-textarea" placeholder="Reason for suspension…" required></textarea>
+                    <textarea name="suspension_reason" rows="2" class="penalty-textarea" placeholder="Reason for suspension…" required></textarea>
                     <label class="notify-check">
                         <input type="checkbox" name="notify_user" value="1" checked>
                         Email the buyer, including the reason above

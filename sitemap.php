@@ -10,12 +10,12 @@ $products = $pdo->query('
     SELECT p.public_id, p.updated_at
     FROM products p
     JOIN businesses b ON b.id = p.business_id
-    WHERE p.active = 1 AND p.archived = 0 AND b.approved = 1
+    WHERE p.active = 1 AND p.archived = 0 AND b.approved = 1 AND b.suspended = 0
     ORDER BY p.id ASC
 ')->fetchAll();
 
 $businesses = $pdo->query('
-    SELECT public_id, updated_at FROM businesses WHERE approved = 1 ORDER BY id ASC
+    SELECT public_id, updated_at FROM businesses WHERE approved = 1 AND suspended = 0 ORDER BY id ASC
 ')->fetchAll();
 
 ?>

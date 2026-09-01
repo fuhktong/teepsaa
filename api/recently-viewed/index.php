@@ -29,7 +29,7 @@ $stmt = $pdo->prepare(
      FROM products p
      JOIN businesses b ON p.business_id = b.id
      LEFT JOIN product_photos pp ON pp.product_id = p.id AND pp.is_primary = 1
-     WHERE p.public_id IN ($ph) AND p.active = 1 AND p.archived = 0 AND b.approved = 1"
+     WHERE p.public_id IN ($ph) AND p.active = 1 AND p.archived = 0 AND b.approved = 1 AND b.suspended = 0"
 );
 $stmt->execute($ids);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);

@@ -22,7 +22,7 @@ check_rate_limit($pdo);
 $email    = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
 
-$stmt = $pdo->prepare('SELECT id, name, password, avatar, avatar_color, banned, email_verified_at, lang FROM vendors WHERE email = ? AND deleted_at IS NULL');
+$stmt = $pdo->prepare('SELECT id, name, password, avatar, avatar_color, suspended, email_verified_at, lang FROM vendors WHERE email = ? AND deleted_at IS NULL');
 $stmt->execute([$email]);
 $user = $stmt->fetch();
 
@@ -33,7 +33,7 @@ if (!$user || !password_verify($password, $user['password'])) {
     exit;
 }
 
-if ($user['banned']) {
+if ($user['suspended']) {
     $_SESSION['auth_error'] = 'Your account has been suspended. Please contact support.';
     header('Location: /login-vendor/');
     exit;

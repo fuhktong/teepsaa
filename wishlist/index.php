@@ -19,7 +19,7 @@ $buyerId = (int)$_SESSION['user_id'];
 
 $stmt = $pdo->prepare('
     SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.sale_percent, p.sale_ends_at, p.stock, p.active, p.archived,
-           b.id AS business_id, b.name AS business_name, b.name_km AS business_name_km, b.approved,
+           b.id AS business_id, b.name AS business_name, b.name_km AS business_name_km, b.approved, b.suspended,
            pp.filename AS photo,
            COALESCE(rv.avg_rating, 0) AS avg_rating,
            COALESCE(rv.review_count, 0) AS review_count,
@@ -65,7 +65,7 @@ $items = $stmt->fetchAll();
         <div class="wishlist-grid">
             <?php foreach ($items as $p): ?>
                 <?php
-                    $unavailable = !$p['active'] || $p['archived'] || !$p['approved'] || $p['stock'] < 1;
+                    $unavailable = !$p['active'] || $p['archived'] || !$p['approved'] || $p['suspended'] || $p['stock'] < 1;
                     $photo = $p['photo']
                         ? '<img src="/uploads/' . htmlspecialchars($p['photo']) . '" alt="" class="wl-card-photo">'
                         : '<div class="wl-card-photo wl-card-photo--empty"></div>';

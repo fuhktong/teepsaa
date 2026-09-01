@@ -28,7 +28,7 @@ if ($minPrice !== '' && !is_numeric($minPrice)) $minPrice = '';
 if ($maxPrice !== '' && !is_numeric($maxPrice)) $maxPrice = '';
 
 // ── WHERE ────────────────────────────────────────────────────────────
-$where  = 'p.active = 1 AND p.archived = 0 AND b.approved = 1';
+$where  = 'p.active = 1 AND p.archived = 0 AND b.approved = 1 AND b.suspended = 0';
 $params = [];
 if ($q !== '') {
     $where   .= ' AND (p.name LIKE ? OR p.description LIKE ?)';

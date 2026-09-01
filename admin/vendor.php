@@ -22,11 +22,13 @@ $id = (int)($_GET['id'] ?? 0);
 if (!$id) { header('Location: /admin/'); exit; }
 
 $stmt = $pdo->prepare('
-    SELECT v.id, v.name, v.email, v.created_at, v.banned, v.ban_reason, v.banned_at,
+    SELECT v.id, v.name, v.email, v.created_at, v.suspended, v.suspension_reason, v.suspended_at,
            v.admin_note, v.aba_qr, v.aba_account_name,
            b.id AS business_id, b.name AS business_name, b.category, b.description,
            b.address, b.house_number, b.khan, b.sangkat,
            b.approved, b.rejection_reason, b.created_at AS submitted_at,
+           b.suspended AS biz_suspended, b.suspension_reason AS biz_suspension_reason,
+           b.suspended_at AS biz_suspended_at,
            b.approved_at, b.spot_checked_at,
            b.royalty_add_on AS company_royalty_add_on, b.royalty_waived
     FROM vendors v
@@ -136,7 +138,8 @@ $adminTab     = 'vendors';
 
     <div class="detail-header">
         <h1><?= htmlspecialchars($v['business_name'] ?: '—') ?></h1>
-        <?php if ($v['banned']): ?><span class="order-badge badge-red">Suspended</span><?php endif; ?>
+        <?php if ($v['suspended']): ?><span class="order-badge badge-red">Account suspended</span><?php endif; ?>
+        <?php if ($v['biz_suspended']): ?><span class="order-badge badge-red">Storefront suspended</span><?php endif; ?>
         <span class="order-badge <?= $statusClass ?>"><?= $statusLabel ?></span>
     </div>
 
@@ -379,15 +382,64 @@ $adminTab     = 'vendors';
                 </form>
             </div>
 
-            <!-- Suspend / Unsuspend -->
+            <?php if ($v['business_id'] && ($v['approved'] === 1 || $v['biz_suspended'])): ?>
+            <!-- Storefront suspension. Separate from the account switch below:
+                 this hides the shop and its products from buyers and stops the
+                 vendor editing listings, but they still sign in and can fix the
+                 business in Settings. Open orders stay workable either way. -->
             <div class="detail-card">
-                <?php if ($v['banned']): ?>
-                <div class="detail-card-title">Suspended</div>
-                <?php if ($v['ban_reason']): ?>
-                <div class="detail-row"><span class="detail-row-label">Reason</span><span class="detail-row-value"><?= htmlspecialchars($v['ban_reason']) ?></span></div>
+                <?php if ($v['biz_suspended']): ?>
+                <div class="detail-card-title">Storefront suspended</div>
+                <?php if ($v['biz_suspension_reason']): ?>
+                <div class="detail-row"><span class="detail-row-label">Reason</span><span class="detail-row-value"><?= htmlspecialchars($v['biz_suspension_reason']) ?></span></div>
                 <?php endif; ?>
-                <?php if ($v['banned_at']): ?>
-                <div class="detail-row"><span class="detail-row-label">Since</span><span class="detail-row-value"><?= date('M j, Y', strtotime($v['banned_at'])) ?></span></div>
+                <?php if ($v['biz_suspended_at']): ?>
+                <div class="detail-row"><span class="detail-row-label">Since</span><span class="detail-row-value"><?= date('M j, Y', strtotime($v['biz_suspended_at'])) ?></span></div>
+                <?php endif; ?>
+                <?php if ($v['suspended']): ?>
+                <p class="notify-check-hint" style="margin-top:0.75rem;">The account is suspended too, which is what took this storefront down. Lift the account suspension first.</p>
+                <?php else: ?>
+                <form method="POST" action="/admin/vendor-action.php" style="margin-top:0.75rem;">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="action" value="unsuspend_business">
+                    <input type="hidden" name="vendor_id" value="<?= $v['id'] ?>">
+                    <input type="hidden" name="business_id" value="<?= $v['business_id'] ?>">
+                    <label class="notify-check">
+                        <input type="checkbox" name="notify_user" value="1" checked>
+                        Email the vendor that their storefront is live again
+                    </label>
+                    <button type="submit" class="btn-approve" style="width:100%;">Put storefront back</button>
+                </form>
+                <?php endif; ?>
+                <?php else: ?>
+                <div class="detail-card-title">Suspend storefront</div>
+                <form method="POST" action="/admin/vendor-action.php">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="action" value="suspend_business">
+                    <input type="hidden" name="vendor_id" value="<?= $v['id'] ?>">
+                    <input type="hidden" name="business_id" value="<?= $v['business_id'] ?>">
+                    <textarea name="suspension_reason" rows="2" class="penalty-textarea" placeholder="What the vendor has to fix before the shop goes back up…" required></textarea>
+                    <label class="notify-check">
+                        <input type="checkbox" name="notify_user" value="1" checked>
+                        Email the vendor, including the reason above
+                    </label>
+                    <p class="notify-check-hint">Hides the shop and every product from buyers. The vendor keeps their login and can fix the business in Settings.</p>
+                    <button type="submit" class="btn-reject" style="margin-top:0.5rem;width:100%;">Suspend storefront</button>
+                </form>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
+            <!-- Suspend / Unsuspend the account. Blocks sign-in outright, and
+                 takes the storefront down with it. -->
+            <div class="detail-card">
+                <?php if ($v['suspended']): ?>
+                <div class="detail-card-title">Account suspended</div>
+                <?php if ($v['suspension_reason']): ?>
+                <div class="detail-row"><span class="detail-row-label">Reason</span><span class="detail-row-value"><?= htmlspecialchars($v['suspension_reason']) ?></span></div>
+                <?php endif; ?>
+                <?php if ($v['suspended_at']): ?>
+                <div class="detail-row"><span class="detail-row-label">Since</span><span class="detail-row-value"><?= date('M j, Y', strtotime($v['suspended_at'])) ?></span></div>
                 <?php endif; ?>
                 <form method="POST" action="/admin/vendor-action.php" style="margin-top:0.75rem;">
                     <?= csrf_input() ?>
@@ -395,9 +447,9 @@ $adminTab     = 'vendors';
                     <input type="hidden" name="vendor_id" value="<?= $v['id'] ?>">
                     <label class="notify-check">
                         <input type="checkbox" name="notify_user" value="1" checked>
-                        Email the vendor that their storefront is live again
+                        Email the vendor that they can sign in again
                     </label>
-                    <button type="submit" class="btn-approve" style="width:100%;">Lift suspension</button>
+                    <button type="submit" class="btn-approve" style="width:100%;">Restore sign-in</button>
                 </form>
                 <?php else: ?>
                 <div class="detail-card-title">Suspend account</div>
@@ -405,12 +457,12 @@ $adminTab     = 'vendors';
                     <?= csrf_input() ?>
                     <input type="hidden" name="action" value="suspend">
                     <input type="hidden" name="vendor_id" value="<?= $v['id'] ?>">
-                    <textarea name="ban_reason" rows="2" class="penalty-textarea" placeholder="Reason for suspension…" required></textarea>
+                    <textarea name="suspension_reason" rows="2" class="penalty-textarea" placeholder="Reason for suspension…" required></textarea>
                     <label class="notify-check">
                         <input type="checkbox" name="notify_user" value="1" checked>
                         Email the vendor, including the reason above
                     </label>
-                    <p class="notify-check-hint">Untick to suspend silently. A vendor loses income while suspended — tell them unless there's a reason not to.</p>
+                    <p class="notify-check-hint">Blocks sign-in and takes the storefront down. Untick to suspend silently — a vendor loses income while suspended, so tell them unless there's a reason not to.</p>
                     <button type="submit" class="btn-reject" style="margin-top:0.5rem;width:100%;">Suspend account</button>
                 </form>
                 <?php endif; ?>

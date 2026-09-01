@@ -16,7 +16,7 @@ if ($publicId === '') {
     exit;
 }
 
-$stmt = $pdo->prepare('SELECT * FROM businesses WHERE public_id = ? AND approved = 1');
+$stmt = $pdo->prepare('SELECT * FROM businesses WHERE public_id = ? AND approved = 1 AND suspended = 0');
 $stmt->execute([$publicId]);
 $business = $stmt->fetch();
 

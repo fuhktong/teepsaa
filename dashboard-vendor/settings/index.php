@@ -24,7 +24,7 @@ $stmt = $pdo->prepare('SELECT name, email, phone, avatar, avatar_color, aba_qr, 
 $stmt->execute([$userId]);
 $vendor = $stmt->fetch();
 
-$stmt = $pdo->prepare('SELECT id, name, name_km, description, description_km, house_number, address, address_notes, khan, sangkat, city, lat, lng, banner, approved, rejection_reason FROM businesses WHERE user_id = ? AND deleted_at IS NULL LIMIT 1');
+$stmt = $pdo->prepare('SELECT id, name, name_km, description, description_km, house_number, address, address_notes, khan, sangkat, city, lat, lng, banner, approved, rejection_reason, suspended, suspension_reason FROM businesses WHERE user_id = ? AND deleted_at IS NULL LIMIT 1');
 $stmt->execute([$userId]);
 $business = $stmt->fetch();
 
@@ -295,7 +295,21 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <p style="font-size:0.9rem;color:#6b7280;"><?= $t['vendor_no_business'] ?> <a href="/submit/"><?= $t['vendor_submit_one'] ?></a></p>
                 <?php else: ?>
 
-                <?php if ((int)$business['approved'] === -1): ?>
+                <?php if ((int)$business['suspended'] === 1): ?>
+                <!-- A suspended shop is off the marketplace but the vendor is
+                     still here fixing it, so this is where they read why.
+                     There is no resubmit button: suspension is lifted by an
+                     admin, not by the vendor sending it back to the queue. -->
+                <div class="biz-rejected">
+                    <p class="biz-rejected-title"><?= $t['vendor_biz_suspended_heading'] ?></p>
+                    <?php if (!empty($business['suspension_reason'])): ?>
+                    <p class="biz-rejected-reason"><strong><?= $t['vendor_biz_suspended_reason'] ?></strong> <?= nl2br(htmlspecialchars($business['suspension_reason'])) ?></p>
+                    <?php else: ?>
+                    <p class="biz-rejected-reason"><?= $t['vendor_biz_suspended_no_reason'] ?></p>
+                    <?php endif; ?>
+                    <p class="biz-rejected-help"><?= $t['vendor_biz_suspended_help'] ?></p>
+                </div>
+                <?php elseif ((int)$business['approved'] === -1): ?>
                 <!-- The only place a rejected vendor is told why, and the only way
                      back into the review queue. -->
                 <div class="biz-rejected">
