@@ -480,6 +480,15 @@ main h1 {
   margin-top: 1rem;
 }
 
+/* The vendor review card is the only .popup-actions holding a textarea. There
+   the second form is a labelled block, not a button, so sitting it beside
+   Approve squeezes both. Stack it underneath instead. The other three uses
+   (refund.php, order.php) are pure button rows and stay side by side. */
+.popup-actions:has(textarea) {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
 .btn-approve {
   background: var(--success-bg);
   color: var(--success-fg);
