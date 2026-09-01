@@ -7,6 +7,7 @@ session_start([
     'cookie_domain'   => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : '',
 ]);
 require __DIR__ . '/../config/subdomain.php';
+require __DIR__ . '/../config/csrf.php';
 
 
 if (isset($_SESSION['user_id'])) {
@@ -57,6 +58,7 @@ unset($_SESSION['contact_guest_error'], $_SESSION['contact_guest_old']);
     <?php endif; ?>
 
     <form method="POST" action="/contact/submit.php" class="contact-form">
+        <?= csrf_input() ?>
         <input type="text" name="website" value="" autocomplete="off" tabindex="-1" style="display:none;position:absolute;left:-9999px;" aria-hidden="true">
 
         <div class="contact-field">

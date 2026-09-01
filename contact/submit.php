@@ -14,6 +14,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/csrf.php';
+
+csrf_verify();
 
 // Honeypot — bots fill hidden fields, humans don't
 if (($_POST['website'] ?? '') !== '') {

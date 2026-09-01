@@ -604,11 +604,6 @@ select.coupon-input {
   background: #f5f5f5;
   color: #888;
 }
-.status-featured {
-  background: var(--primary-soft, #f3e4db);
-  color: var(--primary-hover);
-}
-
 /* Keep this as a normal table cell (not display:flex) so the cell's
    vertical-align:middle centers the buttons against the taller photo row —
    a flexed <td> doesn't stretch to the row height, which left them top-aligned. */

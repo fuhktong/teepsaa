@@ -52,12 +52,6 @@
   margin-bottom: 1.1rem;
 }
 
-.settings-field-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
 .settings-field label {
   display: block;
   font-size: 0.875rem;
@@ -214,10 +208,6 @@
 }
 
 /* Avatar upload */
-.avatar-form {
-  margin-bottom: 0;
-}
-
 .avatar-preview-wrap {
   display: flex;
   align-items: center;
@@ -232,20 +222,6 @@
   object-fit: cover;
   flex-shrink: 0;
   border: 1px solid var(--border);
-}
-
-.avatar-preview--empty {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: var(--primary);
-  color: #fff;
-  font-size: 1.5rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
 }
 
 .btn-upload {
