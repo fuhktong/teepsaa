@@ -174,7 +174,7 @@ $adminTab     = 'vendors';
                 <div class="detail-row"><span class="detail-row-label">Submitted</span><span class="detail-row-value"><?= date('M j, Y', strtotime($v['submitted_at'])) ?></span></div>
                 <div class="detail-row"><span class="detail-row-label">Products</span><span class="detail-row-value"><?= $productCount ?></span></div>
                 <?php if ($v['business_public_id'] && $v['approved'] === 1 && !$v['biz_suspended'] && !$v['suspended']): ?>
-                <div class="detail-row"><span class="detail-row-label">Storefront</span><span class="detail-row-value"><a href="/business/?id=<?= htmlspecialchars($v['business_public_id']) ?>" target="_blank" rel="noopener">View storefront ↗</a></span></div>
+                <div class="detail-row"><span class="detail-row-label">Storefront</span><span class="detail-row-value"><a href="/business/?id=<?= htmlspecialchars($v['business_public_id']) ?>" target="_blank" rel="noopener">View storefront</a></span></div>
                 <?php endif; ?>
             </div>
 
