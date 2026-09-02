@@ -184,7 +184,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
             </div>
 
             <?php elseif ($tab === 'business'): ?>
-            <div class="settings-section">
+            <div class="settings-section settings-section--full">
                 <h2><?= $t['vendor_settings_tab_business'] ?></h2>
 
                 <?php if (!$business): ?>
@@ -226,6 +226,8 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <p class="settings-msg settings-msg--pending"><?= $t['vendor_biz_pending_note'] ?></p>
                 <?php endif; ?>
 
+                <div class="biz-card-cols">
+                <div>
                 <form method="POST" action="/dashboard-vendor/settings/business-action.php" id="business-form">
                     <?= csrf_input() ?>
                     <div class="settings-field">
@@ -261,9 +263,9 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     </div>
                     <?php endif; ?>
                 </form>
+                </div>
 
-                <hr class="form-divider">
-
+                <div>
                 <div class="settings-field">
                     <label><?= $t['vendor_settings_banner'] ?> <span class="field-hint" style="font-weight:400;display:inline"> <?= $t['vendor_settings_banner_hint'] ?></span></label>
                     <?php if ($business['banner']): ?>
@@ -286,14 +288,11 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     <p class="field-hint"><?= $t['vendor_banner_upload_hint'] ?></p>
                 </div>
 
-                <?php endif; ?>
-            </div>
+                <hr class="form-divider">
 
-            <?php if ($business): ?>
-            <!-- Storefront layout — same tab, second card. What shows on the shop
-                 page and in what order. -->
-            <div class="settings-section">
-                <h2><?= $t['storefront_heading'] ?></h2>
+                <!-- Storefront layout — same card, under the banner. What shows
+                     on the shop page and in what order. -->
+                <h3 class="biz-subheading"><?= $t['storefront_heading'] ?></h3>
                 <?php if (empty($sfProducts)): ?>
                 <p class="field-hint"><?= $t['storefront_no_products'] ?></p>
                 <?php else: ?>
@@ -344,10 +343,15 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     </div>
                 </template>
                 <?php endif; ?>
+                </div>
+                </div>
+
+                <?php endif; ?>
             </div>
 
-            <!-- One Save button for the whole Business tab (details + banner note +
-                 storefront), submitting the business form. -->
+            <?php if ($business): ?>
+            <!-- One Save button for the whole Business card (details + storefront),
+                 submitting the business form. -->
             <button type="submit" form="business-form" class="btn-save"><?= $t['settings_save'] ?></button>
             <?php endif; ?>
 

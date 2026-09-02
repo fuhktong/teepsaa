@@ -59,6 +59,33 @@
   align-items: start;
 }
 
+/* The Business card holds details + banner + storefront layout, so it takes
+   the full row; Address and Bank QR pair up beneath it */
+.settings-content--business > .settings-section--full {
+  grid-column: 1 / -1;
+}
+
+/* Inside the Business card: details form on the left, banner photo above the
+   storefront layout on the right. One column again on narrow viewports. */
+.biz-card-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.biz-subheading {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+}
+
+@media (max-width: 900px) {
+  .biz-card-cols {
+    grid-template-columns: 1fr;
+  }
+}
+
 .settings-content--business .settings-section {
   border: 1px solid var(--border);
   border-radius: var(--radius);
