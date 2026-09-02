@@ -24,7 +24,7 @@ if (!$id) { header('Location: /admin/'); exit; }
 $stmt = $pdo->prepare('
     SELECT v.id, v.name, v.email, v.created_at, v.suspended, v.suspension_reason, v.suspended_at,
            v.admin_note, v.aba_qr, v.aba_account_name,
-           b.id AS business_id, b.name AS business_name, b.category, b.description,
+           b.id AS business_id, b.public_id AS business_public_id, b.name AS business_name, b.category, b.description,
            b.address, b.house_number, b.khan, b.sangkat,
            b.approved, b.rejection_reason, b.created_at AS submitted_at,
            b.suspended AS biz_suspended, b.suspension_reason AS biz_suspension_reason,
@@ -173,6 +173,9 @@ $adminTab     = 'vendors';
                 <?php endif; ?>
                 <div class="detail-row"><span class="detail-row-label">Submitted</span><span class="detail-row-value"><?= date('M j, Y', strtotime($v['submitted_at'])) ?></span></div>
                 <div class="detail-row"><span class="detail-row-label">Products</span><span class="detail-row-value"><?= $productCount ?></span></div>
+                <?php if ($v['business_public_id'] && $v['approved'] === 1 && !$v['biz_suspended'] && !$v['suspended']): ?>
+                <div class="detail-row"><span class="detail-row-label">Storefront</span><span class="detail-row-value"><a href="/business/?id=<?= htmlspecialchars($v['business_public_id']) ?>" target="_blank" rel="noopener">View storefront ↗</a></span></div>
+                <?php endif; ?>
             </div>
 
             <!-- Photos -->
