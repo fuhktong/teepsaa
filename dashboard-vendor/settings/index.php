@@ -109,7 +109,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
         </nav>
         <?php endif; ?>
 
-        <div class="settings-content">
+        <div class="settings-content<?= $tab === 'business' ? ' settings-content--business' : '' ?>">
 
             <?php if ($success): ?>
             <p class="settings-msg settings-msg--success"><?= htmlspecialchars($success) ?></p>

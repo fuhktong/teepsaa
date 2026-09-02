@@ -48,6 +48,42 @@
   border-bottom: 1px solid var(--border);
 }
 
+/* Business tab: each subject (details, storefront, address, bank QR) is its
+   own card, flowing two across so the page stays short — same card treatment
+   as the products edit page. Single column again under 900px. */
+.settings-content--business {
+  max-width: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.settings-content--business .settings-section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  background: #fff;
+}
+
+/* Messages and the shared Save button span both columns; the grid gap
+   already provides the spacing, so their own margins go */
+.settings-content--business > .settings-msg,
+.settings-content--business > .btn-save {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.settings-content--business > .btn-save {
+  justify-self: start;
+}
+
+@media (max-width: 900px) {
+  .settings-content--business {
+    grid-template-columns: 1fr;
+  }
+}
+
 .settings-field {
   margin-bottom: 1.1rem;
 }

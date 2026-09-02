@@ -493,7 +493,7 @@ $adminTab     = 'vendors';
     </div>
 
     <?php if (!empty($products)): ?>
-    <div class="detail-card" style="margin-top:1.25rem;">
+    <div class="detail-card">
         <div class="detail-card-title">Products (<?= $productCount ?>)</div>
         <table class="orders-table">
             <thead>
