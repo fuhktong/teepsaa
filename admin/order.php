@@ -229,7 +229,7 @@ $adminTab     = 'orders';
                 <div class="od-row"><span>Reason</span><span><?= htmlspecialchars($o['refund_reason']) ?></span></div>
                 <?php endif; ?>
                 <?php if ($o['return_tracking_url']): ?>
-                <div class="od-row"><span>Return tracking</span><span><a href="<?= htmlspecialchars($o['return_tracking_url']) ?>" target="_blank" rel="noopener">View ↗</a></span></div>
+                <div class="od-row"><span>Return tracking</span><span><a href="<?= htmlspecialchars($o['return_tracking_url']) ?>" target="_blank" rel="noopener">View</a></span></div>
                 <?php endif; ?>
             </div>
             <?php endif; ?>
@@ -274,7 +274,7 @@ $adminTab     = 'orders';
             <?php if ($o['tracking_url']): ?>
             <div class="od-card">
                 <div class="od-card-title">Dispatch</div>
-                <div class="od-row"><span>Grab tracking</span><span><a href="<?= htmlspecialchars($o['tracking_url']) ?>" target="_blank" rel="noopener">View tracking ↗</a></span></div>
+                <div class="od-row"><span>Grab tracking</span><span><a href="<?= htmlspecialchars($o['tracking_url']) ?>" target="_blank" rel="noopener">View tracking</a></span></div>
                 <?php if ($o['delivered_at']): ?>
                 <div class="od-row"><span>Delivered at</span><span><?= date('M j, Y g:ia', strtotime($o['delivered_at'])) ?></span></div>
                 <?php endif; ?>

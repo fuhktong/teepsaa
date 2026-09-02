@@ -18,8 +18,11 @@ if (!isset($vendorSection)) {
     elseif (strpos($vsnPath, '/messages-vendor/') === 0)  $vendorSection = 'messages';
     elseif (strpos($vsnPath, '/dashboard-vendor/') === 0) $vendorSection = 'analytics';
 }
-// Settings lives under /dashboard-vendor/ but isn't the Analytics tab
-if (strpos($vsnPath, '/dashboard-vendor/settings/') === 0) $vendorSection = '';
+// Settings lives under /dashboard-vendor/ but isn't the Analytics tab; its
+// business tab is the subnav's Business tab
+if (strpos($vsnPath, '/dashboard-vendor/settings/') === 0) {
+    $vendorSection = (($_GET['tab'] ?? '') === 'business') ? 'business' : '';
+}
 
 if (!isset($vendorOrdersTodo)) {
     $vsnStmt = $pdo->prepare("SELECT COUNT(*) FROM orders o JOIN businesses b ON b.id = o.business_id WHERE b.user_id = ? AND o.status IN ('paid','return_dispatched')");
@@ -44,8 +47,9 @@ $vsnStorefrontId = $vsnStmt->fetchColumn();
         <a href="/products/" class="<?= $vendorSection === 'products' ? 'active' : '' ?>"><?= $t['nav_products'] ?></a>
         <a href="/messages-vendor/" class="<?= $vendorSection === 'messages' ? 'active' : '' ?>"><?= $vendorUnread ? $t['nav_messages'] . '&nbsp;<span class="nav-msg-badge">' . $vendorUnread . '</span>' : $t['nav_messages'] ?></a>
         <a href="/dashboard-vendor/" class="<?= $vendorSection === 'analytics' ? 'active' : '' ?>"><?= $t['nav_vendor'] ?></a>
+        <a href="/dashboard-vendor/settings/?tab=business" class="<?= $vendorSection === 'business' ? 'active' : '' ?>"><?= $t['vendor_settings_tab_business'] ?></a>
         <?php if ($vsnStorefrontId): ?>
-        <a href="/business/?id=<?= htmlspecialchars($vsnStorefrontId) ?>" target="_blank" rel="noopener"><?= $t['nav_storefront'] ?>&nbsp;↗</a>
+        <a href="/business/?id=<?= htmlspecialchars($vsnStorefrontId) ?>" target="_blank" rel="noopener"><?= $t['nav_storefront'] ?></a>
         <?php endif; ?>
     </nav>
 </div>

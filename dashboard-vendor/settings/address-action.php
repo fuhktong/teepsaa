@@ -16,7 +16,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-vendor/settings/?tab=address');
+    header('Location: /dashboard-vendor/settings/?tab=business');
     exit;
 }
 
@@ -57,5 +57,5 @@ $stmt->execute([
 ]);
 
 $_SESSION['settings_success'] = 'Address updated.';
-header('Location: /dashboard-vendor/settings/?tab=address');
+header('Location: /dashboard-vendor/settings/?tab=business');
 exit;

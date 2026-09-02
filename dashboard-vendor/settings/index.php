@@ -17,8 +17,11 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 }
 
 $userId    = $_SESSION['user_id'];
-$validTabs = ['account', 'address', 'business', 'aba-qr', 'password', 'danger'];
-$tab       = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'account';
+$validTabs = ['account', 'business', 'password', 'danger'];
+$tab       = $_GET['tab'] ?? 'account';
+// Address and Bank QR were folded into the Business tab; keep old links working
+if ($tab === 'address' || $tab === 'aba-qr') $tab = 'business';
+if (!in_array($tab, $validTabs)) $tab = 'account';
 
 $stmt = $pdo->prepare('SELECT name, email, phone, avatar, avatar_color, aba_qr, aba_account_name FROM vendors WHERE id = ?');
 $stmt->execute([$userId]);
@@ -53,8 +56,8 @@ if ($tab === 'business' && $business) {
     $sfSlots = array_values($sfSlots);
 }
 
-$locations = ($tab === 'address') ? require __DIR__ . '/../../config/phnom-penh-locations.php' : [];
-$cities    = ($tab === 'address') ? require __DIR__ . '/../../config/cities.php' : [];
+$locations = ($tab === 'business' && $business) ? require __DIR__ . '/../../config/phnom-penh-locations.php' : [];
+$cities    = ($tab === 'business' && $business) ? require __DIR__ . '/../../config/cities.php' : [];
 
 $bizProductCount = 0;
 $bizOpenOrders   = 0;
@@ -78,7 +81,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings — teepsaa</title>
-    <?php if ($tab === 'address' && $business): ?>
+    <?php if ($tab === 'business' && $business): ?>
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
     <?php endif; ?>
     <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -94,18 +97,17 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 <?php require __DIR__ . '/../../vendor-subnav/vendor-subnav.php'; ?>
 
 <main>
-    <h1 style="margin-bottom:1.5rem"><?= $t['settings_title'] ?></h1>
+    <h1 style="margin-bottom:1.5rem"><?= $tab === 'business' ? $t['vendor_settings_tab_business'] : $t['settings_title'] ?></h1>
 
     <div class="settings-wrap">
 
+        <?php if ($tab !== 'business'): // Business is a top-level subnav tab, not a settings tab ?>
         <nav class="settings-nav">
             <a href="?tab=account"  class="<?= $tab === 'account'  ? 'active' : '' ?>"><?= $t['settings_tab_account'] ?></a>
-            <a href="?tab=address"  class="<?= $tab === 'address'  ? 'active' : '' ?>"><?= $t['vendor_settings_tab_address'] ?></a>
-            <a href="?tab=business" class="<?= $tab === 'business' ? 'active' : '' ?>"><?= $t['vendor_settings_tab_business'] ?></a>
-            <a href="?tab=aba-qr"   class="<?= $tab === 'aba-qr'   ? 'active' : '' ?>"><?= $t['vendor_settings_tab_bank'] ?></a>
             <a href="?tab=password" class="<?= $tab === 'password' ? 'active' : '' ?>"><?= $t['settings_password_heading'] ?></a>
             <a href="?tab=danger"   class="danger-link <?= $tab === 'danger' ? 'active' : '' ?>"><?= $t['settings_delete_account'] ?></a>
         </nav>
+        <?php endif; ?>
 
         <div class="settings-content">
 
@@ -179,113 +181,6 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     </div>
                     <button type="submit" class="btn-save"><?= $t['settings_save'] ?></button>
                 </form>
-            </div>
-
-            <?php elseif ($tab === 'address'): ?>
-            <div class="settings-section">
-                <h2><?= $t['vendor_settings_tab_address'] ?></h2>
-
-                <?php if (!$business): ?>
-                <p style="font-size:0.9rem;color:#6b7280;"><?= $t['vendor_no_business'] ?> <a href="/submit/"><?= $t['vendor_submit_one'] ?></a></p>
-                <?php else: ?>
-
-                <?php
-                $addrParts = array_filter([
-                    trim(($business['house_number'] ?? '') . ' ' . ($business['address'] ?? '')),
-                    $business['sangkat'] ?? '',
-                    $business['khan'] ?? '',
-                    $business['city'] ?: 'Phnom Penh',
-                ]);
-                $addrLine   = implode(', ', $addrParts);
-                $hasAddress = !empty($business['address']) || !empty($business['khan']);
-                ?>
-                <?php if ($hasAddress): ?>
-                <div class="addr-display">
-                    <p class="addr-display-line"><?= htmlspecialchars($addrLine) ?></p>
-                    <?php if ($business['address_notes']): ?>
-                    <p class="addr-display-notes"><?= htmlspecialchars($business['address_notes']) ?></p>
-                    <?php endif; ?>
-                </div>
-                <?php else: ?>
-                <p class="addr-display-empty"><?= $t['settings_no_address'] ?></p>
-                <?php endif; ?>
-                <details class="addr-edit"<?= !$hasAddress ? ' open' : '' ?>>
-                    <summary class="addr-edit-toggle"><?= $t['settings_address_edit'] ?></summary>
-                    <div class="addr-edit-body">
-
-                <form method="POST" action="/dashboard-vendor/settings/address-action.php">
-                    <?= csrf_input() ?>
-
-                    <div class="settings-field">
-                        <label for="house_number"><?= $t['settings_address_house'] ?></label>
-                        <input type="text" id="house_number" name="house_number" value="<?= htmlspecialchars($business['house_number'] ?? '') ?>" placeholder="e.g. 15">
-                    </div>
-
-                    <div class="settings-field">
-                        <label for="address"><?= $t['settings_street'] ?></label>
-                        <input type="text" id="address" name="address" value="<?= htmlspecialchars($business['address'] ?? '') ?>" placeholder="e.g. Street 240">
-                    </div>
-
-                    <div class="settings-field">
-                        <label for="address_notes"><?= $t['settings_address_floor'] ?></label>
-                        <input type="text" id="address_notes" name="address_notes" value="<?= htmlspecialchars($business['address_notes'] ?? '') ?>" placeholder="e.g. Ground floor, blue sign">
-                    </div>
-
-                    <div class="settings-field">
-                        <label for="khan"><?= $t['settings_address_khan'] ?></label>
-                        <select id="khan" name="khan" onchange="updateSangkats(this.value)">
-                            <option value=""><?= $t['settings_select_khan'] ?></option>
-                            <?php foreach (array_keys($locations) as $k): ?>
-                            <option value="<?= htmlspecialchars($k) ?>" <?= ($business['khan'] === $k) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($k) ?>
-                            </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="settings-field">
-                        <label for="sangkat"><?= $t['settings_address_sangkat'] ?></label>
-                        <select id="sangkat" name="sangkat">
-                            <option value=""><?= $t['settings_select_sangkat'] ?></option>
-                            <?php if ($business['khan'] && isset($locations[$business['khan']])): ?>
-                                <?php foreach ($locations[$business['khan']] as $s): ?>
-                                <option value="<?= htmlspecialchars($s) ?>" <?= ($business['sangkat'] === $s) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($s) ?>
-                                </option>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </select>
-                    </div>
-
-                    <div class="settings-field">
-                        <label for="city"><?= $t['settings_address_city'] ?></label>
-                        <select id="city" name="city">
-                            <?php $selCity = $business['city'] ?: ($cities[0] ?? ''); ?>
-                            <?php foreach ($cities as $c): ?>
-                            <option value="<?= htmlspecialchars($c) ?>" <?= ($selCity === $c) ? 'selected' : '' ?>><?= htmlspecialchars($c) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="settings-field">
-                        <label><?= $t['vendor_map_pin'] ?> <span class="field-hint" style="font-weight:400;display:inline"> <?= $t['vendor_map_pin_hint'] ?></span></label>
-                        <div id="addr-map"></div>
-                        <p id="pin-label" class="pin-label">
-                            <?= ($business['lat'] && $business['lng'])
-                                ? number_format((float)$business['lat'], 5) . ', ' . number_format((float)$business['lng'], 5)
-                                : $t['vendor_no_pin_full'] ?>
-                        </p>
-                        <input type="hidden" id="lat" name="lat" value="<?= htmlspecialchars($business['lat'] ?? '') ?>">
-                        <input type="hidden" id="lng" name="lng" value="<?= htmlspecialchars($business['lng'] ?? '') ?>">
-                    </div>
-
-                    <button type="submit" class="btn-save"><?= $t['settings_save_address'] ?></button>
-                </form>
-
-                    </div>
-                </details>
-
-                <?php endif; ?>
             </div>
 
             <?php elseif ($tab === 'business'): ?>
@@ -456,7 +351,110 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
             <button type="submit" form="business-form" class="btn-save"><?= $t['settings_save'] ?></button>
             <?php endif; ?>
 
-            <?php elseif ($tab === 'aba-qr'): ?>
+            <?php if ($business): ?>
+            <!-- Address — folded into the Business tab (was its own tab) -->
+            <div class="settings-section">
+                <h2><?= $t['vendor_settings_tab_address'] ?></h2>
+
+                <?php
+                $addrParts = array_filter([
+                    trim(($business['house_number'] ?? '') . ' ' . ($business['address'] ?? '')),
+                    $business['sangkat'] ?? '',
+                    $business['khan'] ?? '',
+                    $business['city'] ?: 'Phnom Penh',
+                ]);
+                $addrLine   = implode(', ', $addrParts);
+                $hasAddress = !empty($business['address']) || !empty($business['khan']);
+                ?>
+                <?php if ($hasAddress): ?>
+                <div class="addr-display">
+                    <p class="addr-display-line"><?= htmlspecialchars($addrLine) ?></p>
+                    <?php if ($business['address_notes']): ?>
+                    <p class="addr-display-notes"><?= htmlspecialchars($business['address_notes']) ?></p>
+                    <?php endif; ?>
+                </div>
+                <?php else: ?>
+                <p class="addr-display-empty"><?= $t['settings_no_address'] ?></p>
+                <?php endif; ?>
+                <details class="addr-edit"<?= !$hasAddress ? ' open' : '' ?>>
+                    <summary class="addr-edit-toggle"><?= $t['settings_address_edit'] ?></summary>
+                    <div class="addr-edit-body">
+
+                <form method="POST" action="/dashboard-vendor/settings/address-action.php">
+                    <?= csrf_input() ?>
+
+                    <div class="settings-field">
+                        <label for="house_number"><?= $t['settings_address_house'] ?></label>
+                        <input type="text" id="house_number" name="house_number" value="<?= htmlspecialchars($business['house_number'] ?? '') ?>" placeholder="e.g. 15">
+                    </div>
+
+                    <div class="settings-field">
+                        <label for="address"><?= $t['settings_street'] ?></label>
+                        <input type="text" id="address" name="address" value="<?= htmlspecialchars($business['address'] ?? '') ?>" placeholder="e.g. Street 240">
+                    </div>
+
+                    <div class="settings-field">
+                        <label for="address_notes"><?= $t['settings_address_floor'] ?></label>
+                        <input type="text" id="address_notes" name="address_notes" value="<?= htmlspecialchars($business['address_notes'] ?? '') ?>" placeholder="e.g. Ground floor, blue sign">
+                    </div>
+
+                    <div class="settings-field">
+                        <label for="khan"><?= $t['settings_address_khan'] ?></label>
+                        <select id="khan" name="khan" onchange="updateSangkats(this.value)">
+                            <option value=""><?= $t['settings_select_khan'] ?></option>
+                            <?php foreach (array_keys($locations) as $k): ?>
+                            <option value="<?= htmlspecialchars($k) ?>" <?= ($business['khan'] === $k) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($k) ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="settings-field">
+                        <label for="sangkat"><?= $t['settings_address_sangkat'] ?></label>
+                        <select id="sangkat" name="sangkat">
+                            <option value=""><?= $t['settings_select_sangkat'] ?></option>
+                            <?php if ($business['khan'] && isset($locations[$business['khan']])): ?>
+                                <?php foreach ($locations[$business['khan']] as $s): ?>
+                                <option value="<?= htmlspecialchars($s) ?>" <?= ($business['sangkat'] === $s) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($s) ?>
+                                </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                    </div>
+
+                    <div class="settings-field">
+                        <label for="city"><?= $t['settings_address_city'] ?></label>
+                        <select id="city" name="city">
+                            <?php $selCity = $business['city'] ?: ($cities[0] ?? ''); ?>
+                            <?php foreach ($cities as $c): ?>
+                            <option value="<?= htmlspecialchars($c) ?>" <?= ($selCity === $c) ? 'selected' : '' ?>><?= htmlspecialchars($c) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="settings-field">
+                        <label><?= $t['vendor_map_pin'] ?> <span class="field-hint" style="font-weight:400;display:inline"> <?= $t['vendor_map_pin_hint'] ?></span></label>
+                        <div id="addr-map"></div>
+                        <p id="pin-label" class="pin-label">
+                            <?= ($business['lat'] && $business['lng'])
+                                ? number_format((float)$business['lat'], 5) . ', ' . number_format((float)$business['lng'], 5)
+                                : $t['vendor_no_pin_full'] ?>
+                        </p>
+                        <input type="hidden" id="lat" name="lat" value="<?= htmlspecialchars($business['lat'] ?? '') ?>">
+                        <input type="hidden" id="lng" name="lng" value="<?= htmlspecialchars($business['lng'] ?? '') ?>">
+                    </div>
+
+                    <button type="submit" class="btn-save"><?= $t['settings_save_address'] ?></button>
+                </form>
+
+                    </div>
+                </details>
+            </div>
+            <?php endif; ?>
+
+            <!-- Bank QR — folded into the Business tab (was its own tab) -->
             <div class="settings-section">
                 <h2><?= $t['vendor_settings_bank_qr'] ?></h2>
                 <p class="field-hint" style="margin-bottom:1.25rem;"><?= $t['vendor_settings_bank_hint'] ?></p>
@@ -605,7 +603,7 @@ syncSlots();
 </script>
 <?php endif; ?>
 
-<?php if ($tab === 'address' && $business): ?>
+<?php if ($tab === 'business' && $business): ?>
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 <script src="/js/boundary.js"></script>
 <script>

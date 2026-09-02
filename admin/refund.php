@@ -168,7 +168,7 @@ $adminTab     = 'refunds';
 
                 <?php elseif ($o['status'] === 'return_dispatched'): ?>
                 <?php if ($o['return_tracking_url']): ?>
-                <div class="detail-row" style="margin-bottom:0.5rem;"><span class="detail-row-label">Return tracking</span><span class="detail-row-value"><a href="<?= htmlspecialchars($o['return_tracking_url']) ?>" target="_blank" rel="noopener">Track via Grab ↗</a></span></div>
+                <div class="detail-row" style="margin-bottom:0.5rem;"><span class="detail-row-label">Return tracking</span><span class="detail-row-value"><a href="<?= htmlspecialchars($o['return_tracking_url']) ?>" target="_blank" rel="noopener">Track via Grab</a></span></div>
                 <?php endif; ?>
                 <p style="font-size:0.875rem;color:#6b7280;margin:0;">Buyer has dispatched the return. Waiting for vendor to confirm receipt.</p>
 
