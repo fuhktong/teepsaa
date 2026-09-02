@@ -63,7 +63,7 @@ These were the never-started tests. All need a fresh vendor registered with a
       Reject the business as admin, then log in as that vendor and confirm the
       dashboard shows a rejection state rather than a blank or broken page.
       They should get the `business_rejected` email.
-- [ ] **Rejecting an already-approved business hides its products.** This is the
+- [x] **Rejecting an already-approved business hides its products.** This is the
       only way a product can exist under a non-approved business, so it's the
       real test of the invisibility rule. Approve a business, add a product,
       confirm the product is publicly visible — then reject the business as

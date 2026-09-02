@@ -1,0 +1,36 @@
+/* Vendor portal subnav — same box as .header-inner / main (1200px, 1.5rem
+   gutters) so the tabs line up with the header and page content */
+.vendor-subnav-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.vendor-subnav {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--border);
+  overflow-x: auto;
+}
+
+.vendor-subnav a {
+  padding: 0.55rem 1.1rem;
+  text-decoration: none;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  white-space: nowrap;
+}
+
+.vendor-subnav a:hover {
+  color: #111;
+}
+
+.vendor-subnav a.active {
+  color: #111;
+  font-weight: 600;
+  border-bottom-color: #111;
+}

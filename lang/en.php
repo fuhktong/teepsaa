@@ -11,6 +11,7 @@ return [
     'nav_logout'         => 'Logout',
     'nav_vendor'         => 'Analytics',
     'nav_products'       => 'Products',
+    'nav_storefront'     => 'Storefront',
     'nav_cart'           => 'Cart',
     'nav_admin'          => 'Admin',
     'nav_marketing'      => 'Marketing',

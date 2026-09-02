@@ -11,6 +11,7 @@ return [
     'nav_logout'         => 'ចេញ',
     'nav_vendor'         => 'ការវិភាគ',
     'nav_products'       => 'ផលិតផល',
+    'nav_storefront'     => 'ទំព័រហាង',
     'nav_cart'           => 'រទេះ',
     'nav_admin'          => 'អ្នកគ្រប់គ្រង',
     'nav_marketing'      => 'ផ្សព្វផ្សាយ',

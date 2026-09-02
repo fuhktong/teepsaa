@@ -156,10 +156,8 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                         $vOrdStmt->execute([$_SESSION['user_id']]);
                         $vendorOrdersTodo = (int)$vOrdStmt->fetchColumn();
                     ?>
-                    <a href="/orders-vendor/" class="<?= $vendorSection === 'orders' ? 'active' : '' ?>"><?= $vendorOrdersTodo ? $t['nav_orders'] . '&nbsp;<span class="nav-msg-badge">' . $vendorOrdersTodo . '</span>' : $t['nav_orders'] ?></a>
-                    <a href="/products/" class="<?= $vendorSection === 'products' ? 'active' : '' ?>"><?= $t['nav_products'] ?></a>
-                    <a href="/messages-vendor/" class="<?= $vendorSection === 'messages' ? 'active' : '' ?>"><?= $vendorUnread ? $t['nav_messages'] . '&nbsp;<span class="nav-msg-badge">' . $vendorUnread . '</span>' : $t['nav_messages'] ?></a>
-                    <a href="/dashboard-vendor/" class="<?= $vendorSection === 'analytics' ? 'active' : '' ?>"><?= $t['nav_vendor'] ?></a>
+                    <!-- Vendor tabs live in /vendor-subnav/, not here — the
+                         header keeps only bell, avatar and lang menus -->
                     <div class="bell-wrap">
                         <button class="bell-btn" id="bell-btn" type="button" aria-label="Notifications">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
