@@ -31,9 +31,13 @@ if ($maxPrice !== '' && !is_numeric($maxPrice)) $maxPrice = '';
 $where  = 'p.active = 1 AND p.archived = 0 AND b.approved = 1 AND b.suspended = 0';
 $params = [];
 if ($q !== '') {
+    // Escaped exactly as search/index.php does — page 1 is rendered there and
+    // pages 2+ come from here, so an unescaped wildcard would make the two
+    // disagree about what is in the result set.
+    $qLike    = '%' . addcslashes($q, '%_\\') . '%';
     $where   .= ' AND (p.name LIKE ? OR p.description LIKE ?)';
-    $params[] = "%$q%";
-    $params[] = "%$q%";
+    $params[] = $qLike;
+    $params[] = $qLike;
 }
 if ($minPrice !== '') {
     $where   .= ' AND p.price >= ?';

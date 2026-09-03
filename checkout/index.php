@@ -29,6 +29,14 @@ $userId = $_SESSION['user_id'];
 $stmt = $pdo->prepare('SELECT lat, lng, house_number, address, address_notes, khan, sangkat, phone FROM buyers WHERE id = ?');
 $stmt->execute([$userId]);
 $buyer    = $stmt->fetch();
+
+// The session can outlive the row — an admin can delete the buyer mid-session.
+// buyer_missing_fields() below is typed `array`, so a false here is a fatal.
+if (!$buyer) {
+    header('Location: /login-buyer/');
+    exit;
+}
+
 $buyerLat = ($buyer['lat'] !== null && $buyer['lat'] !== '') ? (float)$buyer['lat'] : null;
 $buyerLng = ($buyer['lng'] !== null && $buyer['lng'] !== '') ? (float)$buyer['lng'] : null;
 

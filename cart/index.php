@@ -23,6 +23,14 @@ $userId = $_SESSION['user_id'];
 $stmt = $pdo->prepare('SELECT lat, lng, address, khan, sangkat, phone FROM buyers WHERE id = ?');
 $stmt->execute([$userId]);
 $buyer      = $stmt->fetch();
+
+// The session can outlive the row — an admin can delete the buyer mid-session.
+// buyer_missing_fields() below is typed `array`, so a false here is a fatal.
+if (!$buyer) {
+    header('Location: /login-buyer/');
+    exit;
+}
+
 $buyerLat   = ($buyer['lat'] !== null && $buyer['lat'] !== '') ? (float)$buyer['lat'] : null;
 $buyerLng   = ($buyer['lng'] !== null && $buyer['lng'] !== '') ? (float)$buyer['lng'] : null;
 $hasAddress = $buyerLat !== null && $buyerLng !== null;
@@ -40,7 +48,7 @@ if ($missing) {
 
 $stmt = $pdo->prepare('
     SELECT ci.id AS cart_item_id, ci.quantity, ci.variant_id,
-           p.id AS product_id, p.name AS product_name, p.name_km AS product_name_km, p.price, p.stock, p.weight_g,
+           p.id AS product_id, p.name AS product_name, p.name_km AS product_name_km, p.price, p.stock, p.weight_g, p.delivery_method,
            ROUND(COALESCE(pv.price_override, p.price)
                  * (100 - IF(p.sale_ends_at IS NOT NULL AND p.sale_ends_at > NOW() AND p.sale_percent IS NOT NULL, p.sale_percent, 0)) / 100, 2) AS effective_price,
            COALESCE(pv.stock, p.stock) AS effective_stock,
@@ -69,15 +77,18 @@ foreach ($items as $item) {
             'name'     => pick_lang($item['business_name'], $item['business_name_km'] ?? null),
             'biz_lat'  => ($item['biz_lat'] !== null) ? (float)$item['biz_lat'] : null,
             'biz_lng'  => ($item['biz_lng'] !== null) ? (float)$item['biz_lng'] : null,
-            'items'    => [],
-            'subtotal' => 0.0,
-            'weight_g' => 0,
-            'delivery' => null,
+            'items'        => [],
+            'subtotal'     => 0.0,
+            'weight_g'     => 0,
+            'vehicle_type' => 'bike',
+            'delivery'     => null,
         ];
     }
     $grouped[$bid]['items'][]   = $item;
     $grouped[$bid]['subtotal'] += $item['effective_price'] * $item['quantity'];
     $grouped[$bid]['weight_g'] += ($item['weight_g'] ?: 100) * $item['quantity'];
+    // One tuk-tuk item makes the whole shop's delivery a tuk-tuk run
+    if ($item['delivery_method'] === 'tuktuk') $grouped[$bid]['vehicle_type'] = 'tuktuk';
     $subtotal += $item['effective_price'] * $item['quantity'];
 }
 
@@ -91,7 +102,11 @@ foreach ($grouped as $bid => &$group) {
         if ($dist > $cfg['max_distance']) {
             $group['delivery'] = ['state' => 'out_of_range', 'distance_km' => round($dist, 1)];
         } else {
-            $d = calculate_delivery($dist, $group['weight_g']);
+            // Second argument is the vehicle type — passing weight here made
+            // $cfg[$vehicle_type] miss and silently fall back to bike rates, so
+            // the cart under-quoted every tuk-tuk delivery that checkout then
+            // priced correctly.
+            $d = calculate_delivery($dist, $group['vehicle_type']);
             $group['delivery'] = array_merge($d, ['state' => 'ok']);
         }
     }

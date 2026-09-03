@@ -75,6 +75,12 @@ unset($_SESSION['cart_success'], $_SESSION['cart_error']);
 
 $isBuyer = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer';
 
+// Longest quantity dropdown we'll render — a buyer wanting more than this can
+// raise it on the cart page. Defined here rather than inside the cart form
+// because the variant script below reads it for anyone viewing the page,
+// including a signed-in vendor who never sees that form.
+$qtySelectMax = 20;
+
 $rSummary = $pdo->prepare('SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) AS review_count FROM reviews WHERE product_id = ?');
 $rSummary->execute([$id]);
 $rSummaryRow = $rSummary->fetch();
@@ -240,9 +246,6 @@ $reviews = $rStmt->fetchAll();
                     $showLow      = empty($variants) && $lowThreshold > 0
                                     && $product['stock'] > 0 && $product['stock'] <= $lowThreshold;
                     $outOfStock   = empty($variants) && $product['stock'] < 1;
-                    // Longest quantity dropdown we'll render — a buyer wanting more
-                    // than this can raise it on the cart page
-                    $qtySelectMax = 20;
                 ?>
                 <p class="product-stock<?= $showLow ? ' product-stock--low' : '' ?>" id="stock-display">
                     <?php if (!empty($variants)): ?>
@@ -354,7 +357,7 @@ $reviews = $rStmt->fetchAll();
 </script>
 <script>
 (function () {
-    var photos = <?= json_encode(array_values($allPhotos)) ?>;
+    var photos = <?= json_encode(array_values($allPhotos), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
     if (!photos.length) return;
 
     var lb      = document.getElementById('lightbox');
@@ -406,9 +409,9 @@ $reviews = $rStmt->fetchAll();
 // Stock wording and the quantity cap both follow the selected variant
 var LOW_THRESHOLD   = <?= (int)($product['low_stock_threshold'] ?? 0) ?>;
 var QTY_SELECT_MAX  = <?= (int)$qtySelectMax ?>;
-var TXT_IN_STOCK  = <?= json_encode($t['product_in_stock'], JSON_UNESCAPED_UNICODE) ?>;
-var TXT_OUT_STOCK = <?= json_encode($t['product_out_of_stock'], JSON_UNESCAPED_UNICODE) ?>;
-var TXT_ONLY_LEFT = <?= json_encode($t['product_only_left'], JSON_UNESCAPED_UNICODE) ?>;
+var TXT_IN_STOCK  = <?= json_encode($t['product_in_stock'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+var TXT_OUT_STOCK = <?= json_encode($t['product_out_of_stock'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+var TXT_ONLY_LEFT = <?= json_encode($t['product_only_left'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
 
 function applyVariantStock(stockEl, stock) {
     if (stock <= 0) {
@@ -459,12 +462,12 @@ function applyVariantStock(stockEl, stock) {
     var VARIANT_MAP = <?= json_encode(array_map(function($row) {
         return ['variant_id' => (int)$row['variant_id'], 'stock' => (int)$row['stock'],
                 'price_override' => $row['price_override'], 'value_ids' => $row['value_ids']];
-    }, array_values($variantMap))) ?>;
+    }, array_values($variantMap)), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
 
     var variantLookup = {};
     VARIANT_MAP.forEach(function(v){ variantLookup[v.value_ids] = v; });
 
-    var typeIds    = <?= json_encode(array_column($optionTypes, 'id')) ?>;
+    var typeIds    = <?= json_encode(array_column($optionTypes, 'id'), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
     var selections = {};
 
     function comboKey() {
@@ -479,7 +482,7 @@ function applyVariantStock(stockEl, stock) {
 
     function updateState() {
         if (!allSelected()) {
-            stockEl.textContent = '<?= $t['product_select_options'] ?>';
+            stockEl.textContent = <?= json_encode($t['product_select_options'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
             stockEl.classList.remove('product-stock--low');
             if (variantIn) variantIn.value = '';
             setPending(true);
@@ -488,7 +491,7 @@ function applyVariantStock(stockEl, stock) {
         var key   = comboKey();
         var match = variantLookup[key];
         if (!match) {
-            stockEl.textContent = '<?= $t['product_combo_unavailable'] ?>';
+            stockEl.textContent = <?= json_encode($t['product_combo_unavailable'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
             stockEl.classList.remove('product-stock--low');
             if (variantIn) variantIn.value = '';
             setPending(true);
@@ -503,7 +506,7 @@ function applyVariantStock(stockEl, stock) {
 
     var formEl     = document.getElementById('cart-form');
     var hintEl     = document.getElementById('cart-select-hint');
-    var TYPE_NAMES = <?= json_encode(array_column($optionTypes, 'name', 'id')) ?>;
+    var TYPE_NAMES = <?= json_encode(array_column($optionTypes, 'name', 'id'), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
 
     document.querySelectorAll('[data-type-id]').forEach(function(optDiv) {
         var tid = parseInt(optDiv.dataset.typeId);
@@ -526,7 +529,7 @@ function applyVariantStock(stockEl, stock) {
         if (missing.length) {
             e.preventDefault();
             var names = missing.map(function(tid){ return TYPE_NAMES[tid]; });
-            if (hintEl) { hintEl.textContent = '<?= $t['product_please_select'] ?> ' + names.join(' <?= $t['product_and'] ?> ') + '.'; hintEl.style.display = ''; }
+            if (hintEl) { hintEl.textContent = <?= json_encode($t['product_please_select'] . ' ', JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?> + names.join(<?= json_encode(' ' . $t['product_and'] . ' ', JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>) + '.'; hintEl.style.display = ''; }
             missing.forEach(function(tid){
                 var div = document.querySelector('[data-type-id="' + tid + '"]');
                 var sel = div && div.closest('.variant-selector');
@@ -537,12 +540,12 @@ function applyVariantStock(stockEl, stock) {
         var match = variantLookup[comboKey()];
         if (!match) {
             e.preventDefault();
-            if (hintEl) { hintEl.textContent = '<?= $t['product_combo_unavailable'] ?>'; hintEl.style.display = ''; }
+            if (hintEl) { hintEl.textContent = <?= json_encode($t['product_combo_unavailable'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>; hintEl.style.display = ''; }
             return;
         }
         if (match.stock < 1) {
             e.preventDefault();
-            if (hintEl) { hintEl.textContent = '<?= $t['product_option_oos'] ?>'; hintEl.style.display = ''; }
+            if (hintEl) { hintEl.textContent = <?= json_encode($t['product_option_oos'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>; hintEl.style.display = ''; }
         }
     });
 
@@ -590,13 +593,13 @@ function applyVariantStock(stockEl, stock) {
         var checked = document.querySelector('input[name="variant_id"]:checked');
         if (!checked) {
             e.preventDefault();
-            if (hintEl) { hintEl.textContent = '<?= $t['product_please_select_variant'] ?>'; hintEl.style.display = ''; }
+            if (hintEl) { hintEl.textContent = <?= json_encode($t['product_please_select_variant'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>; hintEl.style.display = ''; }
             if (groupEl) groupEl.classList.add('variant-selector--error');
             return;
         }
         if (parseInt(checked.dataset.stock, 10) < 1) {
             e.preventDefault();
-            if (hintEl) { hintEl.textContent = '<?= $t['product_variant_oos'] ?>'; hintEl.style.display = ''; }
+            if (hintEl) { hintEl.textContent = <?= json_encode($t['product_variant_oos'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>; hintEl.style.display = ''; }
         }
     });
 })();
@@ -605,7 +608,7 @@ function applyVariantStock(stockEl, stock) {
 <?php endif; ?>
 <script>
 (function () {
-    var id = <?= json_encode($product['public_id']) ?>;
+    var id = <?= json_encode($product['public_id'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
     try {
         var key  = 'teepsaa_rv';
         var list = JSON.parse(localStorage.getItem(key) || '[]');

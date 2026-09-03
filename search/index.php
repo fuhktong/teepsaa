@@ -32,10 +32,16 @@ $hasActiveFilters = $minPrice !== '' || $maxPrice !== '' || $categoryId > 0 || $
 // ── WHERE ────────────────────────────────────────────────────────────
 $where  = 'p.active = 1 AND p.archived = 0 AND b.approved = 1 AND b.suspended = 0';
 $params = [];
+// % and _ are LIKE wildcards, so an unescaped query for "50%" or "a_b" matches
+// far more than the buyer typed — "%" on its own returns the whole catalogue.
+// api/search/index.php builds the same pattern for the infinite-scroll pages;
+// keep the two in step or page 2 filters differently from page 1.
+$qLike = '%' . addcslashes($q, '%_\\') . '%';
+
 if ($q !== '') {
     $where   .= ' AND (p.name LIKE ? OR p.description LIKE ?)';
-    $params[] = "%$q%";
-    $params[] = "%$q%";
+    $params[] = $qLike;
+    $params[] = $qLike;
 }
 if ($minPrice !== '') {
     $where   .= ' AND p.price >= ?';
@@ -175,7 +181,7 @@ if ($q !== '') {
         if ($n = $catStmt->fetchColumn()) $shopCatNames[] = $n;
     } else {
         $catStmt = $pdo->prepare('SELECT name FROM categories WHERE name LIKE ? OR name_km LIKE ?');
-        $catStmt->execute(["%$q%", "%$q%"]);
+        $catStmt->execute([$qLike, $qLike]);
         $shopCatNames = $catStmt->fetchAll(PDO::FETCH_COLUMN);
     }
     if ($shopCatNames) {
@@ -195,7 +201,9 @@ if ($q !== '') {
     }
 }
 
-$title = $q ? htmlspecialchars($q) . ' — teepsaa' : 'Search — teepsaa';
+// Kept raw: seo_meta() escapes everything it is handed, so pre-escaping here
+// double-encoded the og: and twitter: tags. Escaped at the <title> below.
+$title = $q !== '' ? $q . ' — teepsaa' : 'Search — teepsaa';
 
 $sortLabels = [
     'newest'     => $t['sort_newest'],
@@ -278,11 +286,11 @@ foreach ($selectedValueIds as $vid) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?></title>
+    <title><?= htmlspecialchars($title) ?></title>
     <?php
         require_once __DIR__ . '/../config/seo.php';
         $searchDesc = $q
-            ? 'Search results for "' . htmlspecialchars($q) . '" on teepsaa — ' . $count . ' product' . ($count !== 1 ? 's' : '') . ' found.'
+            ? 'Search results for "' . $q . '" on teepsaa — ' . $count . ' product' . ($count !== 1 ? 's' : '') . ' found.'
             : 'Browse all products on teepsaa — local Phnom Penh businesses, fast Grab delivery.';
         echo seo_meta($title, $searchDesc);
     ?>
@@ -519,7 +527,7 @@ foreach ($selectedValueIds as $vid) {
         'category'      => $categoryId ?: '',
         'min_rating'    => $minRating > 0 ? (string)(int)$minRating : '',
         'variant_values'=> $selectedValueIds,
-    ]) ?>;
+    ], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
     var currency = '<?= htmlspecialchars($_SESSION['currency'] ?? 'USD') ?>';
     var khrRate  = <?= KHR_RATE ?>;
     var grid     = document.getElementById('product-grid');

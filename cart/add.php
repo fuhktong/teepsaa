@@ -26,7 +26,10 @@ $userId    = $_SESSION['user_id'];
 $productId = (int)($_POST['product_id'] ?? 0);
 $variantId = (int)($_POST['variant_id'] ?? 0) ?: null;
 $redirect  = $_POST['redirect'] ?? '/search/';
-if (!preg_match('#^/(?!/)#', $redirect)) {
+// Same-site paths only. The backslash matters: browsers normalise it to "/",
+// so "/\evil.com" becomes the protocol-relative "//evil.com" and walks the
+// buyer off the site.
+if (!preg_match('#^/(?![/\\\\])#', $redirect)) {
     $redirect = '/search/';
 }
 

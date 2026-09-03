@@ -34,6 +34,13 @@ $stmt = $pdo->prepare('SELECT lat, lng, house_number, address, khan, sangkat, ph
 $stmt->execute([$userId]);
 $buyer = $stmt->fetch();
 
+// The session can outlive the row — an admin can delete the buyer mid-session.
+// buyer_missing_fields() below is typed `array`, so a false here is a fatal.
+if (!$buyer) {
+    header('Location: /login-buyer/');
+    exit;
+}
+
 if (!$buyer['email_verified_at']) {
     $_SESSION['cart_error'] = 'Please verify your email address before placing an order.';
     header('Location: /resend-verification/');
@@ -291,8 +298,15 @@ try {
 
         // Vendor-owned coupons come out of that vendor's own payout; sitewide
         // coupons are platform-absorbed, so vendor_payout is untouched.
+        //
+        // Floored at zero: a coupon can discount the whole subtotal (100% off, or
+        // a fixed amount that config/coupon.php clamps up to the subtotal), and
+        // vendor_payout is already subtotal minus royalty, so the subtraction can
+        // go negative — which would put a "we owe you minus $20" row on the payout
+        // screen. The vendor funds their discount down to nothing and no further;
+        // the platform eats the royalty on an order that earned no revenue.
         $vendorPayout = ($couponBusinessId !== null && $businessId === $couponBusinessId)
-            ? round($group['vendor_payout'] - $groupDiscount, 2)
+            ? max(0.0, round($group['vendor_payout'] - $groupDiscount, 2))
             : $group['vendor_payout'];
 
         $stmt = $pdo->prepare('
@@ -358,9 +372,27 @@ try {
     $pdo->prepare('UPDATE buyers SET abandoned_cart_notified_at = NULL WHERE id = ?')->execute([$userId]);
 
     $pdo->commit();
-    unset($_SESSION['checkout_coupon_code']);
 
-    // Low stock alerts — best-effort, run after commit
+} catch (Throwable $e) {
+    // rollBack() on a finished transaction throws, so only unwind a live one
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    $_SESSION['cart_error'] = 'Something went wrong. Please try again.';
+    header('Location: /cart/');
+    exit;
+}
+
+unset($_SESSION['checkout_coupon_code']);
+
+// Past this point the orders are committed and the buyer has already paid by
+// ABA transfer, so nothing below may report failure back to them. Before this
+// split the whole block sat inside the transaction's try: a hiccup in the
+// low-stock queries or the template render landed in the catch above, which
+// called rollBack() on a finished transaction — a fatal — and otherwise told
+// the buyer to try again on an order that had in fact gone through.
+try {
+    // Low stock alerts
     foreach ($grouped as $group) {
         foreach ($group['items'] as $item) {
             $lowStmt = $pdo->prepare('
@@ -438,11 +470,9 @@ try {
     ]);
     if ($html !== '') send_email($buyer['email'], $subj, $html);
 
-} catch (Exception $e) {
-    $pdo->rollBack();
-    $_SESSION['cart_error'] = 'Something went wrong. Please try again.';
-    header('Location: /cart/');
-    exit;
+} catch (Throwable $e) {
+    // Best-effort follow-up. The order stands and the buyer still gets their
+    // confirmation screen; a missed low-stock alert is not their problem.
 }
 
 $_SESSION['checkout_success'] = count($grouped) > 1
