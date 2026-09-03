@@ -53,16 +53,10 @@
    as the products edit page. Single column again under 900px. */
 .settings-content--business {
   max-width: none;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  align-items: start;
-}
-
-/* The no-business notice is the only card without a pair, so it takes the
-   full row */
-.settings-content--business > .settings-section--full {
-  grid-column: 1 / -1;
+  /* CSS columns instead of grid: cards pack top to bottom in each column, so
+     a short card never leaves a hole beside a tall neighbour */
+  columns: 2;
+  column-gap: 1.5rem;
 }
 
 .settings-content--business .settings-section {
@@ -70,28 +64,27 @@
   border-radius: var(--radius);
   padding: 1.25rem;
   background: #fff;
+  /* Never split one card across the two columns */
+  break-inside: avoid;
+  margin-bottom: 1.5rem;
 }
 
-/* Messages and status banners span both columns; the grid gap already
-   provides the spacing, so their own margins go */
+/* Messages, status banners and the no-business notice sit above the cards
+   and span both columns */
+.settings-content--business > .settings-msg,
+.settings-content--business > .biz-rejected,
+.settings-content--business > .settings-section--full {
+  column-span: all;
+}
+
 .settings-content--business > .settings-msg,
 .settings-content--business > .biz-rejected {
-  grid-column: 1 / -1;
-  margin: 0;
-}
-
-/* The shared Save button for the business form sits on its own full row,
-   right-aligned, between the business cards and the Address/Bank QR cards.
-   Doubled class so it outranks .btn-save's own margin-top below. */
-.settings-content--business > .btn-save.biz-save {
-  grid-column: 1 / -1;
-  justify-self: end;
-  margin: 0;
+  margin: 0 0 1.5rem;
 }
 
 @media (max-width: 900px) {
   .settings-content--business {
-    grid-template-columns: 1fr;
+    columns: 1;
   }
 }
 

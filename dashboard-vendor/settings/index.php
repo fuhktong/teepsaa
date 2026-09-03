@@ -236,6 +236,17 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 
             <div class="settings-section">
                 <h2><?= $t['vendor_biz_details_heading'] ?></h2>
+                <!-- Same show-then-edit pattern as the Address card: current
+                     values, then the inputs behind an Edit toggle. -->
+                <div class="addr-display">
+                    <p class="addr-display-line"><?= htmlspecialchars(pick_lang($business['name'], $business['name_km'] ?? null)) ?></p>
+                    <?php if (lang_field($business, 'description')): ?>
+                    <p class="addr-display-notes"><?= htmlspecialchars(lang_field($business, 'description')) ?></p>
+                    <?php endif; ?>
+                </div>
+                <details class="addr-edit">
+                    <summary class="addr-edit-toggle"><?= $t['settings_edit'] ?></summary>
+                    <div class="addr-edit-body">
                 <form method="POST" action="/dashboard-vendor/settings/business-action.php" id="business-form">
                     <?= csrf_input() ?>
                     <div class="settings-field">
@@ -256,12 +267,31 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                         <textarea id="description_km" name="description_km" rows="4" maxlength="160" placeholder="ការពិពណ៌នាហាងជាភាសាខ្មែរ" oninput="document.getElementById('desc-km-count').textContent = 160 - this.value.length"><?= htmlspecialchars($business['description_km'] ?? '') ?></textarea>
                         <p class="field-hint" style="margin:0.3rem 0 0"><span id="desc-km-count"><?= 160 - mb_strlen($business['description_km'] ?? '') ?></span> <?= $t['vendor_biz_desc_count'] ?></p>
                     </div>
+                    <button type="submit" class="btn-save"><?= $t['settings_save'] ?></button>
                 </form>
+                    </div>
+                </details>
             </div>
 
             <?php if (!empty($catTree)): ?>
+            <?php
+            // Current picks, shown with their bilingual labels
+            $bizCatNames    = array_filter(array_map('trim', explode(',', $business['category'] ?? '')));
+            $catLabelByName = array_column($catTree, 'label', 'name');
+            $bizCatLabels   = array_map(fn($n) => $catLabelByName[$n] ?? $n, $bizCatNames);
+            ?>
             <div class="settings-section">
                 <h2><?= $t['vendor_settings_categories'] ?></h2>
+                <?php if ($bizCatLabels): ?>
+                <div class="addr-display">
+                    <p class="addr-display-line"><?= htmlspecialchars(implode(', ', $bizCatLabels)) ?></p>
+                </div>
+                <?php else: ?>
+                <p class="addr-display-empty"><?= $t['vendor_no_categories'] ?></p>
+                <?php endif; ?>
+                <details class="addr-edit"<?= !$bizCatLabels ? ' open' : '' ?>>
+                    <summary class="addr-edit-toggle"><?= $t['settings_edit'] ?></summary>
+                    <div class="addr-edit-body">
                 <p class="field-hint" style="margin-bottom:1.25rem"><?= $t['vendor_cat_hint'] ?></p>
                 <div class="settings-field">
                     <ul class="psp-cat-chosen" data-cat-chosen hidden></ul>
@@ -272,16 +302,24 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     </div>
                     <input type="hidden" id="biz-category" name="category" form="business-form" value="<?= htmlspecialchars($business['category'] ?? '') ?>">
                 </div>
+                <button type="submit" class="btn-save" form="business-form"><?= $t['settings_save'] ?></button>
+                    </div>
+                </details>
             </div>
             <?php endif; ?>
 
             <div class="settings-section">
                 <h2><?= $t['vendor_settings_banner'] ?></h2>
+                <?php if ($business['banner']): ?>
+                <img src="/uploads/<?= htmlspecialchars($business['banner']) ?>" alt="" class="banner-preview">
+                <?php else: ?>
+                <p class="addr-display-empty"><?= $t['vendor_no_banner'] ?></p>
+                <?php endif; ?>
+                <details class="addr-edit"<?= !$business['banner'] ? ' open' : '' ?>>
+                    <summary class="addr-edit-toggle"><?= $t['settings_edit'] ?></summary>
+                    <div class="addr-edit-body">
                 <p class="field-hint" style="margin-bottom:1.25rem"><?= $t['vendor_settings_banner_hint'] ?></p>
                 <div class="settings-field">
-                    <?php if ($business['banner']): ?>
-                        <img src="/uploads/<?= htmlspecialchars($business['banner']) ?>" alt="" class="banner-preview">
-                    <?php endif; ?>
                     <div class="banner-actions">
                         <form method="POST" action="/dashboard-vendor/settings/banner-action.php" enctype="multipart/form-data" style="display:inline">
                             <?= csrf_input() ?>
@@ -298,18 +336,38 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     </div>
                     <p class="field-hint"><?= $t['vendor_banner_upload_hint'] ?></p>
                 </div>
+                    </div>
+                </details>
             </div>
 
             <!-- Storefront layout — what shows on the shop page and in what order. -->
             <div class="settings-section">
                 <h2><?= $t['storefront_heading'] ?></h2>
                 <?php if (empty($sfProducts)): ?>
-                <p class="field-hint"><?= $t['storefront_no_products'] ?></p>
+                <p class="addr-display-empty" style="margin-bottom:0"><?= $t['storefront_no_products'] ?></p>
                 <?php else: ?>
+                <?php
+                // Current layout, summarised: the featured pick, then the slot order
+                $sfById         = array_column($sfProducts, null, 'id');
+                $sfFeaturedName = ($sfFeatured && isset($sfById[$sfFeatured])) ? lang_field($sfById[$sfFeatured], 'name') : '';
+                $sfSlotNames    = [];
+                foreach ($sfSlots as $slotPid) {
+                    if (isset($sfById[$slotPid])) $sfSlotNames[] = lang_field($sfById[$slotPid], 'name');
+                }
+                ?>
+                <div class="addr-display">
+                    <p class="addr-display-line"><?= $t['storefront_featured_label'] ?>: <?= htmlspecialchars($sfFeaturedName ?: $t['storefront_none']) ?></p>
+                    <?php if ($sfSlotNames): ?>
+                    <p class="addr-display-notes"><?= htmlspecialchars(implode(', ', $sfSlotNames)) ?></p>
+                    <?php endif; ?>
+                </div>
+                <details class="addr-edit">
+                    <summary class="addr-edit-toggle"><?= $t['settings_edit'] ?></summary>
+                    <div class="addr-edit-body">
                 <p class="field-hint" style="margin-bottom:1.25rem"><?= $t['storefront_intro'] ?></p>
 
-                <!-- These fields post with the business form above (form="business-form"),
-                     so the single Save button at the bottom saves everything at once. -->
+                <!-- These fields post with the business form (form="business-form"),
+                     so any of the shared Save buttons saves everything at once. -->
                 <div class="settings-field">
                     <label for="featured"><?= $t['storefront_featured_label'] ?> <span class="field-hint" style="font-weight:400;display:inline"><?= $t['storefront_featured_hint'] ?></span></label>
                     <select id="featured" name="featured" form="business-form">
@@ -352,11 +410,12 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                         <button type="button" class="slot-remove" onclick="removeSlot(this)"><?= $t['storefront_remove'] ?></button>
                     </div>
                 </template>
+
+                <button type="submit" class="btn-save" form="business-form"><?= $t['settings_save'] ?></button>
+                    </div>
+                </details>
                 <?php endif; ?>
             </div>
-
-            <!-- One Save button for the business form (details + categories + storefront) -->
-            <button type="submit" form="business-form" class="btn-save biz-save"><?= $t['settings_save'] ?></button>
 
             <?php endif; ?>
 
@@ -466,10 +525,20 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
             <!-- Bank QR — folded into the Business tab (was its own tab) -->
             <div class="settings-section">
                 <h2><?= $t['vendor_settings_bank_qr'] ?></h2>
-                <p class="field-hint" style="margin-bottom:1.25rem;"><?= $t['vendor_settings_bank_hint'] ?></p>
                 <?php if ($vendor['aba_qr']): ?>
-                <img src="/uploads/<?= htmlspecialchars($vendor['aba_qr']) ?>" alt="Your Bank QR" style="width:140px;height:140px;object-fit:contain;border:1px solid #e5e7eb;border-radius:6px;display:block;margin-bottom:1.25rem;">
+                <?php if (!empty($vendor['aba_account_name'])): ?>
+                <div class="addr-display">
+                    <p class="addr-display-line"><?= htmlspecialchars($vendor['aba_account_name']) ?></p>
+                </div>
                 <?php endif; ?>
+                <img src="/uploads/<?= htmlspecialchars($vendor['aba_qr']) ?>" alt="Your Bank QR" style="width:140px;height:140px;object-fit:contain;border:1px solid #e5e7eb;border-radius:6px;display:block;">
+                <?php else: ?>
+                <p class="addr-display-empty"><?= $t['vendor_no_qr'] ?></p>
+                <?php endif; ?>
+                <details class="addr-edit"<?= !$vendor['aba_qr'] ? ' open' : '' ?>>
+                    <summary class="addr-edit-toggle"><?= $t['settings_edit'] ?></summary>
+                    <div class="addr-edit-body">
+                <p class="field-hint" style="margin-bottom:1.25rem;"><?= $t['vendor_settings_bank_hint'] ?></p>
                 <form method="POST" action="/dashboard-vendor/settings/aba-qr-action.php" enctype="multipart/form-data">
                     <?= csrf_input() ?>
                     <div class="settings-field">
@@ -483,6 +552,8 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     </div>
                     <button type="submit" class="btn-save"><?= $t['vendor_upload'] ?></button>
                 </form>
+                    </div>
+                </details>
             </div>
 
             <?php elseif ($tab === 'password'): ?>
