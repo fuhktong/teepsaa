@@ -81,7 +81,7 @@ if ($action === 'save_note') {
         [$subj, $html] = render_email_template($pdo, 'order_cancelled', [
             'name'    => htmlspecialchars($buyer['name']),
             'order'   => $oid,
-            'cta_url' => 'https://teepsaa.com/dashboard-buyer/order.php?id=' . $buyer['public_id'],
+            'cta_url' => 'https://teepsaa.com/orders-buyer/order.php?id=' . $buyer['public_id'],
         ]);
         if ($html !== '') send_email($buyer['email'], $subj, $html);
     }

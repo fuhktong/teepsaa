@@ -54,7 +54,7 @@ $orders = $stmt->fetchAll();
     <link rel="stylesheet" href="/footer/footer.css">
     <link rel="stylesheet" href="/order-status/order-status.css">
     <link rel="stylesheet" href="/refund-status/refund-status.css">
-    <link rel="stylesheet" href="/dashboard-buyer/dashboard-buyer.css">
+    <link rel="stylesheet" href="/orders-buyer/orders-buyer.css">
 </head>
 <body>
 
@@ -75,7 +75,7 @@ $orders = $stmt->fetchAll();
         <?php foreach ($orders as $o): ?>
         <?php $oid = date('ymd', strtotime($o['created_at'])) . '-' . str_pad($o['id'], 4, '0', STR_PAD_LEFT); ?>
         <?php $isRefund = in_array($o['status'], ['refund_requested','return_approved','return_dispatched','return_received','refunded','refund_rejected']); ?>
-        <a href="/dashboard-buyer/order.php?id=<?= $o['public_id'] ?>" style="text-decoration:none;color:inherit;">
+        <a href="/orders-buyer/order.php?id=<?= $o['public_id'] ?>" style="text-decoration:none;color:inherit;">
         <div class="order-card" data-order-id="<?= $o['id'] ?>" data-order-ref="<?= $oid ?>" data-status="<?= $o['status'] ?>">
             <div class="order-card-head">
                 <span class="order-card-id"><?= $oid ?><?php if ($isRefund): ?> <span class="refund-dot"></span><?php endif; ?></span>

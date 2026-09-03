@@ -7,8 +7,8 @@ session_start([
     'cookie_domain'   => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : '',
 ]);
 
-require __DIR__ . '/../../config/csrf.php';
-require __DIR__ . '/../../config/db.php';
+require __DIR__ . '/../config/csrf.php';
+require __DIR__ . '/../config/db.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -16,7 +16,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-buyer/settings/?tab=address');
+    header('Location: /settings-buyer/?tab=address');
     exit;
 }
 
@@ -26,13 +26,13 @@ $userId = (int)$_SESSION['user_id'];
 $action = $_POST['action'] ?? '';
 
 // Only accept a city we deliver in (Phnom Penh for now); fall back to the first.
-$cities   = require __DIR__ . '/../../config/cities.php';
+$cities   = require __DIR__ . '/../config/cities.php';
 $postCity = trim($_POST['city'] ?? '');
 $city     = in_array($postCity, $cities, true) ? $postCity : ($cities[0] ?? null);
 
 // Same completeness rule the cart and checkout enforce, so an address that
 // saves here can never bounce the buyer later
-require __DIR__ . '/../../config/delivery-address.php';
+require __DIR__ . '/../config/delivery-address.php';
 $t = delivery_lang();
 
 if ($action === 'add') {
@@ -48,7 +48,7 @@ if ($action === 'add') {
     $missing = address_missing_fields($address, $khan, $sangkat, $lat, $lng);
     if ($missing) {
         $_SESSION['settings_error'] = sprintf($t['missing_intro_save'], missing_fields_list($missing));
-        header('Location: /dashboard-buyer/settings/?tab=address&fix=' . implode(',', $missing));
+        header('Location: /settings-buyer/?tab=address&fix=' . implode(',', $missing));
         exit;
     }
 
@@ -96,7 +96,7 @@ if ($action === 'add') {
     $addr = $stmt->fetch();
 
     if (!$addr) {
-        header('Location: /dashboard-buyer/settings/?tab=address');
+        header('Location: /settings-buyer/?tab=address');
         exit;
     }
 
@@ -112,7 +112,7 @@ if ($action === 'add') {
     $missing = address_missing_fields($address, $khan, $sangkat, $lat, $lng);
     if ($missing) {
         $_SESSION['settings_error'] = sprintf($t['missing_intro_save'], missing_fields_list($missing));
-        header('Location: /dashboard-buyer/settings/?tab=address&edit=' . $addrId . '&fix=' . implode(',', $missing));
+        header('Location: /settings-buyer/?tab=address&edit=' . $addrId . '&fix=' . implode(',', $missing));
         exit;
     }
 
@@ -138,7 +138,7 @@ if ($action === 'add') {
     $addr = $stmt->fetch();
 
     if (!$addr) {
-        header('Location: /dashboard-buyer/settings/?tab=address');
+        header('Location: /settings-buyer/?tab=address');
         exit;
     }
 
@@ -180,5 +180,5 @@ if ($action === 'add') {
     $_SESSION['settings_success'] = 'Address removed.';
 }
 
-header('Location: /dashboard-buyer/settings/?tab=address');
+header('Location: /settings-buyer/?tab=address');
 exit;

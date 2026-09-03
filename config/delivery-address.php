@@ -81,12 +81,12 @@ function missing_fields_prompt(array $keys, string $context, ?int $defaultAddres
     );
 
     if ($onlyPhone) {
-        return [$message, '/dashboard-buyer/settings/?tab=account'];
+        return [$message, '/settings-buyer/?tab=account'];
     }
 
     // Point at the address that is actually incomplete — the default one, which
     // is what the buyers table mirrors — so the edit form opens prefilled
-    $url = '/dashboard-buyer/settings/?tab=address'
+    $url = '/settings-buyer/?tab=address'
          . ($defaultAddressId ? '&edit=' . $defaultAddressId : '')
          . '&fix=' . implode(',', array_diff($keys, ['phone']));
 

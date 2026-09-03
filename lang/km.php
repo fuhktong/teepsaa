@@ -217,7 +217,7 @@ return [
     'rstatus_refunded'   => 'បានសងវិញ',
     'rstatus_rejected'   => 'សំណងត្រូវបានបដិសេធ',
 
-    // ── Order detail (dashboard-buyer/order.php) ─────────────────────────
+    // ── Order detail (orders-buyer/order.php) ─────────────────────────
     'order_badge_pending'           => 'កំពុងរង់ចាំ',
     'order_badge_paid'              => 'បានបង់',
     'order_badge_dispatched'        => 'បានដឹកជញ្ជូន',

@@ -200,11 +200,11 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                         $bNotifCount = (int)$bNotifStmt->fetchColumn();
                         $buyerPath    = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
                         $buyerSection = '';
-                        if (strpos($buyerPath, '/dashboard-buyer/') === 0)   $buyerSection = 'orders';
+                        if (strpos($buyerPath, '/orders-buyer/') === 0)   $buyerSection = 'orders';
                         elseif (strpos($buyerPath, '/wishlist/') === 0)     $buyerSection = 'wishlist';
                         elseif (strpos($buyerPath, '/messages-buyer/') === 0) $buyerSection = 'messages';
                     ?>
-                    <a href="/dashboard-buyer/" class="<?= $buyerSection === 'orders' ? 'active' : '' ?>"><?= $t['nav_orders'] ?></a>
+                    <a href="/orders-buyer/" class="<?= $buyerSection === 'orders' ? 'active' : '' ?>"><?= $t['nav_orders'] ?></a>
                     <a href="/wishlist/" class="<?= $buyerSection === 'wishlist' ? 'active' : '' ?>"><?= $t['nav_wishlist'] ?></a>
                     <a href="/messages-buyer/" class="<?= $buyerSection === 'messages' ? 'active' : '' ?>"><?= $buyerUnread ? $t['nav_messages'] . '&nbsp;<span class="nav-msg-badge">' . $buyerUnread . '</span>' : $t['nav_messages'] ?></a>
                     <div class="bell-wrap">
@@ -235,7 +235,7 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                             <?php endif; ?>
                         </button>
                         <div class="user-dropdown" id="user-dropdown">
-                            <a href="/dashboard-buyer/settings/"><?= $t['nav_settings'] ?></a>
+                            <a href="/settings-buyer/"><?= $t['nav_settings'] ?></a>
                             <a href="/logout/logout.php"><?= $t['nav_logout'] ?></a>
                         </div>
                     </div>
@@ -288,10 +288,10 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                 <a href="/logout/logout.php" class="mobile-nav-link"><?= $t['nav_logout'] ?></a>
             <?php else: ?>
                 <a href="/cart/" class="mobile-nav-link"><?= $t['nav_cart'] ?><?= ($cartBadge ?? '') !== '' ? ' (' . $cartBadge . ')' : '' ?></a>
-                <a href="/dashboard-buyer/" class="mobile-nav-link <?= ($buyerSection ?? '') === 'orders' ? 'active' : '' ?>"><?= $t['nav_orders'] ?></a>
+                <a href="/orders-buyer/" class="mobile-nav-link <?= ($buyerSection ?? '') === 'orders' ? 'active' : '' ?>"><?= $t['nav_orders'] ?></a>
                 <a href="/wishlist/" class="mobile-nav-link <?= ($buyerSection ?? '') === 'wishlist' ? 'active' : '' ?>"><?= $t['nav_wishlist'] ?></a>
                 <a href="/messages-buyer/" class="mobile-nav-link <?= ($buyerSection ?? '') === 'messages' ? 'active' : '' ?>"><?= ($buyerUnread ?? 0) > 0 ? $t['nav_messages'] . ' (' . $buyerUnread . ')' : $t['nav_messages'] ?></a>
-                <a href="/dashboard-buyer/settings/" class="mobile-nav-link"><?= $t['nav_settings'] ?><?= ($bNotifCount ?? 0) > 0 ? ' (' . ($bNotifCount ?? 0) . ')' : '' ?></a>
+                <a href="/settings-buyer/" class="mobile-nav-link"><?= $t['nav_settings'] ?><?= ($bNotifCount ?? 0) > 0 ? ' (' . ($bNotifCount ?? 0) . ')' : '' ?></a>
                 <a href="/logout/logout.php" class="mobile-nav-link"><?= $t['nav_logout'] ?></a>
             <?php endif; ?>
         <?php else: ?>

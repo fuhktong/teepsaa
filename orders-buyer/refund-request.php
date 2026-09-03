@@ -17,7 +17,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-buyer/');
+    header('Location: /orders-buyer/');
     exit;
 }
 
@@ -34,18 +34,18 @@ $existing = $pidStmt->fetch();
 $orderPublicId = $existing['public_id'] ?? '';
 
 if (!$orderId || !$reason) {
-    header($orderId ? 'Location: /dashboard-buyer/order.php?id=' . $orderPublicId : 'Location: /dashboard-buyer/');
+    header($orderId ? 'Location: /orders-buyer/order.php?id=' . $orderPublicId : 'Location: /orders-buyer/');
     exit;
 }
 
 if (!$existing) {
-    header('Location: /dashboard-buyer/order.php?id=' . $orderPublicId);
+    header('Location: /orders-buyer/order.php?id=' . $orderPublicId);
     exit;
 }
 
 // 24-hour refund window — only enforced when delivered_at is set
 if ($existing['delivered_at'] && (time() - strtotime($existing['delivered_at'])) >= PAYOUT_WINDOW_SECONDS) {
-    header('Location: /dashboard-buyer/order.php?id=' . $orderPublicId);
+    header('Location: /orders-buyer/order.php?id=' . $orderPublicId);
     exit;
 }
 
@@ -80,5 +80,5 @@ if ($stmt->rowCount()) {
     }
 }
 
-header('Location: /dashboard-buyer/order.php?id=' . $orderPublicId);
+header('Location: /orders-buyer/order.php?id=' . $orderPublicId);
 exit;

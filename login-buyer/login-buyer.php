@@ -53,5 +53,5 @@ $_SESSION['user_name']         = $user['name'];
 $_SESSION['user_avatar']       = $user['avatar'] ?? '';
 $_SESSION['user_avatar_color'] = isset($user['avatar_color']) ? (int)$user['avatar_color'] : null;
 if (!empty($user['lang'])) $_SESSION['lang'] = $user['lang']; // restore saved language preference
-header('Location: /dashboard-buyer/');
+header('Location: /orders-buyer/');
 exit;

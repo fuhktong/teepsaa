@@ -29,10 +29,10 @@ if (empty($_SESSION['user_id'])) {
     ];
 } else {
     $accountLinks = [
-        ['/dashboard-buyer/',          $t['nav_orders']],
+        ['/orders-buyer/',          $t['nav_orders']],
         ['/wishlist/',                 $t['nav_wishlist']],
         ['/messages-buyer/',           $t['nav_messages']],
-        ['/dashboard-buyer/settings/', $t['nav_settings']],
+        ['/settings-buyer/', $t['nav_settings']],
     ];
 }
 ?>

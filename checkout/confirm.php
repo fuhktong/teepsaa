@@ -434,7 +434,7 @@ try {
         . $notesRow;
     [$subj, $html] = render_email_template($pdo, 'order_received', [
         'summary' => $emailSummary,
-        'cta_url' => 'https://teepsaa.com/dashboard-buyer/',
+        'cta_url' => 'https://teepsaa.com/orders-buyer/',
     ]);
     if ($html !== '') send_email($buyer['email'], $subj, $html);
 

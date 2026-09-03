@@ -217,7 +217,7 @@ return [
     'rstatus_refunded'   => 'Refunded',
     'rstatus_rejected'   => 'Refund rejected',
 
-    // ── Order detail (dashboard-buyer/order.php) ─────────────────────────
+    // ── Order detail (orders-buyer/order.php) ─────────────────────────
     'order_badge_pending'           => 'Pending',
     'order_badge_paid'              => 'Paid',
     'order_badge_dispatched'        => 'Dispatched',

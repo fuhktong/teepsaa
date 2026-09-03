@@ -65,11 +65,11 @@ if ($action === 'confirm') {
     if ($buyer) {
         $oid = order_display_id((int)$buyer['order_id'], $buyer['created_at']);
         $msg = 'Your payment has been confirmed — order #' . $oid . ' is being prepared.';
-        notify($pdo, 'buyer', (int)$buyer['buyer_id'], 'payment_confirmed', $msg, '/dashboard-buyer/order.php?id=' . $buyer['order_public_id'], ['ref' => $oid]);
+        notify($pdo, 'buyer', (int)$buyer['buyer_id'], 'payment_confirmed', $msg, '/orders-buyer/order.php?id=' . $buyer['order_public_id'], ['ref' => $oid]);
         [$subj, $html] = render_email_template($pdo, 'payment_confirmed', [
             'name'    => htmlspecialchars($buyer['name']),
             'order'   => $oid,
-            'cta_url' => 'https://teepsaa.com/dashboard-buyer/order.php?id=' . $buyer['order_public_id'],
+            'cta_url' => 'https://teepsaa.com/orders-buyer/order.php?id=' . $buyer['order_public_id'],
         ]);
         if ($html !== '') send_email($buyer['email'], $subj, $html);
     }
@@ -129,7 +129,7 @@ if ($action === 'confirm') {
         [$subj, $html] = render_email_template($pdo, 'order_cancelled', [
             'name'    => htmlspecialchars($row['name']),
             'order'   => $oid,
-            'cta_url' => 'https://teepsaa.com/dashboard-buyer/order.php?id=' . $row['public_id'],
+            'cta_url' => 'https://teepsaa.com/orders-buyer/order.php?id=' . $row['public_id'],
         ]);
         if ($html !== '') send_email($row['email'], $subj, $html);
     }

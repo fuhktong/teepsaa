@@ -172,11 +172,11 @@ unset($_SESSION['cart_success'], $_SESSION['cart_error']);
                 <?php $d = $group['delivery']; ?>
                 <?php if ($d['state'] === 'no_address'): ?>
                     <div class="cart-delivery cart-delivery--cta">
-                        <?= $t['cart_grab_delivery'] ?> — <a href="/dashboard-buyer/settings/?tab=address"><?= $t['cart_set_address'] ?></a>
+                        <?= $t['cart_grab_delivery'] ?> — <a href="/settings-buyer/?tab=address"><?= $t['cart_set_address'] ?></a>
                     </div>
                 <?php elseif ($d['state'] === 'no_pin'): ?>
                     <div class="cart-delivery cart-delivery--muted">
-                        <?= $t['cart_grab_delivery'] ?> — <a href="/dashboard-buyer/settings/?tab=address"><?= $t['cart_set_pin'] ?></a>
+                        <?= $t['cart_grab_delivery'] ?> — <a href="/settings-buyer/?tab=address"><?= $t['cart_set_pin'] ?></a>
                     </div>
                 <?php elseif ($d['state'] === 'out_of_range'): ?>
                     <div class="cart-delivery cart-delivery--error">

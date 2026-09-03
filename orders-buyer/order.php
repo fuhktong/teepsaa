@@ -22,7 +22,7 @@ $t = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km']) ? $lang : 'e
 $userId   = $_SESSION['user_id'];
 $publicId = $_GET['id'] ?? '';
 if ($publicId === '') {
-    header('Location: /dashboard-buyer/');
+    header('Location: /orders-buyer/');
     exit;
 }
 
@@ -44,7 +44,7 @@ $stmt->execute([$publicId, $userId]);
 $o = $stmt->fetch();
 
 if (!$o) {
-    header('Location: /dashboard-buyer/');
+    header('Location: /orders-buyer/');
     exit;
 }
 $orderId = (int)$o['id'];
@@ -97,7 +97,7 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
     <link rel="stylesheet" href="/order-status/order-status.css">
     <link rel="stylesheet" href="/refund-status/refund-status.css">
     <link rel="stylesheet" href="/popup/popup.css">
-    <link rel="stylesheet" href="/dashboard-buyer/dashboard-buyer.css">
+    <link rel="stylesheet" href="/orders-buyer/orders-buyer.css">
 </head>
 <body>
 
@@ -109,7 +109,7 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
     <?php unset($_SESSION['flash_success']); ?>
     <?php endif; ?>
 
-    <a href="/dashboard-buyer/" style="display:inline-block;font-size:0.875rem;color:#6b7280;text-decoration:none;margin-bottom:1.25rem;">← My Orders</a>
+    <a href="/orders-buyer/" style="display:inline-block;font-size:0.875rem;color:#6b7280;text-decoration:none;margin-bottom:1.25rem;">← My Orders</a>
 
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap;">
         <h1 style="margin-bottom:0;"><?= $oid ?><?php if ($isRefund): ?> <span class="refund-dot"></span><?php endif; ?></h1>
@@ -190,7 +190,7 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
     <?php elseif ($o['status'] === 'dispatched'): ?>
     <hr class="popup-divider">
     <div class="popup-actions">
-        <form method="POST" action="/dashboard-buyer/confirm-delivery.php">
+        <form method="POST" action="/orders-buyer/confirm-delivery.php">
             <?= csrf_input() ?>
             <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
             <button type="submit" class="btn-confirm"><?= $t['order_confirm_delivery'] ?></button>
@@ -208,7 +208,7 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
             <div class="popup-section-label"><?= $t['order_issue'] ?></div>
             <?php if ($windowOpen): ?>
             <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.75rem;"><?= sprintf($t['order_refund_info'], '<strong>$' . number_format($o['subtotal'] - $o['discount_amount'], 2) . '</strong>') ?><?php if ($deadline): ?> <strong><?= sprintf($t['order_available_until'], htmlspecialchars($deadline)) ?></strong><?php endif; ?></p>
-            <form method="POST" action="/dashboard-buyer/refund-request.php" class="refund-request-form">
+            <form method="POST" action="/orders-buyer/refund-request.php" class="refund-request-form">
                 <?= csrf_input() ?>
                 <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
                 <select name="reason_preset" class="refund-reason-input refund-reason-select" required>
@@ -245,7 +245,7 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
     <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.25rem;"><?= $t['order_send_to'] ?> <strong><?= htmlspecialchars($retAddress) ?></strong><?php if ($o['biz_address_notes']): ?> — <?= htmlspecialchars($o['biz_address_notes']) ?><?php endif; ?></p>
     <?php endif; ?>
     <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.75rem;"><?= $t['order_return_instructions'] ?></p>
-    <form method="POST" action="/dashboard-buyer/return-dispatch.php" class="refund-request-form">
+    <form method="POST" action="/orders-buyer/return-dispatch.php" class="refund-request-form">
         <?= csrf_input() ?>
         <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
         <input type="url" name="return_tracking_url" required placeholder="<?= htmlspecialchars($t['order_return_url_placeholder']) ?>" class="refund-reason-input" style="resize:none;height:auto;padding:0.5rem 0.65rem;">

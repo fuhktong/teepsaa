@@ -90,12 +90,12 @@ if ($emailKey) {
         [$subj, $html] = render_email_template($pdo, $emailKey, [
             'name'    => htmlspecialchars($buyer['name']),
             'order'   => $oid,
-            'cta_url' => 'https://teepsaa.com/dashboard-buyer/order.php?id=' . $buyer['public_id'],
+            'cta_url' => 'https://teepsaa.com/orders-buyer/order.php?id=' . $buyer['public_id'],
         ]);
         if ($html !== '') send_email($buyer['email'], $subj, $html);
         notify($pdo, 'buyer', (int)$buyer['buyer_id'], $emailKey,
             sprintf($notifMsgs[$emailKey] ?? 'Update on order #%s.', $oid),
-            '/dashboard-buyer/order.php?id=' . $buyer['public_id'], ['ref' => $oid]);
+            '/orders-buyer/order.php?id=' . $buyer['public_id'], ['ref' => $oid]);
     }
 }
 

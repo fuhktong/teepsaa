@@ -45,7 +45,7 @@ unset($_SESSION['auth_error']);
         <p class="auth-info"><?= $t['sell_cta_body1'] ?></p>
         <p class="auth-info"><?= $t['sell_cta_body2'] ?></p>
         <a class="auth-cta" href="/logout/logout.php?next=/register-vendor/"><?= $t['sell_cta_button'] ?></a>
-        <p class="auth-switch"><?= $t['sell_cta_back'] ?> <a href="/dashboard-buyer/"><?= $t['sell_cta_back_link'] ?></a></p>
+        <p class="auth-switch"><?= $t['sell_cta_back'] ?> <a href="/orders-buyer/"><?= $t['sell_cta_back_link'] ?></a></p>
         <?php else: ?>
         <h1><?= $t['register_as_vendor'] ?></h1>
         <?php if ($error): ?>

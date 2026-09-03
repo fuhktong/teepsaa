@@ -16,7 +16,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-buyer/');
+    header('Location: /orders-buyer/');
     exit;
 }
 
@@ -28,7 +28,7 @@ $rating  = (int)($_POST['rating'] ?? 0);
 $comment = trim($_POST['comment'] ?? '');
 
 if (!$itemId || $rating < 1 || $rating > 5) {
-    header('Location: /dashboard-buyer/');
+    header('Location: /orders-buyer/');
     exit;
 }
 
@@ -47,19 +47,19 @@ $stmt->execute([$itemId, $userId]);
 $item = $stmt->fetch();
 
 if (!$item) {
-    header('Location: /dashboard-buyer/');
+    header('Location: /orders-buyer/');
     exit;
 }
 
 if (!in_array($item['status'], ['delivered', 'completed'])) {
-    header('Location: /dashboard-buyer/order.php?id=' . $item['order_public_id']);
+    header('Location: /orders-buyer/order.php?id=' . $item['order_public_id']);
     exit;
 }
 
 $check = $pdo->prepare('SELECT id FROM reviews WHERE order_item_id = ?');
 $check->execute([$itemId]);
 if ($check->fetch()) {
-    header('Location: /dashboard-buyer/order.php?id=' . $item['order_public_id']);
+    header('Location: /orders-buyer/order.php?id=' . $item['order_public_id']);
     exit;
 }
 
@@ -77,5 +77,5 @@ $insert->execute([
 ]);
 
 $_SESSION['flash_success'] = 'Review submitted. Thank you!';
-header('Location: /dashboard-buyer/order.php?id=' . $item['order_public_id']);
+header('Location: /orders-buyer/order.php?id=' . $item['order_public_id']);
 exit;

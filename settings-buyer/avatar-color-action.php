@@ -7,8 +7,8 @@ session_start([
     'cookie_domain'   => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : '',
 ]);
 
-require __DIR__ . '/../../config/db.php';
-require __DIR__ . '/../../config/csrf.php';
+require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/csrf.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -16,7 +16,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-buyer/settings/?tab=account');
+    header('Location: /settings-buyer/?tab=account');
     exit;
 }
 
@@ -28,5 +28,5 @@ if ($color < 0 || $color > 4) $color = 0;
 $pdo->prepare('UPDATE buyers SET avatar_color = ? WHERE id = ?')->execute([$color, $_SESSION['user_id']]);
 $_SESSION['user_avatar_color']  = $color;
 $_SESSION['settings_success']   = 'Avatar color updated.';
-header('Location: /dashboard-buyer/settings/?tab=account');
+header('Location: /settings-buyer/?tab=account');
 exit;

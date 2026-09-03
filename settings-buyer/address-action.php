@@ -7,8 +7,8 @@ session_start([
     'cookie_domain'   => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : '',
 ]);
 
-require __DIR__ . '/../../config/db.php';
-require __DIR__ . '/../../config/csrf.php';
+require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/csrf.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -16,7 +16,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-buyer/settings/?tab=address');
+    header('Location: /settings-buyer/?tab=address');
     exit;
 }
 
@@ -34,7 +34,7 @@ $lat         = $_POST['lat'] ?? '';
 $lng         = $_POST['lng'] ?? '';
 
 // Only accept a city we deliver in (Phnom Penh for now).
-$cities = require __DIR__ . '/../../config/cities.php';
+$cities = require __DIR__ . '/../config/cities.php';
 $city   = in_array($city, $cities, true) ? $city : ($cities[0] ?? null);
 
 $latVal = $lat !== '' ? filter_var($lat, FILTER_VALIDATE_FLOAT) : null;
@@ -60,5 +60,5 @@ if ($address !== '' || $khan !== '' || $houseNumber !== '') {
 }
 
 $_SESSION['settings_success'] = 'Delivery address saved.';
-header('Location: /dashboard-buyer/settings/?tab=address');
+header('Location: /settings-buyer/?tab=address');
 exit;

@@ -7,9 +7,9 @@ session_start([
     'cookie_domain'   => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : '',
 ]);
 
-require __DIR__ . '/../../config/db.php';
-require __DIR__ . '/../../config/csrf.php';
-require __DIR__ . '/../../config/notify.php';
+require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/csrf.php';
+require __DIR__ . '/../config/notify.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -17,7 +17,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-buyer/settings/?tab=danger');
+    header('Location: /settings-buyer/?tab=danger');
     exit;
 }
 
@@ -32,7 +32,7 @@ $row = $stmt->fetch();
 
 if (!password_verify($password, $row['password'])) {
     $_SESSION['settings_error'] = 'Incorrect password.';
-    header('Location: /dashboard-buyer/settings/?tab=danger');
+    header('Location: /settings-buyer/?tab=danger');
     exit;
 }
 

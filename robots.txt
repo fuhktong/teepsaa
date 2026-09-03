@@ -6,7 +6,8 @@ Disallow: /database/
 Disallow: /cron/
 Disallow: /checkout/
 Disallow: /cart/
-Disallow: /dashboard-buyer/
+Disallow: /orders-buyer/
+Disallow: /settings-buyer/
 Disallow: /analytics/
 Disallow: /settings-vendor/
 Disallow: /business-vendor/

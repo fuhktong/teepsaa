@@ -174,7 +174,7 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
     <div class="checkout-success">
         <h1><?= $t['checkout_order_placed'] ?></h1>
         <p><?= htmlspecialchars($success) ?></p>
-        <a href="/dashboard-buyer/" class="btn-primary"><?= $t['checkout_view_orders'] ?></a>
+        <a href="/orders-buyer/" class="btn-primary"><?= $t['checkout_view_orders'] ?></a>
     </div>
 
 <?php elseif (empty($grouped)): ?>

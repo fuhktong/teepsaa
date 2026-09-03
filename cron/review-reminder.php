@@ -21,7 +21,7 @@ $orders = $stmt->fetchAll();
 
 foreach ($orders as $order) {
     $displayId = date('ymd', strtotime($order['created_at'])) . '-' . str_pad($order['id'], 4, '0', STR_PAD_LEFT);
-    $link      = SITE_URL . '/dashboard-buyer/order.php?id=' . $order['public_id'];
+    $link      = SITE_URL . '/orders-buyer/order.php?id=' . $order['public_id'];
     [$subj, $html] = render_email_template($pdo, 'review_reminder', [
         'name'    => $order['buyer_name'] ? htmlspecialchars($order['buyer_name']) : 'អ្នក',
         'order'   => $displayId,
@@ -29,6 +29,6 @@ foreach ($orders as $order) {
     ]);
     if ($html !== '') send_email($order['email'], $subj, $html);
     notify($pdo, 'buyer', $order['buyer_id'], 'review_reminder',
-        "How was order {$displayId}? Leave a review.", '/dashboard-buyer/order.php?id=' . $order['public_id'], ['ref' => $displayId]);
+        "How was order {$displayId}? Leave a review.", '/orders-buyer/order.php?id=' . $order['public_id'], ['ref' => $displayId]);
     $pdo->prepare('UPDATE orders SET review_reminder_sent_at = NOW() WHERE id = ?')->execute([$order['id']]);
 }

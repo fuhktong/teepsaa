@@ -11,7 +11,7 @@ require __DIR__ . '/../config/csrf.php';
 
 if (isset($_SESSION['user_id'])) {
     $role = $_SESSION['role'] ?? 'buyer';
-    header('Location: ' . ($role === 'vendor' ? '/analytics/' : '/dashboard-buyer/'));
+    header('Location: ' . ($role === 'vendor' ? '/analytics/' : '/orders-buyer/'));
     exit;
 }
 

@@ -15,7 +15,7 @@ if (isset($_SESSION['user_id'])) {
     } elseif (($_SESSION['role'] ?? '') === 'vendor') {
         header('Location: /analytics/');
     } else {
-        header('Location: /dashboard-buyer/');
+        header('Location: /orders-buyer/');
     }
     exit;
 }

@@ -7,8 +7,8 @@ session_start([
     'cookie_domain'   => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : '',
 ]);
 
-require __DIR__ . '/../../config/db.php';
-require __DIR__ . '/../../config/csrf.php';
+require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/csrf.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -16,7 +16,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-buyer/settings/');
+    header('Location: /settings-buyer/');
     exit;
 }
 
@@ -28,16 +28,16 @@ $phone  = trim($_POST['phone'] ?? '');
 
 if (!$name) {
     $_SESSION['settings_error'] = 'Full name is required.';
-    header('Location: /dashboard-buyer/settings/?tab=account');
+    header('Location: /settings-buyer/?tab=account');
     exit;
 }
 
 // The driver needs a number to call on delivery, so the cart requires one
 if (!$phone) {
-    require __DIR__ . '/../../config/delivery-address.php';
+    require __DIR__ . '/../config/delivery-address.php';
     $t = delivery_lang();
     $_SESSION['settings_error'] = $t['settings_phone_required'];
-    header('Location: /dashboard-buyer/settings/?tab=account');
+    header('Location: /settings-buyer/?tab=account');
     exit;
 }
 
@@ -46,5 +46,5 @@ $stmt->execute([$name, $phone, $userId]);
 
 $_SESSION['user_name']        = $name;
 $_SESSION['settings_success'] = 'Account updated.';
-header('Location: /dashboard-buyer/settings/?tab=account');
+header('Location: /settings-buyer/?tab=account');
 exit;

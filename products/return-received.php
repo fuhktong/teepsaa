@@ -47,7 +47,7 @@ if ($stmt->rowCount()) {
         $oid = order_display_id((int)$orderId, $buyer['created_at']);
         notify($pdo, 'buyer', (int)$buyer['buyer_user_id'], 'return_received',
             'Your return for order #' . $oid . ' was received — your refund is being processed.',
-            '/dashboard-buyer/order.php?id=' . $buyer['public_id'], ['ref' => $oid]);
+            '/orders-buyer/order.php?id=' . $buyer['public_id'], ['ref' => $oid]);
     }
 }
 

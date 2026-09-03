@@ -60,11 +60,11 @@ if ($stmt->rowCount() > 0) {
     if ($buyer) {
         $oid = order_display_id((int)$buyer['order_id'], $buyer['created_at']);
         $msg = 'Your order #' . $oid . ' has been dispatched and is on its way.';
-        notify($pdo, 'buyer', (int)$buyer['buyer_id'], 'order_dispatched', $msg, '/dashboard-buyer/order.php?id=' . $buyer['order_public_id'], ['ref' => $oid]);
+        notify($pdo, 'buyer', (int)$buyer['buyer_id'], 'order_dispatched', $msg, '/orders-buyer/order.php?id=' . $buyer['order_public_id'], ['ref' => $oid]);
         [$subj, $html] = render_email_template($pdo, 'order_dispatched', [
             'name'    => htmlspecialchars($buyer['name']),
             'order'   => $oid,
-            'cta_url' => 'https://teepsaa.com/dashboard-buyer/order.php?id=' . $buyer['order_public_id'],
+            'cta_url' => 'https://teepsaa.com/orders-buyer/order.php?id=' . $buyer['order_public_id'],
         ]);
         if ($html !== '') send_email($buyer['email'], $subj, $html);
     }

@@ -19,7 +19,7 @@ $userId = $_SESSION['user_id'];
 $itemId = (int)($_GET['item'] ?? 0);
 
 if (!$itemId) {
-    header('Location: /dashboard-buyer/');
+    header('Location: /orders-buyer/');
     exit;
 }
 
@@ -36,19 +36,19 @@ $stmt->execute([$itemId, $userId]);
 $item = $stmt->fetch();
 
 if (!$item) {
-    header('Location: /dashboard-buyer/');
+    header('Location: /orders-buyer/');
     exit;
 }
 
 if (!in_array($item['status'], ['delivered', 'completed'])) {
-    header('Location: /dashboard-buyer/order.php?id=' . $item['order_public_id']);
+    header('Location: /orders-buyer/order.php?id=' . $item['order_public_id']);
     exit;
 }
 
 $check = $pdo->prepare('SELECT id FROM reviews WHERE order_item_id = ?');
 $check->execute([$itemId]);
 if ($check->fetch()) {
-    header('Location: /dashboard-buyer/order.php?id=' . $item['order_public_id']);
+    header('Location: /orders-buyer/order.php?id=' . $item['order_public_id']);
     exit;
 }
 ?>
@@ -70,7 +70,7 @@ if ($check->fetch()) {
 <?php require __DIR__ . '/../header/header.php'; ?>
 
 <main>
-    <a href="/dashboard-buyer/order.php?id=<?= $item['order_public_id'] ?>" style="display:inline-block;font-size:0.875rem;color:#6b7280;text-decoration:none;margin-bottom:1.25rem;">← <?= $t['review_back_order'] ?></a>
+    <a href="/orders-buyer/order.php?id=<?= $item['order_public_id'] ?>" style="display:inline-block;font-size:0.875rem;color:#6b7280;text-decoration:none;margin-bottom:1.25rem;">← <?= $t['review_back_order'] ?></a>
 
     <h1 style="margin-bottom:0.25rem;"><?= $t['review_title'] ?></h1>
     <p style="color:#6b7280;font-size:0.875rem;margin-bottom:1.75rem;"><?= htmlspecialchars(pick_lang($item['product_name'], $item['product_name_km'] ?? null)) ?><?php if ($item['variant_label']): ?> — <?= htmlspecialchars(pick_lang($item['variant_label'], $item['variant_label_km'] ?? null)) ?><?php endif; ?></p>

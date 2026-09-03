@@ -7,9 +7,9 @@ session_start([
     'cookie_domain'   => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : '',
 ]);
 
-require __DIR__ . '/../../config/db.php';
-require __DIR__ . '/../../config/csrf.php';
-require __DIR__ . '/../../config/mapbox.php';
+require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/csrf.php';
+require __DIR__ . '/../config/mapbox.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -19,8 +19,8 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
 $userId    = $_SESSION['user_id'];
 $validTabs = ['account', 'address', 'password', 'danger'];
 $tab       = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'account';
-$locations = ($tab === 'address') ? require __DIR__ . '/../../config/phnom-penh-locations.php' : [];
-$cities    = ($tab === 'address') ? require __DIR__ . '/../../config/cities.php' : [];
+$locations = ($tab === 'address') ? require __DIR__ . '/../config/phnom-penh-locations.php' : [];
+$cities    = ($tab === 'address') ? require __DIR__ . '/../config/cities.php' : [];
 
 $savedAddresses = [];
 if ($tab === 'address') {
@@ -68,11 +68,11 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
-    <link rel="stylesheet" href="/dashboard-buyer/settings/settings.css">
+    <link rel="stylesheet" href="/settings-buyer/settings-buyer.css">
 </head>
 <body>
 
-<?php require __DIR__ . '/../../header/header.php'; ?>
+<?php require __DIR__ . '/../header/header.php'; ?>
 
 <main>
     <h1 style="margin-bottom:1.5rem"><?= $t['settings_title'] ?></h1>
@@ -107,14 +107,14 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                         <?= _avatar_svg($userId, $bColorIdx, 64) ?>
                     <?php endif; ?>
                     <div>
-                        <form method="POST" action="/dashboard-buyer/settings/avatar-action.php" enctype="multipart/form-data" style="display:inline">
+                        <form method="POST" action="/settings-buyer/avatar-action.php" enctype="multipart/form-data" style="display:inline">
                             <?= csrf_input() ?>
                             <input type="hidden" name="action" value="photo">
                             <label for="avatar" class="btn-upload"><?= $t['settings_choose_photo'] ?></label>
                             <input type="file" id="avatar" name="avatar" accept="image/jpeg,image/png" style="display:none" onchange="this.form.submit()">
                         </form>
                         <?php if ($buyer['avatar']): ?>
-                        <form method="POST" action="/dashboard-buyer/settings/avatar-action.php" style="display:inline;margin-left:0.5rem">
+                        <form method="POST" action="/settings-buyer/avatar-action.php" style="display:inline;margin-left:0.5rem">
                             <?= csrf_input() ?>
                             <input type="hidden" name="action" value="delete">
                             <button type="submit" class="btn-remove-avatar"><?= $t['settings_remove_photo'] ?></button>
@@ -127,7 +127,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <?php $avPalette = ['#4a86e8','#e06055','#f6b026','#57bb8a','#8e63ce']; ?>
                 <div style="margin-top:1.1rem">
                     <label class="settings-field-label"><?= $t['settings_avatar_color'] ?> <span class="field-hint" style="font-weight:400"><?= $t['settings_avatar_hint'] ?></span></label>
-                    <form method="POST" action="/dashboard-buyer/settings/avatar-color-action.php">
+                    <form method="POST" action="/settings-buyer/avatar-color-action.php">
                         <?= csrf_input() ?>
                         <div class="avatar-color-picker">
                             <?php foreach ($avPalette as $i => $bg): ?>
@@ -141,7 +141,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 
                 <hr class="form-divider">
 
-                <form method="POST" action="/dashboard-buyer/settings/profile-action.php">
+                <form method="POST" action="/settings-buyer/profile-action.php">
                     <?= csrf_input() ?>
                     <div class="settings-field">
                         <label for="name"><?= $t['settings_full_name'] ?></label>
@@ -190,14 +190,14 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                             <a href="?tab=address&edit=<?= $a['id'] ?>#addr-<?= $a['id'] ?>" class="btn-addr-action"><?= $t['settings_address_edit'] ?></a>
                             <?php endif; ?>
                             <?php if (!$a['is_default']): ?>
-                            <form method="POST" action="/dashboard-buyer/settings/address-book-action.php">
+                            <form method="POST" action="/settings-buyer/address-book-action.php">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="set_default">
                                 <input type="hidden" name="address_id" value="<?= $a['id'] ?>">
                                 <button type="submit" class="btn-addr-action"><?= $t['settings_set_default'] ?></button>
                             </form>
                             <?php endif; ?>
-                            <form method="POST" action="/dashboard-buyer/settings/address-book-action.php"
+                            <form method="POST" action="/settings-buyer/address-book-action.php"
                                   onsubmit="return confirm('Remove this address?')">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="delete">
@@ -207,7 +207,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                         </div>
                         <?php if ($editingAddr && (int)$a['id'] === $editAddrId): ?>
                         <div class="addr-edit-body saved-addr-edit">
-                            <form method="POST" action="/dashboard-buyer/settings/address-book-action.php">
+                            <form method="POST" action="/settings-buyer/address-book-action.php">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="edit">
                                 <input type="hidden" name="address_id" value="<?= $a['id'] ?>">
@@ -279,7 +279,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <details class="addr-edit" style="margin-top:1rem" id="new-addr-details">
                     <summary class="addr-edit-toggle"><?= $t['settings_address_add'] ?></summary>
                     <div class="addr-edit-body">
-                        <form method="POST" action="/dashboard-buyer/settings/address-book-action.php">
+                        <form method="POST" action="/settings-buyer/address-book-action.php">
                             <?= csrf_input() ?>
                             <input type="hidden" name="action" value="add">
                             <div class="settings-field">
@@ -338,7 +338,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
             <?php elseif ($tab === 'password'): ?>
             <div class="settings-section">
                 <h2><?= $t['settings_password_heading'] ?></h2>
-                <form method="POST" action="/dashboard-buyer/settings/password-action.php">
+                <form method="POST" action="/settings-buyer/password-action.php">
                     <?= csrf_input() ?>
                     <input type="text" name="username" value="<?= htmlspecialchars($buyer['email']) ?>" autocomplete="username" hidden readonly>
                     <div class="settings-field">
@@ -363,7 +363,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <h2><?= $t['settings_delete_account'] ?></h2>
                 <div class="danger-zone">
                     <p><?= $t['settings_delete_warning'] ?></p>
-                    <form method="POST" action="/dashboard-buyer/settings/delete-action.php">
+                    <form method="POST" action="/settings-buyer/delete-action.php">
                         <?= csrf_input() ?>
                         <div class="settings-field">
                             <label for="delete_password"><?= $t['settings_confirm_pw_label'] ?></label>
@@ -380,7 +380,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
     </div>
 </main>
 
-<?php require __DIR__ . '/../../footer/footer.php'; ?>
+<?php require __DIR__ . '/../footer/footer.php'; ?>
 
 <?php if ($tab === 'address'): ?>
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>

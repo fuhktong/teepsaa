@@ -17,7 +17,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-buyer/');
+    header('Location: /orders-buyer/');
     exit;
 }
 
@@ -63,5 +63,5 @@ if ($orderPublicId === null) {
     $orderPublicId = $pidStmt->fetchColumn() ?: '';
 }
 
-header('Location: /dashboard-buyer/order.php?id=' . $orderPublicId);
+header('Location: /orders-buyer/order.php?id=' . $orderPublicId);
 exit;
