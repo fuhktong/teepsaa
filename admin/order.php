@@ -159,10 +159,10 @@ $adminTab     = 'orders';
     </div>
 
     <?php if ($success): ?>
-        <p class="admin-success"><?= htmlspecialchars($success) ?></p>
+        <p class="admin-success od-flash"><?= htmlspecialchars($success) ?></p>
     <?php endif; ?>
     <?php if ($error): ?>
-        <p class="admin-error"><?= htmlspecialchars($error) ?></p>
+        <p class="admin-error od-flash"><?= htmlspecialchars($error) ?></p>
     <?php endif; ?>
 
     <div class="od-grid">

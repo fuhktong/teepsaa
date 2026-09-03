@@ -71,49 +71,79 @@ These were the never-started tests. All need a fresh vendor registered with a
       both the business page and the product disappear from search, homepage
       and category pages. A stale product still reachable by direct URL is the
       failure to watch for.
-- [ ] **The vendor portal rejects buyer credentials.** Enter a known-good
+- [x] **The vendor portal rejects buyer credentials.** Enter a known-good
       _buyer_ email and password at `/login-vendor/`. It must fail with the
       same generic "Invalid email or password" — it must not reveal that the
       account exists as a buyer. (The mirror of this, vendor creds at
       `/login-buyer/`, already passed.)
-- [ ] **Vendor forgot-password works end to end.** Request a reset at
+- [x] **Vendor forgot-password works end to end.** Request a reset at
       `/forgot-password-vendor/`, click the emailed link, set a new password.
       Then confirm three things: the old password no longer works, the new one
       does, and clicking the same reset link a second time is rejected.
 
-## 1b. Seven gaps hiding inside ticked boxes
+## 1b. Six tests that were marked done but never fully ran
 
-These items are ticked, but their notes admit part of the test never ran.
-They're listed here as real work.
+In the old checklists these were ticked off, but the note next to each one
+admitted part of the test was skipped. That skipped part is what you're
+testing here. Each item says which accounts you need and where to click.
 
-- [ ] **Live status polling.** Order statuses did advance correctly in the live
-      run, but the auto-refresh itself was never watched. Open a buyer's order
-      page and leave it sitting. In another browser, advance the order as
-      vendor/admin. The buyer's page should update on its own, with no manual
-      reload.
-- [ ] **Notification bell actions.** Bells were confirmed _arriving_ during the
-      refund run. Now test the actions: click a single notification and confirm
-      it goes read and the count drops by one; then use mark-all-read and
-      confirm the count hits zero and stays zero after a reload.
-- [ ] **Vendor new-order and low-stock bells.** Only the refund-request bell was
-      confirmed. Place an order against a vendor and check the bell fires; set a
-      product's low-stock threshold just above its stock, sell one, and check
-      that bell fires too.
-- [ ] **The final payout click.** The payout _window_ gating was verified in
-      both states with a backdated `delivered_at`, and the server-side guard was
-      added — but "mark paid out" was never actually clicked. Click it on a real
-      delivered order and confirm the order moves to completed, the vendor gets
-      the `payout_sent` email, and the order leaves the payouts queue.
-- [ ] **The refund reject path.** The full happy-path refund cycle passed. Run
-      the other branch: buyer requests a refund, admin _rejects_ it. The buyer
-      should get the `refund_rejected` email and the order should return to a
-      sane status rather than getting stuck.
-- [ ] **Vendor wrong-code and resend on verification.** The vendor verification
-      email arrived in the live registration, but only the happy path ran. Enter
-      a wrong code (must be rejected), then hit resend and confirm the new code
-      works _and_ the old one has stopped working.
-- [ ] **Buyer credentials at the vendor portal** — this is the same test as the
-      last item in 1a. Tick both together.
+- [ ] **A buyer's order page updates by itself.** Needs a buyer and the admin
+      (or vendor) in two different browsers.
+      1. Browser 1: log in as a buyer who has an order in progress and open
+         that order at `/orders-buyer/order.php?id=…`. Leave it open, don't
+         touch it.
+      2. Browser 2: move that same order forward — e.g. as admin confirm its
+         payment (admin → Orders → Payments), or as the vendor dispatch it
+         (vendor → Orders).
+      3. Watch browser 1: within ~15 seconds the buyer's page should refresh
+         itself and show the new status **without you touching it** (the page
+         polls every 15s and reloads when the status changes). If it only
+         changes after you refresh it yourself, the test failed.
+         (feature built 2026-09-03 — this page had no auto-update before)
+- [ ] **Clicking a bell notification marks it read.** Any account with unread
+      notifications works — easiest is the vendor from the test above, who just
+      got one.
+      1. Click the bell in the header. Note the unread count.
+      2. Click one notification. The count should drop by one.
+      3. Click "mark all read". Count goes to zero.
+      4. Reload the page. Count must still be zero — if the unread count comes
+         back after a reload, the "read" never reached the database.
+- [ ] **The vendor bell fires for a new order and for low stock.** Needs a
+      buyer, a vendor, and the admin.
+      1. New-order bell: as a buyer, order one of the vendor's products; as
+         admin, confirm the payment (admin → Orders → Payments). Log in as the
+         vendor — the bell should show the new paid order.
+      2. Low-stock bell: as the vendor, edit a product so its low-stock
+         threshold is _higher_ than its current stock (e.g. stock 3,
+         threshold 5). As the buyer, buy one. The vendor's bell should show a
+         low-stock notification.
+- [ ] **"Mark paid out" actually works.** As admin, on an order the buyer has
+      confirmed as delivered (the server's payout window is currently 60
+      seconds, so a minute after delivery is enough).
+      1. Admin → Orders → Payouts. The order should be listed.
+      2. Click "mark paid out".
+      3. Confirm three things: the order's status becomes completed, it is
+         gone from the payouts list, and the vendor receives the `payout_sent`
+         email.
+- [ ] **Rejecting a refund doesn't strand the order.** Needs a buyer with a
+      delivered order, and the admin.
+      1. As the buyer, open the order at `/orders-buyer/` and request a refund.
+      2. As admin, go to Orders → Refunds and _reject_ it (the approve path
+         already passed — you're testing reject).
+      3. The buyer should get the `refund_rejected` email, and the buyer's
+         order page should show a normal status again (delivered), not be
+         stuck saying refund requested or show anything broken.
+- [ ] **A wrong vendor verification code is rejected, and resend works.**
+      Register a fresh vendor with a +alias to get to the "enter the code we
+      emailed you" screen.
+      1. Type a wrong code — it must be rejected with an error.
+      2. Click resend. A second email arrives with a new code.
+      3. The old code from the first email must now fail, and the new code
+         must work.
+
+(The old list had a seventh item — buyer credentials rejected at
+`/login-vendor/` — but that's the same test as the last item in 1a, which
+already passed.)
 
 ---
 
@@ -133,7 +163,7 @@ turned up is written up under **Findings** near the end of this file.
       the branch covering bugs, security and inefficiency. You have to trigger
       it yourself — Claude can't launch it.
 - [ ] **Feed it in sections rather than all at once**, most-recent work first:
-      `products/` and `dashboard-vendor/`, then `cart/ checkout/ product/
+      `products/`, `analytics/`, `settings-vendor/` and `business-vendor/`, then `cart/ checkout/ product/
 search/`, then `header/ footer/ config/ api/`.
 
 ## 2b. PHP and server
@@ -205,7 +235,7 @@ Cheap to do and it shrinks what you have to maintain forever.
       (resolved 2026-08-31 — the file no longer exists anywhere in the tree and
       nothing references it. Already deleted.)
 - [x] **Find unused CSS classes**, especially after the `products/` and
-      `dashboard-vendor/` refactors. Pull the class names out of a page's CSS
+      vendor-portal refactors. Pull the class names out of a page's CSS
       and grep the matching PHP for each.
       (verified 2026-08-31 — ~40 dead classes found, listed under Findings.
       Note `--modifier` classes built by string concatenation
@@ -461,8 +491,8 @@ were excluded, so these are genuinely unreferenced:
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `admin/admin.css`                        | `add-cat-form`, `admin-card-actions`, `admin-card-info`, `admin-list`, `cat-desc`, `cat-section`, `cat-table`, `order-card-business`, `payout-card`, `payout-no-qr`, `payout-note`, `payout-qr`, `refund-popup-note`, `refund-popup-reason`, `review-vendor-sub`, `section-divider`, `suspend-details`, `suspend-summary` |
 | `popup/popup.css`                        | `popup-close`, `popup-inline-form`, `popup-modal`, `popup-overlay`, `popup-payout-box`, `popup-photos`, `popup-status-bar`, `popup-title`, `popup-total--payout`                                                                                                                                                          |
-| `dashboard-buyer/dashboard-buyer.css`    | `order-card-action`, `order-card-business`, `order-track-link`                                                                                                                                                                                                                                                            |
-| `dashboard-buyer/settings/settings.css`  | `avatar-form`, `settings-field-row`                                                                                                                                                                                                                                                                                       |
+| `orders-buyer/orders-buyer.css`    | `order-card-action`, `order-card-business`, `order-track-link`                                                                                                                                                                                                                                                            |
+| `settings-buyer/settings-buyer.css`  | `avatar-form`, `settings-field-row`                                                                                                                                                                                                                                                                                       |
 | `privacy/privacy.css`, `terms/terms.css` | `legal-effective`, `legal-note` (both files)                                                                                                                                                                                                                                                                              |
 | `cart/cart.css`                          | `cart-total-row`                                                                                                                                                                                                                                                                                                          |
 | `checkout/checkout.css`                  | `checkout-total-row`                                                                                                                                                                                                                                                                                                      |
@@ -528,7 +558,7 @@ Reference, not a checklist. Kept so you don't have to grep for it.
 | Password reset link              | `reset_password`    | `forgot-password-buyer/request.php`                   |
 | Order placed                     | `order_received`    | `checkout/confirm.php`                                |
 | Payment confirmed by admin       | `payment_confirmed` | `admin/payments-action.php`                           |
-| Order dispatched                 | `order_dispatched`  | `dashboard-vendor/dispatch.php`                       |
+| Order dispatched                 | `order_dispatched`  | `analytics/dispatch.php`                       |
 | Abandoned cart reminder          | `abandoned_cart`    | `cron/abandoned-cart.php` (daily)                     |
 | Review reminder after delivery   | `review_reminder`   | `cron/review-reminder.php` (daily)                    |
 | Welcome after verification ⚠     | `welcome_buyer`     | `verify-email/verify.php`                             |
@@ -536,8 +566,8 @@ Reference, not a checklist. Kept so you don't have to grep for it.
 | Return approved ⚠                | `refund_approved`   | `admin/refund-action.php`                             |
 | Refund declined ⚠                | `refund_rejected`   | `admin/refund-action.php`                             |
 | Refund sent via ABA ⚠            | `refund_sent`       | `admin/refund-action.php`                             |
-| Password changed ⚠               | `password_changed`  | `dashboard-buyer/settings/password-action.php`        |
-| Account deleted ⚠                | `account_deleted`   | `dashboard-buyer/settings/delete-action.php`          |
+| Password changed ⚠               | `password_changed`  | `settings-buyer/password-action.php`        |
+| Account deleted ⚠                | `account_deleted`   | `settings-buyer/delete-action.php`          |
 
 ## Vendor
 
@@ -547,17 +577,17 @@ Reference, not a checklist. Kept so you don't have to grep for it.
 | Resend verification code         | `verify_code`        | `resend-verification/resend.php`                                                  |
 | Password reset link              | `reset_password`     | `forgot-password-vendor/request.php`                                              |
 | Low stock after a sale           | `low_stock`          | `checkout/confirm.php`                                                            |
-| Buyer confirmed delivery         | `delivery_confirmed` | `dashboard-buyer/confirm-delivery.php`                                            |
+| Buyer confirmed delivery         | `delivery_confirmed` | `orders-buyer/confirm-delivery.php`                                            |
 | Payout sent                      | `payout_sent`        | `admin/payouts-action.php`                                                        |
 | Welcome after verification ⚠     | `welcome_vendor`     | `verify-email/verify.php`                                                         |
 | Business submitted ⚠             | `business_submitted` | `submit/submit.php`                                                               |
 | Business approved ⚠              | `business_approved`  | `admin/action.php`                                                                |
 | Business rejected ⚠              | `business_rejected`  | `admin/action.php`                                                                |
-| Business deleted ⚠               | `business_deleted`   | `dashboard-vendor/settings/business-delete-action.php`, `admin/vendor-action.php` |
+| Business deleted ⚠               | `business_deleted`   | `settings-vendor/business-delete-action.php`, `admin/vendor-action.php` |
 | New paid order ⚠                 | `vendor_new_order`   | `admin/payments-action.php`                                                       |
-| Refund requested ⚠               | `refund_requested`   | `dashboard-buyer/refund-request.php`                                              |
-| Password changed ⚠               | `password_changed`   | `dashboard-vendor/settings/password-action.php`                                   |
-| Account deleted ⚠                | `account_deleted`    | `dashboard-vendor/settings/delete-action.php`                                     |
+| Refund requested ⚠               | `refund_requested`   | `orders-buyer/refund-request.php`                                              |
+| Password changed ⚠               | `password_changed`   | `settings-vendor/password-action.php`                                   |
+| Account deleted ⚠                | `account_deleted`    | `settings-vendor/delete-action.php`                                     |
 
 ## Admin
 

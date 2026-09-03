@@ -27,6 +27,13 @@
   margin: 0;
 }
 
+/* Success/error flashes sit in the same 560px column as .od-header/.od-grid */
+.od-flash {
+  max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .od-grid {
   display: flex;
   flex-direction: column;
