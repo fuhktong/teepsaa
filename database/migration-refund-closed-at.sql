@@ -1,0 +1,12 @@
+-- Closing out a rejected refund.
+--
+-- Rejecting a refund puts the order back to 'delivered' and stamps
+-- refund_rejected_at, which already stops the buyer filing again. But the
+-- payout is still held for the rest of the 24h refund window keyed to
+-- delivered_at — a wait that is now guarding against something that can no
+-- longer happen.
+--
+-- refund_closed_at is the admin saying "I have looked again, the rejection
+-- stands" — it releases that hold so the vendor can be paid immediately.
+-- Overturning a rejection clears it back to NULL along with refund_rejected_at.
+ALTER TABLE orders ADD COLUMN refund_closed_at DATETIME NULL DEFAULT NULL AFTER refund_rejected_at;

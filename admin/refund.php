@@ -29,7 +29,8 @@ $statusIn = implode(',', array_map([$pdo, 'quote'], $refundStatuses));
 
 $stmt = $pdo->prepare("
     SELECT o.id, o.subtotal, o.delivery_fee, o.coupon_code, o.discount_amount, o.status, o.created_at,
-           o.refund_reason, o.refund_requested_at, o.refund_rejected_at, o.return_tracking_url,
+           o.refund_reason, o.refund_requested_at, o.refund_rejected_at, o.refund_closed_at,
+           o.return_tracking_url, o.delivered_at, o.paid_out_at,
            b.name AS business_name,
            bu.name AS buyer_name, bu.email AS buyer_email,
            v.name AS vendor_name, v.aba_qr AS vendor_aba_qr
@@ -54,7 +55,7 @@ $error   = $_SESSION['admin_error']   ?? '';
 unset($_SESSION['admin_success'], $_SESSION['admin_error']);
 
 $refundCount        = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn();
-$pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();
+$pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))")->fetchColumn();
 
 $statusClasses = [
     'refund_requested'  => 'badge-red',
@@ -197,7 +198,41 @@ $adminTab     = 'refunds';
                 <p style="font-size:0.875rem;color:#1e7e34;margin:0;">Refund has been completed.</p>
 
                 <?php elseif ($refundState === 'refund_rejected'): ?>
-                <p style="font-size:0.875rem;color:#6b7280;margin:0;">Refund request was rejected. The order is back to delivered and the vendor is due their payout.</p>
+                <?php
+                // The order is back at 'delivered' and the vendor is due their payout.
+                // Until the payout actually goes out, the rejection is still reversible —
+                // a buyer who makes a good case in the support thread shouldn't need a
+                // workaround. Once paid_out_at is set the money has moved and it isn't.
+                $windowEnds  = $o['delivered_at'] ? strtotime($o['delivered_at']) + PAYOUT_WINDOW_SECONDS : null;
+                $payoutHeld  = !$o['refund_closed_at'] && $windowEnds && time() < $windowEnds;
+                ?>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">
+                    Refund request was rejected<?= $o['refund_rejected_at'] ? ' on ' . date('M j, g:ia', strtotime($o['refund_rejected_at'])) : '' ?>.
+                    The order is back to delivered and the vendor is due their payout.
+                </p>
+                <?php if ($o['paid_out_at']): ?>
+                <p style="font-size:0.875rem;color:#1e7e34;margin:0;">Payout was released on <?= date('M j, g:ia', strtotime($o['paid_out_at'])) ?> — this rejection can no longer be overturned.</p>
+                <?php else: ?>
+                <?php if ($o['refund_closed_at']): ?>
+                <p style="font-size:0.875rem;color:#1e7e34;margin:0 0 0.75rem;">Rejection confirmed on <?= date('M j, g:ia', strtotime($o['refund_closed_at'])) ?> — the payout is cleared to go out.</p>
+                <?php elseif ($payoutHeld): ?>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">The payout is still held until <?= date('M j, g:ia', $windowEnds) ?>. The buyer can't file again, so that wait is only there in case you change your mind — confirm below to release it now.</p>
+                <?php endif; ?>
+                <div class="popup-actions">
+                    <form method="POST" action="/admin/refund-action.php">
+                        <?= csrf_input() ?>
+                        <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
+                        <button type="submit" name="action" value="overturn" class="btn-approve">Overturn — grant refund</button>
+                    </form>
+                    <?php if (!$o['refund_closed_at']): ?>
+                    <form method="POST" action="/admin/refund-action.php">
+                        <?= csrf_input() ?>
+                        <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
+                        <button type="submit" name="action" value="confirm" class="btn-reject">Confirm rejection — release payout</button>
+                    </form>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
                 <?php endif; ?>
             </div>
         </div>

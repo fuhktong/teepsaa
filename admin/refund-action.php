@@ -61,6 +61,32 @@ if ($action === 'approve') {
     }
     $_SESSION['admin_success'] = 'Refund request rejected.';
 
+} elseif ($action === 'overturn') {
+    // Second look went the buyer's way. Put the request back where it was so it
+    // re-enters Orders → Refunds as 'Requested' and runs the normal approve
+    // path — the buyer's own words in refund_reason are left untouched.
+    // Only reachable while the order is still 'delivered': once the payout has
+    // gone out the status is 'completed' and this matches nothing.
+    $stmt = $pdo->prepare("UPDATE orders SET status = 'refund_requested', refund_rejected_at = NULL, refund_closed_at = NULL WHERE id = ? AND status = 'delivered' AND refund_rejected_at IS NOT NULL");
+    $stmt->execute([$orderId]);
+    if ($stmt->rowCount()) {
+        audit_log($pdo, 'refund.overturn', 'order', $orderId);
+        $_SESSION['admin_success'] = 'Rejection overturned — the request is open again. Approve the return to grant the refund.';
+    } else {
+        $_SESSION['admin_error'] = 'This rejection can no longer be overturned — the payout has already gone out.';
+    }
+
+} elseif ($action === 'confirm') {
+    // The rejection stands. refund_rejected_at already blocks the buyer from
+    // filing again, so the rest of the refund window is holding the payout
+    // against something that can't happen — close it and let the vendor be paid.
+    $stmt = $pdo->prepare("UPDATE orders SET refund_closed_at = NOW() WHERE id = ? AND status = 'delivered' AND refund_rejected_at IS NOT NULL AND refund_closed_at IS NULL");
+    $stmt->execute([$orderId]);
+    if ($stmt->rowCount()) {
+        audit_log($pdo, 'refund.confirm', 'order', $orderId);
+    }
+    $_SESSION['admin_success'] = 'Rejection confirmed — the refund window is closed and the payout can be released.';
+
 } elseif ($action === 'complete') {
     $stmt = $pdo->prepare("UPDATE orders SET status = 'refunded', refunded_at = NOW() WHERE id = ? AND status = 'return_received'");
     $stmt->execute([$orderId]);

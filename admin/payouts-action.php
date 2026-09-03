@@ -31,7 +31,7 @@ $orderId = (int)($_POST['order_id'] ?? 0);
 
 // Everything the three guards below need, in one read.
 $gStmt = $pdo->prepare("
-    SELECT o.delivered_at, o.vendor_payout, o.self_deal_flags,
+    SELECT o.delivered_at, o.refund_closed_at, o.vendor_payout, o.self_deal_flags,
            p.confirmed_by, p.id AS payment_id,
            v.id AS vendor_id, v.aba_changed_at
     FROM orders o
@@ -51,8 +51,13 @@ $fail = function (string $msg) use ($orderId): never {
 
 // ── Guard 1: the buyer's refund window ────────────────────────────────────
 // The UI already discourages this, but a misclick shouldn't cut the window short.
+// The one exception is an admin who rejected a refund and then confirmed the
+// rejection on /admin/refund.php: the buyer is already barred from filing again,
+// so the remaining window is guarding nothing. That is the only way past this —
+// there is deliberately no standalone "skip the window" control.
 $deliveredAt = $guard['delivered_at'] ?? null;
-if ($deliveredAt && (time() - strtotime($deliveredAt)) < PAYOUT_WINDOW_SECONDS) {
+$refundClosed = !empty($guard['refund_closed_at']);
+if (!$refundClosed && $deliveredAt && (time() - strtotime($deliveredAt)) < PAYOUT_WINDOW_SECONDS) {
     $fail('Refund window still open until '
         . date('M j, g:ia', strtotime($deliveredAt) + PAYOUT_WINDOW_SECONDS)
         . ' — the payout can\'t be completed before then.');

@@ -19,7 +19,7 @@ if (empty($_SESSION['admin_id'])) {
 admin_require('banners');
 
 $pendingVendorCount = (int) $pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 0")->fetchColumn();
-$pendingPayoutCount = (int) $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();
+$pendingPayoutCount = (int) $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))")->fetchColumn();
 $refundCount        = (int) $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn();
 
 try {

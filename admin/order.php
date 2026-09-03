@@ -36,7 +36,8 @@ $stmt = $pdo->prepare('
            o.coupon_code, o.discount_amount,
            o.delivery_distance_km,
            o.status, o.created_at, o.delivered_at, o.tracking_url,
-           o.refund_reason, o.return_tracking_url, o.admin_note, o.buyer_notes,
+           o.refund_reason, o.refund_rejected_at, o.refund_closed_at,
+           o.return_tracking_url, o.admin_note, o.buyer_notes,
            o.self_deal_flags,
            b.id AS business_id, b.name AS business_name,
            b.house_number AS biz_house_number, b.address AS biz_address,
@@ -79,7 +80,11 @@ $royaltyPct   = round(($o['royalty_rate'] ?? 0) * 100, 1);
 // the stored numbers so this recomputed breakdown stays correct either way.
 $vendorCouponDiscount = max(0, round($o['subtotal'] - $royaltyAmt - (float)$o['vendor_payout'], 2));
 $vendorPayout = round($o['subtotal'] - $royaltyAmt - $vendorCouponDiscount + $o['delivery_fee'] + $o['vendor_delivery_bonus'], 2);
-$windowPassed = $o['delivered_at'] && (time() - strtotime($o['delivered_at'])) >= PAYOUT_WINDOW_SECONDS;
+// A refund that was rejected and then confirmed closes the window early — the
+// buyer can no longer file, so there is nothing left to wait for. Mirrors
+// Guard 1 in admin/payouts-action.php.
+$windowPassed = !empty($o['refund_closed_at'])
+    || ($o['delivered_at'] && (time() - strtotime($o['delivered_at'])) >= PAYOUT_WINDOW_SECONDS);
 $windowTime   = $o['delivered_at'] ? date('M j, g:ia', strtotime($o['delivered_at']) + PAYOUT_WINDOW_SECONDS) : null;
 
 // ── Payout guards, mirrored from admin/payouts-action.php ─────────────────
@@ -115,7 +120,7 @@ $statusClass = $statusClasses[$o['status']] ?? 'badge-grey';
 $statusLabel = ucwords(str_replace('_', ' ', $o['status']));
 
 $refundCount        = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn();
-$pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();
+$pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))")->fetchColumn();
 $unreadMsgCount     = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM support_messages WHERE sender IN ('buyer','vendor','guest') AND read_at IS NULL")->fetchColumn();
 
 $grabParts = array_filter([

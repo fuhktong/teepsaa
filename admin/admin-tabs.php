@@ -8,7 +8,7 @@ $_atTab     = $adminTab     ?? '';
 // Refunds badge = requests to review + returns received awaiting the refund transfer
 $_atRefundCount    = admin_can('refunds') ? (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status IN ('refund_requested','return_received')")->fetchColumn() : 0;
 $_atPendingPayment = admin_can('payments') ? (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending_confirmation'")->fetchColumn() : 0;
-$_atPendingPayout  = admin_can('payouts') ? (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn() : 0;
+$_atPendingPayout  = admin_can('payouts') ? (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))")->fetchColumn() : 0;
 ?>
 <?php /* the ?denied=1 alert renders in admin-subnav, not here */ ?>
 <?php if ($_atSection === 'orders'): ?>
