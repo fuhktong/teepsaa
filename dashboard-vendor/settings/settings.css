@@ -452,6 +452,11 @@
   display: none;
 }
 
+/* Read-only chip summary in the card display; the wrapper's margin is enough */
+.addr-display .psp-cat-chosen {
+  margin-bottom: 0;
+}
+
 .psp-cat-chip {
   display: inline-flex;
   align-items: center;

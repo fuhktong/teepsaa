@@ -239,9 +239,15 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <!-- Same show-then-edit pattern as the Address card: current
                      values, then the inputs behind an Edit toggle. -->
                 <div class="addr-display">
-                    <p class="addr-display-line"><?= htmlspecialchars(pick_lang($business['name'], $business['name_km'] ?? null)) ?></p>
-                    <?php if (lang_field($business, 'description')): ?>
-                    <p class="addr-display-notes"><?= htmlspecialchars(lang_field($business, 'description')) ?></p>
+                    <p class="addr-display-line"><?= htmlspecialchars($business['name']) ?></p>
+                    <?php if (!empty($business['name_km'])): ?>
+                    <p class="addr-display-line"><?= htmlspecialchars($business['name_km']) ?></p>
+                    <?php endif; ?>
+                    <?php if (!empty($business['description'])): ?>
+                    <p class="addr-display-notes"><?= htmlspecialchars($business['description']) ?></p>
+                    <?php endif; ?>
+                    <?php if (!empty($business['description_km'])): ?>
+                    <p class="addr-display-notes"><?= htmlspecialchars($business['description_km']) ?></p>
                     <?php endif; ?>
                 </div>
                 <details class="addr-edit">
@@ -283,8 +289,14 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
             <div class="settings-section">
                 <h2><?= $t['vendor_settings_categories'] ?></h2>
                 <?php if ($bizCatLabels): ?>
+                <!-- Read-only pills, same look as the picker's chips; removing
+                     happens only inside Edit -->
                 <div class="addr-display">
-                    <p class="addr-display-line"><?= htmlspecialchars(implode(', ', $bizCatLabels)) ?></p>
+                    <ul class="psp-cat-chosen">
+                        <?php foreach ($bizCatLabels as $bizCatLabel): ?>
+                        <li class="psp-cat-chip"><?= htmlspecialchars($bizCatLabel) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
                 </div>
                 <?php else: ?>
                 <p class="addr-display-empty"><?= $t['vendor_no_categories'] ?></p>
