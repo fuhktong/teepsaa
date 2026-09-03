@@ -59,7 +59,6 @@ $adminTab     = 'vendor-map';
 <?php require __DIR__ . '/../admin-subnav/admin-subnav.php'; ?>
 
 <main>
-    <?php require __DIR__ . '/admin-tabs.php'; ?>
     <h1>Vendor Map</h1>
 
     <div class="admin-map-legend">

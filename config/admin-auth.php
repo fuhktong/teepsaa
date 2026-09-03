@@ -13,17 +13,21 @@ const ADMIN_SECTION_GROUPS = [
     'Messages'  => ['messages' => 'Messages'],
 ];
 
-// First accessible page for each section, used to find a safe landing spot for a denied request.
+// Landing page for each permission, used to find a safe landing spot for a
+// denied request or a bare /admin/ visit. Ordered like the subnav tab row —
+// the first permission the admin holds is where they land.
 const ADMIN_SECTION_HOME = [
-    'vendors' => '/admin/vendors.php', 'buyers' => '/admin/buyers.php', 'products' => '/admin/products.php',
-    'categories' => '/admin/categories.php', 'reviews' => '/admin/reviews.php',
-    'orders' => '/admin/orders.php', 'refunds' => '/admin/refunds.php', 'accounting' => '/admin/accounting.php',
+    'orders' => '/admin/orders.php', 'refunds' => '/admin/refunds.php',
     'payments' => '/admin/payments.php', 'payouts' => '/admin/payouts.php',
+    'vendors' => '/admin/vendors.php', 'messages' => '/admin/messages/',
+    'buyers' => '/admin/buyers.php', 'products' => '/admin/products.php',
+    'reviews' => '/admin/reviews.php', 'categories' => '/admin/categories.php',
+    'accounting' => '/admin/accounting.php',
     'promo-codes' => '/admin/promo-codes.php', 'coupons' => '/admin/coupons.php', 'banners' => '/admin/banners.php',
-    'careers' => '/admin/careers.php', 'vendor-map' => '/admin/vendor-map.php', 'buyer-map' => '/admin/buyer-map.php',
     'prospects' => '/admin/prospects/',
+    'vendor-map' => '/admin/vendor-map.php', 'buyer-map' => '/admin/buyer-map.php',
+    'careers' => '/admin/careers.php',
     'content' => '/admin/content.php', 'faq' => '/admin/faq.php',
-    'messages' => '/admin/messages/',
 ];
 
 function admin_all_sections(): array {
@@ -80,7 +84,7 @@ function admin_can(string $section): bool {
 function admin_home_url(): string {
     // Never '/admin/' — that is the dispatcher calling this function.
     if (admin_is_super()) {
-        return '/admin/vendors.php';
+        return '/admin/orders.php';
     }
     foreach (ADMIN_SECTION_HOME as $section => $url) {
         if (admin_can($section)) {

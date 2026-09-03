@@ -270,8 +270,8 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
     <div class="mobile-nav" id="mobile-nav">
         <?php if ($isAdminHeader || (isset($_SESSION['user_id']) && isset($_SESSION['role']))): ?>
             <?php if ($isAdminHeader): ?>
-                <?php if (admin_can('vendors')): ?><a href="/admin/vendors.php" class="mobile-nav-link <?= ($adminSection ?? '') === 'admin' ? 'active' : '' ?>"><?= ($adminNavAdmin ?? 0) > 0 ? $t['nav_admin'] . ' (' . $adminNavAdmin . ')' : $t['nav_admin'] ?></a><?php endif; ?>
                 <?php if (admin_can('orders')): ?><a href="/admin/orders.php" class="mobile-nav-link <?= ($adminSection ?? '') === 'orders' ? 'active' : '' ?>"><?= ($adminNavOrders ?? 0) > 0 ? $t['nav_orders'] . ' (' . $adminNavOrders . ')' : $t['nav_orders'] ?></a><?php endif; ?>
+                <?php if (admin_can('vendors')): ?><a href="/admin/vendors.php" class="mobile-nav-link <?= ($adminSection ?? '') === 'admin' ? 'active' : '' ?>"><?= ($adminNavAdmin ?? 0) > 0 ? 'Vendors (' . $adminNavAdmin . ')' : 'Vendors' ?></a><?php endif; ?>
                 <?php if (admin_can('promo-codes')): ?><a href="/admin/promo-codes.php" class="mobile-nav-link <?= ($adminSection ?? '') === 'marketing' ? 'active' : '' ?>"><?= $t['nav_marketing'] ?></a><?php endif; ?>
                 <?php if (admin_can('content')): ?><a href="/admin/content.php" class="mobile-nav-link <?= ($adminSection ?? '') === 'content' ? 'active' : '' ?>"><?= $t['nav_content'] ?></a><?php endif; ?>
                 <?php if (admin_can('messages')): ?><a href="/admin/messages/" class="mobile-nav-link <?= ($adminSection ?? '') === 'messages' ? 'active' : '' ?>"><?= ($adminNavMessages ?? 0) > 0 ? $t['nav_messages'] . ' (' . ($adminNavMessages ?? 0) . ')' : $t['nav_messages'] ?></a><?php endif; ?>

@@ -78,7 +78,6 @@ $adminTab     = 'reviews';
 <?php require __DIR__ . '/../admin-subnav/admin-subnav.php'; ?>
 
 <main>
-    <?php require __DIR__ . '/admin-tabs.php'; ?>
 
     <h1>Reviews <?php if (!empty($reviews) || $search): ?><span class="admin-count-chip"><?= count($reviews) ?></span><?php endif; ?></h1>
 

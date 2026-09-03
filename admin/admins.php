@@ -183,7 +183,6 @@ function admin_form_fields(?array $admin, array $perms): void {
 <?php require __DIR__ . '/../admin-subnav/admin-subnav.php'; ?>
 
 <main>
-    <?php require __DIR__ . '/admin-tabs.php'; ?>
 
     <h1>Manage Admins</h1>
     <p style="color:#6b7280;font-size:0.9rem;margin-bottom:1.25rem;">Create admin accounts and toggle exactly which sections each one can access. Only super admins can see this page.</p>

@@ -102,7 +102,6 @@ $adminTab     = 'products';
 <?php require __DIR__ . '/../admin-subnav/admin-subnav.php'; ?>
 
 <main>
-    <?php require __DIR__ . '/admin-tabs.php'; ?>
 
 
     <?php if ($success): ?><p class="admin-success"><?= htmlspecialchars($success) ?></p><?php endif; ?>

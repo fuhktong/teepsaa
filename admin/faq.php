@@ -133,7 +133,6 @@ $adminTab     = 'faq';
 <?php require __DIR__ . '/../admin-subnav/admin-subnav.php'; ?>
 
 <main>
-    <?php require __DIR__ . '/admin-tabs.php'; ?>
 
     <h1>FAQ</h1>
     <p style="color:#6b7280;font-size:0.9rem;margin-bottom:1.25rem;">Manage the Help Center's frequently asked questions, grouped by section.</p>

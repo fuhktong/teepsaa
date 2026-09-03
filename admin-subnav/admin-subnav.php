@@ -1,42 +1,66 @@
 <?php
-// Admin panel subnav — the five section tabs (Admin, Orders, Marketing,
-// Content, Messages), shown under the header on every admin page. The header
-// <nav> keeps only the avatar and lang menus. Include right after
-// header/header.php; the header already computes the badge counts and active
-// section for its mobile nav, so reuse them when set.
+// Admin panel subnav — the single flat tab row, shown under the header on
+// every admin page. One tab per page, ordered by how often each queue is
+// worked; permission-gated per tab. The header <nav> keeps only the avatar
+// and lang menus. Include right after header/header.php. Activity Log and
+// Manage Admins stay in the avatar dropdown only.
+// Pages set $adminTab (see each page top) for the active state; the header
+// has already computed $adminNavAdmin / $adminNavMessages for its mobile
+// nav, so reuse them when set.
 if (empty($_SESSION['admin_id']) || !function_exists('admin_can')) return;
 
-if (!isset($t)) {
-    $asnLang = $_SESSION['lang'] ?? 'km';
-    $t = require __DIR__ . '/../lang/' . (in_array($asnLang, ['en', 'km']) ? $asnLang : 'en') . '.php';
-}
-
+$adminTab     = $adminTab     ?? '';
 $adminSection = $adminSection ?? '';
 
-if (!isset($adminNavMessages)) {
-    $adminNavMessages = admin_can('messages')
-        ? (int)$pdo->query("SELECT COUNT(*) FROM support_threads WHERE status IN ('pending','open')")->fetchColumn()
-        : 0;
-}
+// Per-tab queues: everything waiting behind that tab.
 if (!isset($adminNavAdmin)) {
     $adminNavAdmin = admin_can('vendors')
         ? (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE deleted_at IS NULL AND (approved = 0 OR (approved = 1 AND approved_at <= NOW() - INTERVAL 7 DAY AND spot_checked_at IS NULL))")->fetchColumn()
         : 0;
 }
-if (!isset($adminNavOrders)) {
-    $adminNavOrders = 0;
-    if (admin_can('payments')) $adminNavOrders += (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending_confirmation'")->fetchColumn();
-    if (admin_can('refunds'))  $adminNavOrders += (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status IN ('refund_requested','return_received')")->fetchColumn();
-    if (admin_can('payouts'))  $adminNavOrders += (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();
+if (!isset($adminNavMessages)) {
+    $adminNavMessages = admin_can('messages')
+        ? (int)$pdo->query("SELECT COUNT(*) FROM support_threads WHERE status IN ('pending','open')")->fetchColumn()
+        : 0;
 }
+$asnRefunds  = admin_can('refunds')  ? (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status IN ('refund_requested','return_received')")->fetchColumn() : 0;
+$asnPayments = admin_can('payments') ? (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending_confirmation'")->fetchColumn() : 0;
+$asnPayouts  = admin_can('payouts')  ? (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn() : 0;
+
+// perm => [url, label, active tab key, badge count]
+$asnTabs = [
+    'orders'      => ['/admin/orders.php',      'Orders',       'orders',      0],
+    'refunds'     => ['/admin/refunds.php',     'Refunds',      'refunds',     $asnRefunds],
+    'payments'    => ['/admin/payments.php',    'Payments',     'payments',    $asnPayments],
+    'payouts'     => ['/admin/payouts.php',     'Payouts',      'payouts',     $asnPayouts],
+    'vendors'     => ['/admin/vendors.php',     'Vendors',      'vendors',     $adminNavAdmin],
+    'messages'    => ['/admin/messages/',       'Messages',     'messages',    $adminNavMessages],
+    'buyers'      => ['/admin/buyers.php',      'Buyers',       'buyers',      0],
+    'products'    => ['/admin/products.php',    'Products',     'products',    0],
+    'reviews'     => ['/admin/reviews.php',     'Reviews',      'reviews',     0],
+    'categories'  => ['/admin/categories.php',  'Categories',   'categories',  0],
+    'accounting'  => ['/admin/accounting.php',  'Accounting',   'accounting',  0],
+    'promo-codes' => ['/admin/promo-codes.php', 'Promo Codes',  'promo-codes', 0],
+    'coupons'     => ['/admin/coupons.php',     'Coupons',      'coupons',     0],
+    'banners'     => ['/admin/banners.php',     'Banners',      'banners',     0],
+    'prospects'   => ['/admin/prospects/',      'Canvassing',   'prospects',   0],
+    'vendor-map'  => ['/admin/vendor-map.php',  'Vendor Map',   'vendor-map',  0],
+    'buyer-map'   => ['/admin/buyer-map.php',   'Buyer Map',    'buyer-map',   0],
+    'careers'     => ['/admin/careers.php',     'Careers',      'careers',     0],
+    'content'     => ['/admin/content.php',     'Pages',        'content',     0],
+    'faq'         => ['/admin/faq.php',         'FAQ',          'faq',         0],
+];
+// Messages pages set $adminSection, not $adminTab.
+$asnActive = $adminTab !== '' ? $adminTab : ($adminSection === 'messages' ? 'messages' : '');
 ?>
 <link rel="stylesheet" href="/admin-subnav/admin-subnav.css">
 <div class="admin-subnav-wrap">
     <nav class="admin-subnav">
-        <?php if (admin_can('vendors')): ?><a href="/admin/vendors.php" class="<?= $adminSection === 'admin' ? 'active' : '' ?>"><?= $adminNavAdmin ? $t['nav_admin'] . '&nbsp;<span class="nav-msg-badge">' . $adminNavAdmin . '</span>' : $t['nav_admin'] ?></a><?php endif; ?>
-        <?php if (admin_can('orders')): ?><a href="/admin/orders.php" class="<?= $adminSection === 'orders' ? 'active' : '' ?>"><?= $adminNavOrders ? $t['nav_orders'] . '&nbsp;<span class="nav-msg-badge">' . $adminNavOrders . '</span>' : $t['nav_orders'] ?></a><?php endif; ?>
-        <?php if (admin_can('promo-codes')): ?><a href="/admin/promo-codes.php" class="<?= $adminSection === 'marketing' ? 'active' : '' ?>"><?= $t['nav_marketing'] ?></a><?php endif; ?>
-        <?php if (admin_can('content')): ?><a href="/admin/content.php" class="<?= $adminSection === 'content' ? 'active' : '' ?>"><?= $t['nav_content'] ?></a><?php endif; ?>
-        <?php if (admin_can('messages')): ?><a href="/admin/messages/" class="<?= $adminSection === 'messages' ? 'active' : '' ?>"><?= $adminNavMessages ? $t['nav_messages'] . '&nbsp;<span class="nav-msg-badge">' . $adminNavMessages . '</span>' : $t['nav_messages'] ?></a><?php endif; ?>
+        <?php foreach ($asnTabs as $asnPerm => [$asnUrl, $asnLabel, $asnKey, $asnCount]): if (!admin_can($asnPerm)) continue; ?>
+        <a href="<?= $asnUrl ?>" class="<?= $asnActive === $asnKey ? 'active' : '' ?>"><?= $asnCount ? $asnLabel . '&nbsp;<span class="nav-msg-badge">' . $asnCount . '</span>' : $asnLabel ?></a>
+        <?php endforeach; ?>
     </nav>
+    <?php if (!empty($_GET['denied'])): ?>
+    <div class="admin-alert admin-alert--error" style="margin-top:1rem;">You don't have access to that section.</div>
+    <?php endif; ?>
 </div>

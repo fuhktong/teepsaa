@@ -52,7 +52,6 @@ $adminTab     = 'coupons';
 <?php require __DIR__ . '/../admin-subnav/admin-subnav.php'; ?>
 
 <main>
-    <?php require __DIR__ . '/admin-tabs.php'; ?>
 
     <h1>Coupons</h1>
     <p class="cat-page-desc">Coupons created here (Shop: —) are sitewide — the platform absorbs the discount and vendor payouts are unaffected. Coupons with a Shop listed were created by that vendor and the discount comes out of their own payout.</p>

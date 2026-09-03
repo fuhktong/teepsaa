@@ -104,7 +104,6 @@ $adminTab     = 'categories';
 
 <main>
     <?php if (!isset($pendingVendorCount)) { $pendingVendorCount = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 0")->fetchColumn(); } ?>
-    <?php require __DIR__ . '/admin-tabs.php'; ?>
     <h1>Categories</h1>
     <p class="cat-page-desc">Hierarchical product categories. The royalty rate is deducted from vendor payouts at checkout.</p>
 

@@ -84,7 +84,6 @@ $adminTab     = 'careers';
 <?php require __DIR__ . '/../admin-subnav/admin-subnav.php'; ?>
 
 <main>
-    <?php require __DIR__ . '/admin-tabs.php'; ?>
 
     <h1>Job Applications</h1>
     <p style="color:#6b7280;font-size:0.9rem;margin-bottom:1.25rem;"><a href="/admin/careers.php">&larr; Back to postings</a></p>
