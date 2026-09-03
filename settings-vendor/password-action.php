@@ -7,9 +7,9 @@ session_start([
     'cookie_domain'   => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : '',
 ]);
 
-require __DIR__ . '/../../config/db.php';
-require __DIR__ . '/../../config/csrf.php';
-require __DIR__ . '/../../config/notify.php';
+require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/csrf.php';
+require __DIR__ . '/../config/notify.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -17,7 +17,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-vendor/settings/?tab=password');
+    header('Location: /settings-vendor/?tab=password');
     exit;
 }
 
@@ -34,19 +34,19 @@ $row = $stmt->fetch();
 
 if (!password_verify($current, $row['password'])) {
     $_SESSION['settings_error'] = 'Current password is incorrect.';
-    header('Location: /dashboard-vendor/settings/?tab=password');
+    header('Location: /settings-vendor/?tab=password');
     exit;
 }
 
 if (strlen($new) < 8) {
     $_SESSION['settings_error'] = 'New password must be at least 8 characters.';
-    header('Location: /dashboard-vendor/settings/?tab=password');
+    header('Location: /settings-vendor/?tab=password');
     exit;
 }
 
 if ($new !== $confirm) {
     $_SESSION['settings_error'] = 'New passwords do not match.';
-    header('Location: /dashboard-vendor/settings/?tab=password');
+    header('Location: /settings-vendor/?tab=password');
     exit;
 }
 
@@ -59,5 +59,5 @@ $stmt->execute([password_hash($new, PASSWORD_DEFAULT), $userId]);
 if ($html !== '') send_email($row['email'], $subj, $html);
 
 $_SESSION['settings_success'] = 'Password updated.';
-header('Location: /dashboard-vendor/settings/?tab=password');
+header('Location: /settings-vendor/?tab=password');
 exit;

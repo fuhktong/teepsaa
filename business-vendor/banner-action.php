@@ -7,8 +7,8 @@ session_start([
     'cookie_domain'   => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : '',
 ]);
 
-require __DIR__ . '/../../config/db.php';
-require __DIR__ . '/../../config/csrf.php';
+require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/csrf.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -16,14 +16,14 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-vendor/settings/?tab=business');
+    header('Location: /business-vendor/');
     exit;
 }
 
 csrf_verify();
 
 $userId    = $_SESSION['user_id'];
-$uploadDir = __DIR__ . '/../../uploads/';
+$uploadDir = __DIR__ . '/../uploads/';
 $allowed   = ['image/jpeg', 'image/png'];
 
 // Remove the current banner — clear the column and delete the file. The
@@ -37,12 +37,12 @@ if (($_POST['action'] ?? '') === 'remove') {
     }
     $pdo->prepare('UPDATE businesses SET banner = NULL WHERE user_id = ? AND deleted_at IS NULL')->execute([$userId]);
     $_SESSION['settings_success'] = 'Banner removed.';
-    header('Location: /dashboard-vendor/settings/?tab=business');
+    header('Location: /business-vendor/');
     exit;
 }
 
 if (empty($_FILES['banner']['name'])) {
-    header('Location: /dashboard-vendor/settings/?tab=business');
+    header('Location: /business-vendor/');
     exit;
 }
 
@@ -52,7 +52,7 @@ $mime = image_type_from_magic($tmp);
 
 if (!in_array($mime, $allowed, true) || $size > 4 * 1024 * 1024) {
     $_SESSION['settings_error'] = 'Invalid file. JPG or PNG only, max 4MB.';
-    header('Location: /dashboard-vendor/settings/?tab=business');
+    header('Location: /business-vendor/');
     exit;
 }
 
@@ -74,5 +74,5 @@ if (move_uploaded_file($tmp, $uploadDir . $filename)) {
     $_SESSION['settings_error'] = 'Upload failed. Please try again.';
 }
 
-header('Location: /dashboard-vendor/settings/?tab=business');
+header('Location: /business-vendor/');
 exit;

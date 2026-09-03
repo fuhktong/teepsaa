@@ -146,7 +146,7 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                         if (strpos($vendorPath, '/orders-vendor/') === 0)        $vendorSection = 'orders';
                         elseif (strpos($vendorPath, '/products/') === 0)        $vendorSection = 'products';
                         elseif (strpos($vendorPath, '/messages-vendor/') === 0) $vendorSection = 'messages';
-                        elseif (strpos($vendorPath, '/dashboard-vendor/') === 0) $vendorSection = 'analytics';
+                        elseif (strpos($vendorPath, '/analytics/') === 0) $vendorSection = 'analytics';
                         $vNotifStmt = $pdo->prepare('SELECT COUNT(*) FROM notifications WHERE role = ? AND user_id = ? AND read_at IS NULL');
                         $vNotifStmt->execute(['vendor', $_SESSION['user_id']]);
                         $vNotifCount = (int)$vNotifStmt->fetchColumn();
@@ -180,7 +180,7 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                             <?php endif; ?>
                         </button>
                         <div class="user-dropdown" id="user-dropdown">
-                            <a href="/dashboard-vendor/settings/"><?= $t['nav_settings'] ?></a>
+                            <a href="/settings-vendor/"><?= $t['nav_settings'] ?></a>
                             <a href="/logout/logout.php"><?= $t['nav_logout'] ?></a>
                         </div>
                     </div>
@@ -283,8 +283,8 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                 <a href="/orders-vendor/" class="mobile-nav-link <?= $vendorSection === 'orders' ? 'active' : '' ?>"><?= ($vendorOrdersTodo ?? 0) > 0 ? $t['nav_orders'] . ' (' . $vendorOrdersTodo . ')' : $t['nav_orders'] ?></a>
                 <a href="/products/" class="mobile-nav-link <?= $vendorSection === 'products' ? 'active' : '' ?>"><?= $t['nav_products'] ?></a>
                 <a href="/messages-vendor/" class="mobile-nav-link <?= $vendorSection === 'messages' ? 'active' : '' ?>"><?= $vendorUnread ? $t['nav_messages'] . ' (' . $vendorUnread . ')' : $t['nav_messages'] ?></a>
-                <a href="/dashboard-vendor/" class="mobile-nav-link <?= $vendorSection === 'analytics' ? 'active' : '' ?>"><?= $t['nav_vendor'] ?></a>
-                <a href="/dashboard-vendor/settings/" class="mobile-nav-link"><?= $t['nav_settings'] ?></a>
+                <a href="/analytics/" class="mobile-nav-link <?= $vendorSection === 'analytics' ? 'active' : '' ?>"><?= $t['nav_vendor'] ?></a>
+                <a href="/settings-vendor/" class="mobile-nav-link"><?= $t['nav_settings'] ?></a>
                 <a href="/logout/logout.php" class="mobile-nav-link"><?= $t['nav_logout'] ?></a>
             <?php else: ?>
                 <a href="/cart/" class="mobile-nav-link"><?= $t['nav_cart'] ?><?= ($cartBadge ?? '') !== '' ? ' (' . $cartBadge . ')' : '' ?></a>

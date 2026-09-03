@@ -13,7 +13,7 @@ if (isset($_SESSION['user_id'])) {
     if (isset($_SESSION['pending_role'])) {
         header('Location: /verify-email/');
     } elseif (($_SESSION['role'] ?? '') === 'vendor') {
-        header('Location: /dashboard-vendor/');
+        header('Location: /analytics/');
     } else {
         header('Location: /dashboard-buyer/');
     }

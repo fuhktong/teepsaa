@@ -130,7 +130,7 @@ if ($tab === 'refunds' && !empty($bizIds)) {
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
     <link rel="stylesheet" href="/products/products.css">
-    <link rel="stylesheet" href="/dashboard-vendor/dashboard-vendor.css">
+    <link rel="stylesheet" href="/analytics/analytics.css">
     <link rel="stylesheet" href="/order-status/order-status.css">
     <link rel="stylesheet" href="/refund-status/refund-status.css">
 </head>

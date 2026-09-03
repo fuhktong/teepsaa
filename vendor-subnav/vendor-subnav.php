@@ -16,12 +16,8 @@ if (!isset($vendorSection)) {
     if (strpos($vsnPath, '/orders-vendor/') === 0)        $vendorSection = 'orders';
     elseif (strpos($vsnPath, '/products/') === 0)         $vendorSection = 'products';
     elseif (strpos($vsnPath, '/messages-vendor/') === 0)  $vendorSection = 'messages';
-    elseif (strpos($vsnPath, '/dashboard-vendor/') === 0) $vendorSection = 'analytics';
-}
-// Settings lives under /dashboard-vendor/ but isn't the Analytics tab; its
-// business tab is the subnav's Business tab
-if (strpos($vsnPath, '/dashboard-vendor/settings/') === 0) {
-    $vendorSection = (($_GET['tab'] ?? '') === 'business') ? 'business' : '';
+    elseif (strpos($vsnPath, '/analytics/') === 0)        $vendorSection = 'analytics';
+    elseif (strpos($vsnPath, '/business-vendor/') === 0)  $vendorSection = 'business';
 }
 
 if (!isset($vendorOrdersTodo)) {
@@ -46,8 +42,8 @@ $vsnStorefrontId = $vsnStmt->fetchColumn();
         <a href="/orders-vendor/" class="<?= $vendorSection === 'orders' ? 'active' : '' ?>"><?= $vendorOrdersTodo ? $t['nav_orders'] . '&nbsp;<span class="nav-msg-badge">' . $vendorOrdersTodo . '</span>' : $t['nav_orders'] ?></a>
         <a href="/products/" class="<?= $vendorSection === 'products' ? 'active' : '' ?>"><?= $t['nav_products'] ?></a>
         <a href="/messages-vendor/" class="<?= $vendorSection === 'messages' ? 'active' : '' ?>"><?= $vendorUnread ? $t['nav_messages'] . '&nbsp;<span class="nav-msg-badge">' . $vendorUnread . '</span>' : $t['nav_messages'] ?></a>
-        <a href="/dashboard-vendor/" class="<?= $vendorSection === 'analytics' ? 'active' : '' ?>"><?= $t['nav_vendor'] ?></a>
-        <a href="/dashboard-vendor/settings/?tab=business" class="<?= $vendorSection === 'business' ? 'active' : '' ?>"><?= $t['vendor_settings_tab_business'] ?></a>
+        <a href="/analytics/" class="<?= $vendorSection === 'analytics' ? 'active' : '' ?>"><?= $t['nav_vendor'] ?></a>
+        <a href="/business-vendor/" class="<?= $vendorSection === 'business' ? 'active' : '' ?>"><?= $t['vendor_settings_tab_business'] ?></a>
         <?php if ($vsnStorefrontId): ?>
         <a href="/business/?id=<?= htmlspecialchars($vsnStorefrontId) ?>" target="_blank" rel="noopener"><?= $t['nav_storefront'] ?></a>
         <?php endif; ?>

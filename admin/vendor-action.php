@@ -148,7 +148,7 @@ if ($action === 'suspend') {
         $sent = $notifyVendor('business_suspended', [
             'business' => htmlspecialchars($business['name']),
             'reason'   => htmlspecialchars($reason),
-            'cta_url'  => 'https://vendor.teepsaa.com/dashboard-vendor/settings/',
+            'cta_url'  => 'https://vendor.teepsaa.com/business-vendor/',
         ]);
         $_SESSION['admin_success'] = $sent
             ? 'Business suspended. The vendor has been emailed and can still sign in to fix it.'
@@ -180,7 +180,7 @@ if ($action === 'suspend') {
     if (!empty($_POST['notify_user'])) {
         $sent = $notifyVendor('business_reinstated', [
             'business' => htmlspecialchars($business['name']),
-            'cta_url'  => 'https://vendor.teepsaa.com/dashboard-vendor/',
+            'cta_url'  => 'https://vendor.teepsaa.com/analytics/',
         ]);
         $_SESSION['admin_success'] = $sent
             ? 'Business suspension lifted. The vendor has been emailed.'

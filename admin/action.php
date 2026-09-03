@@ -75,7 +75,7 @@ if ($owner && $owner['email']) {
     $templateKey = $action === 'approve' ? 'business_approved' : 'business_rejected';
     $ctaUrl      = $action === 'approve'
         ? 'https://teepsaa.com/products/'
-        : 'https://teepsaa.com/dashboard-vendor/settings/';
+        : 'https://vendor.teepsaa.com/business-vendor/';
     // Rendered blocks, not raw text: an empty reason must leave no stray label
     // behind in either language.
     $reasonHtml = $reason === '' ? ['', ''] : [

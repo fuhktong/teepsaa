@@ -7,8 +7,8 @@ session_start([
     'cookie_domain'   => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : '',
 ]);
 
-require __DIR__ . '/../../config/db.php';
-require __DIR__ . '/../../config/csrf.php';
+require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/csrf.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -16,7 +16,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-vendor/settings/');
+    header('Location: /settings-vendor/');
     exit;
 }
 
@@ -28,7 +28,7 @@ $phone  = trim($_POST['phone'] ?? '');
 
 if (!$name) {
     $_SESSION['settings_error'] = 'Full name is required.';
-    header('Location: /dashboard-vendor/settings/?tab=account');
+    header('Location: /settings-vendor/?tab=account');
     exit;
 }
 
@@ -37,5 +37,5 @@ $stmt->execute([$name, $phone ?: null, $userId]);
 
 $_SESSION['user_name'] = $name;
 $_SESSION['settings_success'] = 'Account updated.';
-header('Location: /dashboard-vendor/settings/?tab=account');
+header('Location: /settings-vendor/?tab=account');
 exit;

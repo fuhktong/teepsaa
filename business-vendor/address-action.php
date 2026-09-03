@@ -7,8 +7,8 @@ session_start([
     'cookie_domain'   => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : '',
 ]);
 
-require __DIR__ . '/../../config/db.php';
-require __DIR__ . '/../../config/csrf.php';
+require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/csrf.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -16,7 +16,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-vendor/settings/?tab=business');
+    header('Location: /business-vendor/');
     exit;
 }
 
@@ -33,7 +33,7 @@ $lat         = $_POST['lat'] ?? '';
 $lng         = $_POST['lng'] ?? '';
 
 // Only accept a city we actually deliver in (Phnom Penh for now).
-$cities = require __DIR__ . '/../../config/cities.php';
+$cities = require __DIR__ . '/../config/cities.php';
 $city   = in_array($city, $cities, true) ? $city : ($cities[0] ?? null);
 
 $latVal = $lat !== '' ? filter_var($lat, FILTER_VALIDATE_FLOAT) : null;
@@ -57,5 +57,5 @@ $stmt->execute([
 ]);
 
 $_SESSION['settings_success'] = 'Address updated.';
-header('Location: /dashboard-vendor/settings/?tab=business');
+header('Location: /business-vendor/');
 exit;

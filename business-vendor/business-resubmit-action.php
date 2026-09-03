@@ -7,8 +7,8 @@ session_start([
     'cookie_domain'   => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : '',
 ]);
 
-require __DIR__ . '/../../config/db.php';
-require __DIR__ . '/../../config/csrf.php';
+require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/csrf.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -16,7 +16,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-vendor/settings/?tab=business');
+    header('Location: /business-vendor/');
     exit;
 }
 
@@ -33,5 +33,5 @@ $_SESSION['settings_success'] = $stmt->rowCount() > 0
     ? 'Your business has been sent back for review.'
     : 'Your business is not awaiting a resubmission.';
 
-header('Location: /dashboard-vendor/settings/?tab=business');
+header('Location: /business-vendor/');
 exit;

@@ -73,7 +73,7 @@ unset($_SESSION['submit_error'], $_SESSION['submit_success']);
 
     <?php if ($hasShop): ?>
         <p class="form-error"><?= $t['submit_has_business'] ?></p>
-        <p><a href="/dashboard-vendor/"><?= $t['submit_back_dashboard'] ?></a></p>
+        <p><a href="/analytics/"><?= $t['submit_back_dashboard'] ?></a></p>
     <?php else: ?>
 
     <?php if ($error): ?>

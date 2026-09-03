@@ -18,7 +18,7 @@ if (empty($_SESSION['user_id'])) {
         ['/orders-vendor/',             $t['nav_orders']],
         ['/products/',                  $t['nav_products']],
         ['/messages-vendor/',           $t['nav_messages']],
-        ['/dashboard-vendor/settings/', $t['nav_settings']],
+        ['/settings-vendor/', $t['nav_settings']],
     ];
 } elseif (!empty($_SESSION['admin_id'])
           && (!function_exists('admin_area_request') || admin_area_request())) {

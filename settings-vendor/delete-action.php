@@ -7,9 +7,9 @@ session_start([
     'cookie_domain'   => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : '',
 ]);
 
-require __DIR__ . '/../../config/db.php';
-require __DIR__ . '/../../config/csrf.php';
-require __DIR__ . '/../../config/notify.php';
+require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/csrf.php';
+require __DIR__ . '/../config/notify.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -17,7 +17,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-vendor/settings/?tab=danger');
+    header('Location: /settings-vendor/?tab=danger');
     exit;
 }
 
@@ -32,7 +32,7 @@ $row = $stmt->fetch();
 
 if (!password_verify($password, $row['password'])) {
     $_SESSION['settings_error'] = 'Incorrect password.';
-    header('Location: /dashboard-vendor/settings/?tab=danger');
+    header('Location: /settings-vendor/?tab=danger');
     exit;
 }
 
@@ -44,7 +44,7 @@ $stmt = $pdo->prepare('
 $stmt->execute([$userId]);
 if ($stmt->fetchColumn() > 0) {
     $_SESSION['settings_error'] = 'Cannot delete account — you have open orders. Wait until all orders are completed or cancelled.';
-    header('Location: /dashboard-vendor/settings/?tab=danger');
+    header('Location: /settings-vendor/?tab=danger');
     exit;
 }
 

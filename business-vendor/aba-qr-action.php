@@ -7,10 +7,10 @@ session_start([
     'cookie_domain'   => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : '',
 ]);
 
-require __DIR__ . '/../../config/db.php';
-require __DIR__ . '/../../config/csrf.php';
-require __DIR__ . '/../../config/notify.php';
-require __DIR__ . '/../../config/audit.php';
+require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/csrf.php';
+require __DIR__ . '/../config/notify.php';
+require __DIR__ . '/../config/audit.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -18,7 +18,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-vendor/settings/?tab=business');
+    header('Location: /business-vendor/');
     exit;
 }
 
@@ -41,7 +41,7 @@ function aba_change_notice(PDO $pdo, int $vendorId, string $accountName, string 
 
     notify($pdo, 'vendor', $vendorId, 'bank_changed',
         'Your payout bank details were changed. Payouts are held for 24 hours.',
-        '/dashboard-vendor/settings/?tab=business');
+        '/business-vendor/');
 
     try {
         $stmt = $pdo->prepare('SELECT name, email FROM vendors WHERE id = ?');
@@ -62,13 +62,13 @@ function aba_change_notice(PDO $pdo, int $vendorId, string $accountName, string 
 }
 
 $userId    = $_SESSION['user_id'];
-$uploadDir = __DIR__ . '/../../uploads/';
+$uploadDir = __DIR__ . '/../uploads/';
 $allowed   = ['image/jpeg', 'image/png'];
 
 $accountName = trim($_POST['aba_account_name'] ?? '');
 if ($accountName === '') {
     $_SESSION['settings_error'] = 'Account name is required.';
-    header('Location: /dashboard-vendor/settings/?tab=business');
+    header('Location: /business-vendor/');
     exit;
 }
 $accountName = mb_substr($accountName, 0, 100);
@@ -79,14 +79,14 @@ if (empty($_FILES['aba_qr']['name'])) {
     $stmt->execute([$userId]);
     if (!$stmt->fetchColumn()) {
         $_SESSION['settings_error'] = 'Please upload your bank QR code.';
-        header('Location: /dashboard-vendor/settings/?tab=business');
+        header('Location: /business-vendor/');
         exit;
     }
     $pdo->prepare('UPDATE vendors SET aba_account_name = ?, aba_changed_at = NOW() WHERE id = ?')
         ->execute([$accountName, $userId]);
     aba_change_notice($pdo, (int)$userId, $accountName, 'account name');
     $_SESSION['settings_success'] = 'Account name updated. Payouts are held for 24 hours while the change is verified.';
-    header('Location: /dashboard-vendor/settings/?tab=business');
+    header('Location: /business-vendor/');
     exit;
 }
 
@@ -96,7 +96,7 @@ $mime = image_type_from_magic($tmp);
 
 if (!in_array($mime, $allowed, true) || $size > 2 * 1024 * 1024) {
     $_SESSION['settings_error'] = 'Invalid file. JPG or PNG only, max 2MB.';
-    header('Location: /dashboard-vendor/settings/?tab=business');
+    header('Location: /business-vendor/');
     exit;
 }
 
@@ -112,5 +112,5 @@ if (move_uploaded_file($tmp, $uploadDir . $filename)) {
     $_SESSION['settings_error'] = 'Upload failed. Please try again.';
 }
 
-header('Location: /dashboard-vendor/settings/?tab=business');
+header('Location: /business-vendor/');
 exit;

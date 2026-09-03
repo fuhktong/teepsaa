@@ -143,10 +143,10 @@ if (!empty($_FILES['banner']['name']) && $_FILES['banner']['error'] === UPLOAD_E
 [$subj, $html] = render_email_template($pdo, 'business_submitted', [
     'name'     => htmlspecialchars($vendor['name']),
     'business' => htmlspecialchars($name),
-    'cta_url'  => 'https://teepsaa.com/dashboard-vendor/',
+    'cta_url'  => 'https://vendor.teepsaa.com/analytics/',
 ]);
 if ($html !== '') send_email($vendor['email'], $subj, $html);
 
 $_SESSION['submit_success'] = 'Business submitted! It will appear on the map once approved.';
-header('Location: /dashboard-vendor/');
+header('Location: /analytics/');
 exit;

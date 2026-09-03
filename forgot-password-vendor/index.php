@@ -10,7 +10,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 
 if (isset($_SESSION['user_id'])) {
-    header('Location: /dashboard-vendor/');
+    header('Location: /analytics/');
     exit;
 }
 

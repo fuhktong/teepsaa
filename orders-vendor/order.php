@@ -117,7 +117,7 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
     <link rel="stylesheet" href="/footer/footer.css">
     <link rel="stylesheet" href="/order-status/order-status.css">
     <link rel="stylesheet" href="/popup/popup.css">
-    <link rel="stylesheet" href="/dashboard-vendor/dashboard-vendor.css">
+    <link rel="stylesheet" href="/analytics/analytics.css">
     <link rel="stylesheet" href="/products/products.css">
 </head>
 <body>
@@ -236,7 +236,7 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
         <?= $t['vorder_cod_warning'] ?>
     </div>
     <p style="font-size:0.85rem;color:#6b7280;margin:0 0 0.75rem;"><?= $t['vorder_dispatch_hint'] ?></p>
-    <form method="POST" action="/dashboard-vendor/dispatch.php" class="dispatch-form">
+    <form method="POST" action="/analytics/dispatch.php" class="dispatch-form">
         <?= csrf_input() ?>
         <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
         <input type="url" name="tracking_url" required placeholder="<?= htmlspecialchars($t['vorder_tracking_placeholder']) ?>"

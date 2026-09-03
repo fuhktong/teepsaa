@@ -7,9 +7,9 @@ session_start([
     'cookie_domain'   => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : '',
 ]);
 
-require __DIR__ . '/../../config/db.php';
-require __DIR__ . '/../../config/csrf.php';
-require __DIR__ . '/../../config/notify.php';
+require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/csrf.php';
+require __DIR__ . '/../config/notify.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -17,7 +17,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /dashboard-vendor/settings/?tab=danger');
+    header('Location: /settings-vendor/?tab=danger');
     exit;
 }
 
@@ -32,7 +32,7 @@ $row = $stmt->fetch();
 
 if (!password_verify($password, $row['password'])) {
     $_SESSION['settings_error'] = 'Incorrect password.';
-    header('Location: /dashboard-vendor/settings/?tab=danger');
+    header('Location: /settings-vendor/?tab=danger');
     exit;
 }
 
@@ -41,7 +41,7 @@ $stmt->execute([$userId]);
 $business = $stmt->fetch();
 
 if (!$business) {
-    header('Location: /dashboard-vendor/settings/?tab=danger');
+    header('Location: /settings-vendor/?tab=danger');
     exit;
 }
 
@@ -49,7 +49,7 @@ $stmt = $pdo->prepare('SELECT COUNT(*) FROM products WHERE business_id = ?');
 $stmt->execute([$business['id']]);
 if ($stmt->fetchColumn() > 0) {
     $_SESSION['settings_error'] = 'Cannot delete business — you must delete all of your products first, including archived ones.';
-    header('Location: /dashboard-vendor/settings/?tab=danger');
+    header('Location: /settings-vendor/?tab=danger');
     exit;
 }
 
@@ -57,11 +57,11 @@ $stmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE business_id = ? AND sta
 $stmt->execute([$business['id']]);
 if ($stmt->fetchColumn() > 0) {
     $_SESSION['settings_error'] = 'Cannot delete business — all orders must be completed, cancelled, or refunded first.';
-    header('Location: /dashboard-vendor/settings/?tab=danger');
+    header('Location: /settings-vendor/?tab=danger');
     exit;
 }
 
-$uploadDir = __DIR__ . '/../../uploads/';
+$uploadDir = __DIR__ . '/../uploads/';
 
 $stmt = $pdo->prepare('SELECT filename FROM photos WHERE business_id = ?');
 $stmt->execute([$business['id']]);
@@ -89,5 +89,5 @@ if ($owner = $vStmt->fetch()) {
 }
 
 $_SESSION['settings_success'] = 'Your business has been deleted.';
-header('Location: /dashboard-vendor/settings/?tab=danger');
+header('Location: /settings-vendor/?tab=danger');
 exit;

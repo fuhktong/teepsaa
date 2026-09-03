@@ -35,7 +35,8 @@ if ($sdActive) {
 
     // Note /products/ (vendor management) vs /product/ (public detail page).
     $sdVendorPaths = [
-        '/dashboard-vendor/', '/products/', '/orders-vendor/', '/submit/',
+        '/analytics/', '/settings-vendor/', '/business-vendor/',
+        '/products/', '/orders-vendor/', '/submit/',
         '/messages-vendor/', '/login-vendor/', '/register-vendor/',
         '/forgot-password-vendor/', '/reset-password-vendor/', '/contact-vendor/',
     ];
@@ -71,12 +72,12 @@ if ($sdActive) {
             if (IS_ADMIN_SUBDOMAIN) {
                 $sdGo($sdPath === '/' ? '/admin/' : BASE_URL_MAIN . $sdPath . $sdQuery);
             } elseif (IS_VENDOR_SUBDOMAIN) {
-                $sdGo($sdPath === '/' ? '/dashboard-vendor/' : BASE_URL_MAIN . $sdPath . $sdQuery);
+                $sdGo($sdPath === '/' ? '/analytics/' : BASE_URL_MAIN . $sdPath . $sdQuery);
             } elseif ($sdPath === '/' && ($_SESSION['role'] ?? '') === 'vendor') {
                 // Wrong door, right person: vendor on the main homepage goes to
                 // their dashboard. Only the bare homepage — vendors may still
                 // preview their public product/business pages on teepsaa.com.
-                $sdGo(BASE_URL_VENDOR . '/dashboard-vendor/');
+                $sdGo(BASE_URL_VENDOR . '/analytics/');
             }
         }
     }

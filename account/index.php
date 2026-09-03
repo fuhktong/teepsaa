@@ -12,7 +12,7 @@ require __DIR__ . '/../config/subdomain.php';
 if (isset($_SESSION['user_id'])) {
     $role = $_SESSION['role'] ?? '';
     if ($role === 'buyer')  { header('Location: /dashboard-buyer/');  exit; }
-    if ($role === 'vendor') { header('Location: /dashboard-vendor/settings/'); exit; }
+    if ($role === 'vendor') { header('Location: /settings-vendor/'); exit; }
 }
 ?>
 <!DOCTYPE html>

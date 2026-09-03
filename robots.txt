@@ -7,7 +7,9 @@ Disallow: /cron/
 Disallow: /checkout/
 Disallow: /cart/
 Disallow: /dashboard-buyer/
-Disallow: /dashboard-vendor/
+Disallow: /analytics/
+Disallow: /settings-vendor/
+Disallow: /business-vendor/
 Disallow: /orders-vendor/
 Disallow: /login-buyer/
 Disallow: /login-vendor/
