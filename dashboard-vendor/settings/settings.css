@@ -59,31 +59,10 @@
   align-items: start;
 }
 
-/* The Business card holds details + banner + storefront layout, so it takes
-   the full row; Address and Bank QR pair up beneath it */
+/* The no-business notice is the only card without a pair, so it takes the
+   full row */
 .settings-content--business > .settings-section--full {
   grid-column: 1 / -1;
-}
-
-/* Inside the Business card: details form on the left, banner photo above the
-   storefront layout on the right. One column again on narrow viewports. */
-.biz-card-cols {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  align-items: start;
-}
-
-.biz-subheading {
-  font-size: 1rem;
-  font-weight: 700;
-  margin: 0 0 0.75rem;
-}
-
-@media (max-width: 900px) {
-  .biz-card-cols {
-    grid-template-columns: 1fr;
-  }
 }
 
 .settings-content--business .settings-section {
@@ -93,18 +72,21 @@
   background: #fff;
 }
 
-/* Messages span both columns; the grid gap already provides the spacing,
-   so their own margins go */
-.settings-content--business > .settings-msg {
+/* Messages and status banners span both columns; the grid gap already
+   provides the spacing, so their own margins go */
+.settings-content--business > .settings-msg,
+.settings-content--business > .biz-rejected {
   grid-column: 1 / -1;
   margin: 0;
 }
 
-/* The shared Save button lives inside the Business card, bottom right.
+/* The shared Save button for the business form sits on its own full row,
+   right-aligned, between the business cards and the Address/Bank QR cards.
    Doubled class so it outranks .btn-save's own margin-top below. */
-.btn-save.biz-save {
-  display: block;
-  margin: 1.5rem 0 0 auto;
+.settings-content--business > .btn-save.biz-save {
+  grid-column: 1 / -1;
+  justify-self: end;
+  margin: 0;
 }
 
 @media (max-width: 900px) {

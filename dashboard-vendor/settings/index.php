@@ -187,14 +187,19 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
             </div>
 
             <?php elseif ($tab === 'business'): ?>
-            <!-- No card-level <h2>: the page <h1> above already says Business.
-                 Each subject inside gets a .biz-subheading instead. -->
+            <!-- Each subject is its own .settings-section card, flowing two
+                 across in the grid. The name/description fields live inside
+                 <form id="business-form">; the Categories and Storefront cards
+                 post with it via form="business-form", so the one Save button
+                 after the cards saves all three at once. Banner and Address
+                 have their own forms. -->
+            <?php if (!$business): ?>
             <div class="settings-section settings-section--full">
-                <?php if (!$business): ?>
                 <p style="font-size:0.9rem;color:#6b7280;"><?= $t['vendor_no_business'] ?> <a href="/submit/"><?= $t['vendor_submit_one'] ?></a></p>
-                <?php else: ?>
+            </div>
+            <?php else: ?>
 
-                <?php if ((int)$business['suspended'] === 1): ?>
+            <?php if ((int)$business['suspended'] === 1): ?>
                 <!-- A suspended shop is off the marketplace but the vendor is
                      still here fixing it, so this is where they read why.
                      There is no resubmit button: suspension is lifted by an
@@ -229,11 +234,10 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <p class="settings-msg settings-msg--pending"><?= $t['vendor_biz_pending_note'] ?></p>
                 <?php endif; ?>
 
-                <div class="biz-card-cols">
-                <div>
+            <div class="settings-section">
+                <h2><?= $t['vendor_biz_details_heading'] ?></h2>
                 <form method="POST" action="/dashboard-vendor/settings/business-action.php" id="business-form">
                     <?= csrf_input() ?>
-                    <h3 class="biz-subheading"><?= $t['vendor_biz_details_heading'] ?></h3>
                     <div class="settings-field">
                         <label for="business_name"><?= $t['vendor_settings_biz_name'] ?></label>
                         <input type="text" id="business_name" name="business_name" value="<?= htmlspecialchars($business['name']) ?>" required>
@@ -252,25 +256,27 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                         <textarea id="description_km" name="description_km" rows="4" maxlength="160" placeholder="ការពិពណ៌នាហាងជាភាសាខ្មែរ" oninput="document.getElementById('desc-km-count').textContent = 160 - this.value.length"><?= htmlspecialchars($business['description_km'] ?? '') ?></textarea>
                         <p class="field-hint" style="margin:0.3rem 0 0"><span id="desc-km-count"><?= 160 - mb_strlen($business['description_km'] ?? '') ?></span> <?= $t['vendor_biz_desc_count'] ?></p>
                     </div>
-                    <?php if (!empty($catTree)): ?>
-                    <hr class="form-divider">
-                    <h3 class="biz-subheading"><?= $t['vendor_settings_categories'] ?></h3>
-                    <p class="field-hint" style="margin-bottom:1.25rem"><?= $t['vendor_cat_hint'] ?></p>
-                    <div class="settings-field">
-                        <ul class="psp-cat-chosen" data-cat-chosen hidden></ul>
-                        <div data-cat-cascade data-target="biz-category" data-ph-root="<?= htmlspecialchars($t['prod_select_category']) ?>" data-ph-sub="<?= htmlspecialchars($t['prod_select_subcategory']) ?>"></div>
-                        <div class="biz-cat-actions">
-                            <button type="button" class="biz-cat-btn" data-cat-add><?= $t['vendor_cat_add'] ?></button>
-                            <button type="button" class="biz-cat-btn biz-cat-btn--ghost" data-cat-clear><?= $t['vendor_cat_clear'] ?></button>
-                        </div>
-                        <input type="hidden" id="biz-category" name="category" value="<?= htmlspecialchars($business['category'] ?? '') ?>">
-                    </div>
-                    <?php endif; ?>
                 </form>
-                </div>
+            </div>
 
-                <div>
-                <h3 class="biz-subheading"><?= $t['vendor_settings_banner'] ?></h3>
+            <?php if (!empty($catTree)): ?>
+            <div class="settings-section">
+                <h2><?= $t['vendor_settings_categories'] ?></h2>
+                <p class="field-hint" style="margin-bottom:1.25rem"><?= $t['vendor_cat_hint'] ?></p>
+                <div class="settings-field">
+                    <ul class="psp-cat-chosen" data-cat-chosen hidden></ul>
+                    <div data-cat-cascade data-target="biz-category" data-ph-root="<?= htmlspecialchars($t['prod_select_category']) ?>" data-ph-sub="<?= htmlspecialchars($t['prod_select_subcategory']) ?>"></div>
+                    <div class="biz-cat-actions">
+                        <button type="button" class="biz-cat-btn" data-cat-add><?= $t['vendor_cat_add'] ?></button>
+                        <button type="button" class="biz-cat-btn biz-cat-btn--ghost" data-cat-clear><?= $t['vendor_cat_clear'] ?></button>
+                    </div>
+                    <input type="hidden" id="biz-category" name="category" form="business-form" value="<?= htmlspecialchars($business['category'] ?? '') ?>">
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <div class="settings-section">
+                <h2><?= $t['vendor_settings_banner'] ?></h2>
                 <p class="field-hint" style="margin-bottom:1.25rem"><?= $t['vendor_settings_banner_hint'] ?></p>
                 <div class="settings-field">
                     <?php if ($business['banner']): ?>
@@ -292,12 +298,11 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     </div>
                     <p class="field-hint"><?= $t['vendor_banner_upload_hint'] ?></p>
                 </div>
+            </div>
 
-                <hr class="form-divider">
-
-                <!-- Storefront layout — same card, under the banner. What shows
-                     on the shop page and in what order. -->
-                <h3 class="biz-subheading"><?= $t['storefront_heading'] ?></h3>
+            <!-- Storefront layout — what shows on the shop page and in what order. -->
+            <div class="settings-section">
+                <h2><?= $t['storefront_heading'] ?></h2>
                 <?php if (empty($sfProducts)): ?>
                 <p class="field-hint"><?= $t['storefront_no_products'] ?></p>
                 <?php else: ?>
@@ -348,15 +353,12 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                     </div>
                 </template>
                 <?php endif; ?>
-                </div>
-                </div>
-
-                <!-- One Save button for the whole Business card (details + storefront),
-                     submitting the business form. -->
-                <button type="submit" form="business-form" class="btn-save biz-save"><?= $t['settings_save'] ?></button>
-
-                <?php endif; ?>
             </div>
+
+            <!-- One Save button for the business form (details + categories + storefront) -->
+            <button type="submit" form="business-form" class="btn-save biz-save"><?= $t['settings_save'] ?></button>
+
+            <?php endif; ?>
 
             <?php if ($business): ?>
             <!-- Address — folded into the Business tab (was its own tab) -->
