@@ -187,9 +187,9 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
             </div>
 
             <?php elseif ($tab === 'business'): ?>
+            <!-- No card-level <h2>: the page <h1> above already says Business.
+                 Each subject inside gets a .biz-subheading instead. -->
             <div class="settings-section settings-section--full">
-                <h2><?= $t['vendor_settings_tab_business'] ?></h2>
-
                 <?php if (!$business): ?>
                 <p style="font-size:0.9rem;color:#6b7280;"><?= $t['vendor_no_business'] ?> <a href="/submit/"><?= $t['vendor_submit_one'] ?></a></p>
                 <?php else: ?>
@@ -233,6 +233,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <div>
                 <form method="POST" action="/dashboard-vendor/settings/business-action.php" id="business-form">
                     <?= csrf_input() ?>
+                    <h3 class="biz-subheading"><?= $t['vendor_biz_details_heading'] ?></h3>
                     <div class="settings-field">
                         <label for="business_name"><?= $t['vendor_settings_biz_name'] ?></label>
                         <input type="text" id="business_name" name="business_name" value="<?= htmlspecialchars($business['name']) ?>" required>
@@ -252,8 +253,10 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                         <p class="field-hint" style="margin:0.3rem 0 0"><span id="desc-km-count"><?= 160 - mb_strlen($business['description_km'] ?? '') ?></span> <?= $t['vendor_biz_desc_count'] ?></p>
                     </div>
                     <?php if (!empty($catTree)): ?>
+                    <hr class="form-divider">
+                    <h3 class="biz-subheading"><?= $t['vendor_settings_categories'] ?></h3>
+                    <p class="field-hint" style="margin-bottom:1.25rem"><?= $t['vendor_cat_hint'] ?></p>
                     <div class="settings-field">
-                        <label><?= $t['vendor_settings_categories'] ?> <span class="field-hint" style="font-weight:400;display:inline"><?= $t['vendor_cat_hint'] ?></span></label>
                         <ul class="psp-cat-chosen" data-cat-chosen hidden></ul>
                         <div data-cat-cascade data-target="biz-category" data-ph-root="<?= htmlspecialchars($t['prod_select_category']) ?>" data-ph-sub="<?= htmlspecialchars($t['prod_select_subcategory']) ?>"></div>
                         <div class="biz-cat-actions">
@@ -267,8 +270,9 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 </div>
 
                 <div>
+                <h3 class="biz-subheading"><?= $t['vendor_settings_banner'] ?></h3>
+                <p class="field-hint" style="margin-bottom:1.25rem"><?= $t['vendor_settings_banner_hint'] ?></p>
                 <div class="settings-field">
-                    <label><?= $t['vendor_settings_banner'] ?> <span class="field-hint" style="font-weight:400;display:inline"> <?= $t['vendor_settings_banner_hint'] ?></span></label>
                     <?php if ($business['banner']): ?>
                         <img src="/uploads/<?= htmlspecialchars($business['banner']) ?>" alt="" class="banner-preview">
                     <?php endif; ?>
@@ -347,14 +351,12 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 </div>
                 </div>
 
+                <!-- One Save button for the whole Business card (details + storefront),
+                     submitting the business form. -->
+                <button type="submit" form="business-form" class="btn-save biz-save"><?= $t['settings_save'] ?></button>
+
                 <?php endif; ?>
             </div>
-
-            <?php if ($business): ?>
-            <!-- One Save button for the whole Business card (details + storefront),
-                 submitting the business form. -->
-            <button type="submit" form="business-form" class="btn-save"><?= $t['settings_save'] ?></button>
-            <?php endif; ?>
 
             <?php if ($business): ?>
             <!-- Address — folded into the Business tab (was its own tab) -->

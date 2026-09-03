@@ -93,16 +93,18 @@
   background: #fff;
 }
 
-/* Messages and the shared Save button span both columns; the grid gap
-   already provides the spacing, so their own margins go */
-.settings-content--business > .settings-msg,
-.settings-content--business > .btn-save {
+/* Messages span both columns; the grid gap already provides the spacing,
+   so their own margins go */
+.settings-content--business > .settings-msg {
   grid-column: 1 / -1;
   margin: 0;
 }
 
-.settings-content--business > .btn-save {
-  justify-self: start;
+/* The shared Save button lives inside the Business card, bottom right.
+   Doubled class so it outranks .btn-save's own margin-top below. */
+.btn-save.biz-save {
+  display: block;
+  margin: 1.5rem 0 0 auto;
 }
 
 @media (max-width: 900px) {
