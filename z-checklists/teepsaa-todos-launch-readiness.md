@@ -88,58 +88,44 @@ admitted part of the test was skipped. That skipped part is what you're
 testing here. Each item says which accounts you need and where to click.
 
 - [ ] **A buyer's order page updates by itself.** Needs a buyer and the admin
-      (or vendor) in two different browsers.
-      1. Browser 1: log in as a buyer who has an order in progress and open
-         that order at `/orders-buyer/order.php?id=…`. Leave it open, don't
-         touch it.
-      2. Browser 2: move that same order forward — e.g. as admin confirm its
-         payment (admin → Orders → Payments), or as the vendor dispatch it
-         (vendor → Orders).
-      3. Watch browser 1: within ~15 seconds the buyer's page should refresh
-         itself and show the new status **without you touching it** (the page
-         polls every 15s and reloads when the status changes). If it only
-         changes after you refresh it yourself, the test failed.
-         (feature built 2026-09-03 — this page had no auto-update before)
-- [ ] **Clicking a bell notification marks it read.** Any account with unread
+      (or vendor) in two different browsers. 1. Browser 1: log in as a buyer who has an order in progress and open
+      that order at `/orders-buyer/order.php?id=…`. Leave it open, don't
+      touch it. 2. Browser 2: move that same order forward — e.g. as admin confirm its
+      payment (admin → Orders → Payments), or as the vendor dispatch it
+      (vendor → Orders). 3. Watch browser 1: within ~15 seconds the buyer's page should refresh
+      itself and show the new status **without you touching it** (the page
+      polls every 15s and reloads when the status changes). If it only
+      changes after you refresh it yourself, the test failed.
+      (built 2026-09-03 — no page auto-updated before. Now every order page
+      polls every 15s: buyer/vendor/admin order detail pages reload when the
+      status changes, and the order list pages update their cards in place.
+      So the reverse direction — buyer confirms delivery, watch the vendor
+      and admin order pages — is the same test and also has to pass.)
+- [x] **Clicking a bell notification marks it read.** Any account with unread
       notifications works — easiest is the vendor from the test above, who just
-      got one.
-      1. Click the bell in the header. Note the unread count.
-      2. Click one notification. The count should drop by one.
-      3. Click "mark all read". Count goes to zero.
-      4. Reload the page. Count must still be zero — if the unread count comes
-         back after a reload, the "read" never reached the database.
+      got one. 1. Click the bell in the header. Note the unread count. 2. Click one notification. The count should drop by one. 3. Click "mark all read". Count goes to zero. 4. Reload the page. Count must still be zero — if the unread count comes
+      back after a reload, the "read" never reached the database.
 - [ ] **The vendor bell fires for a new order and for low stock.** Needs a
-      buyer, a vendor, and the admin.
-      1. New-order bell: as a buyer, order one of the vendor's products; as
-         admin, confirm the payment (admin → Orders → Payments). Log in as the
-         vendor — the bell should show the new paid order.
-      2. Low-stock bell: as the vendor, edit a product so its low-stock
-         threshold is _higher_ than its current stock (e.g. stock 3,
-         threshold 5). As the buyer, buy one. The vendor's bell should show a
-         low-stock notification.
+      buyer, a vendor, and the admin. 1. New-order bell: as a buyer, order one of the vendor's products; as
+      admin, confirm the payment (admin → Orders → Payments). Log in as the
+      vendor — the bell should show the new paid order. 2. Low-stock bell: as the vendor, edit a product so its low-stock
+      threshold is _higher_ than its current stock (e.g. stock 3,
+      threshold 5). As the buyer, buy one. The vendor's bell should show a
+      low-stock notification.
 - [ ] **"Mark paid out" actually works.** As admin, on an order the buyer has
       confirmed as delivered (the server's payout window is currently 60
-      seconds, so a minute after delivery is enough).
-      1. Admin → Orders → Payouts. The order should be listed.
-      2. Click "mark paid out".
-      3. Confirm three things: the order's status becomes completed, it is
-         gone from the payouts list, and the vendor receives the `payout_sent`
-         email.
+      seconds, so a minute after delivery is enough). 1. Admin → Orders → Payouts. The order should be listed. 2. Click "mark paid out". 3. Confirm three things: the order's status becomes completed, it is
+      gone from the payouts list, and the vendor receives the `payout_sent`
+      email.
 - [ ] **Rejecting a refund doesn't strand the order.** Needs a buyer with a
-      delivered order, and the admin.
-      1. As the buyer, open the order at `/orders-buyer/` and request a refund.
-      2. As admin, go to Orders → Refunds and _reject_ it (the approve path
-         already passed — you're testing reject).
-      3. The buyer should get the `refund_rejected` email, and the buyer's
-         order page should show a normal status again (delivered), not be
-         stuck saying refund requested or show anything broken.
+      delivered order, and the admin. 1. As the buyer, open the order at `/orders-buyer/` and request a refund. 2. As admin, go to Orders → Refunds and _reject_ it (the approve path
+      already passed — you're testing reject). 3. The buyer should get the `refund_rejected` email, and the buyer's
+      order page should show a normal status again (delivered), not be
+      stuck saying refund requested or show anything broken.
 - [ ] **A wrong vendor verification code is rejected, and resend works.**
       Register a fresh vendor with a +alias to get to the "enter the code we
-      emailed you" screen.
-      1. Type a wrong code — it must be rejected with an error.
-      2. Click resend. A second email arrives with a new code.
-      3. The old code from the first email must now fail, and the new code
-         must work.
+      emailed you" screen. 1. Type a wrong code — it must be rejected with an error. 2. Click resend. A second email arrives with a new code. 3. The old code from the first email must now fail, and the new code
+      must work.
 
 (The old list had a seventh item — buyer credentials rejected at
 `/login-vendor/` — but that's the same test as the last item in 1a, which
@@ -425,11 +411,9 @@ items — they're deduplicated here.
       `.htaccess` and remove `.htpasswd` from the server. The exposure fix this
       was waiting on (removing `z-checklists/` and `database/`) was completed
       2026-07-10.
-- [ ] **Optionally add host-scoped Basic Auth on `admin.teepsaa.com`** at the
-      same moment — the same `.htpasswd` technique scoped by host
-      (`SetEnvIf Host ^admin\.teepsaa\.com ADMIN_HOST`). Doing it now rather
-      than earlier avoids two password prompts on admin pages. See
-      `teepsaa-open-questions.md`.
+(Host-scoped Basic Auth on `admin.teepsaa.com` was listed here as optional —
+cut from launch scope 2026-09-03; it stays tracked in
+`teepsaa-open-questions.md`.)
 
 ---
 
@@ -445,42 +429,28 @@ own, but the first two are visible to the public and cheap to fix.
 - [ ] **`sitemap.php` lists `/browse/`, which does not exist.** Line 34. There
       is no `browse/` directory anywhere in the tree and nothing else in the
       site links to it. Google will fetch it, get a 404, and log a sitemap
-      error on the first crawl after the gate comes off. Either delete the
-      `<url>` block or create the page.
+      error on the first crawl after the gate comes off. Delete the `<url>`
+      block (one-line fix, not a new page).
 
 - [ ] **Three footer social links are `href="#"` placeholders** —
       `footer/footer.php`, the Instagram/Facebook/Telegram row. Telegram
       especially, given Part 3e already flags Telegram sharing as important in
       Cambodia. Point them at real accounts or drop the row before launch.
 
-## CSRF — four POST handlers verify no token
+## Cut from launch scope 2026-09-03 — post-launch cleanup, not launch work
 
-Every file containing a `method="post"` form calls `csrf_input()`, and every
-`*-action.php` verifies. These four read `$_POST` and change state without a
-`csrf_verify()` or an inline `hash_equals()` check:
+None of these block launch and none are tests. Kept as one-liners so the
+findings aren't lost; do them whenever, after launch:
 
-- [ ] `api/notifications/mark-read.php` — marks the caller's notifications read
-- [ ] `api/wishlist/toggle.php` — adds/removes a wishlist row
-- [ ] `lang/set.php` — writes `lang` to the account row
-- [ ] `currency/set.php` — session only
-
-      All four are mitigated in practice: the session cookie is
-      `SameSite=Strict`, so a cross-site POST arrives with no session and is
-      rejected by the login guard before reaching the write. The impact if the
-      mitigation were ever relaxed is also low — nuisance writes on the
-      victim's own account, no money and no privilege. Worth adding
-      `csrf_verify()` to the first three for consistency; `api/coupon/validate.php`
-      and `api/messages/reply.php` already do the inline check and are the
-      pattern to copy.
-
-## `products/toggle.php` has no `archived` guard
-
-- [ ] `products/toggle.php` runs `UPDATE products SET active = 1 - active`
-      without excluding archived rows, so a vendor who POSTs it against an
-      archived product produces `archived = 1, active = 1`. Every buyer-facing
-      query filters `archived = 0`, so nothing leaks publicly — but it is an
-      inconsistent state that `archive.php` (which forces `active = 0`)
-      clearly intends to prevent. Add `AND archived = 0` to the UPDATE.
+- CSRF tokens on 4 minor POST handlers (`api/notifications/mark-read.php`,
+  `api/wishlist/toggle.php`, `lang/set.php`, `currency/set.php`) — already
+  mitigated by the `SameSite=Strict` cookie; worst case is nuisance writes on
+  the attacker's victim's own account.
+- `products/toggle.php` — add `AND archived = 0` to its UPDATE. Nothing leaks
+  publicly today; it just allows an odd `archived=1, active=1` row.
+- Delete the dead CSS classes in the table below.
+- Host-scoped Basic Auth on `admin.teepsaa.com` (was an "optional" Part 5
+  item) — already tracked in `teepsaa-open-questions.md`.
 
 ## Dead CSS
 
@@ -491,8 +461,8 @@ were excluded, so these are genuinely unreferenced:
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `admin/admin.css`                        | `add-cat-form`, `admin-card-actions`, `admin-card-info`, `admin-list`, `cat-desc`, `cat-section`, `cat-table`, `order-card-business`, `payout-card`, `payout-no-qr`, `payout-note`, `payout-qr`, `refund-popup-note`, `refund-popup-reason`, `review-vendor-sub`, `section-divider`, `suspend-details`, `suspend-summary` |
 | `popup/popup.css`                        | `popup-close`, `popup-inline-form`, `popup-modal`, `popup-overlay`, `popup-payout-box`, `popup-photos`, `popup-status-bar`, `popup-title`, `popup-total--payout`                                                                                                                                                          |
-| `orders-buyer/orders-buyer.css`    | `order-card-action`, `order-card-business`, `order-track-link`                                                                                                                                                                                                                                                            |
-| `settings-buyer/settings-buyer.css`  | `avatar-form`, `settings-field-row`                                                                                                                                                                                                                                                                                       |
+| `orders-buyer/orders-buyer.css`          | `order-card-action`, `order-card-business`, `order-track-link`                                                                                                                                                                                                                                                            |
+| `settings-buyer/settings-buyer.css`      | `avatar-form`, `settings-field-row`                                                                                                                                                                                                                                                                                       |
 | `privacy/privacy.css`, `terms/terms.css` | `legal-effective`, `legal-note` (both files)                                                                                                                                                                                                                                                                              |
 | `cart/cart.css`                          | `cart-total-row`                                                                                                                                                                                                                                                                                                          |
 | `checkout/checkout.css`                  | `checkout-total-row`                                                                                                                                                                                                                                                                                                      |
@@ -500,14 +470,12 @@ were excluded, so these are genuinely unreferenced:
 | `header/header.css`                      | `lang-chevron`                                                                                                                                                                                                                                                                                                            |
 | `style.css`                              | `flash-badge`                                                                                                                                                                                                                                                                                                             |
 
-- [ ] Delete the above.
-
-      `popup.css` is the interesting one: the modal shell itself
-      (`popup-modal`, `popup-overlay`, `popup-close`, `popup-title`) is dead
-      while the contents (`popup-row`, `popup-items`, `popup-total`) are live,
-      so the shell was reimplemented somewhere else and the old rules were left
-      behind. Worth a look before deleting, in case the new shell is the
-      duplicate.
+(Post-launch cleanup — see "Cut from launch scope" above. `popup.css` is the
+interesting one: the modal shell itself (`popup-modal`, `popup-overlay`,
+`popup-close`, `popup-title`) is dead while the contents (`popup-row`,
+`popup-items`, `popup-total`) are live, so the shell was reimplemented
+somewhere else and the old rules were left behind. Worth a look before
+deleting, in case the new shell is the duplicate.)
 
 ## What could not be checked from here, and why
 
@@ -558,7 +526,7 @@ Reference, not a checklist. Kept so you don't have to grep for it.
 | Password reset link              | `reset_password`    | `forgot-password-buyer/request.php`                   |
 | Order placed                     | `order_received`    | `checkout/confirm.php`                                |
 | Payment confirmed by admin       | `payment_confirmed` | `admin/payments-action.php`                           |
-| Order dispatched                 | `order_dispatched`  | `analytics/dispatch.php`                       |
+| Order dispatched                 | `order_dispatched`  | `analytics/dispatch.php`                              |
 | Abandoned cart reminder          | `abandoned_cart`    | `cron/abandoned-cart.php` (daily)                     |
 | Review reminder after delivery   | `review_reminder`   | `cron/review-reminder.php` (daily)                    |
 | Welcome after verification ⚠     | `welcome_buyer`     | `verify-email/verify.php`                             |
@@ -566,26 +534,26 @@ Reference, not a checklist. Kept so you don't have to grep for it.
 | Return approved ⚠                | `refund_approved`   | `admin/refund-action.php`                             |
 | Refund declined ⚠                | `refund_rejected`   | `admin/refund-action.php`                             |
 | Refund sent via ABA ⚠            | `refund_sent`       | `admin/refund-action.php`                             |
-| Password changed ⚠               | `password_changed`  | `settings-buyer/password-action.php`        |
-| Account deleted ⚠                | `account_deleted`   | `settings-buyer/delete-action.php`          |
+| Password changed ⚠               | `password_changed`  | `settings-buyer/password-action.php`                  |
+| Account deleted ⚠                | `account_deleted`   | `settings-buyer/delete-action.php`                    |
 
 ## Vendor
 
-| Event                            | Template             | Sent from                                                                         |
-| -------------------------------- | -------------------- | --------------------------------------------------------------------------------- |
-| Registration → verification code | `verify_code`        | `register-vendor/register-vendor.php`                                             |
-| Resend verification code         | `verify_code`        | `resend-verification/resend.php`                                                  |
-| Password reset link              | `reset_password`     | `forgot-password-vendor/request.php`                                              |
-| Low stock after a sale           | `low_stock`          | `checkout/confirm.php`                                                            |
-| Buyer confirmed delivery         | `delivery_confirmed` | `orders-buyer/confirm-delivery.php`                                            |
-| Payout sent                      | `payout_sent`        | `admin/payouts-action.php`                                                        |
-| Welcome after verification ⚠     | `welcome_vendor`     | `verify-email/verify.php`                                                         |
-| Business submitted ⚠             | `business_submitted` | `submit/submit.php`                                                               |
-| Business approved ⚠              | `business_approved`  | `admin/action.php`                                                                |
-| Business rejected ⚠              | `business_rejected`  | `admin/action.php`                                                                |
+| Event                            | Template             | Sent from                                                               |
+| -------------------------------- | -------------------- | ----------------------------------------------------------------------- |
+| Registration → verification code | `verify_code`        | `register-vendor/register-vendor.php`                                   |
+| Resend verification code         | `verify_code`        | `resend-verification/resend.php`                                        |
+| Password reset link              | `reset_password`     | `forgot-password-vendor/request.php`                                    |
+| Low stock after a sale           | `low_stock`          | `checkout/confirm.php`                                                  |
+| Buyer confirmed delivery         | `delivery_confirmed` | `orders-buyer/confirm-delivery.php`                                     |
+| Payout sent                      | `payout_sent`        | `admin/payouts-action.php`                                              |
+| Welcome after verification ⚠     | `welcome_vendor`     | `verify-email/verify.php`                                               |
+| Business submitted ⚠             | `business_submitted` | `submit/submit.php`                                                     |
+| Business approved ⚠              | `business_approved`  | `admin/action.php`                                                      |
+| Business rejected ⚠              | `business_rejected`  | `admin/action.php`                                                      |
 | Business deleted ⚠               | `business_deleted`   | `settings-vendor/business-delete-action.php`, `admin/vendor-action.php` |
-| New paid order ⚠                 | `vendor_new_order`   | `admin/payments-action.php`                                                       |
-| Refund requested ⚠               | `refund_requested`   | `orders-buyer/refund-request.php`                                              |
+| New paid order ⚠                 | `vendor_new_order`   | `admin/payments-action.php`                                             |
+| Refund requested ⚠               | `refund_requested`   | `orders-buyer/refund-request.php`                                       |
 | Password changed ⚠               | `password_changed`   | `settings-vendor/password-action.php`                                   |
 | Account deleted ⚠                | `account_deleted`    | `settings-vendor/delete-action.php`                                     |
 

@@ -149,21 +149,26 @@ export function initStatusRefresh(options = {}) {
     const asAdmin       = !!options.asAdmin;
     const popupBody     = document.getElementById('popup-body');
     const btn           = document.querySelector('[data-refresh-all-btn]');
-    if (!btn) return;
 
-    btn.addEventListener('click', async () => {
-        btn.disabled = true;
-        btn.classList.add('is-spinning');
-
+    const refreshAll = () => {
         const cards = [...document.querySelectorAll('[data-order-id]')];
-        try {
-            await Promise.all([
-                Promise.all(cards.map(card => refreshCard(card, { loginUrl, isAdminFilter, asAdmin, popupBody }))),
-                new Promise(r => setTimeout(r, 700)),
-            ]);
-        } finally {
-            btn.disabled = false;
-            btn.classList.remove('is-spinning');
-        }
-    });
+        return Promise.all(cards.map(card => refreshCard(card, { loginUrl, isAdminFilter, asAdmin, popupBody })));
+    };
+
+    if (btn) {
+        btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            btn.classList.add('is-spinning');
+            try {
+                await Promise.all([refreshAll(), new Promise(r => setTimeout(r, 700))]);
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('is-spinning');
+            }
+        });
+    }
+
+    // The same sweep runs on its own every 15s (matching the bell's rhythm)
+    // while the tab is visible, so order pages update without anyone clicking.
+    setInterval(() => { if (!document.hidden) refreshAll(); }, 15000);
 }
