@@ -56,7 +56,7 @@ $reviews = $stmt->fetchAll();
 $success = $_SESSION['admin_success'] ?? '';
 $error   = $_SESSION['admin_error']   ?? '';
 unset($_SESSION['admin_success'], $_SESSION['admin_error']);
-$adminSection = 'admin';
+$adminSection = 'reviews';
 $adminTab     = 'reviews';
 ?>
 <!DOCTYPE html>

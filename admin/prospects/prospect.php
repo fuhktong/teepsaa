@@ -19,7 +19,7 @@ if (empty($_SESSION['admin_id'])) {
 
 admin_require('prospects');
 
-$adminSection = 'marketing';
+$adminSection = 'canvassing';
 $adminTab     = 'prospects';
 
 $id = (int)($_GET['id'] ?? 0);

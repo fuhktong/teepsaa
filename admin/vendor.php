@@ -109,7 +109,7 @@ if (!$v['business_id'])        { $statusLabel = $deletedBizCount > 0 ? 'Business
 elseif ($v['approved'] === 1)  { $statusLabel = 'Approved';    $statusClass = 'badge-green'; }
 elseif ($v['approved'] === -1) { $statusLabel = 'Rejected';    $statusClass = 'badge-red'; }
 else                           { $statusLabel = 'Pending';     $statusClass = 'badge-yellow'; }
-$adminSection = 'admin';
+$adminSection = 'vendors';
 $adminTab     = 'vendors';
 ?>
 <!DOCTYPE html>

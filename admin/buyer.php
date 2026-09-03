@@ -57,7 +57,7 @@ $pendingVendorCount = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE ap
 
 $statusClass = $b['suspended'] ? 'badge-red' : 'badge-green';
 $statusLabel = $b['suspended'] ? 'Suspended' : 'Active';
-$adminSection = 'admin';
+$adminSection = 'buyers';
 $adminTab     = 'buyers';
 ?>
 <!DOCTYPE html>

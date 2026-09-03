@@ -56,7 +56,7 @@ $buyers = $stmt->fetchAll();
 
 $bcounts = $pdo->query("SELECT COUNT(*) AS total, SUM(suspended) AS suspended, SUM(1-suspended) AS active FROM buyers")->fetch();
 
-$adminSection = 'admin';
+$adminSection = 'buyers';
 $adminTab     = 'buyers';
 ?>
 <!DOCTYPE html>

@@ -18,7 +18,7 @@ if (empty($_SESSION['admin_id'])) {
 
 admin_require('prospects');
 
-$adminSection = 'marketing';
+$adminSection = 'canvassing';
 $adminTab     = 'prospects';
 
 $statusFilter = isset($_GET['status']) && isset(PROSPECT_STATUSES[$_GET['status']]) ? $_GET['status'] : '';

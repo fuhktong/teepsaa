@@ -35,7 +35,7 @@ $total    = count($vendors);
 $approved = count(array_filter($vendors, fn($v) => (int)$v['approved'] === 1));
 $pending  = count(array_filter($vendors, fn($v) => (int)$v['approved'] === 0));
 $rejected = count(array_filter($vendors, fn($v) => (int)$v['approved'] === -1));
-$adminSection = 'marketing';
+$adminSection = 'canvassing';
 $adminTab     = 'vendor-map';
 ?>
 <!DOCTYPE html>

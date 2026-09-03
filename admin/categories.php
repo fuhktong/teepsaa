@@ -81,7 +81,7 @@ $unreadMsgCount     = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM su
 $tree      = buildCatTree($allCats);
 $flat      = flattenCatTree($tree);
 $parentIds = array_column(array_filter($allCats, fn($c) => $c['parent_id'] !== null), 'parent_id');
-$adminSection = 'admin';
+$adminSection = 'categories';
 $adminTab     = 'categories';
 ?>
 <!DOCTYPE html>

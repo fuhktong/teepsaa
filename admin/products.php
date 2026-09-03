@@ -85,7 +85,7 @@ $stmt->execute($pparams);
 $products = $stmt->fetchAll();
 
 $pcounts = $pdo->query("SELECT COUNT(*) AS total, SUM(active) AS active, SUM(1-active) AS inactive FROM products")->fetch();
-$adminSection = 'admin';
+$adminSection = 'products';
 $adminTab     = 'products';
 ?>
 <!DOCTYPE html>

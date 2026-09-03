@@ -75,7 +75,7 @@ foreach ($khanRows as $row) {
 }
 
 $maxCount = $khanData ? max(array_column($khanData, 'cnt')) : 1;
-$adminSection = 'marketing';
+$adminSection = 'canvassing';
 $adminTab     = 'buyer-map';
 ?>
 <!DOCTYPE html>

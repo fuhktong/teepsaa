@@ -19,7 +19,7 @@ if (empty($_SESSION['admin_id'])) {
 
 admin_require('prospects');
 
-$adminSection = 'marketing';
+$adminSection = 'canvassing';
 $adminTab     = 'prospects';
 
 $prospects = $pdo->query('

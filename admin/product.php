@@ -80,7 +80,7 @@ $companyRate   = (float)$p['company_royalty_add_on'];
 $productRate   = (float)$p['product_royalty_add_on'];
 $royaltyWaived = (bool)$p['royalty_waived'];
 $totalRate     = $royaltyWaived ? 0.0 : $catRate + $companyRate + $productRate + $penaltyRate;
-$adminSection = 'admin';
+$adminSection = 'products';
 $adminTab     = 'products';
 ?>
 <!DOCTYPE html>

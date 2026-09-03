@@ -8,7 +8,8 @@
 const ADMIN_SECTION_GROUPS = [
     'Admin'     => ['vendors' => 'Vendors', 'buyers' => 'Buyers', 'products' => 'Products', 'categories' => 'Categories', 'reviews' => 'Reviews'],
     'Orders'    => ['orders' => 'Orders', 'refunds' => 'Refunds', 'accounting' => 'Accounting', 'payments' => 'Payments', 'payouts' => 'Payouts'],
-    'Marketing' => ['promo-codes' => 'Promo Codes', 'coupons' => 'Coupons', 'banners' => 'Banners', 'careers' => 'Careers', 'vendor-map' => 'Vendor Map', 'buyer-map' => 'Buyer Map', 'prospects' => 'Canvassing'],
+    'Marketing'  => ['promo-codes' => 'Promo Codes', 'coupons' => 'Coupons', 'banners' => 'Banners', 'careers' => 'Careers'],
+    'Canvassing' => ['vendor-map' => 'Vendor Map', 'buyer-map' => 'Buyer Map', 'prospects' => 'Canvassing'],
     'Content'   => ['content' => 'Pages', 'faq' => 'FAQ'],
     'Messages'  => ['messages' => 'Messages'],
 ];
