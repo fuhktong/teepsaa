@@ -101,7 +101,7 @@ if ($tab === 'refunds' && !empty($bizIds)) {
     $ph2  = implode(',', array_fill(0, count($bizIds), '?'));
     $stmt = $pdo->prepare("
         SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.discount_amount,
-               o.status, o.created_at, o.refund_reason,
+               o.status, o.created_at, o.refund_reason, o.refund_rejected_at,
                b.name AS business_name,
                u.name AS buyer_name, u.email AS buyer_email,
                GROUP_CONCAT(CONCAT(oi.product_name, IFNULL(CONCAT(' (', oi.variant_label, ')'), ''), ' x', oi.quantity) ORDER BY oi.id SEPARATOR ', ') AS items
@@ -110,7 +110,8 @@ if ($tab === 'refunds' && !empty($bizIds)) {
         JOIN buyers u ON u.id = o.buyer_user_id
         JOIN order_items oi ON oi.order_id = o.id
         WHERE b.id IN ($ph2)
-          AND o.status IN ('refund_requested','return_approved','return_dispatched','return_received','refunded','refund_rejected')
+          AND (o.status IN ('refund_requested','return_approved','return_dispatched','return_received','refunded','refund_rejected')
+               OR o.refund_rejected_at IS NOT NULL)
         GROUP BY o.id
         ORDER BY o.created_at DESC
     ");
@@ -261,7 +262,7 @@ if ($tab === 'refunds' && !empty($bizIds)) {
                     <span class="order-card-total">$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?> refund</span>
                 </div>
                 <div class="order-card-status">
-                    <?php $refundStatus = $o['status']; require __DIR__ . '/../refund-status/refund-status.php'; ?>
+                    <?php $refundStatus = $o['refund_rejected_at'] ? 'refund_rejected' : $o['status']; require __DIR__ . '/../refund-status/refund-status.php'; ?>
                 </div>
             </div>
             </a>

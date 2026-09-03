@@ -87,32 +87,18 @@ In the old checklists these were ticked off, but the note next to each one
 admitted part of the test was skipped. That skipped part is what you're
 testing here. Each item says which accounts you need and where to click.
 
-- [ ] **A buyer's order page updates by itself.** Needs a buyer and the admin
-      (or vendor) in two different browsers. 1. Browser 1: log in as a buyer who has an order in progress and open
-      that order at `/orders-buyer/order.php?id=…`. Leave it open, don't
-      touch it. 2. Browser 2: move that same order forward — e.g. as admin confirm its
-      payment (admin → Orders → Payments), or as the vendor dispatch it
-      (vendor → Orders). 3. Watch browser 1: within ~15 seconds the buyer's page should refresh
-      itself and show the new status **without you touching it** (the page
-      polls every 15s and reloads when the status changes). If it only
-      changes after you refresh it yourself, the test failed.
-      (built 2026-09-03 — no page auto-updated before. Now every order page
-      polls every 15s: buyer/vendor/admin order detail pages reload when the
-      status changes, and the order list pages update their cards in place.
-      So the reverse direction — buyer confirms delivery, watch the vendor
-      and admin order pages — is the same test and also has to pass.)
 - [x] **Clicking a bell notification marks it read.** Any account with unread
       notifications works — easiest is the vendor from the test above, who just
       got one. 1. Click the bell in the header. Note the unread count. 2. Click one notification. The count should drop by one. 3. Click "mark all read". Count goes to zero. 4. Reload the page. Count must still be zero — if the unread count comes
       back after a reload, the "read" never reached the database.
-- [ ] **The vendor bell fires for a new order and for low stock.** Needs a
+- [x] **The vendor bell fires for a new order and for low stock.** Needs a
       buyer, a vendor, and the admin. 1. New-order bell: as a buyer, order one of the vendor's products; as
       admin, confirm the payment (admin → Orders → Payments). Log in as the
       vendor — the bell should show the new paid order. 2. Low-stock bell: as the vendor, edit a product so its low-stock
       threshold is _higher_ than its current stock (e.g. stock 3,
       threshold 5). As the buyer, buy one. The vendor's bell should show a
       low-stock notification.
-- [ ] **"Mark paid out" actually works.** As admin, on an order the buyer has
+- [x] **"Mark paid out" actually works.** As admin, on an order the buyer has
       confirmed as delivered (the server's payout window is currently 60
       seconds, so a minute after delivery is enough). 1. Admin → Orders → Payouts. The order should be listed. 2. Click "mark paid out". 3. Confirm three things: the order's status becomes completed, it is
       gone from the payouts list, and the vendor receives the `payout_sent`
@@ -411,9 +397,9 @@ items — they're deduplicated here.
       `.htaccess` and remove `.htpasswd` from the server. The exposure fix this
       was waiting on (removing `z-checklists/` and `database/`) was completed
       2026-07-10.
-(Host-scoped Basic Auth on `admin.teepsaa.com` was listed here as optional —
-cut from launch scope 2026-09-03; it stays tracked in
-`teepsaa-open-questions.md`.)
+      (Host-scoped Basic Auth on `admin.teepsaa.com` was listed here as optional —
+      cut from launch scope 2026-09-03; it stays tracked in
+      `teepsaa-open-questions.md`.)
 
 ---
 

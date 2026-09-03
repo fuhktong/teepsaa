@@ -29,7 +29,7 @@ $statusIn = implode(',', array_map([$pdo, 'quote'], $refundStatuses));
 
 $stmt = $pdo->prepare("
     SELECT o.id, o.subtotal, o.delivery_fee, o.coupon_code, o.discount_amount, o.status, o.created_at,
-           o.refund_reason, o.refund_requested_at, o.return_tracking_url,
+           o.refund_reason, o.refund_requested_at, o.refund_rejected_at, o.return_tracking_url,
            b.name AS business_name,
            bu.name AS buyer_name, bu.email AS buyer_email,
            v.name AS vendor_name, v.aba_qr AS vendor_aba_qr
@@ -37,7 +37,7 @@ $stmt = $pdo->prepare("
     JOIN businesses b ON b.id = o.business_id
     JOIN buyers bu ON bu.id = o.buyer_user_id
     JOIN vendors v ON v.id = b.user_id
-    WHERE o.id = ? AND o.status IN ($statusIn)
+    WHERE o.id = ? AND (o.status IN ($statusIn) OR o.refund_rejected_at IS NOT NULL)
 ");
 $stmt->execute([$orderId]);
 $o = $stmt->fetch();
@@ -72,8 +72,11 @@ $statusLabels = [
     'refunded'          => 'Refunded',
     'refund_rejected'   => 'Rejected',
 ];
-$statusClass = $statusClasses[$o['status']] ?? 'badge-grey';
-$statusLabel = $statusLabels[$o['status']] ?? ucwords(str_replace('_', ' ', $o['status']));
+// A rejected refund leaves the order back at 'delivered', so the refund state
+// shown here comes from the column, not from status.
+$refundState = $o['refund_rejected_at'] ? 'refund_rejected' : $o['status'];
+$statusClass = $statusClasses[$refundState] ?? 'badge-grey';
+$statusLabel = $statusLabels[$refundState] ?? ucwords(str_replace('_', ' ', $refundState));
 $adminSection = 'orders';
 $adminTab     = 'refunds';
 ?>
@@ -144,12 +147,12 @@ $adminTab     = 'refunds';
 
             <div class="detail-card">
                 <div class="detail-card-title">Status</div>
-                <?php $refundStatus = $o['status']; require __DIR__ . '/../refund-status/refund-status.php'; ?>
+                <?php $refundStatus = $refundState; require __DIR__ . '/../refund-status/refund-status.php'; ?>
             </div>
 
             <div class="detail-card">
                 <div class="detail-card-title">Actions</div>
-                <?php if ($o['status'] === 'refund_requested'): ?>
+                <?php if ($refundState === 'refund_requested'): ?>
                 <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Buyer will return item via Grab at their own cost. Approve to proceed, or reject if request is invalid.</p>
                 <div class="popup-actions">
                     <form method="POST" action="/admin/refund-action.php">
@@ -164,16 +167,16 @@ $adminTab     = 'refunds';
                     </form>
                 </div>
 
-                <?php elseif ($o['status'] === 'return_approved'): ?>
+                <?php elseif ($refundState === 'return_approved'): ?>
                 <p style="font-size:0.875rem;color:#6b7280;margin:0;">Waiting for buyer to pack and dispatch the return via Grab.</p>
 
-                <?php elseif ($o['status'] === 'return_dispatched'): ?>
+                <?php elseif ($refundState === 'return_dispatched'): ?>
                 <?php if ($o['return_tracking_url']): ?>
                 <div class="detail-row" style="margin-bottom:0.5rem;"><span class="detail-row-label">Return tracking</span><span class="detail-row-value"><a href="<?= htmlspecialchars($o['return_tracking_url']) ?>" target="_blank" rel="noopener">Track via Grab</a></span></div>
                 <?php endif; ?>
                 <p style="font-size:0.875rem;color:#6b7280;margin:0;">Buyer has dispatched the return. Waiting for vendor to confirm receipt.</p>
 
-                <?php elseif ($o['status'] === 'return_received'): ?>
+                <?php elseif ($refundState === 'return_received'): ?>
                 <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Vendor confirmed receipt. Send <strong>$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></strong> to the buyer via ABA, then mark as refunded.</p>
                 <div class="detail-row" style="margin-bottom:0.75rem;"><span class="detail-row-label">Buyer email</span><span class="detail-row-value"><?= htmlspecialchars($o['buyer_email']) ?></span></div>
                 <?php if ($o['vendor_aba_qr']): ?>
@@ -190,11 +193,11 @@ $adminTab     = 'refunds';
                     </form>
                 </div>
 
-                <?php elseif ($o['status'] === 'refunded'): ?>
+                <?php elseif ($refundState === 'refunded'): ?>
                 <p style="font-size:0.875rem;color:#1e7e34;margin:0;">Refund has been completed.</p>
 
-                <?php elseif ($o['status'] === 'refund_rejected'): ?>
-                <p style="font-size:0.875rem;color:#6b7280;margin:0;">Refund request was rejected.</p>
+                <?php elseif ($refundState === 'refund_rejected'): ?>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0;">Refund request was rejected. The order is back to delivered and the vendor is due their payout.</p>
                 <?php endif; ?>
             </div>
         </div>

@@ -28,7 +28,7 @@ $orderId = (int)($_POST['order_id'] ?? 0);
 $preset  = trim($_POST['reason_preset'] ?? '');
 $reason  = $preset === 'other' ? trim($_POST['reason_other'] ?? '') : $preset;
 
-$pidStmt = $pdo->prepare("SELECT public_id, delivered_at FROM orders WHERE id = ? AND buyer_user_id = ? AND status = 'delivered'");
+$pidStmt = $pdo->prepare("SELECT public_id, delivered_at, refund_rejected_at FROM orders WHERE id = ? AND buyer_user_id = ? AND status = 'delivered'");
 $pidStmt->execute([$orderId, $userId]);
 $existing = $pidStmt->fetch();
 $orderPublicId = $existing['public_id'] ?? '';
@@ -43,6 +43,13 @@ if (!$existing) {
     exit;
 }
 
+// A denied request is final — the order is back at 'delivered', so without
+// this it could be requested again and again inside the same window.
+if ($existing['refund_rejected_at']) {
+    header('Location: /orders-buyer/order.php?id=' . $orderPublicId);
+    exit;
+}
+
 // 24-hour refund window — only enforced when delivered_at is set
 if ($existing['delivered_at'] && (time() - strtotime($existing['delivered_at'])) >= PAYOUT_WINDOW_SECONDS) {
     header('Location: /orders-buyer/order.php?id=' . $orderPublicId);
@@ -52,7 +59,7 @@ if ($existing['delivered_at'] && (time() - strtotime($existing['delivered_at']))
 $stmt = $pdo->prepare("
     UPDATE orders
     SET status = 'refund_requested', refund_reason = ?, refund_requested_at = NOW()
-    WHERE id = ? AND buyer_user_id = ? AND status = 'delivered'
+    WHERE id = ? AND buyer_user_id = ? AND status = 'delivered' AND refund_rejected_at IS NULL
 ");
 $stmt->execute([$reason, $orderId, $userId]);
 

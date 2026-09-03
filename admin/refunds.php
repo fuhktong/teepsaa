@@ -27,11 +27,20 @@ $validFilters   = array_merge(['all'], $refundStatuses);
 $filter = in_array($_GET['status'] ?? '', $validFilters) ? ($_GET['status'] ?? 'all') : 'all';
 
 $statusIn = '\'refund_requested\',\'return_approved\',\'return_dispatched\',\'return_received\',\'refunded\',\'refund_rejected\'';
-$filterClause = $filter !== 'all' ? ' AND o.status = ' . $pdo->quote($filter) : '';
+
+// A rejected refund is no longer a status — the order is back to 'delivered'
+// and only refund_rejected_at marks it — so it is matched on the column.
+if ($filter === 'refund_rejected') {
+    $filterClause = ' AND o.refund_rejected_at IS NOT NULL';
+} elseif ($filter !== 'all') {
+    $filterClause = ' AND o.status = ' . $pdo->quote($filter) . ' AND o.refund_rejected_at IS NULL';
+} else {
+    $filterClause = '';
+}
 
 $sql = "
     SELECT o.id, o.subtotal, o.delivery_fee, o.discount_amount, o.status, o.created_at,
-           o.refund_reason, o.refund_requested_at, o.return_tracking_url,
+           o.refund_reason, o.refund_requested_at, o.refund_rejected_at, o.return_tracking_url,
            b.name AS business_name,
            bu.name AS buyer_name, bu.email AS buyer_email,
            v.name AS vendor_name, v.aba_qr AS vendor_aba_qr,
@@ -41,13 +50,14 @@ $sql = "
     JOIN buyers bu ON bu.id = o.buyer_user_id
     JOIN vendors v ON v.id = b.user_id
     JOIN order_items oi ON oi.order_id = o.id
-    WHERE o.status IN ($statusIn) $filterClause
+    WHERE (o.status IN ($statusIn) OR o.refund_rejected_at IS NOT NULL) $filterClause
     GROUP BY o.id
     ORDER BY o.refund_requested_at DESC
 ";
 $orders = $pdo->query($sql)->fetchAll();
 
-$counts = $pdo->query("SELECT status, COUNT(*) AS n FROM orders WHERE status IN ('refund_requested','return_approved','return_dispatched','return_received','refunded','refund_rejected') GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR);
+$counts = $pdo->query("SELECT status, COUNT(*) AS n FROM orders WHERE status IN ('refund_requested','return_approved','return_dispatched','return_received','refunded','refund_rejected') AND refund_rejected_at IS NULL GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR);
+$counts['refund_rejected'] = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE refund_rejected_at IS NOT NULL")->fetchColumn();
 $totalCount = array_sum($counts);
 
 $refundCount        = (int)($counts['refund_requested'] ?? 0);
@@ -136,7 +146,8 @@ $adminTab     = 'refunds';
                 <span class="order-row-biz"><?= htmlspecialchars($o['business_name']) ?></span>
                 <span class="order-row-customer"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span>
                 <span class="order-row-total">$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?> refund</span>
-                <span class="order-badge <?= $statusClasses[$o['status']] ?>"><?= $statusLabels[$o['status']] ?></span>
+                <?php $rState = $o['refund_rejected_at'] ? 'refund_rejected' : $o['status']; ?>
+                <span class="order-badge <?= $statusClasses[$rState] ?>"><?= $statusLabels[$rState] ?></span>
             </div>
             <?php if ($o['items']): ?>
             <div class="refund-row-reason" style="font-style:normal;color:#374151;"><?= htmlspecialchars($o['items']) ?></div>

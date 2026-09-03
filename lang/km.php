@@ -260,6 +260,7 @@ return [
     'order_describe_issue' => 'ពិពណ៌នាបញ្ហា…',
     'order_request_refund' => 'ស្នើសុំសំណង',
     'order_refund_closed'  => 'រយៈពេលស្នើសំណងបានបិទ។',
+    'order_refund_denied'  => 'ការស្នើសុំសំណងសម្រាប់ការបញ្ជាទិញនេះត្រូវបានបដិសេធ។',
     'order_send_back'      => 'ផ្ញើទំនិញត្រឡប់',
     'order_send_to'        => 'ផ្ញើទៅ៖',
     'order_return_instructions' => 'ខ្ចប់ទំនិញ ហើយផ្ញើត្រឡប់វិញតាម Grab ដោយសោហ៊ុយផ្ទាល់ខ្លួន។ បិទភ្ជាប់តំណតាមដាន Grab ខាងក្រោមនៅពេលបានផ្ញើ។',

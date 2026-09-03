@@ -49,7 +49,11 @@ if ($action === 'approve') {
     $_SESSION['admin_success'] = 'Return approved — buyer has been notified to send item back.';
 
 } elseif ($action === 'reject') {
-    $stmt = $pdo->prepare("UPDATE orders SET status = 'refund_rejected' WHERE id = ? AND status = 'refund_requested'");
+    // The request came from a delivered order, so denying it puts the order
+    // back exactly where it was — otherwise it can never reach 'completed'
+    // and falls out of the payout queue, and the vendor is never paid.
+    // The rejection is recorded in its own column instead of in status.
+    $stmt = $pdo->prepare("UPDATE orders SET status = 'delivered', refund_rejected_at = NOW() WHERE id = ? AND status = 'refund_requested'");
     $stmt->execute([$orderId]);
     if ($stmt->rowCount()) {
         $emailKey = 'refund_rejected';

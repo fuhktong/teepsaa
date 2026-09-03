@@ -260,6 +260,7 @@ return [
     'order_describe_issue' => 'Describe the issue…',
     'order_request_refund' => 'Request Refund',
     'order_refund_closed'  => 'Refund window has closed.',
+    'order_refund_denied'  => 'Your refund request for this order was declined.',
     'order_send_back'      => 'Send item back',
     'order_send_to'        => 'Send to:',
     'order_return_instructions' => 'Pack the item and send it back via Grab at your cost. Paste the Grab tracking link below once dispatched.',

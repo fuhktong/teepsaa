@@ -31,13 +31,14 @@ $statusIn = implode(',', array_map([$pdo, 'quote'], $refundStatuses));
 
 $stmt = $pdo->prepare("
     SELECT o.id, o.subtotal, o.delivery_fee, o.status, o.created_at,
-           o.refund_reason, o.return_tracking_url, o.coupon_code, o.discount_amount,
+           o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.coupon_code, o.discount_amount,
            b.name AS business_name,
            u.name AS buyer_name, u.email AS buyer_email
     FROM orders o
     JOIN businesses b ON b.id = o.business_id
     JOIN buyers u ON u.id = o.buyer_user_id
-    WHERE o.public_id = ? AND b.user_id = ? AND b.deleted_at IS NULL AND o.status IN ($statusIn)
+    WHERE o.public_id = ? AND b.user_id = ? AND b.deleted_at IS NULL
+      AND (o.status IN ($statusIn) OR o.refund_rejected_at IS NOT NULL)
 ");
 $stmt->execute([$publicId, $userId]);
 $o = $stmt->fetch();
@@ -73,8 +74,11 @@ $statusClasses = [
     'refunded'          => 'badge-green',
     'refund_rejected'   => 'badge-grey',
 ];
-$statusClass = $statusClasses[$o['status']] ?? 'badge-grey';
-$statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' ', $o['status']));
+// A denied refund puts the order back to 'delivered', so the refund state
+// shown here comes from the column, not from status.
+$refundState = $o['refund_rejected_at'] ? 'refund_rejected' : $o['status'];
+$statusClass = $statusClasses[$refundState] ?? 'badge-grey';
+$statusLabel = $t['order_badge_' . $refundState] ?? ucwords(str_replace('_', ' ', $refundState));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -158,7 +162,7 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
 
     <div class="popup-section">
         <div class="popup-section-label"><?= $t['vorder_refund_status'] ?></div>
-        <?php $refundStatus = $o['status']; require __DIR__ . '/../refund-status/refund-status.php'; ?>
+        <?php $refundStatus = $refundState; require __DIR__ . '/../refund-status/refund-status.php'; ?>
     </div>
 
     <?php if ($o['status'] === 'return_dispatched'): ?>

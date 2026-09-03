@@ -28,7 +28,7 @@ if ($publicId === '') {
 
 $stmt = $pdo->prepare('
     SELECT o.id, o.subtotal, o.delivery_fee, o.status, o.created_at, o.tracking_url,
-           o.refund_reason, o.return_tracking_url, o.coupon_code, o.discount_amount,
+           o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.coupon_code, o.discount_amount,
            CASE WHEN o.delivered_at IS NULL OR TIMESTAMPDIFF(SECOND, o.delivered_at, NOW()) < ' . PAYOUT_WINDOW_SECONDS . ' THEN 1 ELSE 0 END AS refund_window_open,
            DATE_ADD(o.delivered_at, INTERVAL ' . PAYOUT_WINDOW_SECONDS . ' SECOND) AS refund_deadline,
            b.name AS business_name,
@@ -206,7 +206,9 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
         <summary class="order-options-toggle"><?= $t['order_options'] ?></summary>
         <div class="order-options-body">
             <div class="popup-section-label"><?= $t['order_issue'] ?></div>
-            <?php if ($windowOpen): ?>
+            <?php if ($o['refund_rejected_at']): ?>
+            <p class="order-refund-window order-refund-window--closed" style="margin-top:0.5rem;"><?= $t['order_refund_denied'] ?></p>
+            <?php elseif ($windowOpen): ?>
             <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.75rem;"><?= sprintf($t['order_refund_info'], '<strong>$' . number_format($o['subtotal'] - $o['discount_amount'], 2) . '</strong>') ?><?php if ($deadline): ?> <strong><?= sprintf($t['order_available_until'], htmlspecialchars($deadline)) ?></strong><?php endif; ?></p>
             <form method="POST" action="/orders-buyer/refund-request.php" class="refund-request-form">
                 <?= csrf_input() ?>
