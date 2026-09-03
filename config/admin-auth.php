@@ -15,7 +15,7 @@ const ADMIN_SECTION_GROUPS = [
 
 // First accessible page for each section, used to find a safe landing spot for a denied request.
 const ADMIN_SECTION_HOME = [
-    'vendors' => '/admin/', 'buyers' => '/admin/buyers.php', 'products' => '/admin/products.php',
+    'vendors' => '/admin/vendors.php', 'buyers' => '/admin/buyers.php', 'products' => '/admin/products.php',
     'categories' => '/admin/categories.php', 'reviews' => '/admin/reviews.php',
     'orders' => '/admin/orders.php', 'refunds' => '/admin/refunds.php', 'accounting' => '/admin/accounting.php',
     'payments' => '/admin/payments.php', 'payouts' => '/admin/payouts.php',
@@ -78,8 +78,9 @@ function admin_can(string $section): bool {
 }
 
 function admin_home_url(): string {
+    // Never '/admin/' — that is the dispatcher calling this function.
     if (admin_is_super()) {
-        return '/admin/';
+        return '/admin/vendors.php';
     }
     foreach (ADMIN_SECTION_HOME as $section => $url) {
         if (admin_can($section)) {

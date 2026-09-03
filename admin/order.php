@@ -146,6 +146,7 @@ $adminTab     = 'orders';
 <body>
 
 <?php require __DIR__ . '/../header/header.php'; ?>
+<?php require __DIR__ . '/../admin-subnav/admin-subnav.php'; ?>
 
 <main>
     <?php if (!isset($pendingVendorCount)) { $pendingVendorCount = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 0")->fetchColumn(); } ?>

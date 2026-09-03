@@ -13,7 +13,7 @@ $_atPendingPayout  = admin_can('payouts') ? (int)$pdo->query("SELECT COUNT(*) FR
 <?php endif; ?>
 <?php if ($_atSection === 'admin' && admin_can('vendors')): ?>
 <nav class="admin-tabs">
-    <?php if (admin_can('vendors')): ?><a href="/admin/"               class="admin-tab <?= $_atTab === 'vendors'    ? 'active' : '' ?>">Vendors<?= $_atPendingVendor > 0 ? ' <span class="admin-tab-badge">' . $_atPendingVendor . '</span>' : '' ?></a><?php endif; ?>
+    <?php if (admin_can('vendors')): ?><a href="/admin/vendors.php"    class="admin-tab <?= $_atTab === 'vendors'    ? 'active' : '' ?>">Vendors<?= $_atPendingVendor > 0 ? ' <span class="admin-tab-badge">' . $_atPendingVendor . '</span>' : '' ?></a><?php endif; ?>
     <?php if (admin_can('buyers')): ?><a href="/admin/buyers.php"     class="admin-tab <?= $_atTab === 'buyers'     ? 'active' : '' ?>">Buyers</a><?php endif; ?>
     <?php if (admin_can('products')): ?><a href="/admin/products.php"   class="admin-tab <?= $_atTab === 'products'   ? 'active' : '' ?>">Products</a><?php endif; ?>
     <?php if (admin_can('categories')): ?><a href="/admin/categories.php" class="admin-tab <?= $_atTab === 'categories' ? 'active' : '' ?>">Categories</a><?php endif; ?>

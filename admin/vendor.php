@@ -19,7 +19,7 @@ if (empty($_SESSION['admin_id'])) {
 admin_require('vendors');
 
 $id = (int)($_GET['id'] ?? 0);
-if (!$id) { header('Location: /admin/'); exit; }
+if (!$id) { header('Location: /admin/vendors.php'); exit; }
 
 $stmt = $pdo->prepare('
     SELECT v.id, v.name, v.email, v.created_at, v.suspended, v.suspension_reason, v.suspended_at,
@@ -37,7 +37,7 @@ $stmt = $pdo->prepare('
 ');
 $stmt->execute([$id]);
 $v = $stmt->fetch();
-if (!$v) { header('Location: /admin/'); exit; }
+if (!$v) { header('Location: /admin/vendors.php'); exit; }
 
 $photos = [];
 if ($v['business_id']) {
@@ -128,6 +128,7 @@ $adminTab     = 'vendors';
 <body>
 
 <?php require __DIR__ . '/../header/header.php'; ?>
+<?php require __DIR__ . '/../admin-subnav/admin-subnav.php'; ?>
 
 <main>
     <?php require __DIR__ . '/admin-tabs.php'; ?>

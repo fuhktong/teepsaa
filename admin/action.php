@@ -21,7 +21,7 @@ if (empty($_SESSION['admin_id'])) {
 admin_require('vendors');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /admin/');
+    header('Location: /admin/vendors.php');
     exit;
 }
 
@@ -35,7 +35,7 @@ $vendorId = (int)($_POST['vendor_id'] ?? 0);
 $reason   = mb_substr(trim($_POST['reason'] ?? ''), 0, 500);
 
 if (!$id || !in_array($action, ['approve', 'reject'], true)) {
-    header('Location: /admin/');
+    header('Location: /admin/vendors.php');
     exit;
 }
 
@@ -92,6 +92,6 @@ if ($owner && $owner['email']) {
     if ($html !== '') send_email($owner['email'], $subj, $html);
 }
 
-$redirect = $vendorId ? '/admin/vendor.php?id=' . $vendorId : '/admin/';
+$redirect = $vendorId ? '/admin/vendor.php?id=' . $vendorId : '/admin/vendors.php';
 header('Location: ' . $redirect);
 exit;

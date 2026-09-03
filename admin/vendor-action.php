@@ -21,7 +21,7 @@ if (empty($_SESSION['admin_id'])) {
 admin_require('vendors');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /admin/');
+    header('Location: /admin/vendors.php');
     exit;
 }
 
@@ -31,7 +31,7 @@ $action   = $_POST['action'] ?? '';
 $vendorId = (int)($_POST['vendor_id'] ?? 0);
 
 if (!$vendorId) {
-    header('Location: /admin/');
+    header('Location: /admin/vendors.php');
     exit;
 }
 

@@ -32,10 +32,10 @@ const GO_TARGETS = [
     'payments'    => '/admin/payments.php',
     'refunds'     => '/admin/refunds.php?status=refund_requested',
     'refunds-pay' => '/admin/refunds.php?status=return_received',
-    'businesses'  => '/admin/?status=pending',
+    'businesses'  => '/admin/vendors.php?status=pending',
     'messages'    => '/admin/messages/',
     'payouts'     => '/admin/payouts.php',
-    'spot-checks' => '/admin/?status=spot_check',
+    'spot-checks' => '/admin/vendors.php?status=spot_check',
     'prospects'   => '/admin/prospects/?sort=followup',
     'audit'       => '/admin/audit.php',
 ];

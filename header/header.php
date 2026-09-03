@@ -114,11 +114,10 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                         $adminAvatarColor = isset($aAvRow['avatar_color']) ? (int)$aAvRow['avatar_color'] : null;
                         $adminSection = $adminSection ?? '';
                     ?>
-                    <?php if (admin_can('vendors')): ?><a href="/admin/" <?= $adminSection === 'admin' ? 'class="active"' : '' ?>><?= $adminNavAdmin ? $t['nav_admin'] . '&nbsp;<span class="nav-msg-badge">' . $adminNavAdmin . '</span>' : $t['nav_admin'] ?></a><?php endif; ?>
-                    <?php if (admin_can('orders')): ?><a href="/admin/orders.php" <?= $adminSection === 'orders' ? 'class="active"' : '' ?>><?= $adminNavOrders ? $t['nav_orders'] . '&nbsp;<span class="nav-msg-badge">' . $adminNavOrders . '</span>' : $t['nav_orders'] ?></a><?php endif; ?>
-                    <?php if (admin_can('promo-codes')): ?><a href="/admin/promo-codes.php" <?= $adminSection === 'marketing' ? 'class="active"' : '' ?>><?= $t['nav_marketing'] ?></a><?php endif; ?>
-                    <?php if (admin_can('content')): ?><a href="/admin/content.php" <?= $adminSection === 'content' ? 'class="active"' : '' ?>><?= $t['nav_content'] ?></a><?php endif; ?>
-                    <?php if (admin_can('messages')): ?><a href="/admin/messages/" <?= $adminSection === 'messages' ? 'class="active"' : '' ?>><?= $adminNavMessages ? $t['nav_messages'] . '&nbsp;<span class="nav-msg-badge">' . $adminNavMessages . '</span>' : $t['nav_messages'] ?></a><?php endif; ?>
+                    <!-- Admin section tabs live in /admin-subnav/, not here —
+                         the header keeps only the avatar and lang menus. The
+                         badge counts above stay: the mobile nav and the subnav
+                         both reuse them. -->
                     <div class="user-menu">
                         <button class="user-avatar" id="user-avatar-btn" type="button" aria-label="Account menu">
                             <?php if ($adminAvatarFile): ?>
@@ -271,7 +270,7 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
     <div class="mobile-nav" id="mobile-nav">
         <?php if ($isAdminHeader || (isset($_SESSION['user_id']) && isset($_SESSION['role']))): ?>
             <?php if ($isAdminHeader): ?>
-                <?php if (admin_can('vendors')): ?><a href="/admin/" class="mobile-nav-link <?= ($adminSection ?? '') === 'admin' ? 'active' : '' ?>"><?= ($adminNavAdmin ?? 0) > 0 ? $t['nav_admin'] . ' (' . $adminNavAdmin . ')' : $t['nav_admin'] ?></a><?php endif; ?>
+                <?php if (admin_can('vendors')): ?><a href="/admin/vendors.php" class="mobile-nav-link <?= ($adminSection ?? '') === 'admin' ? 'active' : '' ?>"><?= ($adminNavAdmin ?? 0) > 0 ? $t['nav_admin'] . ' (' . $adminNavAdmin . ')' : $t['nav_admin'] ?></a><?php endif; ?>
                 <?php if (admin_can('orders')): ?><a href="/admin/orders.php" class="mobile-nav-link <?= ($adminSection ?? '') === 'orders' ? 'active' : '' ?>"><?= ($adminNavOrders ?? 0) > 0 ? $t['nav_orders'] . ' (' . $adminNavOrders . ')' : $t['nav_orders'] ?></a><?php endif; ?>
                 <?php if (admin_can('promo-codes')): ?><a href="/admin/promo-codes.php" class="mobile-nav-link <?= ($adminSection ?? '') === 'marketing' ? 'active' : '' ?>"><?= $t['nav_marketing'] ?></a><?php endif; ?>
                 <?php if (admin_can('content')): ?><a href="/admin/content.php" class="mobile-nav-link <?= ($adminSection ?? '') === 'content' ? 'active' : '' ?>"><?= $t['nav_content'] ?></a><?php endif; ?>
