@@ -101,6 +101,7 @@ $adminTab     = 'careers';
 <?php require __DIR__ . '/../admin-subnav/admin-subnav.php'; ?>
 
 <main>
+    <?php require __DIR__ . '/admin-tabs.php'; ?>
 
     <h1>Careers</h1>
     <p style="color:#6b7280;font-size:0.9rem;margin-bottom:1.25rem;">Manage job postings. Open postings appear on the public <a href="/careers/" target="_blank">careers page</a>. &middot; <a href="/admin/careers-applications.php">View all applications</a></p>

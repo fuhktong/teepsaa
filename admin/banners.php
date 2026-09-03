@@ -151,6 +151,7 @@ $adminTab     = 'banners';
 <?php require __DIR__ . '/../admin-subnav/admin-subnav.php'; ?>
 
 <main>
+    <?php require __DIR__ . '/admin-tabs.php'; ?>
     <?php require __DIR__ . '/../includes/banner-carousel.php'; ?>
 
     <h1>Banners</h1>

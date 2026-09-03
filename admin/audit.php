@@ -117,6 +117,7 @@ function audit_detail_text(?string $json): string {
 <?php require __DIR__ . '/../admin-subnav/admin-subnav.php'; ?>
 
 <main>
+    <?php require __DIR__ . '/admin-tabs.php'; ?>
     <h1>Activity Log</h1>
     <p class="audit-intro">
         Every state-changing admin action, newest first. Append-only — nothing in the

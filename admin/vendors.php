@@ -125,6 +125,7 @@ $adminTab     = 'vendors';
 <?php require __DIR__ . '/../admin-subnav/admin-subnav.php'; ?>
 
 <main>
+    <?php require __DIR__ . '/admin-tabs.php'; ?>
     <h1>Vendors</h1>
 
     <?php

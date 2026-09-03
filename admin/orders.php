@@ -106,6 +106,7 @@ $adminTab     = 'orders';
 <?php require __DIR__ . '/../admin-subnav/admin-subnav.php'; ?>
 
 <main>
+    <?php require __DIR__ . '/admin-tabs.php'; ?>
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;">
         <h1 style="margin-bottom:0">Orders</h1>
         <button class="btn-refresh" data-refresh-all-btn type="button" title="Refresh orders"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>

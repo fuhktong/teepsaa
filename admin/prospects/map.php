@@ -73,6 +73,7 @@ if ($prospects) {
 <?php require __DIR__ . '/../../admin-subnav/admin-subnav.php'; ?>
 
 <main>
+    <?php require __DIR__ . '/../admin-tabs.php'; ?>
 
     <div class="psp-head">
         <h1>Canvassing map</h1>

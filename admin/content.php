@@ -121,6 +121,7 @@ $adminTab     = 'content';
 <?php require __DIR__ . '/../admin-subnav/admin-subnav.php'; ?>
 
 <main>
+    <?php require __DIR__ . '/admin-tabs.php'; ?>
 
     <h1>Pages</h1>
     <p style="color:#6b7280;font-size:0.9rem;margin-bottom:1.25rem;">Edit the site's static content pages. Body text supports Markdown (## headings, **bold**, *italic*, [links](url), - lists).</p>
