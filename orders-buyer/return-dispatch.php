@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/notify.php';
+require __DIR__ . '/../config/url.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -31,7 +32,11 @@ $pidStmt = $pdo->prepare('SELECT public_id FROM orders WHERE id = ? AND buyer_us
 $pidStmt->execute([$orderId, $userId]);
 $orderPublicId = $pidStmt->fetchColumn() ?: '';
 
-if (!$orderId || !$trackingUrl) {
+// Shown to the vendor and to admins as a clickable link, so it has to be a
+// real http(s) URL and not a javascript: payload.
+$trackingUrl = safe_external_url($trackingUrl);
+
+if (!$orderId || $trackingUrl === null) {
     header($orderId ? 'Location: /orders-buyer/order.php?id=' . $orderPublicId : 'Location: /orders-buyer/');
     exit;
 }

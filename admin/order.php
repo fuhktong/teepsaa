@@ -8,6 +8,7 @@ session_start([
 ]);
 
 require __DIR__ . '/../config/csrf.php';
+require __DIR__ . '/../config/url.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/audit.php';
@@ -61,6 +62,12 @@ $stmt = $pdo->prepare('
 ');
 $stmt->execute([$orderId]);
 $o = $stmt->fetch();
+
+// A link typed in by the other party. Anything that isn't a real http(s)
+// URL becomes null here, so the surrounding `if` drops the link entirely
+// rather than rendering a javascript: href (config/url.php).
+if (isset($o['tracking_url'])) $o['tracking_url'] = safe_external_url($o['tracking_url']);
+if (isset($o['return_tracking_url'])) $o['return_tracking_url'] = safe_external_url($o['return_tracking_url']);
 
 if (!$o) {
     header('Location: /admin/orders.php');

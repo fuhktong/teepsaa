@@ -30,6 +30,12 @@ $stmt = $pdo->prepare('SELECT password FROM vendors WHERE id = ?');
 $stmt->execute([$userId]);
 $row = $stmt->fetch();
 
+// The session can outlive the row — an admin can delete the vendor mid-session.
+if (!$row) {
+    header('Location: /login-vendor/');
+    exit;
+}
+
 if (!password_verify($password, $row['password'])) {
     $_SESSION['settings_error'] = 'Incorrect password.';
     header('Location: /settings-vendor/?tab=danger');
@@ -53,7 +59,7 @@ if ($stmt->fetchColumn() > 0) {
     exit;
 }
 
-$stmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE business_id = ? AND status NOT IN ('completed','cancelled','refunded','refund_rejected')");
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE business_id = ? AND status NOT IN ('completed','cancelled','refunded')");
 $stmt->execute([$business['id']]);
 if ($stmt->fetchColumn() > 0) {
     $_SESSION['settings_error'] = 'Cannot delete business — all orders must be completed, cancelled, or refunded first.';

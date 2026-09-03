@@ -659,7 +659,7 @@ if ($editing) {
         <?php endif; ?>
         <script>
         (function () {
-            var allCats      = <?= json_encode(array_values($allFlat)) ?>;
+            var allCats      = <?= json_encode(array_values($allFlat), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
             var editLeafId   = <?= json_encode($editing ? (int)$editing['category_id'] : null) ?>;
 
             var byParent = {}, byId = {};
@@ -674,10 +674,10 @@ if ($editing) {
             var hidden       = document.getElementById('category_id');
             var priceIn      = document.getElementById('price');
             var preview      = document.getElementById('payout-preview');
-            var COMPANY_ADDN   = <?= json_encode($companyAddOn) ?>;
+            var COMPANY_ADDN   = <?= json_encode($companyAddOn, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
             var PRODUCT_ADDN   = <?= json_encode($editing ? (float)$editing['royalty_add_on'] : 0.0) ?>;
             var PENALTY_RATE   = <?= json_encode((float)$penaltyRate) ?>;
-            var ROYALTY_WAIVED = <?= json_encode($royaltyWaived) ?>;
+            var ROYALTY_WAIVED = <?= json_encode($royaltyWaived, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
 
             function isLeaf(id) { return !byParent[id] || !byParent[id].length; }
 
@@ -773,7 +773,7 @@ if ($editing) {
             var addBtn    = document.getElementById('add-variant-btn');
             var stockIn   = document.getElementById('stock');
             var stockHint = document.getElementById('stock-variant-hint');
-            var EXISTING  = <?= json_encode(array_values($editingVariants)) ?>;
+            var EXISTING  = <?= json_encode(array_values($editingVariants), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
 
             function updateStockField() {
                 var hasRows = list.querySelectorAll('.variant-row').length > 0;

@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/notify.php';
+require __DIR__ . '/../config/url.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -35,7 +36,10 @@ $pidStmt = $pdo->prepare('
 $pidStmt->execute([$orderId, $userId]);
 $orderPublicId = $pidStmt->fetchColumn() ?: '';
 
-if (empty($trackingUrl) || !filter_var($trackingUrl, FILTER_VALIDATE_URL)) {
+// FILTER_VALIDATE_URL alone passes javascript: and data: URLs, which end up
+// as a clickable href on the buyer's and the admin's order page.
+$trackingUrl = safe_external_url($trackingUrl);
+if ($trackingUrl === null) {
     $_SESSION['settings_error'] = 'A valid Grab tracking URL is required before dispatching.';
     header('Location: /orders-vendor/order.php?id=' . $orderPublicId);
     exit;

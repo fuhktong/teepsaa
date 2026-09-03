@@ -33,22 +33,34 @@ if (!empty($ownedIds)) {
     $stmt->execute(array_merge([$productId], array_map('intval', $ownedIds)));
 
     if ($stmt->fetch()) {
-        // Delete photo files
+        // Read the filenames before the rows go, but only unlink once the
+        // database side has committed — a failed DELETE would otherwise leave
+        // a live product pointing at photos that no longer exist on disk.
         $photos = $pdo->prepare('SELECT filename FROM product_photos WHERE product_id = ?');
         $photos->execute([$productId]);
-        foreach ($photos->fetchAll(PDO::FETCH_COLUMN) as $filename) {
+        $filenames = $photos->fetchAll(PDO::FETCH_COLUMN);
+
+        $pdo->beginTransaction();
+        try {
+            // Nullify order_items reference (preserve history)
+            $pdo->prepare('UPDATE order_items SET product_id = NULL WHERE product_id = ?')->execute([$productId]);
+
+            // Remove from carts
+            $pdo->prepare('DELETE FROM cart_items WHERE product_id = ?')->execute([$productId]);
+
+            // Delete product (product_photos cascade)
+            $pdo->prepare('DELETE FROM products WHERE id = ?')->execute([$productId]);
+
+            $pdo->commit();
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+
+        foreach ($filenames as $filename) {
             $path = __DIR__ . '/../uploads/' . $filename;
             if (file_exists($path)) @unlink($path);
         }
-
-        // Nullify order_items reference (preserve history)
-        $pdo->prepare('UPDATE order_items SET product_id = NULL WHERE product_id = ?')->execute([$productId]);
-
-        // Remove from carts
-        $pdo->prepare('DELETE FROM cart_items WHERE product_id = ?')->execute([$productId]);
-
-        // Delete product (product_photos cascade)
-        $pdo->prepare('DELETE FROM products WHERE id = ?')->execute([$productId]);
     }
 }
 

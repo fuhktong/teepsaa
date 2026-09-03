@@ -32,6 +32,12 @@ $stmt = $pdo->prepare('SELECT name, email, password FROM vendors WHERE id = ?');
 $stmt->execute([$userId]);
 $row = $stmt->fetch();
 
+// The session can outlive the row — an admin can delete the vendor mid-session.
+if (!$row) {
+    header('Location: /login-vendor/');
+    exit;
+}
+
 if (!password_verify($current, $row['password'])) {
     $_SESSION['settings_error'] = 'Current password is incorrect.';
     header('Location: /settings-vendor/?tab=password');

@@ -103,12 +103,12 @@ testing here. Each item says which accounts you need and where to click.
       seconds, so a minute after delivery is enough). 1. Admin → Orders → Payouts. The order should be listed. 2. Click "mark paid out". 3. Confirm three things: the order's status becomes completed, it is
       gone from the payouts list, and the vendor receives the `payout_sent`
       email.
-- [ ] **Rejecting a refund doesn't strand the order.** Needs a buyer with a
+- [x] **Rejecting a refund doesn't strand the order.** Needs a buyer with a
       delivered order, and the admin. 1. As the buyer, open the order at `/orders-buyer/` and request a refund. 2. As admin, go to Orders → Refunds and _reject_ it (the approve path
       already passed — you're testing reject). 3. The buyer should get the `refund_rejected` email, and the buyer's
       order page should show a normal status again (delivered), not be
       stuck saying refund requested or show anything broken.
-- [ ] **A wrong vendor verification code is rejected, and resend works.**
+- [x] **A wrong vendor verification code is rejected, and resend works.**
       Register a fresh vendor with a +alias to get to the "enter the code we
       emailed you" screen. 1. Type a wrong code — it must be rejected with an error. 2. Click resend. A second email arrives with a new code. 3. The old code from the first email must now fail, and the new code
       must work.
@@ -131,7 +131,7 @@ turned up is written up under **Findings** near the end of this file.
 
 ## 2a. Automated review
 
-- [ ] **Run `/code-review ultra` in Claude Code.** It's a multi-agent review of
+- [x] **Run `/code-review ultra` in Claude Code.** It's a multi-agent review of
       the branch covering bugs, security and inefficiency. You have to trigger
       it yourself — Claude can't launch it.
 - [ ] **Feed it in sections rather than all at once**, most-recent work first:

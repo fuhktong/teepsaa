@@ -9,6 +9,7 @@ session_start([
 
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
+require __DIR__ . '/../config/url.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -42,6 +43,11 @@ $stmt = $pdo->prepare('
 ');
 $stmt->execute([$publicId, $userId]);
 $o = $stmt->fetch();
+
+// A link typed in by the other party. Anything that isn't a real http(s)
+// URL becomes null here, so the surrounding `if` drops the link entirely
+// rather than rendering a javascript: href (config/url.php).
+if (isset($o['tracking_url'])) $o['tracking_url'] = safe_external_url($o['tracking_url']);
 
 if (!$o) {
     header('Location: /orders-buyer/');
