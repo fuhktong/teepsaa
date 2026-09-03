@@ -10,9 +10,9 @@
 
 .admin-subnav {
   display: flex;
+  flex-wrap: wrap;
   gap: 0;
   border-bottom: 2px solid var(--border);
-  overflow-x: auto;
 }
 
 .admin-subnav a {
