@@ -257,28 +257,6 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
 <?php require __DIR__ . '/../footer/footer.php'; ?>
 
 <script>
-// Everything on this page hangs off the order status — the progress bar, the
-// action forms, the tracking link, the reviews section — so when the status
-// changes on the server (admin confirms payment, vendor dispatches) the page
-// reloads itself rather than patching each piece. Never mid-typing: a focused
-// field defers the reload to the next tick.
-(function () {
-    var orderId = <?= $orderId ?>;
-    var status  = <?= json_encode($o['status']) ?>;
-    setInterval(function () {
-        if (document.hidden) return;
-        fetch('/api/order-status.php?order_id=' + orderId)
-            .then(function (res) { return res.ok ? res.json() : null; })
-            .then(function (data) {
-                if (!data || !data.status || data.status === status) return;
-                var el = document.activeElement;
-                if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
-                location.reload();
-            })
-            .catch(function () {});
-    }, 15000);
-})();
-
 document.addEventListener('change', function(e) {
     if (!e.target.classList.contains('refund-reason-select')) return;
     var form  = e.target.closest('form');

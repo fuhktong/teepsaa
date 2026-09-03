@@ -167,8 +167,4 @@ export function initStatusRefresh(options = {}) {
             }
         });
     }
-
-    // The same sweep runs on its own every 15s (matching the bell's rhythm)
-    // while the tab is visible, so order pages update without anyone clicking.
-    setInterval(() => { if (!document.hidden) refreshAll(); }, 15000);
 }

@@ -436,27 +436,5 @@ $adminTab     = 'orders';
 </main>
 
 <?php require __DIR__ . '/../footer/footer.php'; ?>
-
-<script>
-// The whole page hangs off the order status, so when it changes elsewhere
-// (buyer confirms delivery, vendor dispatches) the page reloads itself —
-// same pattern as /orders-buyer/order.php. Never mid-typing: a focused
-// field defers the reload to the next tick.
-(function () {
-    var status = <?= json_encode($o['status']) ?>;
-    setInterval(function () {
-        if (document.hidden) return;
-        fetch('/api/order-status.php?order_id=<?= $orderId ?>&as=admin')
-            .then(function (res) { return res.ok ? res.json() : null; })
-            .then(function (data) {
-                if (!data || !data.status || data.status === status) return;
-                var el = document.activeElement;
-                if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
-                location.reload();
-            })
-            .catch(function () {});
-    }, 15000);
-})();
-</script>
 </body>
 </html>
