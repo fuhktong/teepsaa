@@ -450,41 +450,100 @@
   }
 }
 
-.biz-cat-grid {
+/* Category cascade picker (js/cat-cascade.js) — one select per tree level,
+   chosen categories shown as chips above. Class names match the widget. */
+.psp-cat-level {
+  width: 100%;
+  margin-bottom: 0.4rem;
+}
+
+.psp-cat-level:last-of-type {
+  margin-bottom: 0.6rem;
+}
+
+.psp-cat-chosen {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0 0 0.6rem;
+  padding: 0;
 }
 
-.biz-cat-option {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.8rem;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  font-size: 0.875rem;
-  color: var(--text-soft);
-  cursor: pointer;
-  user-select: none;
-  transition:
-    border-color 0.15s,
-    background 0.15s;
-}
-
-.biz-cat-option input[type="checkbox"] {
+/* The flex rule above would otherwise beat the hidden attribute. */
+.psp-cat-chosen[hidden] {
   display: none;
 }
 
-.biz-cat-option:hover {
-  border-color: var(--text-muted);
+.psp-cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.4rem 0.3rem 0.65rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background-color: var(--surface);
+  font-size: 0.85rem;
+  color: var(--text);
 }
 
-.biz-cat-option--selected {
-  background: var(--primary);
-  color: #fff;
-  border-color: #111;
+/* A name the tree cannot place — saving drops it, so it should not look settled. */
+.psp-cat-chip-unknown {
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.psp-cat-chip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--bg-subtle);
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.psp-cat-chip-x:hover {
+  background-color: var(--error-bg);
+  color: var(--error-fg);
+}
+
+.biz-cat-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.biz-cat-btn {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background-color: var(--surface);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.biz-cat-btn:hover {
+  background-color: var(--bg-subtle);
+}
+
+.biz-cat-btn--ghost {
+  border-color: transparent;
+  color: var(--text-muted);
+}
+
+/* Nothing selected in the cascade yet — there is nothing to add. */
+[data-cat-add][disabled] {
+  opacity: 0.45;
+  cursor: default;
 }
 
 /* Avatar color picker */

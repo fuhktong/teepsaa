@@ -161,6 +161,40 @@ if ($q !== '') {
     )->fetchAll();
 }
 
+// ── Shops strip ──────────────────────────────────────────────────────
+// Vendors tag their business with the categories they sell (comma-separated
+// English names in businesses.category). When the buyer filters by a category
+// — or their query text matches a category name — show those shops above the
+// product results, so a shop is findable even when no product name matches.
+$matchedShops = [];
+if ($q !== '') {
+    $shopCatNames = [];
+    if ($categoryId > 0) {
+        $catStmt = $pdo->prepare('SELECT name FROM categories WHERE id = ?');
+        $catStmt->execute([$categoryId]);
+        if ($n = $catStmt->fetchColumn()) $shopCatNames[] = $n;
+    } else {
+        $catStmt = $pdo->prepare('SELECT name FROM categories WHERE name LIKE ? OR name_km LIKE ?');
+        $catStmt->execute(["%$q%", "%$q%"]);
+        $shopCatNames = $catStmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+    if ($shopCatNames) {
+        // The column holds ", "-separated names; squeeze the space so
+        // FIND_IN_SET can do an exact per-name match (no LIKE false hits).
+        $conds = [];
+        foreach ($shopCatNames as $n) $conds[] = "FIND_IN_SET(?, REPLACE(b.category, ', ', ','))";
+        $shopStmt = $pdo->prepare(
+            "SELECT b.public_id, b.name, b.name_km, b.banner
+             FROM businesses b
+             WHERE b.approved = 1 AND b.suspended = 0 AND b.deleted_at IS NULL
+               AND (" . implode(' OR ', $conds) . ")
+             ORDER BY b.name
+             LIMIT 12");
+        $shopStmt->execute($shopCatNames);
+        $matchedShops = $shopStmt->fetchAll();
+    }
+}
+
 $title = $q ? htmlspecialchars($q) . ' — teepsaa' : 'Search — teepsaa';
 
 $sortLabels = [
@@ -368,6 +402,24 @@ foreach ($selectedValueIds as $vid) {
                     <?= htmlspecialchars($chip['label']) ?><span class="chip-x" aria-hidden="true">×</span>
                 </a>
                 <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($matchedShops)): ?>
+            <div class="shops-strip">
+                <p class="shops-strip-title"><?= $t['search_shops'] ?></p>
+                <div class="shops-strip-row">
+                    <?php foreach ($matchedShops as $s): ?>
+                    <a href="/business/?id=<?= htmlspecialchars($s['public_id']) ?>" class="shop-card">
+                        <?php if ($s['banner']): ?>
+                        <img src="/uploads/<?= htmlspecialchars($s['banner']) ?>" alt="" class="shop-card-banner">
+                        <?php else: ?>
+                        <div class="shop-card-banner shop-card-banner--empty"></div>
+                        <?php endif; ?>
+                        <span class="shop-card-name"><?= htmlspecialchars(pick_lang($s['name'], $s['name_km'] ?? null)) ?></span>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
             </div>
             <?php endif; ?>
 

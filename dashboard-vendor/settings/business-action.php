@@ -29,7 +29,9 @@ $nameKm      = trim($_POST['business_name_km'] ?? '');
 // (matches the maxlength on the settings form).
 $description   = mb_substr(trim($_POST['description'] ?? ''), 0, 160);
 $descriptionKm = mb_substr(trim($_POST['description_km'] ?? ''), 0, 160);
-$rawCats     = $_POST['categories'] ?? [];
+// Cascade picker posts one comma-separated string of English category names —
+// any level of the tree, not just parents. Keep only names that still exist.
+$rawCats     = array_filter(array_map('trim', explode(',', $_POST['category'] ?? '')));
 
 if (!$name) {
     $_SESSION['settings_error'] = 'Business name is required.';
@@ -37,8 +39,8 @@ if (!$name) {
     exit;
 }
 
-$allParentNames = $pdo->query('SELECT name FROM categories WHERE parent_id IS NULL')->fetchAll(PDO::FETCH_COLUMN);
-$safeCats = array_values(array_filter($rawCats, fn($c) => in_array($c, $allParentNames, true)));
+$allCatNames = $pdo->query('SELECT name FROM categories')->fetchAll(PDO::FETCH_COLUMN);
+$safeCats = array_values(array_unique(array_filter($rawCats, fn($c) => in_array($c, $allCatNames, true))));
 $category = implode(', ', $safeCats);
 
 $stmt = $pdo->prepare('UPDATE businesses SET name = ?, name_km = ?, description = ?, description_km = ?, category = ? WHERE user_id = ? AND deleted_at IS NULL');

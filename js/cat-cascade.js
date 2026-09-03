@@ -42,6 +42,10 @@
         }).filter(function (n) { return n !== ''; });
     }
 
+    // Stored values are always the English `name`; a page can add a `label`
+    // per category (e.g. "ខោអាវ / Clothing") for what the picker displays.
+    function labelOf(c) { return c.label || c.name; }
+
     Array.prototype.forEach.call(document.querySelectorAll('[data-cat-cascade]'), function (box) {
         var hidden = document.getElementById(box.getAttribute('data-target'));
         if (!hidden) return;
@@ -84,7 +88,7 @@
                 // A name typed before this list existed, or one since renamed.
                 // Say so, because saving will drop it.
                 if (!known) li.title = 'Not in the category list any more — saving will drop it.';
-                li.appendChild(document.createTextNode(name));
+                li.appendChild(document.createTextNode(known ? labelOf(byName[name.toLowerCase()]) : name));
 
                 var x = document.createElement('button');
                 x.type = 'button';
@@ -116,13 +120,15 @@
 
             var ph = document.createElement('option');
             ph.value = '';
-            ph.textContent = level === 0 ? '— Select a category —' : '— Narrow it down (optional) —';
+            ph.textContent = level === 0
+                ? (box.getAttribute('data-ph-root') || '— Select a category —')
+                : (box.getAttribute('data-ph-sub') || '— Narrow it down (optional) —');
             sel.appendChild(ph);
 
             children.forEach(function (c) {
                 var opt = document.createElement('option');
                 opt.value = c.id;
-                opt.textContent = c.name;
+                opt.textContent = labelOf(c);
                 sel.appendChild(opt);
             });
 

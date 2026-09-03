@@ -27,15 +27,18 @@ $stmt = $pdo->prepare('SELECT name, email, phone, avatar, avatar_color, aba_qr, 
 $stmt->execute([$userId]);
 $vendor = $stmt->fetch();
 
-$stmt = $pdo->prepare('SELECT id, name, name_km, description, description_km, house_number, address, address_notes, khan, sangkat, city, lat, lng, banner, approved, rejection_reason, suspended, suspension_reason FROM businesses WHERE user_id = ? AND deleted_at IS NULL LIMIT 1');
+$stmt = $pdo->prepare('SELECT id, name, name_km, category, description, description_km, house_number, address, address_notes, khan, sangkat, city, lat, lng, banner, approved, rejection_reason, suspended, suspension_reason FROM businesses WHERE user_id = ? AND deleted_at IS NULL LIMIT 1');
 $stmt->execute([$userId]);
 $business = $stmt->fetch();
 
-$parentCategories = [];
-$selectedCategories = [];
+// Category tree for the cascade picker. Stored values are English names
+// (same comma-separated shape businesses.category has always held); `label`
+// is what the picker displays in the current language.
+$catTree = [];
 if ($tab === 'business' && $business) {
-    $parentCategories = $pdo->query('SELECT id, name, name_km FROM categories WHERE parent_id IS NULL ORDER BY name ASC')->fetchAll();
-    $selectedCategories = array_filter(array_map('trim', explode(',', $business['category'] ?? '')));
+    foreach ($pdo->query('SELECT id, parent_id, name, name_km FROM categories ORDER BY name ASC')->fetchAll(PDO::FETCH_ASSOC) as $c) {
+        $catTree[] = ['id' => (int)$c['id'], 'parent_id' => $c['parent_id'] !== null ? (int)$c['parent_id'] : null, 'name' => $c['name'], 'label' => cat_name($c)];
+    }
 }
 
 // Storefront layout (lives inside the Business tab): the shop's sellable
@@ -248,18 +251,16 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                         <textarea id="description_km" name="description_km" rows="4" maxlength="160" placeholder="ការពិពណ៌នាហាងជាភាសាខ្មែរ" oninput="document.getElementById('desc-km-count').textContent = 160 - this.value.length"><?= htmlspecialchars($business['description_km'] ?? '') ?></textarea>
                         <p class="field-hint" style="margin:0.3rem 0 0"><span id="desc-km-count"><?= 160 - mb_strlen($business['description_km'] ?? '') ?></span> <?= $t['vendor_biz_desc_count'] ?></p>
                     </div>
-                    <?php if (!empty($parentCategories)): ?>
+                    <?php if (!empty($catTree)): ?>
                     <div class="settings-field">
                         <label><?= $t['vendor_settings_categories'] ?> <span class="field-hint" style="font-weight:400;display:inline"><?= $t['vendor_cat_hint'] ?></span></label>
-                        <div class="biz-cat-grid">
-                            <?php foreach ($parentCategories as $cat): ?>
-                            <?php $checked = in_array($cat['name'], $selectedCategories, true); ?>
-                            <label class="biz-cat-option <?= $checked ? 'biz-cat-option--selected' : '' ?>">
-                                <input type="checkbox" name="categories[]" value="<?= htmlspecialchars($cat['name']) ?>" <?= $checked ? 'checked' : '' ?> onchange="this.closest('label').classList.toggle('biz-cat-option--selected', this.checked)">
-                                <?= htmlspecialchars(cat_name($cat)) ?>
-                            </label>
-                            <?php endforeach; ?>
+                        <ul class="psp-cat-chosen" data-cat-chosen hidden></ul>
+                        <div data-cat-cascade data-target="biz-category" data-ph-root="<?= htmlspecialchars($t['prod_select_category']) ?>" data-ph-sub="<?= htmlspecialchars($t['prod_select_subcategory']) ?>"></div>
+                        <div class="biz-cat-actions">
+                            <button type="button" class="biz-cat-btn" data-cat-add><?= $t['vendor_cat_add'] ?></button>
+                            <button type="button" class="biz-cat-btn biz-cat-btn--ghost" data-cat-clear><?= $t['vendor_cat_clear'] ?></button>
                         </div>
+                        <input type="hidden" id="biz-category" name="category" value="<?= htmlspecialchars($business['category'] ?? '') ?>">
                     </div>
                     <?php endif; ?>
                 </form>
@@ -551,6 +552,11 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 </main>
 
 <?php require __DIR__ . '/../../footer/footer.php'; ?>
+
+<?php if (!empty($catTree)): ?>
+<script type="application/json" id="cat-tree-data"><?= json_encode($catTree, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?></script>
+<script src="/js/cat-cascade.js"></script>
+<?php endif; ?>
 
 <?php if ($tab === 'business' && $business && !empty($sfProducts)): ?>
 <script>
