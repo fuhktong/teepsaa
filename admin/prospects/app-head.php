@@ -10,7 +10,12 @@
 // admin login even if you are signed in in Safari — tick "Remember this
 // device" there and it stays signed in.
 ?>
-<link rel="manifest" href="/admin/prospects/manifest.webmanifest">
+<!-- crossorigin="use-credentials" is not optional here: a manifest is fetched
+     with credentials mode "omit" unless this attribute says otherwise, so the
+     browser sends no Basic Auth header and the pre-launch gate answers 401.
+     Without the manifest the home-screen app loses its name, icon and
+     standalone display mode and just opens as a Safari tab. -->
+<link rel="manifest" href="/admin/prospects/manifest.webmanifest" crossorigin="use-credentials">
 <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
 <meta name="theme-color" content="#cc8a6c">
 <meta name="mobile-web-app-capable" content="yes">

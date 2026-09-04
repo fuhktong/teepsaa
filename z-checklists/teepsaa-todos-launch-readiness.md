@@ -134,7 +134,7 @@ turned up is written up under **Findings** near the end of this file.
 - [x] **Run `/code-review ultra` in Claude Code.** It's a multi-agent review of
       the branch covering bugs, security and inefficiency. You have to trigger
       it yourself — Claude can't launch it.
-- [ ] **Feed it in sections rather than all at once**, most-recent work first:
+- [x] **Feed it in sections rather than all at once**, most-recent work first:
       `products/`, `analytics/`, `settings-vendor/` and `business-vendor/`, then `cart/ checkout/ product/
 search/`, then `header/ footer/ config/ api/`.
 
