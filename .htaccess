@@ -23,11 +23,12 @@ AddType application/manifest+json .webmanifest
 # the .htpasswd file) TO GO LIVE.
 #
 # (Local dev is bypassed via LOCAL_DEV below, so MAMP is unaffected.)
-SetEnvIf Host "^(localhost|127\.0\.0\.1)(:|$)" LOCAL_DEV
-AuthType Basic
-AuthName "teepsaa — coming soon"
-AuthUserFile /home/u767733958/domains/teepsaa.com/public_html/.htpasswd
-<RequireAny>
-    Require env LOCAL_DEV
-    Require valid-user
-</RequireAny>
+# ── GATE TEMPORARILY DISABLED FOR PHP TESTING — re-enable by uncommenting ──
+#SetEnvIf Host "^(localhost|127\.0\.0\.1)(:|$)" LOCAL_DEV
+#AuthType Basic
+#AuthName "teepsaa — coming soon"
+#AuthUserFile /home/u767733958/domains/teepsaa.com/public_html/.htpasswd
+#<RequireAny>
+#    Require env LOCAL_DEV
+#    Require valid-user
+#</RequireAny>
