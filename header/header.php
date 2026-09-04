@@ -83,7 +83,7 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
     <div class="header-inner">
         <a href="/" class="site-name"><img src="/images/<?= $lang === 'km' ? 'teepsaa_logo_khm.png' : 'teepsaa_logo_eng_myriad.png' ?>" alt="teepsaa"></a>
         <form class="header-search" method="GET" action="/search/">
-            <input type="search" name="q" placeholder="<?= $t['search_placeholder'] ?>" value="<?= htmlspecialchars($_GET['q'] ?? '') ?>">
+            <input type="search" name="q" placeholder="<?= $t['search_placeholder'] ?>" value="<?= htmlspecialchars((string)($_GET['q'] ?? '')) ?>">
             <button type="submit" aria-label="Search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
         </form>
         <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu" aria-expanded="false">

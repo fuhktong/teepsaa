@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $token = $_POST['csrf_token'] ?? '';
-if (empty($token) || !hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
+if (!is_string($token) || $token === '' || !hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
     http_response_code(403);
     echo json_encode(['error' => 'Invalid CSRF token']);
     exit;
@@ -36,8 +36,21 @@ $isAdmin = !empty($_SESSION['admin_id']) && ($_POST['as'] ?? '') === 'admin';
 $role    = $isAdmin ? '' : ($_SESSION['role'] ?? '');
 $userId  = $_SESSION['user_id'] ?? 0;
 
+// The page behind this endpoint calls admin_require('messages'); without the same
+// check here a custom admin who was never granted that section could reach
+// the data through the API instead. admin-auth.php's device-restore block is
+// inert on this path — it only runs when no admin session exists.
+if ($isAdmin) {
+    require_once __DIR__ . '/../../config/admin-auth.php';
+    if (!admin_can('messages')) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Forbidden']);
+        exit;
+    }
+}
+
 $threadId = (int)($_POST['thread_id'] ?? 0);
-$body     = trim($_POST['body'] ?? '');
+$body     = trim((string)($_POST['body'] ?? ''));
 
 if (!$threadId || $body === '') {
     http_response_code(400);

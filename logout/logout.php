@@ -24,7 +24,11 @@ unset(
 if (empty($_SESSION['admin_id'])) {
     session_destroy();
 } else {
+    // The other identity stays signed in, so the session survives — but the id
+    // changes and the CSRF token goes with it, so nothing minted for the
+    // identity that just left is still accepted.
     session_regenerate_id(true);
+    unset($_SESSION['csrf_token']);
 }
 
 // Allow returning to an internal page after logout (e.g. vendor signup).

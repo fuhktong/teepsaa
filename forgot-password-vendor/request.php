@@ -19,10 +19,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 csrf_verify();
-check_rate_limit($pdo);
-record_failed_attempt($pdo);
+$email = trim((string)($_POST['email'] ?? ''));
 
-$email = trim($_POST['email'] ?? '');
+// Every request counts, not just failures — the thing being limited is how much
+// reset mail one address can be made to receive. Its own budget, so a reset
+// storm cannot lock the victim out of logging in as well.
+check_rate_limit($pdo, 'reset', $email);
+record_failed_attempt($pdo, 'reset', $email);
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $_SESSION['auth_error'] = 'Invalid email address.';

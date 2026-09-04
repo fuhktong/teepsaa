@@ -60,7 +60,11 @@ unset(
 if (empty($_SESSION['admin_id'])) {
     session_destroy();
 } else {
+    // An admin is still signed in, so the session survives — but the id changes
+    // and the CSRF token goes with it, so nothing minted for the account that
+    // was just deleted is still accepted.
     session_regenerate_id(true);
+    unset($_SESSION['csrf_token']);
 }
 
 header('Location: /');

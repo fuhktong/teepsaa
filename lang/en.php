@@ -264,7 +264,8 @@ return [
     'order_send_back'      => 'Send item back',
     'order_send_to'        => 'Send to:',
     'order_return_instructions' => 'Pack the item and send it back via Grab at your cost. Paste the Grab tracking link below once dispatched.',
-    'order_return_url_placeholder' => 'Paste Grab return tracking URL…',
+    'order_return_url_placeholder' => 'https://… (paste the full Grab tracking link)',
+    'order_return_url_invalid' => 'That did not look like a link. Paste the whole Grab tracking URL, starting with https://',
     'order_mark_dispatched' => 'Mark return dispatched',
 
     // ── Wishlist ─────────────────────────────────────────────────────────

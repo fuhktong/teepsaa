@@ -13,10 +13,10 @@ require __DIR__ . '/../config/db.php';
 $lang = $_SESSION['lang'] ?? 'km';
 $t = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km']) ? $lang : 'en') . '.php';
 
-$q          = trim($_GET['q'] ?? '');
+$q          = trim((string)($_GET['q'] ?? ''));
 $sort       = $_GET['sort'] ?? 'newest';
-$minPrice   = trim($_GET['min_price'] ?? '');
-$maxPrice   = trim($_GET['max_price'] ?? '');
+$minPrice   = trim((string)($_GET['min_price'] ?? ''));
+$maxPrice   = trim((string)($_GET['max_price'] ?? ''));
 $categoryId = (int)($_GET['category'] ?? 0);
 $rawRating  = (int)($_GET['min_rating'] ?? 0);
 $minRating        = in_array($rawRating, [2, 3, 4]) ? (float)$rawRating : 0.0;

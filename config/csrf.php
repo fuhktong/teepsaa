@@ -16,7 +16,8 @@ function csrf_input(): string {
 
 function csrf_verify(): void {
     if (
-        empty($_POST['csrf_token']) ||
+        !is_string($_POST['csrf_token'] ?? null) ||
+        $_POST['csrf_token'] === '' ||
         !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])
     ) {
         http_response_code(403);

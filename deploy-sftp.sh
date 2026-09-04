@@ -47,6 +47,7 @@ rsync -rlptvz $DRY \
     --exclude 'config/db.php' \
     --exclude 'config/smtp.php' \
     --exclude 'config/mapbox.php' \
+    --exclude 'mail.log' \
     -e ssh \
     "$LOCAL_PATH" "$REMOTE:$REMOTE_PATH/"
 

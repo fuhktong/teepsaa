@@ -29,9 +29,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 csrf_verify();
-check_rate_limit($pdo);
+// Keyed on the account, since the code belongs to the signed-in user.
+$rlId = $role . ':' . $_SESSION['user_id'];
+check_rate_limit($pdo, 'verify', $rlId);
 
-$submitted = preg_replace('/\D/', '', $_POST['code'] ?? '');
+$submitted = preg_replace('/\D/', '', (string)($_POST['code'] ?? ''));
 $userId    = $_SESSION['user_id'];
 $table     = $role === 'buyer' ? 'buyers' : 'vendors';
 $loginUrl  = $role === 'vendor' ? '/login-vendor/' : '/login-buyer/';
@@ -70,7 +72,7 @@ if (new DateTime() > new DateTime($user['verify_code_expires'])) {
 }
 
 if (!hash_equals($user['verify_token'], $submitted)) {
-    record_failed_attempt($pdo);
+    record_failed_attempt($pdo, 'verify', $rlId);
     $_SESSION['verify_error'] = 'Incorrect code. Please try again.';
     header('Location: /verify-email/');
     exit;

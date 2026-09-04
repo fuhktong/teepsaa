@@ -123,86 +123,105 @@ function announcement_deliver(string $to, string $subject, string $html): ?strin
 
 // Sends up to $limit queued messages for the oldest announcement still sending.
 // Returns ['id','sent','failed','skipped','remaining','finished'] — or null
-// when nothing is queued at all.
-function announcement_process_batch(PDO $pdo, int $limit = ANNOUNCEMENT_BATCH): ?array {
-    $a = $pdo->query(
-        "SELECT * FROM announcements WHERE status = 'sending' ORDER BY queued_at, id LIMIT 1"
-    )->fetch(PDO::FETCH_ASSOC);
-    if (!$a) return null;
+// when nothing is queued at all, or when another worker holds the send lock —
+// $busy comes back true in that second case so a caller can tell them apart.
+function announcement_process_batch(PDO $pdo, int $limit = ANNOUNCEMENT_BATCH, ?bool &$busy = null): ?array {
+    $busy = false;
 
-    $stmt = $pdo->prepare(
-        "SELECT * FROM announcement_recipients
-          WHERE announcement_id = ? AND status = 'pending'
-          ORDER BY id LIMIT {$limit}"
-    );
-    $stmt->execute([$a['id']]);
-    $queue = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // cron/announcement-send.php runs every 5 minutes for up to 240s, and the
+    // admin has a "Send next batch" button that calls this too. Recipients are
+    // only marked sent *after* the SMTP handshake returns, which takes seconds
+    // per message — so two overlapping runs would both select the same pending
+    // rows and email those people twice. A named lock makes the batch
+    // single-threaded across connections; MySQL drops it by itself if the
+    // process dies mid-send, so a crash cannot wedge the queue.
+    if (!(int)$pdo->query("SELECT GET_LOCK('teepsaa_announcements', 0)")->fetchColumn()) {
+        $busy = true;
+        return null;
+    }
 
-    $mark = $pdo->prepare(
-        'UPDATE announcement_recipients SET status = ?, error = ?, sent_at = NOW() WHERE id = ?'
-    );
-    $sent = $failed = $skipped = 0;
+    try {
+        $a = $pdo->query(
+            "SELECT * FROM announcements WHERE status = 'sending' ORDER BY queued_at, id LIMIT 1"
+        )->fetch(PDO::FETCH_ASSOC);
+        if (!$a) return null;
 
-    foreach ($queue as $r) {
-        $role  = $r['role'];
-        $table = unsubscribe_table($role);
-        $acc = $pdo->prepare(
-            "SELECT email, deleted_at, suspended, unsubscribed_at FROM {$table} WHERE id = ?"
+        $stmt = $pdo->prepare(
+            "SELECT * FROM announcement_recipients
+              WHERE announcement_id = ? AND status = 'pending'
+              ORDER BY id LIMIT {$limit}"
         );
-        $acc->execute([$r['user_id']]);
-        $u = $acc->fetch(PDO::FETCH_ASSOC);
+        $stmt->execute([$a['id']]);
+        $queue = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Re-checked at send time, not just at queue time: a long list can take
-        // a while to drain and someone may close, be suspended, or opt out mid-run.
-        $skipReason = null;
-        if (!$u)                                                     $skipReason = 'account no longer exists';
-        elseif ($u['deleted_at'])                                    $skipReason = 'account closed';
-        elseif ((int)$u['suspended'] === 1)                          $skipReason = 'account suspended';
-        elseif ($a['kind'] !== 'service' && $u['unsubscribed_at'])   $skipReason = 'unsubscribed';
+        $mark = $pdo->prepare(
+            'UPDATE announcement_recipients SET status = ?, error = ?, sent_at = NOW() WHERE id = ?'
+        );
+        $sent = $failed = $skipped = 0;
 
-        if ($skipReason) {
-            $mark->execute(['skipped', $skipReason, $r['id']]);
-            $skipped++;
-            continue;
+        foreach ($queue as $r) {
+            $role  = $r['role'];
+            $table = unsubscribe_table($role);
+            $acc = $pdo->prepare(
+                "SELECT email, deleted_at, suspended, unsubscribed_at FROM {$table} WHERE id = ?"
+            );
+            $acc->execute([$r['user_id']]);
+            $u = $acc->fetch(PDO::FETCH_ASSOC);
+
+            // Re-checked at send time, not just at queue time: a long list can take
+            // a while to drain and someone may close, be suspended, or opt out mid-run.
+            $skipReason = null;
+            if (!$u)                                                     $skipReason = 'account no longer exists';
+            elseif ($u['deleted_at'])                                    $skipReason = 'account closed';
+            elseif ((int)$u['suspended'] === 1)                          $skipReason = 'account suspended';
+            elseif ($a['kind'] !== 'service' && $u['unsubscribed_at'])   $skipReason = 'unsubscribed';
+
+            if ($skipReason) {
+                $mark->execute(['skipped', $skipReason, $r['id']]);
+                $skipped++;
+                continue;
+            }
+
+            $unsubUrl = null;
+            if ($a['kind'] !== 'service') {
+                $tok = unsubscribe_token($pdo, $role, (int)$r['user_id']);
+                if ($tok) $unsubUrl = unsubscribe_url($role, $tok);
+            }
+            [$subject, $html] = announcement_render($a, $unsubUrl);
+
+            $err = announcement_deliver($u['email'], $subject, $html);
+            if ($err === null) {
+                $mark->execute(['sent', null, $r['id']]);
+                $sent++;
+            } else {
+                $mark->execute(['failed', $err, $r['id']]);
+                $failed++;
+            }
         }
 
-        $unsubUrl = null;
-        if ($a['kind'] !== 'service') {
-            $tok = unsubscribe_token($pdo, $role, (int)$r['user_id']);
-            if ($tok) $unsubUrl = unsubscribe_url($role, $tok);
+        if ($sent || $failed) {
+            $pdo->prepare('UPDATE announcements SET sent_count = sent_count + ?, failed_count = failed_count + ? WHERE id = ?')
+                ->execute([$sent, $failed, $a['id']]);
         }
-        [$subject, $html] = announcement_render($a, $unsubUrl);
 
-        $err = announcement_deliver($u['email'], $subject, $html);
-        if ($err === null) {
-            $mark->execute(['sent', null, $r['id']]);
-            $sent++;
-        } else {
-            $mark->execute(['failed', $err, $r['id']]);
-            $failed++;
+        $rem = $pdo->prepare("SELECT COUNT(*) FROM announcement_recipients WHERE announcement_id = ? AND status = 'pending'");
+        $rem->execute([$a['id']]);
+        $remaining = (int)$rem->fetchColumn();
+
+        if ($remaining === 0) {
+            $pdo->prepare("UPDATE announcements SET status = 'sent', finished_at = NOW() WHERE id = ?")
+                ->execute([$a['id']]);
         }
+
+        return [
+            'id'        => (int)$a['id'],
+            'sent'      => $sent,
+            'failed'    => $failed,
+            'skipped'   => $skipped,
+            'remaining' => $remaining,
+            'finished'  => $remaining === 0,
+        ];
+    } finally {
+        $pdo->query("SELECT RELEASE_LOCK('teepsaa_announcements')");
     }
-
-    if ($sent || $failed) {
-        $pdo->prepare('UPDATE announcements SET sent_count = sent_count + ?, failed_count = failed_count + ? WHERE id = ?')
-            ->execute([$sent, $failed, $a['id']]);
-    }
-
-    $rem = $pdo->prepare("SELECT COUNT(*) FROM announcement_recipients WHERE announcement_id = ? AND status = 'pending'");
-    $rem->execute([$a['id']]);
-    $remaining = (int)$rem->fetchColumn();
-
-    if ($remaining === 0) {
-        $pdo->prepare("UPDATE announcements SET status = 'sent', finished_at = NOW() WHERE id = ?")
-            ->execute([$a['id']]);
-    }
-
-    return [
-        'id'        => (int)$a['id'],
-        'sent'      => $sent,
-        'failed'    => $failed,
-        'skipped'   => $skipped,
-        'remaining' => $remaining,
-        'finished'  => $remaining === 0,
-    ];
 }

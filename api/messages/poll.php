@@ -24,6 +24,19 @@ $isAdmin = !empty($_SESSION['admin_id']) && ($_GET['as'] ?? '') === 'admin';
 $role    = $isAdmin ? '' : ($_SESSION['role'] ?? '');
 $userId  = $_SESSION['user_id'] ?? 0;
 
+// The page behind this endpoint calls admin_require('messages'); without the same
+// check here a custom admin who was never granted that section could reach
+// the data through the API instead. admin-auth.php's device-restore block is
+// inert on this path — it only runs when no admin session exists.
+if ($isAdmin) {
+    require_once __DIR__ . '/../../config/admin-auth.php';
+    if (!admin_can('messages')) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Forbidden']);
+        exit;
+    }
+}
+
 $threadId = (int)($_GET['thread_id'] ?? 0);
 $afterId  = (int)($_GET['after'] ?? 0);
 

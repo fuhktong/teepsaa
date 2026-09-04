@@ -144,8 +144,12 @@ if ($action === 'batch') {
     $a = $load($id);
     if ($a['status'] !== 'sending') $done($edit($id), null, 'This announcement is not sending.');
 
-    $r = announcement_process_batch($pdo);
-    if ($r === null) $done($edit($id), null, 'Nothing left to send.');
+    $r = announcement_process_batch($pdo, ANNOUNCEMENT_BATCH, $busy);
+    if ($r === null) {
+        $done($edit($id), null, $busy
+            ? 'A send is already running — give it a moment and check back.'
+            : 'Nothing left to send.');
+    }
     $done($edit($id), sprintf(
         '%d sent, %d failed, %d skipped. %s',
         $r['sent'], $r['failed'], $r['skipped'],

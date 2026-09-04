@@ -30,8 +30,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 csrf_verify();
-check_rate_limit($pdo);
-record_failed_attempt($pdo);
+// Every send counts, not just failures — this throttles the volume of mail one
+// account can ask us to send, which is the abuse here.
+$rlId = $role . ':' . $_SESSION['user_id'];
+check_rate_limit($pdo, 'resend', $rlId);
+record_failed_attempt($pdo, 'resend', $rlId);
 
 $userId = $_SESSION['user_id'];
 $table  = $role === 'buyer' ? 'buyers' : 'vendors';

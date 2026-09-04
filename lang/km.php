@@ -264,7 +264,8 @@ return [
     'order_send_back'      => 'ផ្ញើទំនិញត្រឡប់',
     'order_send_to'        => 'ផ្ញើទៅ៖',
     'order_return_instructions' => 'ខ្ចប់ទំនិញ ហើយផ្ញើត្រឡប់វិញតាម Grab ដោយសោហ៊ុយផ្ទាល់ខ្លួន។ បិទភ្ជាប់តំណតាមដាន Grab ខាងក្រោមនៅពេលបានផ្ញើ។',
-    'order_return_url_placeholder' => 'បិទភ្ជាប់តំណតាមដានការប្រគល់វិញ Grab…',
+    'order_return_url_placeholder' => 'https://… (បិទភ្ជាប់តំណតាមដាន Grab ទាំងមូល)',
+    'order_return_url_invalid' => 'នេះមិនមែនជាតំណទេ។ សូមបិទភ្ជាប់តំណតាមដាន Grab ទាំងមូល ដែលចាប់ផ្តើមដោយ https://',
     'order_mark_dispatched' => 'សម្គាល់ថាបានផ្ញើត្រឡប់',
 
     // ── Wishlist ─────────────────────────────────────────────────────────

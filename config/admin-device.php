@@ -163,7 +163,12 @@ function admin_device_restore(PDO $pdo): bool {
         $permissions = $permStmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
+    // The session id changes here, so the CSRF token must change with it —
+    // otherwise a token minted for the pre-login anonymous session stays
+    // valid afterwards, which is the fixation half of a session-fixation
+    // attack. csrf_token() mints a fresh one on the next render.
     session_regenerate_id(true);
+    unset($_SESSION['csrf_token']);
     $_SESSION['admin_id']          = (int)$d['admin_id'];
     $_SESSION['admin_role']        = $d['admin_role'];
     $_SESSION['admin_permissions'] = $permissions;

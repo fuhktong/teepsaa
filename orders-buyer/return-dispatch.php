@@ -37,6 +37,15 @@ $orderPublicId = $pidStmt->fetchColumn() ?: '';
 $trackingUrl = safe_external_url($trackingUrl);
 
 if (!$orderId || $trackingUrl === null) {
+    // The buyer has to paste the whole URL including the scheme — we do not
+    // guess a missing "https://", because guessing wrong sends the vendor
+    // somewhere the buyer never intended. So say what was wrong instead of
+    // bouncing them back to an unchanged page with no explanation.
+    if ($orderId) {
+        $rdLang = $_SESSION['lang'] ?? 'km';
+        $rdT = require __DIR__ . '/../lang/' . (in_array($rdLang, ['en', 'km'], true) ? $rdLang : 'en') . '.php';
+        $_SESSION['flash_error'] = $rdT['order_return_url_invalid'];
+    }
     header($orderId ? 'Location: /orders-buyer/order.php?id=' . $orderPublicId : 'Location: /orders-buyer/');
     exit;
 }

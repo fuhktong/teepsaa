@@ -253,6 +253,16 @@ select.refund-reason-input {
   margin-bottom: 1rem;
 }
 
+.order-flash-error {
+  font-size: 0.875rem;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.75rem;
+  margin-bottom: 1rem;
+}
+
 .review-item-row {
   display: flex;
   align-items: center;

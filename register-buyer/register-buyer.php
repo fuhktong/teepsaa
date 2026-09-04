@@ -85,7 +85,12 @@ $codeHtml = '<div style="font-size:2rem;font-weight:bold;letter-spacing:0.3em;fo
 ]);
 if ($html !== '') send_email($email, $subj, $html);
 
+// The session id changes here, so the CSRF token must change with it —
+// otherwise a token minted for the pre-login anonymous session stays valid
+// afterwards, which is the fixation half of a session-fixation attack.
+// csrf_token() mints a fresh one on the next render.
 session_regenerate_id(true);
+unset($_SESSION['csrf_token']);
 $_SESSION['user_id']      = $newId;
 $_SESSION['pending_role'] = 'buyer';
 header('Location: /verify-email/');

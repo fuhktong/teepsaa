@@ -31,6 +31,19 @@ $isAdmin = !empty($_SESSION['admin_id']) && ($_GET['as'] ?? '') === 'admin';
 $userId  = $_SESSION['user_id'] ?? 0;
 $role    = $isAdmin ? '' : ($_SESSION['role'] ?? '');
 
+// The page behind this endpoint calls admin_require('orders'); without the same
+// check here a custom admin who was never granted that section could reach
+// the data through the API instead. admin-auth.php's device-restore block is
+// inert on this path — it only runs when no admin session exists.
+if ($isAdmin) {
+    require_once __DIR__ . '/../config/admin-auth.php';
+    if (!admin_can('orders')) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Forbidden']);
+        exit;
+    }
+}
+
 if ($isAdmin) {
     $stmt = $pdo->prepare('SELECT status FROM orders WHERE id = ?');
     $stmt->execute([$orderId]);

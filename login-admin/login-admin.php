@@ -18,17 +18,19 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 csrf_verify();
-check_rate_limit($pdo);
+$email    = trim((string)($_POST['email'] ?? ''));
+$password = (string)($_POST['password'] ?? '');
 
-$email    = trim($_POST['email'] ?? '');
-$password = $_POST['password'] ?? '';
+// All three portals share the 'login' budget: someone working through a stolen
+// password list should not get a fresh five tries per portal.
+check_rate_limit($pdo, 'login', $email);
 
 $stmt = $pdo->prepare('SELECT id, password, admin_role, is_active FROM admins WHERE email = ?');
 $stmt->execute([$email]);
 $user = $stmt->fetch();
 
 if (!$user || !password_verify($password, $user['password'])) {
-    record_failed_attempt($pdo);
+    record_failed_attempt($pdo, 'login', $email);
     $_SESSION['auth_error'] = 'Invalid email or password.';
     header('Location: /login-admin/');
     exit;
@@ -50,7 +52,12 @@ if ($user['admin_role'] !== 'super') {
 // The admin identity lives under its own keys and never touches 'user_id' or
 // 'role', so an admin, a buyer and a vendor can all be signed in in the same
 // browser without clobbering each other. See config/admin-auth.php.
+// The session id changes here, so the CSRF token must change with it —
+// otherwise a token minted for the pre-login anonymous session stays valid
+// afterwards, which is the fixation half of a session-fixation attack.
+// csrf_token() mints a fresh one on the next render.
 session_regenerate_id(true);
+unset($_SESSION['csrf_token']);
 $_SESSION['admin_id']          = $user['id'];
 $_SESSION['admin_role']        = $user['admin_role'];
 $_SESSION['admin_permissions'] = $permissions;

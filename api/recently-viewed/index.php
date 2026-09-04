@@ -10,7 +10,7 @@ session_start([
 require __DIR__ . '/../../config/db.php';
 header('Content-Type: application/json');
 
-$raw = $_GET['ids'] ?? '';
+$raw = (string)($_GET['ids'] ?? '');
 $uuidRe = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i';
 $ids = array_values(array_unique(array_filter(explode(',', $raw), fn($id) => preg_match($uuidRe, $id))));
 $ids = array_slice($ids, 0, 20);

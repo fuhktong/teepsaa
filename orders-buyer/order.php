@@ -114,6 +114,10 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
     <div class="order-flash-success"><?= htmlspecialchars($_SESSION['flash_success']) ?></div>
     <?php unset($_SESSION['flash_success']); ?>
     <?php endif; ?>
+    <?php if (!empty($_SESSION['flash_error'])): ?>
+    <div class="order-flash-error"><?= htmlspecialchars($_SESSION['flash_error']) ?></div>
+    <?php unset($_SESSION['flash_error']); ?>
+    <?php endif; ?>
 
     <a href="/orders-buyer/" style="display:inline-block;font-size:0.875rem;color:#6b7280;text-decoration:none;margin-bottom:1.25rem;">← My Orders</a>
 

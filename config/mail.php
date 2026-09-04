@@ -22,6 +22,16 @@ if (!function_exists('send_email')) {
     }
 
     function smtp_deliver(string $to, string $subject, string $html): void {
+        // $to lands unescaped in "RCPT TO:<...>" and in the To: header, and
+        // $subject in the Subject: header. Today every caller filters the
+        // address through FILTER_VALIDATE_EMAIL and every subject is base64'd by
+        // mime_header(), so neither can carry a newline — but that is a property
+        // of the callers, not of this function. One address that skips the
+        // filter would be enough to inject a Bcc: line, so refuse here instead.
+        if (preg_match('/[\r\n]/', $to) || preg_match('/[\r\n]/', $subject)) {
+            throw new Exception('header injection attempt in recipient or subject');
+        }
+
         $sock = stream_socket_client(
             'ssl://' . SMTP_HOST . ':' . SMTP_PORT,
             $errno, $errstr, 15,

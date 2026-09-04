@@ -35,13 +35,15 @@ $error = '';
 
 if (!$notFound && $_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
-    check_rate_limit($pdo);
-    record_failed_attempt($pdo);
+    $name    = trim((string)($_POST['name'] ?? ''));
+    $email   = trim((string)($_POST['email'] ?? ''));
+    $phone   = trim((string)($_POST['phone'] ?? ''));
+    $message = trim((string)($_POST['message'] ?? ''));
 
-    $name    = trim($_POST['name'] ?? '');
-    $email   = trim($_POST['email'] ?? '');
-    $phone   = trim($_POST['phone'] ?? '');
-    $message = trim($_POST['message'] ?? '');
+    // Applications get their own budget; flooding this form must not lock the
+    // applicant's address out of logging in.
+    check_rate_limit($pdo, 'careers', $email);
+    record_failed_attempt($pdo, 'careers', $email);
 
     if ($name === '' || $email === '') {
         $error = 'Please provide your name and email.';
