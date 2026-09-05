@@ -140,9 +140,20 @@ search/`, then `header/ footer/ config/ api/`.
 
 ## 2b. PHP and server
 
-- [ ] **Turn on `display_errors` in dev and click through every page.** You're
+- [x] **Turn on `display_errors` in dev and click through every page.** You're
       hunting notices and warnings that don't fatal but reveal bugs — undefined
       array keys, null property reads. Remember to turn it back off (Part 5).
+      (verified 2026-09-04 — 384 URLs across 88 distinct pages swept by curl as
+      public/buyer/vendor/admin. **`display_errors` alone was a false pass:**
+      hPanel had it `On` but `error_reporting` was `-32768` (= report nothing),
+      so PHP printed no diagnostics regardless. Proved with a throwaway probe,
+      then forced with `php_value error_reporting 32767` in the server's root
+      `.htaccess` — `php_value` does work under Hostinger's LiteSpeed. Two live
+      bugs found, both listed under Findings. Note the web SAPI is PHP 8.3.33
+      while the CLI is 8.1.34, so the Part 2b `php -l` pass ran on a different
+      PHP than serves the site. POST-only paths — checkout, submit, register,
+      uploads — are NOT covered by this sweep and still need the Part 1 flows
+      re-run by hand with errors visible.)
 - [x] **Run `php -l` over the whole tree** to catch syntax errors in anything
       heavily edited:
       `find . -name '*.php' -not -path './vendor/*' -exec php -l {} \; | grep -v 'No syntax errors'`
@@ -225,14 +236,24 @@ Cheap to do and it shrinks what you have to maintain forever.
 Run each query against the live database. Each should return zero rows, or a
 result you can explain.
 
-- [ ] **Orphaned product photos:**
+- [x] **Orphaned product photos:**
       `SELECT COUNT(*) FROM product_photos p LEFT JOIN products pr ON pr.id = p.product_id WHERE pr.id IS NULL;`
-- [ ] **Orphaned cart items:**
+      (verified 2026-09-04 — returns **0**.)
+- [x] **Orphaned cart items:**
       `SELECT COUNT(*) FROM cart_items c LEFT JOIN products p ON p.id = c.product_id WHERE p.id IS NULL;`
-- [ ] **Order items with a deleted product.** Expect some — products get
+      (verified 2026-09-04 — returns **0**.)
+- [x] **Order items with a deleted product.** Expect some — products get
       deleted. What matters is that order pages still render the snapshot name
       instead of blowing up. Find one and open the order as buyer, vendor and
       admin.
+      (verified 2026-09-04 — 2 such rows: `order_items` 35 ("Sunflower Dress",
+      order 34 / `09ca8911…`) and 36 ("White Dress", order 35 / `3ec66fc1…`),
+      both with a NULL `product_id`. All six views fetched with `display_errors`
+      on — buyer `/orders-buyer/order.php`, vendor `/orders-vendor/order.php`,
+      admin `/admin/order.php` — every one returned 200, rendered the
+      `order_items.product_name` snapshot, and emitted zero PHP diagnostics. The
+      snapshot columns (`product_name`, `product_name_km`, `variant_label`,
+      `price_at_purchase`) are doing their job.)
 - [x] **Confirm `archived = 0` is filtered everywhere buyers see products.**
       Grep every buyer-facing query — homepage, search, business page, category
       — and check the filter is present. An archived product leaking into search
@@ -244,8 +265,9 @@ result you can explain.
       filtering — correct for a wishlist. `cart/add.php` gates on `active`, and
       `archive.php` forces `active = 0`, so archived items cannot be carted.
       One gap: see the `products/toggle.php` finding.)
-- [ ] **Confirm at most one primary photo per product:**
+- [x] **Confirm at most one primary photo per product:**
       `SELECT product_id, COUNT(*) FROM product_photos WHERE is_primary = 1 GROUP BY product_id HAVING COUNT(*) > 1;`
+      (verified 2026-09-04 — 0 rows.)
 
 ## 2f. Frontend
 
@@ -385,8 +407,16 @@ items — they're deduplicated here.
 - [ ] **Set `PAYOUT_WINDOW_SECONDS` to `86400`** in the server's
       `config/db.php`. It is currently **`60`**, the dev value. Leaving it means
       vendors can be paid out a minute after delivery.
-- [ ] **Set `display_errors = Off`.** If you turned it on for Part 2b, this is
-      where it goes back.
+- [ ] **Set `display_errors = Off`, and undo the Part 2b `.htaccess` block.**
+      Two separate places: hPanel's `display_errors`, _and_ the temporary block
+      appended to the server's root `.htaccess` on 2026-09-04:
+      `     ssh teepsaa
+  cd domains/teepsaa.com/public_html
+  cp .htaccess.bak-errortest .htaccess && rm .htaccess.bak-errortest
+  `
+      Running `./deploy-sftp.sh` also clears it, since `.htaccess` is not in the
+      rsync exclude list. Leave `log_errors` on — it is what catches `/api/` and
+      `/cron/` problems, which never render in a browser.
 - [ ] **Confirm `/uploads/` is writable by the web server user**, and that its
       `.htaccess` PHP-execution block is still in place after the deploy.
 - [x] **Search for leftover `TODO` and `FIXME` comments** —
@@ -400,6 +430,52 @@ items — they're deduplicated here.
       (Host-scoped Basic Auth on `admin.teepsaa.com` was listed here as optional —
       cut from launch scope 2026-09-03; it stays tracked in
       `teepsaa-open-questions.md`.)
+
+---
+
+# Findings from the display_errors sweep (2026-09-04)
+
+Two live bugs, from 384 URLs / 88 pages swept as public, buyer, vendor and admin.
+
+- [x] **`/sitemap.php` fatals on every single request.** Not an edge case — the
+      page is 100% dead:
+      `Uncaught PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown
+  column 'p.updated_at'`. Line 9 selects `p.updated_at` from `products` and
+      line 18 selects `updated_at` from `businesses`; neither column exists —
+      `database/migration.sql` only ever defines `created_at`. Consequence:
+      Google Search Console reads the sitemap as unparseable, so product pages
+      do not get indexed. Fix is `updated_at` → `created_at` in both queries
+      (`created_at` is a fine `lastmod` value), or add the columns if you want
+      true modification times.
+      (fixed 2026-09-04 — both queries and both `lastmod` reads now use
+      `created_at`. **A second bug in the same file was found while fixing it:**
+      the sitemap listed `https://teepsaa.com/browse/`, which is a 404 — there is
+      no `browse/` folder in the repo — so that entry was removed. Uploaded to
+      the server and live-verified: `/sitemap.php` returns valid XML that parses
+      cleanly, 31 `<url>` entries (19 products, 7 businesses, 5 static pages),
+      26 `<lastmod>` tags, zero PHP diagnostics. The local file is fixed but
+      **not yet committed** — it will go out with the next normal deploy.)
+- [ ] **`/order-status/order-status.php` and `/refund-status/refund-status.php`
+      are directly web-reachable but are include-fragments, not pages.** Both
+      open with `// Expects $orderStatus (string) to be set before including.`,
+      so a direct GET renders a broken partial plus
+      `Warning: Undefined variable $orderStatus`, which leaks the absolute
+      server path. Harmless to the app's own flows (every real include sets the
+      variable first) — this is hardening, not a launch blocker. Either guard
+      the top of each file with a `defined()`/`isset()` bail-out, or deny them
+      in `.htaccess`.
+
+Explicitly NOT covered by this sweep, and still to do by hand with errors
+visible: every POST-only path — checkout, cart mutations, product submit,
+registration, file uploads, admin action endpoints (`*-action.php`). Those only
+execute on a real form submission. Re-run the Part 1 functional flows once with
+`display_errors` still on.
+
+Deliberate behaviour confirmed as correct, not bugs: `/support-thread/` returns
+404 on a missing/invalid `?t=` token (`http_response_code(404)`), `/admin/` 302s
+to `/admin/orders.php`, and `/product/` + `/business/` 302 to `/search/` when the
+`public_id` does not match — note those two key on a UUID `public_id`, never a
+numeric id, so `?id=1` never reaches the page body.
 
 ---
 
