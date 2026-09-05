@@ -180,7 +180,7 @@ These matter because the robot behaves completely differently for each one.
 
 This is the most confusing problem on the site and worth reading slowly.
 
-- [ ] **Right now the robot reads a page whose visible words are Khmer,
+- [x] **Right now the robot reads a page whose visible words are Khmer,
       whose hidden title is English, and which announces itself as an
       English page.**
 
@@ -286,12 +286,23 @@ This is the most confusing problem on the site and worth reading slowly.
          knowingly. If you pick English, change `'km'` to `'en'` in both
          `config/db.php` and `header/header.php`.
 
-      **Status: steps 1 and 2 are done. Only step 3 is left, and it's a
-      decision, not typing.** All 48 public pages now declare their real
-      language, and the product page, shop page and all eight info pages
-      take their title and description from the same language the body
-      renders in. The box stays unticked until you tell me Khmer or
-      English.
+      **Status: done — all three steps.** All 49 public pages declare
+      their real language, and the product page, shop page and all eight
+      info pages take their title and description from the same language
+      the body renders in.
+
+      Step 3 turned out not to need a sacrifice. **Khmer is the deliberate
+      default** — a stranger, Googlebot included, gets Khmer — but 3a below
+      was built in a cheap form at the same time, so English is no longer
+      shut out of Google. Adding `?lang=en` to any address renders that
+      page in English, and Google is told about both. The either/or in the
+      two bullets above no longer applies: you get the uncontested Khmer
+      terms *and* the English search traffic.
+
+      The default now lives in one place, `DEFAULT_LANG` in
+      `config/i18n.php`. Changing it there changes every page, every
+      canonical address and the sitemap together — the `?? 'km'` defaults
+      scattered across 49 files are gone.
 
 ## 1e. Deleted products send visitors to the search page — 20 minutes
 
@@ -879,7 +890,7 @@ None of these should hold up the launch. But 3a and 3b get harder the longer
 you wait, because they change web addresses, and once other sites and
 Facebook posts link to the old addresses those links have to be preserved.
 
-- [ ] **3a. Give each language its own web address.** Today one address
+- [x] **3a. Give each language its own web address.** Today one address
       shows either English or Khmer depending on a setting stored against
       the visitor. Google is one visitor with one setting, so **only one
       language can ever be in Google.** All the Khmer translation work in
@@ -898,6 +909,45 @@ Facebook posts link to the old addresses those links have to be preserved.
       **This roughly doubles the number of pages you can appear for**, and
       it's the biggest long-term item here. It's also about a week of work
       touching every page and every internal link. Hence: after launch.
+
+      **Status: done early, in the cheap form — about a day, not a week.**
+      Built before launch because the week-long version is what's expensive,
+      and there's a version that gets the same result from Google's side
+      without renaming a single address.
+
+      Instead of `/en/product/...` and `/km/product/...`, the language rides
+      in the query: the bare address is Khmer and `?lang=en` is English.
+      Nothing that exists today moves, so no old link ever breaks — which is
+      exactly the reason this item warned about waiting.
+
+      What's in place:
+
+      - `current_lang()` in `config/i18n.php` — the address wins over the
+        session, so a visitor arriving on an English link from Google gets
+        English even though they never touched the switcher. `DEFAULT_LANG`
+        (Khmer) is the single source of truth.
+      - `seo_meta()` in `config/seo.php` emits the `hreflang` pair on every
+        indexable page — `km`, `en`, and `x-default` pointing at Khmer —
+        both directions, which is the reciprocity Google requires. Noindex
+        pages (filtered search) deliberately get no pair.
+      - `sitemap.php` lists every page twice, each entry naming its twin.
+      - `lang_href()` wraps the links along the public crawl path — nav,
+        footer, category tiles, product cards, shop cards, the shop link on
+        a product page — so on an English page the crawler's next click
+        stays English. Khmer links stay bare, so no address is duplicated.
+      - `lang/set.php` strips `?lang=` from the page it returns to, so the
+        switcher isn't silently undone by the address it came from.
+
+      What the full `/en/` version would still buy you: a slightly cleaner
+      address, and a marginal ranking preference Google has never actually
+      confirmed. Not worth a week — revisit only if the English pages are
+      earning traffic and something concrete argues for it.
+
+      **One thing this does not fix:** it makes your English *visible*, not
+      *good*. If `name_en` and `description_en` in the database are empty,
+      or hold the Khmer text copied over, the English pages are thin and
+      Google will treat them as such. Worth spot-checking a dozen products
+      before expecting anything from this.
 
 - [ ] **3b. Put product names in the web address.** Today a product address
       is `teepsaa.com/product/?id=8f14e45f-ab3c-...`. It contains no words,
@@ -1023,29 +1073,29 @@ Facebook posts link to the old addresses those links have to be preserved.
 
 ## Suggested order
 
-| Do this | Item | Time | Worth |
-|---|---|---|---|
-| 1 | 1b — the missing share picture | 5 min | High |
-| 2 | 1c — favicon | 5 min | Medium |
-| 3 | 1m — www redirect | 5 min | Low |
-| 4 | 1k — robots.txt additions | 10 min | Low |
-| 5 | 1h — homepage heading | 15 min | High |
-| 6 | 1e + 1f — deleted products and the 404 page | 40 min | Medium |
-| 7 | 1g — descriptions on info pages | 20 min | Medium |
-| 8 | 1l — noindex on filtered searches | 20 min | Medium |
-| 9 | 1d — the language mix-up | 30 min | High |
-| 10 | 1j — per-subdomain robots.txt | 30 min | Medium |
-| 11 | 1n — sitemap improvements | 30 min | Medium |
-| 12 | 1i — alt text on product photos | 1 hr | High |
-| 13 | 2a — product info cards | 2 hr | **Highest** |
-| 14 | 1o — Search Console and friends | 30 min | High |
-| — | *launch* | | |
-| 15 | 2b–2f — the rest of the info cards | 3 hr | High |
-| 16 | 3c — category pages | 1–2 days | High |
-| 17 | 3e + 3f — images, compression | 1–2 days | High |
-| 18 | 3a — one address per language | ~1 week | **Highest** |
-| 19 | 3b, 3d, 3g | 2 days | Medium |
-| — | 3h — content and links | ongoing | High |
+| Do this | Item | Time | Worth | Done |
+|---|---|---|---|---|
+| 1 | 1b — the missing share picture | 5 min | High | ✅ |
+| 2 | 1c — favicon | 5 min | Medium | ✅ |
+| 3 | 1m — www redirect | 5 min | Low | ✅ |
+| 4 | 1k — robots.txt additions | 10 min | Low | ✅ |
+| 5 | 1h — homepage heading | 15 min | High | ✅ |
+| 6 | 1e + 1f — deleted products and the 404 page | 40 min | Medium | ✅ |
+| 7 | 1g — descriptions on info pages | 20 min | Medium | ✅ |
+| 8 | 1l — noindex on filtered searches | 20 min | Medium | ✅ |
+| 9 | 1d — the language mix-up | 30 min | High | ✅ |
+| 10 | 1j — per-subdomain robots.txt | 30 min | Medium | ✅ |
+| 11 | 1n — sitemap improvements | 30 min | Medium | ✅ |
+| 12 | 1i — alt text on product photos | 1 hr | High | ✅ |
+| 13 | 2a — product info cards | 2 hr | **Highest** |  |
+| 14 | 1o — Search Console and friends | 30 min | High |  |
+| — | *launch* | | |  |
+| 15 | 2b–2f — the rest of the info cards | 3 hr | High |  |
+| 16 | 3c — category pages | 1–2 days | High |  |
+| 17 | 3e + 3f — images, compression | 1–2 days | High |  |
+| 18 | 3a — one address per language | ~1 day (cheap form) | **Highest** | ✅ |
+| 19 | 3b, 3d, 3g | 2 days | Medium |  |
+| — | 3h — content and links | ongoing | High |  |
 
 Items 1–14 come to roughly **six hours** and should all be done before the
 password comes off.

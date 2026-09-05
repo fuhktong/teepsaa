@@ -2,11 +2,17 @@
 // The list of addresses handed to Google, Bing and friends. Served as
 // /sitemap.xml (rewritten in .htaccess) and named in robots.php.
 //
-// Only pages that are genuinely public and worth a search result belong
-// here. Anything behind a login, anything a filter can generate infinitely
-// many of (see /search/'s noindex), and the vendor/admin subdomains are all
+// Every page appears twice — once in Khmer (the bare address) and once in
+// English (?lang=en) — and each entry names both, which is how Google learns
+// they're one page in two languages rather than two duplicates competing with
+// each other. See current_lang() in config/i18n.php.
+//
+// Only pages that are genuinely public and worth a search result belong here.
+// Anything behind a login, anything a filter can generate infinitely many of
+// (see /search/'s noindex), and the vendor/admin subdomains are all
 // deliberately absent.
 require __DIR__ . '/config/db.php';
+require __DIR__ . '/config/seo.php';
 
 header('Content-Type: application/xml; charset=utf-8');
 echo '<?xml version="1.0" encoding="UTF-8"?>';
@@ -45,53 +51,50 @@ $businesses = $pdo->query("
     ORDER BY id ASC
 ")->fetchAll();
 
-// Every page teepsaa.com serves that isn't a product or a shop. Kept in one
-// list so adding a page means adding one line here, not another XML block.
-$staticPages = [
-    ['/',          'daily',   '1.0'],
-    ['/search/',   'daily',   '0.8'],
-    ['/about/',    'monthly', '0.6'],
-    ['/help/',     'monthly', '0.4'],
-    ['/contact/',  'monthly', '0.4'],
-    ['/shipping/', 'monthly', '0.4'],
-    ['/returns/',  'monthly', '0.4'],
-    ['/careers/',  'monthly', '0.4'],
-    ['/privacy/',  'monthly', '0.3'],
-    ['/terms/',    'monthly', '0.3'],
+// One flat list of every address worth crawling: [path, changefreq,
+// priority, last modified, primary image]. Built here so the XML below is
+// a single loop rather than three near-identical blocks.
+$pages = [
+    ['/',          'daily',   '1.0', null, null],
+    ['/search/',   'daily',   '0.8', null, null],
+    ['/about/',    'monthly', '0.6', null, null],
+    ['/help/',     'monthly', '0.4', null, null],
+    ['/contact/',  'monthly', '0.4', null, null],
+    ['/shipping/', 'monthly', '0.4', null, null],
+    ['/returns/',  'monthly', '0.4', null, null],
+    ['/careers/',  'monthly', '0.4', null, null],
+    ['/privacy/',  'monthly', '0.3', null, null],
+    ['/terms/',    'monthly', '0.3', null, null],
 ];
+foreach ($businesses as $b) {
+    $pages[] = ['/business/?id=' . $b['public_id'], 'weekly', '0.7', $b['modified_at'], $b['banner']];
+}
+foreach ($products as $p) {
+    $pages[] = ['/product/?id=' . $p['public_id'], 'weekly', '0.6', $p['modified_at'], $p['photo']];
+}
 
 $x = fn(?string $s): string => htmlspecialchars((string)$s, ENT_QUOTES | ENT_XML1, 'UTF-8');
 
 ?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-    <?php foreach ($staticPages as [$path, $freq, $priority]): ?>
+    <?php foreach ($pages as [$path, $freq, $priority, $modified, $image]): ?>
+    <?php foreach (['km', 'en'] as $lang): ?>
     <url>
-        <loc><?= $base . $path ?></loc>
+        <loc><?= $x(seo_url($path, $lang)) ?></loc>
+        <xhtml:link rel="alternate" hreflang="km" href="<?= $x(seo_url($path, 'km')) ?>"/>
+        <xhtml:link rel="alternate" hreflang="en" href="<?= $x(seo_url($path, 'en')) ?>"/>
+        <xhtml:link rel="alternate" hreflang="x-default" href="<?= $x(seo_url($path, DEFAULT_LANG)) ?>"/>
+        <?php if ($modified): ?><lastmod><?= date('Y-m-d', strtotime($modified)) ?></lastmod><?php endif; ?>
         <changefreq><?= $freq ?></changefreq>
         <priority><?= $priority ?></priority>
-    </url>
-    <?php endforeach; ?>
-    <?php foreach ($businesses as $b): ?>
-    <url>
-        <loc><?= $base ?>/business/?id=<?= $x($b['public_id']) ?></loc>
-        <?php if ($b['modified_at']): ?><lastmod><?= date('Y-m-d', strtotime($b['modified_at'])) ?></lastmod><?php endif; ?>
-        <changefreq>weekly</changefreq>
-        <priority>0.7</priority>
-        <?php if ($b['banner']): ?>
-        <image:image><image:loc><?= $base ?>/uploads/<?= $x($b['banner']) ?></image:loc></image:image>
+        <?php if ($image): ?>
+        <?php // rawurlencode first: uploads are hex-named today, but a filename
+              // with a space would otherwise emit an address that isn't valid. ?>
+        <image:image><image:loc><?= $base ?>/uploads/<?= $x(rawurlencode($image)) ?></image:loc></image:image>
         <?php endif; ?>
     </url>
     <?php endforeach; ?>
-    <?php foreach ($products as $p): ?>
-    <url>
-        <loc><?= $base ?>/product/?id=<?= $x($p['public_id']) ?></loc>
-        <?php if ($p['modified_at']): ?><lastmod><?= date('Y-m-d', strtotime($p['modified_at'])) ?></lastmod><?php endif; ?>
-        <changefreq>weekly</changefreq>
-        <priority>0.6</priority>
-        <?php if ($p['photo']): ?>
-        <image:image><image:loc><?= $base ?>/uploads/<?= $x($p['photo']) ?></image:loc></image:image>
-        <?php endif; ?>
-    </url>
     <?php endforeach; ?>
 </urlset>

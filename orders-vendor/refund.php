@@ -17,7 +17,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 }
 
 // Translations loaded early — status badge label is built before the header.
-$lang = $_SESSION['lang'] ?? 'km';
+$lang = current_lang();
 $t = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km']) ? $lang : 'en') . '.php';
 
 $userId   = $_SESSION['user_id'];
@@ -87,7 +87,7 @@ $statusClass = $statusClasses[$refundState] ?? 'badge-grey';
 $statusLabel = $t['order_badge_' . $refundState] ?? ucwords(str_replace('_', ' ', $refundState));
 ?>
 <!DOCTYPE html>
-<html lang="<?= ($_SESSION['lang'] ?? 'km') === 'km' ? 'km' : 'en' ?>">
+<html lang="<?= current_lang() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

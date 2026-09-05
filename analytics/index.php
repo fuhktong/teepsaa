@@ -18,7 +18,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
 $userId = $_SESSION['user_id'];
 
 // Translations loaded early — business status label is built before the header.
-$lang = $_SESSION['lang'] ?? 'km';
+$lang = current_lang();
 $t = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km']) ? $lang : 'en') . '.php';
 
 $stmt = $pdo->prepare('SELECT id, name, category, approved, suspended, suspension_reason, trial_starts_at, trial_ends_at, royalty_free_threshold FROM businesses WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1');
@@ -115,7 +115,7 @@ if ($business) {
 
 ?>
 <!DOCTYPE html>
-<html lang="<?= ($_SESSION['lang'] ?? 'km') === 'km' ? 'km' : 'en' ?>">
+<html lang="<?= current_lang() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

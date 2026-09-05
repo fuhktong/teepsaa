@@ -11,7 +11,7 @@ function delivery_lang(): array
 {
     static $t = null;
     if ($t === null) {
-        $lang = $_SESSION['lang'] ?? 'km';
+        $lang = current_lang();
         $t    = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km'], true) ? $lang : 'en') . '.php';
     }
     return $t;

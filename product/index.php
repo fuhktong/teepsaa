@@ -35,7 +35,7 @@ if (!$product) {
     $existed->execute([$publicId]);
     http_response_code($existed->fetchColumn() ? 410 : 404);
 
-    $nfLang  = $_SESSION['lang'] ?? 'km';
+    $nfLang  = current_lang();
     $t       = require __DIR__ . '/../lang/' . (in_array($nfLang, ['en', 'km'], true) ? $nfLang : 'en') . '.php';
     $nfTitle = $t['nf_product_title'];
     $nfBody  = $t['nf_product_body'];
@@ -111,7 +111,7 @@ $rStmt->execute([$id]);
 $reviews = $rStmt->fetchAll();
 ?>
 <!DOCTYPE html>
-<html lang="<?= ($_SESSION['lang'] ?? 'km') === 'km' ? 'km' : 'en' ?>">
+<html lang="<?= current_lang() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -205,7 +205,7 @@ $reviews = $rStmt->fetchAll();
         </div>
 
         <div class="product-info">
-            <p class="product-seller"><?= $t['product_sold_by'] ?> <a href="/business/?id=<?= $product['business_public_id'] ?>"><?= htmlspecialchars(pick_lang($product['business_name'], $product['business_name_km'] ?? null)) ?></a></p>
+            <p class="product-seller"><?= $t['product_sold_by'] ?> <a href="<?= lang_href('/business/?id=' . $product['business_public_id']) ?>"><?= htmlspecialchars(pick_lang($product['business_name'], $product['business_name_km'] ?? null)) ?></a></p>
             <h1 class="product-name"><?= htmlspecialchars(lang_field($product, 'name')) ?></h1>
             <p class="product-price" id="product-price"><?= price_html($product) ?></p>
 

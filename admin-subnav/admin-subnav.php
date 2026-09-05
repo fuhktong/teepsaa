@@ -11,7 +11,7 @@
 if (empty($_SESSION['admin_id']) || !function_exists('admin_can')) return;
 
 if (!isset($t)) {
-    $asnLang = $_SESSION['lang'] ?? 'km';
+    $asnLang = current_lang();
     $t = require __DIR__ . '/../lang/' . (in_array($asnLang, ['en', 'km']) ? $asnLang : 'en') . '.php';
 }
 

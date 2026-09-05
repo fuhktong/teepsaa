@@ -1,7 +1,7 @@
 <?php
 // Expects $refundStatus (string) to be set before including.
 if (!isset($t)) {
-    $_rl = $_SESSION['lang'] ?? 'km';
+    $_rl = current_lang();
     $t = require __DIR__ . '/../lang/' . (in_array($_rl, ['en', 'km']) ? $_rl : 'en') . '.php';
 }
 $_rrejected = ($refundStatus === 'refund_rejected');

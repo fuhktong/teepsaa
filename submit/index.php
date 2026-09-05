@@ -51,7 +51,7 @@ $success = $_SESSION['submit_success'] ?? '';
 unset($_SESSION['submit_error'], $_SESSION['submit_success']);
 ?>
 <!DOCTYPE html>
-<html lang="<?= ($_SESSION['lang'] ?? 'km') === 'km' ? 'km' : 'en' ?>">
+<html lang="<?= current_lang() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -184,7 +184,7 @@ unset($_SESSION['submit_error'], $_SESSION['submit_success']);
 // Category cascade
 (function () {
     var allCats = <?= json_encode(array_values($allFlat)) ?>;
-    var CAT_LANG = <?= json_encode($_SESSION['lang'] ?? 'km') ?>;
+    var CAT_LANG = <?= json_encode(current_lang()) ?>;
     var byParent = {}, byId = {};
     allCats.forEach(function (c) {
         byId[c.id] = c;

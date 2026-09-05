@@ -1,6 +1,6 @@
 <?php
 // Shared banner carousel — requires $pdo to be available
-$_bannerLang = $_SESSION['lang'] ?? 'km';
+$_bannerLang = current_lang();
 try {
     $_banners = $pdo->query(
         'SELECT id, title, title_km, subtitle, subtitle_km, link_url, image_filename

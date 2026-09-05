@@ -23,7 +23,7 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/../config/db.php';
 
 if (!isset($t)) {
-    $nfLang = $_SESSION['lang'] ?? 'km';
+    $nfLang = current_lang();
     $t = require __DIR__ . '/../lang/' . (in_array($nfLang, ['en', 'km'], true) ? $nfLang : 'en') . '.php';
 }
 
@@ -31,7 +31,7 @@ $nfTitle = $nfTitle ?? $t['nf_title'];
 $nfBody  = $nfBody  ?? $t['nf_body'];
 ?>
 <!DOCTYPE html>
-<html lang="<?= ($_SESSION['lang'] ?? 'km') === 'km' ? 'km' : 'en' ?>">
+<html lang="<?= current_lang() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

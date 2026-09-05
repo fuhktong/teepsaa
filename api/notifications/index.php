@@ -17,7 +17,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['buyer',
     exit;
 }
 
-$lang = in_array($_SESSION['lang'] ?? 'km', ['en', 'km'], true) ? ($_SESSION['lang'] ?? 'km') : 'km';
+$lang = current_lang();
 $t    = require __DIR__ . '/../../lang/' . $lang . '.php';
 
 $role   = $_SESSION['role'];

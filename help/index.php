@@ -19,7 +19,7 @@ if ($role === 'buyer') {
     $contactUrl = '/contact/';
 }
 
-$lang = $_SESSION['lang'] ?? 'km';
+$lang = current_lang();
 
 try {
     $faqRows = $pdo->query('SELECT * FROM faq_items WHERE active = 1 ORDER BY sort_order ASC, id ASC')->fetchAll();
@@ -37,7 +37,7 @@ foreach ($faqRows as $row) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="<?= ($_SESSION['lang'] ?? 'km') === 'km' ? 'km' : 'en' ?>">
+<html lang="<?= current_lang() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

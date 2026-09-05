@@ -42,7 +42,7 @@ if (!$orderId || $trackingUrl === null) {
     // somewhere the buyer never intended. So say what was wrong instead of
     // bouncing them back to an unchanged page with no explanation.
     if ($orderId) {
-        $rdLang = $_SESSION['lang'] ?? 'km';
+        $rdLang = current_lang();
         $rdT = require __DIR__ . '/../lang/' . (in_array($rdLang, ['en', 'km'], true) ? $rdLang : 'en') . '.php';
         $_SESSION['flash_error'] = $rdT['order_return_url_invalid'];
     }

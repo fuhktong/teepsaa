@@ -8,6 +8,8 @@ session_start([
 ]);
 
 require __DIR__ . '/../config/csrf.php';
+// i18n.php gives this page current_lang() (and requires subdomain.php itself).
+require __DIR__ . '/../config/i18n.php';
 
 $buyerBlocked = false;
 if (isset($_SESSION['user_id'])) {
@@ -22,7 +24,7 @@ $error = $_SESSION['auth_error'] ?? '';
 unset($_SESSION['auth_error']);
 ?>
 <!DOCTYPE html>
-<html lang="<?= ($_SESSION['lang'] ?? 'km') === 'km' ? 'km' : 'en' ?>">
+<html lang="<?= current_lang() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

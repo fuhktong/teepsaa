@@ -9,7 +9,7 @@ if (in_array($orderStatus, $_oRefundStatuses)) {
 }
 unset($_oRefundStatuses);
 if (!isset($t)) {
-    $_ol = $_SESSION['lang'] ?? 'km';
+    $_ol = current_lang();
     $t = require __DIR__ . '/../lang/' . (in_array($_ol, ['en', 'km']) ? $_ol : 'en') . '.php';
 }
 $_osteps = [

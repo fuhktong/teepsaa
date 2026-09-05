@@ -16,7 +16,7 @@ function product_card(array $p): string {
     $rating = (!empty($p['review_count']) && $p['review_count'] > 0)
         ? '<span class="card-rating">★ ' . number_format((float)$p['avg_rating'], 1) . ' (' . (int)$p['review_count'] . ')</span>'
         : '';
-    return '<a href="/product/?id=' . htmlspecialchars($p['public_id']) . '" class="product-card">'
+    return '<a href="' . lang_href('/product/?id=' . htmlspecialchars($p['public_id'])) . '" class="product-card">'
         . $photo
         . '<div class="card-body">'
         . '<strong class="card-name">' . htmlspecialchars(lang_field($p, 'name')) . '</strong>'
@@ -177,7 +177,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
 }
 ?>
 <!DOCTYPE html>
-<html lang="<?= ($_SESSION['lang'] ?? 'km') === 'km' ? 'km' : 'en' ?>">
+<html lang="<?= current_lang() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -345,7 +345,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
         </div>
         <div class="home-scroll">
             <?php foreach ($catTiles as $cat): ?>
-            <a href="/search/?q=<?= urlencode($cat['name']) ?>" class="cat-preview">
+            <a href="<?= lang_href('/search/?q=' . urlencode($cat['name'])) ?>" class="cat-preview">
                 <?php if ($cat['sample_photo']): ?>
                     <img src="/uploads/<?= htmlspecialchars($cat['sample_photo']) ?>" alt="<?= htmlspecialchars(cat_name($cat)) ?>" class="cat-preview-img">
                 <?php else: ?>
@@ -362,7 +362,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
     <?php if (!empty($featured)): ?>
     <section class="home-section">
         <div class="home-section-head">
-            <h2><a href="/search/"><?= $t['home_featured'] ?></a></h2>
+            <h2><a href="<?= lang_href('/search/') ?>"><?= $t['home_featured'] ?></a></h2>
         </div>
         <div class="home-scroll">
             <?php foreach ($featured as $p): echo product_card($p); endforeach; ?>
@@ -373,7 +373,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
     <?php if (!empty($bestSellers)): ?>
     <section class="home-section">
         <div class="home-section-head">
-            <h2><a href="/search/"><?= $t['home_best_sellers'] ?></a></h2>
+            <h2><a href="<?= lang_href('/search/') ?>"><?= $t['home_best_sellers'] ?></a></h2>
         </div>
         <div class="home-scroll">
             <?php foreach ($bestSellers as $p): echo product_card($p); endforeach; ?>
@@ -384,7 +384,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
     <?php if (!empty($trending)): ?>
     <section class="home-section">
         <div class="home-section-head">
-            <h2><a href="/search/"><?= $t['home_trending'] ?></a></h2>
+            <h2><a href="<?= lang_href('/search/') ?>"><?= $t['home_trending'] ?></a></h2>
         </div>
         <div class="home-scroll">
             <?php foreach ($trending as $p): echo product_card($p); endforeach; ?>
@@ -395,7 +395,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
     <?php if (!empty($newArrivals)): ?>
     <section class="home-section">
         <div class="home-section-head">
-            <h2><a href="/search/"><?= $t['home_new_arrivals'] ?></a></h2>
+            <h2><a href="<?= lang_href('/search/') ?>"><?= $t['home_new_arrivals'] ?></a></h2>
         </div>
         <div class="home-scroll">
             <?php foreach ($newArrivals as $p): echo product_card($p); endforeach; ?>
@@ -406,7 +406,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
     <?php if (!empty($topRated)): ?>
     <section class="home-section">
         <div class="home-section-head">
-            <h2><a href="/search/"><?= $t['home_top_rated'] ?></a></h2>
+            <h2><a href="<?= lang_href('/search/') ?>"><?= $t['home_top_rated'] ?></a></h2>
         </div>
         <div class="home-scroll">
             <?php foreach ($topRated as $p): echo product_card($p); endforeach; ?>
@@ -417,7 +417,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
     <?php if (!empty($underFifteen)): ?>
     <section class="home-section">
         <div class="home-section-head">
-            <h2><a href="/search/"><?= $t['home_under_15'] ?></a></h2>
+            <h2><a href="<?= lang_href('/search/') ?>"><?= $t['home_under_15'] ?></a></h2>
         </div>
         <div class="home-scroll">
             <?php foreach ($underFifteen as $p): echo product_card($p); endforeach; ?>
@@ -428,7 +428,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
     <?php if (!empty($recommended)): ?>
     <section class="home-section">
         <div class="home-section-head">
-            <h2><a href="/search/"><?= $t['home_you_might_like'] ?></a></h2>
+            <h2><a href="<?= lang_href('/search/') ?>"><?= $t['home_you_might_like'] ?></a></h2>
         </div>
         <div class="home-scroll">
             <?php foreach ($recommended as $p): echo product_card($p); endforeach; ?>

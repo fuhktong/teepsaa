@@ -6,7 +6,7 @@
 if (empty($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') return;
 
 if (!isset($t)) {
-    $vsnLang = $_SESSION['lang'] ?? 'km';
+    $vsnLang = current_lang();
     $t = require __DIR__ . '/../lang/' . (in_array($vsnLang, ['en', 'km']) ? $vsnLang : 'en') . '.php';
 }
 

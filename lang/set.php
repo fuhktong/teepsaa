@@ -28,5 +28,17 @@ if ($referer) {
         $back = $referer;
     }
 }
+
+// Strip any ?lang= from the page we're returning to. A visitor who arrived on
+// an English link from Google is on an address that names its own language,
+// and current_lang() lets the address win — so sending them back to it would
+// silently undo the switch they just clicked.
+$backParts = parse_url($back);
+$backQuery = [];
+if (!empty($backParts['query'])) {
+    parse_str($backParts['query'], $backQuery);
+    unset($backQuery['lang']);
+}
+$back = ($backParts['path'] ?? '/') . ($backQuery ? '?' . http_build_query($backQuery) : '');
 header('Location: ' . $back);
 exit;

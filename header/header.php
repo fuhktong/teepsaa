@@ -1,6 +1,6 @@
 <?php
 $current  = basename($_SERVER['PHP_SELF']);
-$lang     = $_SESSION['lang']     ?? 'km';
+$lang     = current_lang();
 $currency = $_SESSION['currency'] ?? 'USD';
 
 if (!isset($t)) {
@@ -81,7 +81,7 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
 ?>
 <header<?= $isAdminHeader ? ' class="admin-header"' : ($isVendorHeader ? ' class="vendor-header"' : ($isBuyerHeader ? ' class="buyer-header"' : '')) ?>>
     <div class="header-inner">
-        <a href="/" class="site-name"><img src="/images/<?= $lang === 'km' ? 'teepsaa_logo_khm.png' : 'teepsaa_logo_eng_myriad.png' ?>" alt="teepsaa"></a>
+        <a href="<?= lang_href('/') ?>" class="site-name"><img src="/images/<?= $lang === 'km' ? 'teepsaa_logo_khm.png' : 'teepsaa_logo_eng_myriad.png' ?>" alt="teepsaa"></a>
         <form class="header-search" method="GET" action="/search/">
             <input type="search" name="q" placeholder="<?= $t['search_placeholder'] ?>" value="<?= htmlspecialchars((string)($_GET['q'] ?? '')) ?>">
             <button type="submit" aria-label="Search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>

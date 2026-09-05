@@ -29,7 +29,7 @@ if (!$business) {
     $existed->execute([$publicId]);
     http_response_code($existed->fetchColumn() ? 410 : 404);
 
-    $nfLang  = $_SESSION['lang'] ?? 'km';
+    $nfLang  = current_lang();
     $t       = require __DIR__ . '/../lang/' . (in_array($nfLang, ['en', 'km'], true) ? $nfLang : 'en') . '.php';
     $nfTitle = $t['nf_shop_title'];
     $nfBody  = $t['nf_shop_body'];
@@ -78,7 +78,7 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
 
 ?>
 <!DOCTYPE html>
-<html lang="<?= ($_SESSION['lang'] ?? 'km') === 'km' ? 'km' : 'en' ?>">
+<html lang="<?= current_lang() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -88,7 +88,7 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
         // title can no longer sit over Khmer body copy. The header include
         // (which normally loads $t) comes after this block, so load it here.
         if (!isset($t)) {
-            $bizLang = $_SESSION['lang'] ?? 'km';
+            $bizLang = current_lang();
             $t = require __DIR__ . '/../lang/' . (in_array($bizLang, ['en', 'km'], true) ? $bizLang : 'en') . '.php';
         }
         $seoName = lang_field($business, 'name');
@@ -191,7 +191,7 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
             <span class="featured-eyebrow"><?= $t['store_featured'] ?></span>
         </div>
         <div class="featured-card">
-            <a href="/product/?id=<?= $featured['public_id'] ?>" class="featured-media">
+            <a href="<?= lang_href('/product/?id=' . $featured['public_id']) ?>" class="featured-media">
                 <?php if (active_sale($featured)): ?><span class="sale-badge"><?= $t['store_sale'] ?></span><?php endif; ?>
                 <?php if ($featured['photo']): ?>
                     <img src="/uploads/<?= htmlspecialchars($featured['photo']) ?>" alt="<?= htmlspecialchars(lang_field($featured, 'name')) ?>">
@@ -200,7 +200,7 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
                 <?php endif; ?>
             </a>
             <div class="featured-body">
-                <a href="/product/?id=<?= $featured['public_id'] ?>" class="featured-name"><?= htmlspecialchars(lang_field($featured, 'name')) ?></a>
+                <a href="<?= lang_href('/product/?id=' . $featured['public_id']) ?>" class="featured-name"><?= htmlspecialchars(lang_field($featured, 'name')) ?></a>
                 <?php if ((int)$featured['review_count'] > 0): ?>
                 <div class="featured-rating">★ <?= number_format((float)$featured['avg_rating'], 1) ?> <span>(<?= (int)$featured['review_count'] ?> <?= (int)$featured['review_count'] === 1 ? $t['store_review'] : $t['store_reviews'] ?>)</span></div>
                 <?php endif; ?>
@@ -213,7 +213,7 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
                 <?php elseif ((int)$featured['stock'] <= 0): ?>
                 <div class="featured-stock featured-stock--out"><?= $t['product_out_of_stock'] ?></div>
                 <?php endif; ?>
-                <a href="/product/?id=<?= $featured['public_id'] ?>" class="featured-cta"><?= $t['store_view_product'] ?></a>
+                <a href="<?= lang_href('/product/?id=' . $featured['public_id']) ?>" class="featured-cta"><?= $t['store_view_product'] ?></a>
             </div>
         </div>
     </section>
@@ -224,7 +224,7 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
         <h2><?= $t['store_shop_all'] ?></h2>
         <div class="product-grid">
             <?php foreach ($gridProducts as $p): ?>
-            <a href="/product/?id=<?= $p['public_id'] ?>" class="product-card">
+            <a href="<?= lang_href('/product/?id=' . $p['public_id']) ?>" class="product-card">
                 <?php if (active_sale($p)): ?><span class="sale-badge"><?= $t['store_sale'] ?></span><?php endif; ?>
                 <?php if ($p['photo']): ?>
                     <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="<?= htmlspecialchars(lang_field($p, 'name')) ?>" class="product-photo">

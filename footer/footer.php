@@ -1,5 +1,5 @@
 <?php
-$lang     = $_SESSION['lang']     ?? 'km';
+$lang     = current_lang();
 $currency = $_SESSION['currency'] ?? 'USD';
 
 // Translations: reuse the page's $t if the header already loaded it.
@@ -40,7 +40,7 @@ if (empty($_SESSION['user_id'])) {
     <div class="footer-top">
         <div class="footer-head">
             <div class="footer-brandrow">
-                <a href="/" class="footer-logo">
+                <a href="<?= lang_href('/') ?>" class="footer-logo">
                     <img src="/images/<?= $lang === 'km' ? 'teepsaa_logo_khm.png' : 'teepsaa_logo_eng_myriad.png' ?>" alt="teepsaa">
                 </a>
                 <span class="footer-tagline"<?= $lang === 'km' ? ' lang="km"' : '' ?>><?= $lang === 'km' ? 'ទិញឱ្យងាយស្រួល' : 'Shopping made easy' ?></span>
@@ -79,18 +79,18 @@ if (empty($_SESSION['user_id'])) {
             <nav class="footer-col" aria-label="<?= htmlspecialchars($t['footer_help']) ?>">
                 <h2 class="footer-col-head"><?= $t['footer_help'] ?></h2>
                 <ul class="footer-col-list">
-                    <li><a href="/help/"><?= $t['footer_help_center'] ?></a></li>
-                    <li><a href="/shipping/"><?= $t['footer_shipping'] ?></a></li>
-                    <li><a href="/returns/"><?= $t['footer_returns'] ?></a></li>
-                    <li><a href="/privacy/"><?= $t['footer_privacy'] ?></a></li>
-                    <li><a href="/terms/"><?= $t['footer_terms'] ?></a></li>
+                    <li><a href="<?= lang_href('/help/') ?>"><?= $t['footer_help_center'] ?></a></li>
+                    <li><a href="<?= lang_href('/shipping/') ?>"><?= $t['footer_shipping'] ?></a></li>
+                    <li><a href="<?= lang_href('/returns/') ?>"><?= $t['footer_returns'] ?></a></li>
+                    <li><a href="<?= lang_href('/privacy/') ?>"><?= $t['footer_privacy'] ?></a></li>
+                    <li><a href="<?= lang_href('/terms/') ?>"><?= $t['footer_terms'] ?></a></li>
                 </ul>
             </nav>
             <nav class="footer-col" aria-label="<?= htmlspecialchars($t['footer_brand']) ?>">
                 <h2 class="footer-col-head"><?= $t['footer_brand'] ?></h2>
                 <ul class="footer-col-list">
-                    <li><a href="/about/"><?= $t['footer_about'] ?></a></li>
-                    <li><a href="/careers/"><?= $t['footer_careers'] ?></a></li>
+                    <li><a href="<?= lang_href('/about/') ?>"><?= $t['footer_about'] ?></a></li>
+                    <li><a href="<?= lang_href('/careers/') ?>"><?= $t['footer_careers'] ?></a></li>
                     <li><a href="/register-vendor/"><?= $t['footer_sell_on'] ?></a></li>
                 </ul>
             </nav>

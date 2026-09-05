@@ -10,7 +10,7 @@ session_start([
 require __DIR__ . '/../config/db.php';
 
 // Load translations early — sort labels/chips are built before the header.
-$lang = $_SESSION['lang'] ?? 'km';
+$lang = current_lang();
 $t = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km']) ? $lang : 'en') . '.php';
 
 $q          = trim((string)($_GET['q'] ?? ''));
@@ -282,7 +282,7 @@ foreach ($selectedValueIds as $vid) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="<?= ($_SESSION['lang'] ?? 'km') === 'km' ? 'km' : 'en' ?>">
+<html lang="<?= current_lang() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -313,7 +313,10 @@ foreach ($selectedValueIds as $vid) {
         if ($searchNoIndex) {
             echo '<meta name="robots" content="noindex, follow">' . "\n    ";
         }
-        echo seo_meta($title, $searchDesc, '', $searchCanonical);
+        // No hreflang on a noindex page: pointing Google at translations of a
+        // page it has been told to ignore is noise. The bare /search/ page is
+        // indexable and gets the pair like every other page.
+        echo seo_meta($title, $searchDesc, '', $searchCanonical, !$searchNoIndex);
     ?>
     <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
@@ -441,7 +444,7 @@ foreach ($selectedValueIds as $vid) {
                 <p class="shops-strip-title"><?= $t['search_shops'] ?></p>
                 <div class="shops-strip-row">
                     <?php foreach ($matchedShops as $s): ?>
-                    <a href="/business/?id=<?= htmlspecialchars($s['public_id']) ?>" class="shop-card">
+                    <a href="<?= lang_href('/business/?id=' . htmlspecialchars($s['public_id'])) ?>" class="shop-card">
                         <?php if ($s['banner']): ?>
                         <img src="/uploads/<?= htmlspecialchars($s['banner']) ?>" alt="<?= htmlspecialchars(pick_lang($s['name'], $s['name_km'] ?? null)) ?>" class="shop-card-banner">
                         <?php else: ?>
@@ -459,7 +462,7 @@ foreach ($selectedValueIds as $vid) {
             <?php else: ?>
             <div class="product-grid" id="product-grid">
                 <?php foreach ($products as $p): ?>
-                <a href="/product/?id=<?= htmlspecialchars($p['public_id']) ?>" class="product-card">
+                <a href="<?= lang_href('/product/?id=' . htmlspecialchars($p['public_id'])) ?>" class="product-card">
                     <?php if ($p['photo']): ?>
                         <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="<?= htmlspecialchars(lang_field($p, 'name')) ?>" class="card-photo">
                     <?php else: ?>
@@ -502,7 +505,7 @@ foreach ($selectedValueIds as $vid) {
     <?php else: ?>
     <div class="product-grid" id="product-grid">
         <?php foreach ($products as $p): ?>
-        <a href="/product/?id=<?= htmlspecialchars($p['public_id']) ?>" class="product-card">
+        <a href="<?= lang_href('/product/?id=' . htmlspecialchars($p['public_id'])) ?>" class="product-card">
             <?php if ($p['photo']): ?>
                 <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="<?= htmlspecialchars(lang_field($p, 'name')) ?>" class="card-photo">
             <?php else: ?>

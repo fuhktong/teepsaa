@@ -6,7 +6,8 @@ session_start([
     'cookie_secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
     'cookie_domain'   => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : '',
 ]);
-require __DIR__ . '/../config/subdomain.php';
+// i18n.php gives this page current_lang() (and requires subdomain.php itself).
+require __DIR__ . '/../config/i18n.php';
 require __DIR__ . '/../config/csrf.php';
 
 
@@ -27,7 +28,7 @@ $old   = $_SESSION['contact_guest_old']   ?? [];
 unset($_SESSION['contact_guest_error'], $_SESSION['contact_guest_old']);
 ?>
 <!DOCTYPE html>
-<html lang="<?= ($_SESSION['lang'] ?? 'km') === 'km' ? 'km' : 'en' ?>">
+<html lang="<?= current_lang() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
