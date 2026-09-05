@@ -172,6 +172,7 @@
 
 .browse-count {
     font-size: 0.9rem;
+    font-weight: 400;   /* it is an <h1> now — cancel the browser's bold */
     color: #555;
 }
 

@@ -12,7 +12,8 @@ require __DIR__ . '/../config/csrf.php';
 
 $publicId = $_GET['id'] ?? '';
 if ($publicId === '') {
-    header('Location: /search/');
+    http_response_code(404);
+    require __DIR__ . '/../404/index.php';
     exit;
 }
 
@@ -26,7 +27,19 @@ $stmt->execute([$publicId]);
 $product = $stmt->fetch();
 
 if (!$product) {
-    header('Location: /search/');
+    // Was this ever a real product, or is the id junk? A listing that existed
+    // and was taken down gets 410 (Gone), which Google drops from its index
+    // much faster than a 404. Either way it must NOT redirect to /search/ —
+    // that reads as a soft 404 and keeps the dead URL alive in the index.
+    $existed = $pdo->prepare('SELECT 1 FROM products WHERE public_id = ?');
+    $existed->execute([$publicId]);
+    http_response_code($existed->fetchColumn() ? 410 : 404);
+
+    $nfLang  = $_SESSION['lang'] ?? 'km';
+    $t       = require __DIR__ . '/../lang/' . (in_array($nfLang, ['en', 'km'], true) ? $nfLang : 'en') . '.php';
+    $nfTitle = $t['nf_product_title'];
+    $nfBody  = $t['nf_product_body'];
+    require __DIR__ . '/../404/index.php';
     exit;
 }
 
@@ -98,23 +111,32 @@ $rStmt->execute([$id]);
 $reviews = $rStmt->fetchAll();
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= ($_SESSION['lang'] ?? 'km') === 'km' ? 'km' : 'en' ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($product['name']) ?> — teepsaa</title>
+    <?php
+        // Title and meta must be in the same language as the body, or Google
+        // reads an English title over Khmer content and picks its own snippet.
+        // lang_field() is what the <h1> below uses, so they always agree.
+        $seoName = lang_field($product, 'name');
+        $seoDesc = lang_field($product, 'description');
+    ?>
+    <title><?= htmlspecialchars($seoName) ?> — teepsaa</title>
     <?php
         require_once __DIR__ . '/../config/seo.php';
         $seoImg = $galleryPhotos[0]['filename'] ?? '';
         echo seo_meta(
-            $product['name'] . ' — teepsaa',
-            $product['description'] ?? '',
+            $seoName . ' — teepsaa',
+            $seoDesc,
             $seoImg,
             'https://teepsaa.com/product/?id=' . $product['public_id']
         );
     ?>
     <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
+    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -167,11 +189,11 @@ $reviews = $rStmt->fetchAll();
         <div class="product-photo-wrap">
             <?php $allPhotos = array_column($galleryPhotos, 'filename'); ?>
             <?php if (!empty($allPhotos)): ?>
-                <img src="/uploads/<?= htmlspecialchars($allPhotos[0]) ?>" alt="" class="product-main-photo" id="product-main-img">
+                <img src="/uploads/<?= htmlspecialchars($allPhotos[0]) ?>" alt="<?= htmlspecialchars($seoName) ?>" class="product-main-photo" id="product-main-img">
                 <?php if (count($allPhotos) > 1): ?>
                 <div class="product-thumbs">
                     <?php foreach ($allPhotos as $i => $fn): ?>
-                    <img src="/uploads/<?= htmlspecialchars($fn) ?>" alt=""
+                    <img src="/uploads/<?= htmlspecialchars($fn) ?>" alt="<?= htmlspecialchars($seoName) ?> — <?= $i + 1 ?>"
                          class="product-thumb <?= $i === 0 ? 'product-thumb--active' : '' ?>"
                          data-src="/uploads/<?= htmlspecialchars($fn) ?>">
                     <?php endforeach; ?>

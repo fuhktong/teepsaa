@@ -31,6 +31,7 @@ return [
     'footer_your_orders' => 'Your Orders',
     'footer_wishlist'    => 'Wishlist',
     'footer_sell_on'     => 'Sell on teepsaa',
+    'home_h1'            => 'Shop Phnom Penh businesses on teepsaa',
     'footer_about'       => 'About',
     'footer_careers'     => 'Careers',
     'footer_help_center' => 'Help Center',
@@ -691,6 +692,31 @@ return [
     'store_eyebrow'     => 'teepsaa shop',
     'store_verified'    => 'Verified',
     'store_sale'        => 'Sale',
+
+    // ── Not found page (404/) ────────────────────────────────────────────
+    'nf_title'         => 'Page not found',
+    'nf_body'          => 'We could not find that page. It may have been moved, or the link may be wrong.',
+    'nf_product_title' => 'This product is no longer available',
+    'nf_product_body'  => 'The seller has removed this listing, or the shop is no longer active on teepsaa.',
+    'nf_shop_title'    => 'This shop is no longer available',
+    'nf_shop_body'     => 'This shop has closed, or is no longer listed on teepsaa.',
+    'nf_home'          => 'Go to the homepage',
+    'nf_browse'        => 'Browse all products',
+    // Meta description for a shop that has written no description of its
+    // own. %s is the shop name. Used by business/index.php for SEO only.
+    'seo_shop_desc'     => 'Shop %s on teepsaa. Browse products and order for delivery in Phnom Penh.',
+
+    // ── Meta descriptions for the static pages ───────────────────────────
+    // Search-result blurbs only — never shown on the page itself. Around
+    // 150 characters each; anything longer gets cut off by Google.
+    'seo_desc_about'    => 'teepsaa is a Phnom Penh marketplace connecting local shops with local buyers. Learn who we are and how ordering works.',
+    'seo_desc_help'     => 'Answers to common questions about ordering, delivery, payment and returns on teepsaa.',
+    'seo_desc_contact'  => 'Get in touch with the teepsaa team about an order, your shop, or anything else.',
+    'seo_desc_careers'  => 'Open roles at teepsaa. Help build the marketplace for Phnom Penh shops and shoppers.',
+    'seo_desc_privacy'  => 'How teepsaa collects, uses and protects your personal information.',
+    'seo_desc_terms'    => 'The terms you agree to when you buy or sell on teepsaa.',
+    'seo_desc_returns'  => 'How returns and refunds work on teepsaa, and how long you have to request one.',
+    'seo_desc_shipping' => 'Delivery areas, times and fees for orders placed on teepsaa.',
 
     // ── Review page (review/) ────────────────────────────────────────────
     'review_back_order' => 'Back to order',

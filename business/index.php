@@ -12,7 +12,8 @@ require __DIR__ . '/../config/csrf.php';
 
 $publicId = $_GET['id'] ?? '';
 if ($publicId === '') {
-    header('Location: /search/');
+    http_response_code(404);
+    require __DIR__ . '/../404/index.php';
     exit;
 }
 
@@ -21,7 +22,18 @@ $stmt->execute([$publicId]);
 $business = $stmt->fetch();
 
 if (!$business) {
-    header('Location: /search/');
+    // A shop that existed and was closed/suspended gets 410 (Gone); a junk id
+    // gets 404. Never redirect to /search/ — Google reads that as a soft 404
+    // and keeps re-crawling the dead URL.
+    $existed = $pdo->prepare('SELECT 1 FROM businesses WHERE public_id = ?');
+    $existed->execute([$publicId]);
+    http_response_code($existed->fetchColumn() ? 410 : 404);
+
+    $nfLang  = $_SESSION['lang'] ?? 'km';
+    $t       = require __DIR__ . '/../lang/' . (in_array($nfLang, ['en', 'km'], true) ? $nfLang : 'en') . '.php';
+    $nfTitle = $t['nf_shop_title'];
+    $nfBody  = $t['nf_shop_body'];
+    require __DIR__ . '/../404/index.php';
     exit;
 }
 
@@ -66,19 +78,31 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
 
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= ($_SESSION['lang'] ?? 'km') === 'km' ? 'km' : 'en' ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($business['name']) ?> — teepsaa</title>
+    <?php
+        // Title and meta follow the language the page actually renders in —
+        // lang_field() is what the store <h1> uses further down, so an English
+        // title can no longer sit over Khmer body copy. The header include
+        // (which normally loads $t) comes after this block, so load it here.
+        if (!isset($t)) {
+            $bizLang = $_SESSION['lang'] ?? 'km';
+            $t = require __DIR__ . '/../lang/' . (in_array($bizLang, ['en', 'km'], true) ? $bizLang : 'en') . '.php';
+        }
+        $seoName = lang_field($business, 'name');
+        $seoBody = lang_field($business, 'description');
+    ?>
+    <title><?= htmlspecialchars($seoName) ?> — teepsaa</title>
     <?php
         require_once __DIR__ . '/../config/seo.php';
         $bizPhoto = $featured['photo'] ?? ($products[0]['photo'] ?? '');
-        $bizDesc  = !empty($business['description'])
-            ? $business['name'] . ' — ' . $business['description']
-            : 'Shop ' . $business['name'] . ' on teepsaa. Browse products and order for delivery in Phnom Penh.';
+        $bizDesc  = $seoBody !== ''
+            ? $seoName . ' — ' . $seoBody
+            : sprintf($t['seo_shop_desc'], $seoName);
         echo seo_meta(
-            $business['name'] . ' — teepsaa',
+            $seoName . ' — teepsaa',
             $bizDesc,
             $bizPhoto,
             'https://teepsaa.com/business/?id=' . $business['public_id']
@@ -86,6 +110,8 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
     ?>
     <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
+    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -108,7 +134,7 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
 <!-- Full-bleed banner: sits outside <main> (like the homepage carousel) so it
      spans the whole viewport. Store name + rating are overlaid on a scrim. -->
 <div class="business-banner business-banner--hero">
-    <img src="/uploads/<?= htmlspecialchars($business['banner']) ?>" alt="">
+    <img src="/uploads/<?= htmlspecialchars($business['banner']) ?>" alt="<?= htmlspecialchars($seoName) ?>">
     <div class="banner-overlay">
         <div class="banner-overlay-inner">
             <div class="store-eyebrow">
@@ -168,7 +194,7 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
             <a href="/product/?id=<?= $featured['public_id'] ?>" class="featured-media">
                 <?php if (active_sale($featured)): ?><span class="sale-badge"><?= $t['store_sale'] ?></span><?php endif; ?>
                 <?php if ($featured['photo']): ?>
-                    <img src="/uploads/<?= htmlspecialchars($featured['photo']) ?>" alt="">
+                    <img src="/uploads/<?= htmlspecialchars($featured['photo']) ?>" alt="<?= htmlspecialchars(lang_field($featured, 'name')) ?>">
                 <?php else: ?>
                     <span class="featured-media--empty"></span>
                 <?php endif; ?>
@@ -201,7 +227,7 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
             <a href="/product/?id=<?= $p['public_id'] ?>" class="product-card">
                 <?php if (active_sale($p)): ?><span class="sale-badge"><?= $t['store_sale'] ?></span><?php endif; ?>
                 <?php if ($p['photo']): ?>
-                    <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="" class="product-photo">
+                    <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="<?= htmlspecialchars(lang_field($p, 'name')) ?>" class="product-photo">
                 <?php else: ?>
                     <div class="product-photo product-photo--empty"></div>
                 <?php endif; ?>

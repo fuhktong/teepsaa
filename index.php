@@ -11,7 +11,7 @@ require __DIR__ . '/config/db.php';
 
 function product_card(array $p): string {
     $photo = $p['photo']
-        ? '<img src="/uploads/' . htmlspecialchars($p['photo']) . '" alt="" class="card-photo">'
+        ? '<img src="/uploads/' . htmlspecialchars($p['photo']) . '" alt="' . htmlspecialchars(lang_field($p, 'name')) . '" class="card-photo">'
         : '<div class="card-photo card-photo--empty"></div>';
     $rating = (!empty($p['review_count']) && $p['review_count'] > 0)
         ? '<span class="card-rating">★ ' . number_format((float)$p['avg_rating'], 1) . ' (' . (int)$p['review_count'] . ')</span>'
@@ -177,7 +177,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= ($_SESSION['lang'] ?? 'km') === 'km' ? 'km' : 'en' ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -193,6 +193,8 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
     ?>
     <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
+    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -333,6 +335,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
 <?php require __DIR__ . '/header/header.php'; ?>
 
 <main>
+    <h1 class="visually-hidden"><?= htmlspecialchars($t['home_h1']) ?></h1>
     <?php require __DIR__ . '/includes/banner-carousel.php'; ?>
 
     <?php if (!empty($catTiles)): ?>
@@ -344,7 +347,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
             <?php foreach ($catTiles as $cat): ?>
             <a href="/search/?q=<?= urlencode($cat['name']) ?>" class="cat-preview">
                 <?php if ($cat['sample_photo']): ?>
-                    <img src="/uploads/<?= htmlspecialchars($cat['sample_photo']) ?>" alt="" class="cat-preview-img">
+                    <img src="/uploads/<?= htmlspecialchars($cat['sample_photo']) ?>" alt="<?= htmlspecialchars(cat_name($cat)) ?>" class="cat-preview-img">
                 <?php else: ?>
                     <div class="cat-preview-placeholder"></div>
                 <?php endif; ?>
@@ -503,7 +506,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
 
     function cardHtml(p) {
         var photo = p.photo
-            ? '<img src="/uploads/' + p.photo + '" alt="" class="card-photo">'
+            ? '<img src="/uploads/' + escHtml(p.photo) + '" alt="' + escHtml(p.name) + '" class="card-photo">'
             : '<div class="card-photo card-photo--empty"></div>';
         var now = Date.now() / 1000;
         var onSale = p.sale_price && p.sale_ends_at && (new Date(p.sale_ends_at).getTime() / 1000) > now;

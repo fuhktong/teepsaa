@@ -1,5 +1,18 @@
 <?php
 
+// A page's <head> runs before header.php loads $t, so any page wanting a
+// translated title or meta description needs the strings earlier than that.
+// Returns the same array header.php would; it checks isset($t) itself, so
+// calling this first costs nothing.
+function seo_t(): array {
+    static $strings = null;
+    if ($strings === null) {
+        $lang = $_SESSION['lang'] ?? 'km';
+        $strings = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km'], true) ? $lang : 'en') . '.php';
+    }
+    return $strings;
+}
+
 function seo_meta(string $title, string $description = '', string $image = '', string $canonicalUrl = ''): string {
     static $base = 'https://teepsaa.com';
     $defaultDesc = 'Shop from local Phnom Penh businesses on teepsaa — fast delivery, authentic products.';

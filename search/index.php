@@ -282,7 +282,7 @@ foreach ($selectedValueIds as $vid) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= ($_SESSION['lang'] ?? 'km') === 'km' ? 'km' : 'en' ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -292,10 +292,33 @@ foreach ($selectedValueIds as $vid) {
         $searchDesc = $q
             ? 'Search results for "' . $q . '" on teepsaa — ' . $count . ' product' . ($count !== 1 ? 's' : '') . ' found.'
             : 'Browse all products on teepsaa — local Phnom Penh businesses, fast Grab delivery.';
-        echo seo_meta($title, $searchDesc);
+
+        // Every combination of search term, price band, category, rating and
+        // option is its own URL, so the filters alone can generate millions of
+        // near-identical pages. Letting Google index them buries the real
+        // product pages under thin duplicates and burns the crawl budget that
+        // should be spent finding new listings. "noindex, follow" keeps them
+        // out of search results while still letting the crawler walk through
+        // to the products they link to. The bare /search/ page — no term, no
+        // filters — is a genuine browse page and stays indexable.
+        $searchNoIndex = $q !== '' || $hasActiveFilters;
+
+        // A noindex page must point its canonical at itself; aiming it at a
+        // different URL sends Google two contradictory instructions about the
+        // same address, and it may follow either one.
+        $searchCanonical = $searchNoIndex
+            ? 'https://teepsaa.com' . ($_SERVER['REQUEST_URI'] ?? '/search/')
+            : 'https://teepsaa.com/search/';
+
+        if ($searchNoIndex) {
+            echo '<meta name="robots" content="noindex, follow">' . "\n    ";
+        }
+        echo seo_meta($title, $searchDesc, '', $searchCanonical);
     ?>
     <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
+    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -398,9 +421,9 @@ foreach ($selectedValueIds as $vid) {
         <!-- ── Right results ── -->
         <div class="search-results">
             <div class="browse-toolbar">
-                <p class="browse-count">
+                <h1 class="browse-count">
                     <?= $count ?> <?= $t['search_products'] ?> <?= $t['search_for'] ?> <em><?= htmlspecialchars($q) ?></em>
-                </p>
+                </h1>
             </div>
 
             <?php if (!empty($chips)): ?>
@@ -420,7 +443,7 @@ foreach ($selectedValueIds as $vid) {
                     <?php foreach ($matchedShops as $s): ?>
                     <a href="/business/?id=<?= htmlspecialchars($s['public_id']) ?>" class="shop-card">
                         <?php if ($s['banner']): ?>
-                        <img src="/uploads/<?= htmlspecialchars($s['banner']) ?>" alt="" class="shop-card-banner">
+                        <img src="/uploads/<?= htmlspecialchars($s['banner']) ?>" alt="<?= htmlspecialchars(pick_lang($s['name'], $s['name_km'] ?? null)) ?>" class="shop-card-banner">
                         <?php else: ?>
                         <div class="shop-card-banner shop-card-banner--empty"></div>
                         <?php endif; ?>
@@ -438,7 +461,7 @@ foreach ($selectedValueIds as $vid) {
                 <?php foreach ($products as $p): ?>
                 <a href="/product/?id=<?= htmlspecialchars($p['public_id']) ?>" class="product-card">
                     <?php if ($p['photo']): ?>
-                        <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="" class="card-photo">
+                        <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="<?= htmlspecialchars(lang_field($p, 'name')) ?>" class="card-photo">
                     <?php else: ?>
                         <div class="card-photo card-photo--empty"></div>
                     <?php endif; ?>
@@ -471,7 +494,7 @@ foreach ($selectedValueIds as $vid) {
 <?php else: ?>
 
     <div class="browse-toolbar">
-        <p class="browse-count"><?= $count ?> <?= $t['search_products'] ?></p>
+        <h1 class="browse-count"><?= $count ?> <?= $t['search_products'] ?></h1>
     </div>
 
     <?php if (empty($products)): ?>
@@ -481,7 +504,7 @@ foreach ($selectedValueIds as $vid) {
         <?php foreach ($products as $p): ?>
         <a href="/product/?id=<?= htmlspecialchars($p['public_id']) ?>" class="product-card">
             <?php if ($p['photo']): ?>
-                <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="" class="card-photo">
+                <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="<?= htmlspecialchars(lang_field($p, 'name')) ?>" class="card-photo">
             <?php else: ?>
                 <div class="card-photo card-photo--empty"></div>
             <?php endif; ?>
@@ -559,7 +582,7 @@ foreach ($selectedValueIds as $vid) {
 
     function cardHtml(p) {
         var photo = p.photo
-            ? '<img src="/uploads/' + escHtml(p.photo) + '" alt="" class="card-photo" loading="lazy">'
+            ? '<img src="/uploads/' + escHtml(p.photo) + '" alt="' + escHtml(p.name) + '" class="card-photo" loading="lazy">'
             : '<div class="card-photo card-photo--empty"></div>';
         var rating = p.review_count > 0
             ? '<span class="card-rating">★ ' + parseFloat(p.avg_rating).toFixed(1) + ' (' + p.review_count + ')</span>'

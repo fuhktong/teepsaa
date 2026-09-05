@@ -37,13 +37,25 @@ foreach ($faqRows as $row) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= ($_SESSION['lang'] ?? 'km') === 'km' ? 'km' : 'en' ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Help Center — teepsaa</title>
+    <?php
+        // Title and description come from the translation file so they match
+        // the language the body actually renders in — an English title over a
+        // Khmer page makes Google write its own snippet. seo_t() loads those
+        // strings here because header.php, which normally loads them, runs
+        // after </head>; header.php skips its own load when $t is already set.
+        require_once __DIR__ . '/../config/seo.php';
+        $t = seo_t();
+    ?>
+    <title><?= htmlspecialchars($t['footer_help_center']) ?> — teepsaa</title>
+    <?= seo_meta($t['footer_help_center'] . ' — teepsaa', $t['seo_desc_help'], '', 'https://teepsaa.com/help/') ?>
     <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
+    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">

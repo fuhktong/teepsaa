@@ -83,6 +83,31 @@ How to use this checklist:
 - [ ] អ្នកប្រហែលជាចូលចិត្ត — “You might like” (`home_you_might_like`)
 - [ ] បានមើលថ្មីៗ — “Recently viewed” (`home_recently_viewed`)
 
+## SEO strings (added for the SEO work — never shown on the page)
+
+These are the words Google prints in a search result and the wording of the
+"page not found" screen. Nobody sees the meta descriptions on the site
+itself, so a mistake here is invisible until it's in Google — worth a
+careful read.
+
+- [ ] ទិញទំនិញពី %s នៅលើ teepsaa។ រកមើលផលិតផល និងកម្មង់សម្រាប់ការដឹកជញ្ជូននៅភ្នំពេញ។ — shop description, `%s` is the shop name (`seo_shop_desc`)
+- [ ] ទិញទំនិញពីហាងក្នុងភ្នំពេញនៅលើ teepsaa — homepage heading, hidden from view (`home_h1`)
+- [ ] teepsaa គឺជាទីផ្សារអនឡាញនៅភ្នំពេញ … — About page description (`seo_desc_about`)
+- [ ] ចម្លើយចំពោះសំណួរញឹកញាប់អំពីការកម្មង់ … — Help page description (`seo_desc_help`)
+- [ ] ទាក់ទងក្រុមការងារ teepsaa … — Contact page description (`seo_desc_contact`)
+- [ ] មុខតំណែងទំនេរនៅ teepsaa … — Careers page description (`seo_desc_careers`)
+- [ ] របៀបដែល teepsaa ប្រមូល ប្រើប្រាស់ … — Privacy page description (`seo_desc_privacy`)
+- [ ] លក្ខខណ្ឌដែលអ្នកយល់ព្រម … — Terms page description (`seo_desc_terms`)
+- [ ] របៀបប្រគល់ទំនិញ និងសងប្រាក់វិញ … — Returns page description (`seo_desc_returns`)
+- [ ] តំបន់ដឹកជញ្ជូន រយៈពេល និងតម្លៃសេវា … — Shipping page description (`seo_desc_shipping`)
+
+## Page not found `/404/`
+
+- [ ] Heading + body text for a mistyped address (`nf_title`, `nf_body`)
+- [ ] Heading + body for a product that no longer exists (`nf_product_title`, `nf_product_body`)
+- [ ] Heading + body for a shop that no longer exists (`nf_shop_title`, `nf_shop_body`)
+- [ ] The two buttons (`nf_home`, `nf_browse`)
+
 ## Search `/search/`
 
 - [ ] ថ្មីៗ — “Newest” (`sort_newest`)

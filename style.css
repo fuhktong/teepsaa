@@ -339,3 +339,19 @@ main {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
+/* Real text that screen readers and search engines read, but that does not
+   appear on screen. Used for page headings on layouts (the homepage, the
+   product page) whose design has no room for a visible <h1>. Clipped rather
+   than display:none — hidden elements are skipped by both. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

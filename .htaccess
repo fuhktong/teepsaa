@@ -7,6 +7,26 @@ RewriteCond %{HTTP_HOST} ^(www\.)?teepsaa\.com$ [NC]
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [L,R=301]
 
+# One canonical hostname. The HTTPS rule above keeps whatever host was typed,
+# so without this www.teepsaa.com serves the whole catalogue alongside the
+# apex while every canonical tag names the apex. Runs after it so a www+http
+# request lands on https apex in two hops rather than looping.
+RewriteCond %{HTTP_HOST} ^www\.teepsaa\.com$ [NC]
+RewriteRule ^(.*)$ https://teepsaa.com/$1 [L,R=301]
+
+# Sitemap under the name crawlers and SEO tools actually look for. The
+# generator stays sitemap.php because it needs the DB.
+RewriteRule ^sitemap\.xml$ /sitemap.php [L]
+
+# robots.txt is generated so it can differ per host — all three subdomains
+# share this document root, so a static file would hand vendor. and admin.
+# the buyer site's crawl rules. See robots.php.
+RewriteRule ^robots\.txt$ /robots.php [L]
+
+# A styled 404 with the header, nav and a way back, instead of Apache's
+# default grey page.
+ErrorDocument 404 /404/index.php
+
 # The home-screen app manifest (/admin/prospects/manifest.webmanifest) —
 # Apache does not know this extension out of the box.
 AddType application/manifest+json .webmanifest

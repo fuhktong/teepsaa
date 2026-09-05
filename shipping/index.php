@@ -16,13 +16,26 @@ try {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= ($_SESSION['lang'] ?? 'km') === 'km' ? 'km' : 'en' ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shipping — teepsaa</title>
+    <?php
+        // The <h1> below prints this same row through pick_lang(), so the
+        // title in a search result always matches the heading on the page.
+        // seo_t() loads the translation strings here because header.php,
+        // which normally loads them, runs after </head>; it skips its own
+        // load when $t is already set.
+        require_once __DIR__ . '/../config/seo.php';
+        $t = seo_t();
+        $seoTitle = $page ? pick_lang($page['title_en'], $page['title_km']) : $t['footer_shipping'];
+    ?>
+    <title><?= htmlspecialchars($seoTitle) ?> — teepsaa</title>
+    <?= seo_meta($seoTitle . ' — teepsaa', $t['seo_desc_shipping'], '', 'https://teepsaa.com/shipping/') ?>
     <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
+    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
@@ -36,7 +49,7 @@ try {
         <h1><?= htmlspecialchars(pick_lang($page['title_en'], $page['title_km'])) ?></h1>
         <?= render_markdown(pick_lang($page['body_en'], $page['body_km'])) ?>
 <?php else: ?>
-        <h1><?= $lang === 'km' ? 'ការដឹកជញ្ជូន' : 'Shipping' ?></h1>
+        <h1><?= htmlspecialchars($seoTitle) ?></h1>
         <p><?= $lang === 'km' ? 'មាតិកាមិនអាចប្រើប្រាស់បានទេនាពេលនេះ។' : 'This content is temporarily unavailable.' ?></p>
 <?php endif; ?>
     </div>

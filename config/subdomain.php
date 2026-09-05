@@ -53,8 +53,13 @@ if ($sdActive) {
         }
         return false;
     };
-    $sdGo = function (string $target): void {
-        header('Location: ' . $target, true, 302);
+    // Default 301: which host owns a path is a permanent routing rule, so
+    // Google should transfer the address to the target and drop the source
+    // rather than keeping both listed. Pass 302 for any redirect that depends
+    // on who is signed in — browsers cache a 301 hard, and would keep applying
+    // it to a later visitor in the same browser who is no longer that person.
+    $sdGo = function (string $target, int $code = 301): void {
+        header('Location: ' . $target, true, $code);
         exit;
     };
 
@@ -77,7 +82,8 @@ if ($sdActive) {
                 // Wrong door, right person: vendor on the main homepage goes to
                 // their dashboard. Only the bare homepage — vendors may still
                 // preview their public product/business pages on teepsaa.com.
-                $sdGo(BASE_URL_VENDOR . '/analytics/');
+                // 302 — this one branches on the session, not the path.
+                $sdGo(BASE_URL_VENDOR . '/analytics/', 302);
             }
         }
     }
