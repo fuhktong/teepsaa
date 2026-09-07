@@ -17,30 +17,19 @@ try {
 ?>
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <?php
-        // The <h1> below prints this same row through pick_lang(), so the
-        // title in a search result always matches the heading on the page.
-        // seo_t() loads the translation strings here because header.php,
-        // which normally loads them, runs after </head>; it skips its own
-        // load when $t is already set.
-        require_once __DIR__ . '/../config/seo.php';
-        $t = seo_t();
-        $seoTitle = $page ? pick_lang($page['title_en'], $page['title_km']) : $t['footer_returns'];
-    ?>
-    <title><?= htmlspecialchars($seoTitle) ?> — teepsaa</title>
-    <?= seo_meta($seoTitle . ' — teepsaa', $t['seo_desc_returns'], '', 'https://teepsaa.com/returns/') ?>
-    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
-    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/header/header.css">
-    <link rel="stylesheet" href="/footer/footer.css">
-    <link rel="stylesheet" href="/returns/returns.css">
-</head>
+<?php
+// The <h1> below prints this same row through pick_lang(), so the title in a
+// search result always matches the heading on the page.
+require_once __DIR__ . '/../config/seo.php';
+$t = seo_t();
+$seoTitle = $page ? pick_lang($page['title_en'], $page['title_km']) : $t['footer_returns'];
+
+$headTitle = $seoTitle . ' — teepsaa';
+$headDesc  = $t['seo_desc_returns'];
+$headUrl   = 'https://teepsaa.com/returns/';
+$headCss   = ['/returns/returns.css'];
+require __DIR__ . '/../head/head.php';
+?>
 <body>
 <?php require __DIR__ . '/../header/header.php'; ?>
 <main>

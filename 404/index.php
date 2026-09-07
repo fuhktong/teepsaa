@@ -32,22 +32,15 @@ $nfBody  = $nfBody  ?? $t['nf_body'];
 ?>
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($nfTitle) ?> — teepsaa</title>
-    <!-- No canonical and no sitemap entry: this page must never be indexed
-         under whatever address happened to produce it. -->
-    <meta name="robots" content="noindex,follow">
-    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
-    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/header/header.css">
-    <link rel="stylesheet" href="/footer/footer.css">
-    <link rel="stylesheet" href="/404/404.css">
-</head>
+<?php
+$headTitle  = $nfTitle . ' — teepsaa';
+// No canonical and no sitemap entry: this page must never be indexed under
+// whatever address happened to produce it.
+$headRobots = 'noindex,follow';
+$headSeo    = false;
+$headCss    = ['/404/404.css'];
+require __DIR__ . '/../head/head.php';
+?>
 <body>
 <?php require __DIR__ . '/../header/header.php'; ?>
 <main>

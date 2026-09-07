@@ -23,6 +23,25 @@ RewriteRule ^sitemap\.xml$ /sitemap.php [L]
 # the buyer site's crawl rules. See robots.php.
 RewriteRule ^robots\.txt$ /robots.php [L]
 
+# ── Readable addresses ───────────────────────────────────────────────
+# /product/silk-krama-scarf-8f14e45f-ab3c/  →  product/index.php
+# /business/lucky-silk-3c1d9a77-2b4e/       →  business/index.php
+# /category/dresses/                        →  category/index.php
+#
+# The slug is deliberately NOT passed as a query parameter. Slugs may contain
+# Khmer, and pushing percent-encoded UTF-8 through a rewrite substitution is
+# where that gets mangled; each page reads REQUEST_URI itself instead.
+#
+# !-f keeps the real files in those folders — product/product.css and the
+# rest — serving themselves rather than being read as a slug. QSA preserves
+# ?lang=en, which the whole English half of the site depends on.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^product/[^/]+/?$ /product/index.php [L,QSA]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^business/[^/]+/?$ /business/index.php [L,QSA]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^category/[^/]+/?$ /category/index.php [L,QSA]
+
 # A styled 404 with the header, nav and a way back, instead of Apache's
 # default grey page.
 ErrorDocument 404 /404/index.php
@@ -37,6 +56,50 @@ AddType application/manifest+json .webmanifest
     Order allow,deny
     Deny from all
 </FilesMatch>
+
+# ── Transfer size and browser caching ────────────────────────────────
+# Without these every visitor re-downloads the logo, the two font files and
+# every stylesheet on every page, and the HTML goes down the wire uncompressed.
+# Both modules are standard on Hostinger/LiteSpeed; the IfModule wrappers make
+# the whole block inert rather than a 500 if one is ever missing.
+
+<IfModule mod_deflate.c>
+    # Text only. Compressing a JPEG or WebP again spends CPU to make the file
+    # slightly bigger, so images and fonts are deliberately absent here —
+    # woff2 is already Brotli-compressed internally.
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml \
+        text/javascript application/javascript application/json \
+        application/xml application/rss+xml image/svg+xml \
+        application/manifest+json
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+
+    # Uploads and site images keep their filename forever, so a year is safe.
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png  "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/gif  "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/x-icon  "access plus 1 year"
+
+    # Self-hosted subset fonts — these never change under the same name.
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType font/woff  "access plus 1 year"
+
+    # CSS and JS are NOT versioned in this codebase (/style.css, /js/map.js),
+    # so a long cache would strand returning visitors on the old stylesheet
+    # after a deploy. A week is the compromise: repeat visits within a session
+    # cost nothing, and a design change reaches everyone inside seven days.
+    # Shorten this to a few hours while actively working on the CSS.
+    ExpiresByType text/css   "access plus 1 week"
+    ExpiresByType text/javascript       "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+
+    # Every page is signed-in-sensitive (cart count, buyer name in the nav),
+    # so HTML must never be cached — no default rule is set for that reason.
+</IfModule>
 
 # ── Pre-launch gate ──────────────────────────────────────────────────
 # Password-protects the whole site until launch. DELETE THIS BLOCK (and

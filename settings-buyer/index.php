@@ -56,22 +56,15 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 ?>
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings — teepsaa</title>
-    <?php if ($tab === 'address'): ?>
-    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
-    <?php endif; ?>
-    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
-    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/header/header.css">
-    <link rel="stylesheet" href="/footer/footer.css">
-    <link rel="stylesheet" href="/settings-buyer/settings-buyer.css">
-</head>
+<?php
+$headTitle = 'Settings — teepsaa';
+$headSeo   = false;
+// Mapbox's stylesheet only on the tab that draws a map.
+$headCss   = $tab === 'address'
+    ? ['https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css', '/settings-buyer/settings-buyer.css']
+    : ['/settings-buyer/settings-buyer.css'];
+require __DIR__ . '/../head/head.php';
+?>
 <body>
 
 <?php require __DIR__ . '/../header/header.php'; ?>
@@ -104,7 +97,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <?php $bColorIdx = isset($buyer['avatar_color']) ? (int)$buyer['avatar_color'] : (abs($userId) % 5); ?>
                 <div class="avatar-preview-wrap">
                     <?php if ($buyer['avatar']): ?>
-                        <img src="/uploads/<?= htmlspecialchars($buyer['avatar']) ?>" alt="" class="avatar-preview">
+                        <img src="<?= htmlspecialchars(image_variant($buyer['avatar'])) ?>" alt="" class="avatar-preview" width="64" height="64">
                     <?php else: ?>
                         <?= _avatar_svg($userId, $bColorIdx, 64) ?>
                     <?php endif; ?>

@@ -22,19 +22,12 @@ unset($_SESSION['auth_error'], $_SESSION['auth_success']);
 ?>
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forgot password — teepsaa</title>
-    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
-    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/header/header.css">
-    <link rel="stylesheet" href="/footer/footer.css">
-    <link rel="stylesheet" href="/forgot-password-vendor/forgot-password-vendor.css">
-</head>
+<?php
+$headTitle = 'Forgot password — teepsaa';
+$headCss   = ['/forgot-password-vendor/forgot-password-vendor.css'];
+$headSeo   = false;
+require __DIR__ . '/../head/head.php';
+?>
 <body>
 
 <?php require __DIR__ . '/../header/header.php'; ?>

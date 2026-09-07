@@ -11,12 +11,12 @@ require __DIR__ . '/config/db.php';
 
 function product_card(array $p): string {
     $photo = $p['photo']
-        ? '<img src="/uploads/' . htmlspecialchars($p['photo']) . '" alt="' . htmlspecialchars(lang_field($p, 'name')) . '" class="card-photo">'
+        ? '<img src="' . htmlspecialchars(image_variant($p['photo'])) . '" alt="' . htmlspecialchars(lang_field($p, 'name')) . '" class="card-photo" width="400" height="400" loading="lazy" decoding="async">'
         : '<div class="card-photo card-photo--empty"></div>';
     $rating = (!empty($p['review_count']) && $p['review_count'] > 0)
         ? '<span class="card-rating">★ ' . number_format((float)$p['avg_rating'], 1) . ' (' . (int)$p['review_count'] . ')</span>'
         : '';
-    return '<a href="' . lang_href('/product/?id=' . htmlspecialchars($p['public_id'])) . '" class="product-card">'
+    return '<a href="' . lang_href(product_path($p)) . '" class="product-card">'
         . $photo
         . '<div class="card-body">'
         . '<strong class="card-name">' . htmlspecialchars(lang_field($p, 'name')) . '</strong>'
@@ -118,7 +118,12 @@ $underFifteen = $pdo->query(
      LIMIT 8"
 )->fetchAll();
 
+require_once __DIR__ . '/config/category.php';
+
 // ── Category tiles ───────────────────────────────────────────────
+// These used to link to /search/?q=Bags — a *text* search for the word,
+// which silently missed every bag whose listing didn't contain it. They now
+// link to the category page, which filters on the category itself.
 $catTiles = $pdo->query(
     "SELECT c.id, c.name, c.name_km, COUNT(p.id) AS product_count,
             (SELECT pp.filename
@@ -178,26 +183,23 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
 ?>
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>teepsaa — Shop local businesses in Phnom Penh</title>
-    <?php
-        require_once __DIR__ . '/config/seo.php';
-        echo seo_meta(
-            'teepsaa — Shop local businesses in Phnom Penh',
-            'Discover and order from local Phnom Penh businesses on teepsaa. Fast Grab delivery, great products.',
-            '',
-            'https://teepsaa.com/'
-        );
-    ?>
-    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
-    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/header/header.css">
-    <link rel="stylesheet" href="/footer/footer.css">
+<?php
+$headTitle = 'teepsaa — Shop local businesses in Phnom Penh';
+$headDesc  = 'Discover and order from local Phnom Penh businesses on teepsaa. Fast Grab delivery, great products.';
+$headUrl   = 'https://teepsaa.com/';
+
+// Structured data, homepage only — these two describe the site as a whole, so
+// repeating them on every page tells Google nothing new. Organization is what
+// fills the brand panel on the right of a result; WebSite's SearchAction is
+// what can put a search box for teepsaa inside Google's own results page.
+require_once __DIR__ . '/config/schema.php';
+
+// The homepage is the one page with no folder of its own to hold a
+// stylesheet (style.css is the global reset), so its CSS is captured here
+// and handed to head.php rather than written as a string.
+ob_start();
+$headExtra = schema_graph(schema_organization(), schema_website()) . "\n    ";
+?>
     <style>
 
         /* Homepage-only: let the banner span the full container, edge-to-edge
@@ -329,7 +331,11 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
             background: var(--border-strong);
         }
     </style>
-</head>
+<?php
+$headExtra .= trim(ob_get_clean());
+
+require __DIR__ . '/head/head.php';
+?>
 <body>
 
 <?php require __DIR__ . '/header/header.php'; ?>
@@ -345,9 +351,9 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
         </div>
         <div class="home-scroll">
             <?php foreach ($catTiles as $cat): ?>
-            <a href="<?= lang_href('/search/?q=' . urlencode($cat['name'])) ?>" class="cat-preview">
+            <a href="<?= lang_href(category_path($pdo, $cat)) ?>" class="cat-preview">
                 <?php if ($cat['sample_photo']): ?>
-                    <img src="/uploads/<?= htmlspecialchars($cat['sample_photo']) ?>" alt="<?= htmlspecialchars(cat_name($cat)) ?>" class="cat-preview-img">
+                    <img src="<?= htmlspecialchars(image_variant($cat['sample_photo'])) ?>" alt="<?= htmlspecialchars(cat_name($cat)) ?>" class="cat-preview-img" width="400" height="400" loading="lazy" decoding="async">
                 <?php else: ?>
                     <div class="cat-preview-placeholder"></div>
                 <?php endif; ?>
@@ -506,7 +512,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
 
     function cardHtml(p) {
         var photo = p.photo
-            ? '<img src="/uploads/' + escHtml(p.photo) + '" alt="' + escHtml(p.name) + '" class="card-photo">'
+            ? '<img src="' + escHtml(p.photo_url) + '" alt="' + escHtml(p.name) + '" class="card-photo" width="400" height="400" loading="lazy" decoding="async">'
             : '<div class="card-photo card-photo--empty"></div>';
         var now = Date.now() / 1000;
         var onSale = p.sale_price && p.sale_ends_at && (new Date(p.sale_ends_at).getTime() / 1000) > now;
@@ -514,7 +520,7 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
             ? '<span class="price-sale">' + fmtPrice(p.sale_price) + '</span>'
               + '<span class="price-original">' + fmtPrice(p.price) + '</span>'
             : fmtPrice(p.price);
-        return '<a href="/product/?id=' + p.id + '" class="product-card">'
+        return '<a href="' + escHtml(p.url) + '" class="product-card">'
             + photo
             + '<div class="card-body">'
             + '<strong class="card-name">' + escHtml(p.name) + '</strong>'

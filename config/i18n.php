@@ -3,6 +3,11 @@
 // db.php itself is unmanaged on the server, so it can't hold the require.
 require_once __DIR__ . '/subdomain.php';
 
+// Readable product and shop addresses. Loads here for the same reason —
+// header.php and every card grid build these links, and none of them require
+// anything else in config/ directly.
+require_once __DIR__ . '/slug.php';
+
 // ── Which language this request renders in ───────────────────────────
 //
 // Khmer is what a visitor gets when they haven't said otherwise, and that

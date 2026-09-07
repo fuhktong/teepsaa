@@ -22,7 +22,7 @@ if (!$ids) {
 
 $ph   = implode(',', array_fill(0, count($ids), '?'));
 $stmt = $pdo->prepare(
-    "SELECT p.public_id AS id, p.name, p.name_km, p.price,
+    "SELECT p.public_id AS id, p.public_id, p.name, p.name_km, p.price,
             CASE WHEN p.sale_percent IS NOT NULL AND p.sale_ends_at IS NOT NULL AND p.sale_ends_at > NOW()
                  THEN ROUND(p.price * (100 - p.sale_percent) / 100, 2) END AS sale_price,
             p.sale_ends_at, b.name AS business_name, b.name_km AS business_name_km, pp.filename AS photo
@@ -36,6 +36,11 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $byId    = [];
 foreach ($rows as $r) {
+    // See api/search — the address is derived from the English name, before
+    // the language swap replaces it.
+    $r['url']           = product_path($r);
+    $r['photo_url']     = image_variant($r['photo'] ?? null);
+    unset($r['public_id']);
     $r['name']          = lang_field($r, 'name');
     $r['business_name'] = pick_lang($r['business_name'], $r['business_name_km'] ?? null);
     unset($r['name_km'], $r['business_name_km']);

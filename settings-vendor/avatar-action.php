@@ -32,6 +32,7 @@ if ($action === 'delete') {
     if ($old) {
         $oldPath = __DIR__ . '/../uploads/' . $old;
         if (file_exists($oldPath)) @unlink($oldPath);
+        image_delete_derivatives($old);
     }
     $pdo->prepare('UPDATE vendors SET avatar = NULL WHERE id = ?')->execute([$userId]);
     $_SESSION['user_avatar']      = '';
@@ -66,11 +67,15 @@ $ext      = $mime === 'image/png' ? 'png' : 'jpg';
 $filename = 'avatar_v_' . $userId . '_' . time() . '.' . $ext;
 $dest     = __DIR__ . '/../uploads/' . $filename;
 
+// A phone photo dropped in as an avatar is shown at 26px in the header;
+// the small WebP copy is what actually gets served. See config/upload.php.
 if (!move_uploaded_file($file['tmp_name'], $dest)) {
     $_SESSION['settings_error'] = 'Could not save file. Please try again.';
     header('Location: /settings-vendor/?tab=account');
     exit;
 }
+
+image_make_derivatives($dest, $filename);
 
 $stmt = $pdo->prepare('SELECT avatar FROM vendors WHERE id = ?');
 $stmt->execute([$userId]);
@@ -78,6 +83,7 @@ $old = $stmt->fetchColumn();
 if ($old) {
     $oldPath = __DIR__ . '/../uploads/' . $old;
     if (file_exists($oldPath)) @unlink($oldPath);
+    image_delete_derivatives($old);
 }
 
 $pdo->prepare('UPDATE vendors SET avatar = ? WHERE id = ?')->execute([$filename, $userId]);

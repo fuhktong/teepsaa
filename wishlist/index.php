@@ -37,20 +37,12 @@ $items = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wishlist — teepsaa</title>
-    <?= seo_meta('Wishlist — teepsaa', '', '', 'https://teepsaa.com/wishlist/') ?>
-    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
-    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/header/header.css">
-    <link rel="stylesheet" href="/footer/footer.css">
-    <link rel="stylesheet" href="/wishlist/wishlist.css">
-</head>
+<?php
+$headTitle = 'Wishlist — teepsaa';
+$headUrl   = 'https://teepsaa.com/wishlist/';
+$headCss   = ['/wishlist/wishlist.css'];
+require __DIR__ . '/../head/head.php';
+?>
 <body>
 
 <?php require __DIR__ . '/../header/header.php'; ?>
@@ -69,14 +61,14 @@ $items = $stmt->fetchAll();
                 <?php
                     $unavailable = !$p['active'] || $p['archived'] || !$p['approved'] || $p['suspended'] || $p['stock'] < 1;
                     $photo = $p['photo']
-                        ? '<img src="/uploads/' . htmlspecialchars($p['photo']) . '" alt="" class="wl-card-photo">'
+                        ? '<img src="' . htmlspecialchars(image_variant($p['photo'])) . '" alt="" class="wl-card-photo" width="400" height="400" loading="lazy" decoding="async">'
                         : '<div class="wl-card-photo wl-card-photo--empty"></div>';
                     $rating = ($p['review_count'] > 0)
                         ? '<span class="wl-card-rating">★ ' . number_format((float)$p['avg_rating'], 1) . ' (' . (int)$p['review_count'] . ')</span>'
                         : '';
                 ?>
                 <div class="wl-card<?= $unavailable ? ' wl-card--unavailable' : '' ?>">
-                    <a href="/product/?id=<?= htmlspecialchars($p['public_id']) ?>" class="wl-card-inner">
+                    <a href="<?= lang_href(product_path($p)) ?>" class="wl-card-inner">
                         <?= $photo ?>
                         <div class="wl-card-body">
                             <strong class="wl-card-name"><?= htmlspecialchars(lang_field($p, 'name')) ?></strong>

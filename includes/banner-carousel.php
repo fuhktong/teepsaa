@@ -23,7 +23,7 @@ if (!empty($_banners)):
             $bSubtitle = ($_bannerLang === 'km' && !empty($b['subtitle_km'])) ? $b['subtitle_km'] : $b['subtitle'];
         ?>
         <<?= $tag . $href ?> class="banner-slide<?= $i === 0 ? ' active' : '' ?>"
-             style="background-image:url('/uploads/<?= htmlspecialchars($b['image_filename']) ?>')">
+             style="background-image:url('<?= htmlspecialchars(image_variant($b['image_filename'], 'w1200')) ?>')">
             <?php if ($bTitle || $bSubtitle): ?>
             <div class="banner-text">
                 <?php if ($bTitle): ?><p class="banner-title"><?= htmlspecialchars($bTitle) ?></p><?php endif; ?>

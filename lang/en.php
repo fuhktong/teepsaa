@@ -32,6 +32,9 @@ return [
     'footer_wishlist'    => 'Wishlist',
     'footer_sell_on'     => 'Sell on teepsaa',
     'home_h1'            => 'Shop Phnom Penh businesses on teepsaa',
+    'crumb_home'         => 'Home',
+    'crumb_shops'        => 'Shops',
+    'crumb_label'        => 'Breadcrumb',
     'footer_about'       => 'About',
     'footer_careers'     => 'Careers',
     'footer_help_center' => 'Help Center',
@@ -66,6 +69,20 @@ return [
     'search_any_rating'   => 'Any rating',
     'search_apply'        => 'Apply',
     'search_clear'        => 'Clear filters',
+
+    // ── Category pages ───────────────────────────────────────────────
+    'cat_subcategories'  => 'Browse within',
+    'cat_refine'         => 'Filter and sort these products',
+    'cat_all_products'   => 'All products',
+    'cat_empty'          => 'No products in this category yet. Check back soon — new shops are joining every week.',
+    'seo_cat_desc'       => 'Shop %s in Phnom Penh on teepsaa. Browse listings from local shops and order for delivery across the city.',
+
+    // ── Pagination ───────────────────────────────────────────────────
+    'pg_label'           => 'Pagination',
+    'pg_prev'            => 'Previous',
+    'pg_next'            => 'Next',
+    'pg_page'            => 'Page %d',
+
     'search_no_results'   => 'No products found.',
     'search_no_results_hint' => 'Try removing some filters.',
     'search_price_min'    => 'Min',

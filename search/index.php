@@ -22,6 +22,14 @@ $rawRating  = (int)($_GET['min_rating'] ?? 0);
 $minRating        = in_array($rawRating, [2, 3, 4]) ? (float)$rawRating : 0.0;
 $selectedValueIds = array_values(array_unique(array_filter(array_map('intval', (array)($_GET['variant_values'] ?? [])), fn($v) => $v > 0)));
 
+// Numbered pages. The grid also loads more as you scroll, which is right for
+// a person on a phone and useless to a crawler — it doesn't scroll, so
+// without ?page= it sees the first twenty products and stops, and no internal
+// link ever reaches product twenty-one. The two live side by side: the server
+// renders the page it was asked for, and the scroll picks up from the end of
+// it.
+$page = max(1, (int)($_GET['page'] ?? 1));
+
 $validSorts = ['newest', 'price_asc', 'price_desc', 'rating', 'popular'];
 if (!in_array($sort, $validSorts, true)) $sort = 'newest';
 if ($minPrice !== '' && !is_numeric($minPrice)) $minPrice = '';
@@ -145,11 +153,22 @@ $dataStmt = $pdo->prepare("
     $salesJoin
     WHERE $where
     ORDER BY $orderBy
-    LIMIT 20");
+    LIMIT 20 OFFSET " . (($page - 1) * 20));
 $dataStmt->execute($params);
 $products = $dataStmt->fetchAll();
 
-$hasMore = $count > 20;
+$totalPages = max(1, (int)ceil($count / 20));
+
+// A page number past the end is not a page. Answering 200 with the last
+// page's contents would be a soft 404 — an address Google keeps re-crawling
+// because it never says it doesn't exist.
+if ($page > $totalPages) {
+    http_response_code(404);
+    require __DIR__ . '/../404/index.php';
+    exit;
+}
+
+$hasMore = $count > $page * 20;
 
 // ── Category dropdown ─────────────────────────────────────────────────
 $categories = [];
@@ -201,9 +220,16 @@ if ($q !== '') {
     }
 }
 
-// Kept raw: seo_meta() escapes everything it is handed, so pre-escaping here
-// double-encoded the og: and twitter: tags. Escaped at the <title> below.
+// Kept raw: head.php and seo_meta() escape everything they are handed, so
+// pre-escaping here double-encoded the <title> and the og:/twitter: tags.
 $title = $q !== '' ? $q . ' — teepsaa' : 'Search — teepsaa';
+
+// The address of one page of these results, used for the canonical, the page
+// links and the ?page= form of every filter chip.
+$pgUrl = fn(int $n): string => htmlspecialchars(
+    lang_href(searchUrl($q, $sort, $minPrice, $maxPrice, $categoryId, $minRating, $selectedValueIds, $n)),
+    ENT_QUOTES, 'UTF-8'
+);
 
 $sortLabels = [
     'newest'     => $t['sort_newest'],
@@ -214,7 +240,7 @@ $sortLabels = [
 ];
 
 // ── Build filter chips ───────────────────────────────────────────────
-function searchUrl(string $q, string $sort, string $minPrice, string $maxPrice, int $categoryId, float $minRating, array $selVals = []): string {
+function searchUrl(string $q, string $sort, string $minPrice, string $maxPrice, int $categoryId, float $minRating, array $selVals = [], int $page = 1): string {
     $p = ['q' => $q];
     if ($sort !== 'newest')  $p['sort']           = $sort;
     if ($minPrice !== '')    $p['min_price']       = $minPrice;
@@ -222,6 +248,9 @@ function searchUrl(string $q, string $sort, string $minPrice, string $maxPrice, 
     if ($categoryId > 0)     $p['category']        = $categoryId;
     if ($minRating > 0)      $p['min_rating']      = (int)$minRating;
     if (!empty($selVals))    $p['variant_values']  = $selVals;
+    // Page 1 is the bare address, never ?page=1 — otherwise the same results
+    // sit at two addresses and the links between them are split across both.
+    if ($page > 1)           $p['page']            = $page;
     return '/search/?' . http_build_query($p);
 }
 
@@ -283,50 +312,40 @@ foreach ($selectedValueIds as $vid) {
 ?>
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($title) ?></title>
-    <?php
-        require_once __DIR__ . '/../config/seo.php';
-        $searchDesc = $q
-            ? 'Search results for "' . $q . '" on teepsaa — ' . $count . ' product' . ($count !== 1 ? 's' : '') . ' found.'
-            : 'Browse all products on teepsaa — local Phnom Penh businesses, fast Grab delivery.';
+<?php
+$headTitle = $title;
+$headDesc  = $q
+    ? 'Search results for "' . $q . '" on teepsaa — ' . $count . ' product' . ($count !== 1 ? 's' : '') . ' found.'
+    : 'Browse all products on teepsaa — local Phnom Penh businesses, fast Grab delivery.';
 
-        // Every combination of search term, price band, category, rating and
-        // option is its own URL, so the filters alone can generate millions of
-        // near-identical pages. Letting Google index them buries the real
-        // product pages under thin duplicates and burns the crawl budget that
-        // should be spent finding new listings. "noindex, follow" keeps them
-        // out of search results while still letting the crawler walk through
-        // to the products they link to. The bare /search/ page — no term, no
-        // filters — is a genuine browse page and stays indexable.
-        $searchNoIndex = $q !== '' || $hasActiveFilters;
+// Every combination of search term, price band, category, rating and option
+// is its own URL, so the filters alone can generate millions of
+// near-identical pages. Letting Google index them buries the real product
+// pages under thin duplicates and burns the crawl budget that should be spent
+// finding new listings. "noindex, follow" keeps them out of search results
+// while still letting the crawler walk through to the products they link to.
+// The bare /search/ page — no term, no filters — is a genuine browse page and
+// stays indexable.
+$searchNoIndex = $q !== '' || $hasActiveFilters;
 
-        // A noindex page must point its canonical at itself; aiming it at a
-        // different URL sends Google two contradictory instructions about the
-        // same address, and it may follow either one.
-        $searchCanonical = $searchNoIndex
-            ? 'https://teepsaa.com' . ($_SERVER['REQUEST_URI'] ?? '/search/')
-            : 'https://teepsaa.com/search/';
+// A noindex page must point its canonical at itself; aiming it at a different
+// URL sends Google two contradictory instructions about the same address, and
+// it may follow either one. Page 2 and beyond canonicalise to themselves.
+// Pointing them all at page 1 (the advice Google itself has since dropped)
+// says the products that only appear on page 3 exist nowhere it should look.
+$headUrl = $searchNoIndex
+    ? 'https://teepsaa.com' . ($_SERVER['REQUEST_URI'] ?? '/search/')
+    : 'https://teepsaa.com/search/' . ($page > 1 ? '?page=' . $page : '');
 
-        if ($searchNoIndex) {
-            echo '<meta name="robots" content="noindex, follow">' . "\n    ";
-        }
-        // No hreflang on a noindex page: pointing Google at translations of a
-        // page it has been told to ignore is noise. The bare /search/ page is
-        // indexable and gets the pair like every other page.
-        echo seo_meta($title, $searchDesc, '', $searchCanonical, !$searchNoIndex);
-    ?>
-    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
-    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/header/header.css">
-    <link rel="stylesheet" href="/footer/footer.css">
-    <link rel="stylesheet" href="/search/search.css">
-</head>
+$headRobots = $searchNoIndex ? 'noindex, follow' : '';
+// No hreflang on a noindex page: pointing Google at translations of a page it
+// has been told to ignore is noise. The bare /search/ page is indexable and
+// gets the pair like every other page.
+$headAlt = !$searchNoIndex;
+
+$headCss = ['/pagination/pagination.css', '/search/search.css'];
+require __DIR__ . '/../head/head.php';
+?>
 <body>
 
 <?php require __DIR__ . '/../header/header.php'; ?>
@@ -444,11 +463,11 @@ foreach ($selectedValueIds as $vid) {
                 <p class="shops-strip-title"><?= $t['search_shops'] ?></p>
                 <div class="shops-strip-row">
                     <?php foreach ($matchedShops as $s): ?>
-                    <a href="<?= lang_href('/business/?id=' . htmlspecialchars($s['public_id'])) ?>" class="shop-card">
+                    <a href="<?= lang_href(business_path($s)) ?>" class="shop-card">
                         <?php if ($s['banner']): ?>
-                        <img src="/uploads/<?= htmlspecialchars($s['banner']) ?>" alt="<?= htmlspecialchars(pick_lang($s['name'], $s['name_km'] ?? null)) ?>" class="shop-card-banner">
+                        <img src="<?= htmlspecialchars(image_variant($s['banner'])) ?>" alt="<?= htmlspecialchars(pick_lang($s['name'], $s['name_km'] ?? null)) ?>" width="480" height="64" loading="lazy" decoding="async" class="shop-card-banner">
                         <?php else: ?>
-                        <div class="shop-card-banner shop-card-banner--empty"></div>
+                        <div width="480" height="64" loading="lazy" decoding="async" class="shop-card-banner shop-card-banner--empty"></div>
                         <?php endif; ?>
                         <span class="shop-card-name"><?= htmlspecialchars(pick_lang($s['name'], $s['name_km'] ?? null)) ?></span>
                     </a>
@@ -462,9 +481,9 @@ foreach ($selectedValueIds as $vid) {
             <?php else: ?>
             <div class="product-grid" id="product-grid">
                 <?php foreach ($products as $p): ?>
-                <a href="<?= lang_href('/product/?id=' . htmlspecialchars($p['public_id'])) ?>" class="product-card">
+                <a href="<?= lang_href(product_path($p)) ?>" class="product-card">
                     <?php if ($p['photo']): ?>
-                        <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="<?= htmlspecialchars(lang_field($p, 'name')) ?>" class="card-photo">
+                        <img src="<?= htmlspecialchars(image_variant($p['photo'])) ?>" alt="<?= htmlspecialchars(lang_field($p, 'name')) ?>" class="card-photo" width="400" height="400" loading="lazy" decoding="async">
                     <?php else: ?>
                         <div class="card-photo card-photo--empty"></div>
                     <?php endif; ?>
@@ -489,6 +508,7 @@ foreach ($selectedValueIds as $vid) {
                 <div class="spinner"></div>
             </div>
             <?php endif; ?>
+            <?php $pgCurrent = $page; $pgTotal = $totalPages; require __DIR__ . '/../pagination/pagination.php'; ?>
             <?php endif; ?>
         </div><!-- /.search-results -->
 
@@ -505,9 +525,9 @@ foreach ($selectedValueIds as $vid) {
     <?php else: ?>
     <div class="product-grid" id="product-grid">
         <?php foreach ($products as $p): ?>
-        <a href="<?= lang_href('/product/?id=' . htmlspecialchars($p['public_id'])) ?>" class="product-card">
+        <a href="<?= lang_href(product_path($p)) ?>" class="product-card">
             <?php if ($p['photo']): ?>
-                <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="<?= htmlspecialchars(lang_field($p, 'name')) ?>" class="card-photo">
+                <img src="<?= htmlspecialchars(image_variant($p['photo'])) ?>" alt="<?= htmlspecialchars(lang_field($p, 'name')) ?>" class="card-photo" width="400" height="400" loading="lazy" decoding="async">
             <?php else: ?>
                 <div class="card-photo card-photo--empty"></div>
             <?php endif; ?>
@@ -532,6 +552,7 @@ foreach ($selectedValueIds as $vid) {
         <div class="spinner"></div>
     </div>
     <?php endif; ?>
+    <?php $pgCurrent = $page; $pgTotal = $totalPages; require __DIR__ . '/../pagination/pagination.php'; ?>
     <?php endif; ?>
 
 <?php endif; ?>
@@ -542,7 +563,9 @@ foreach ($selectedValueIds as $vid) {
 <?php if ($hasMore): ?>
 <script>
 (function () {
-    var offset   = 20;
+    // Not 20 — the server rendered page <?= $page ?>, so the next batch starts
+    // after it, or scrolling on ?page=3 would re-show products 21-40.
+    var offset   = <?= $page * 20 ?>;
     var loading  = false;
     var done     = false;
     var filters  = <?= json_encode([
@@ -585,7 +608,7 @@ foreach ($selectedValueIds as $vid) {
 
     function cardHtml(p) {
         var photo = p.photo
-            ? '<img src="/uploads/' + escHtml(p.photo) + '" alt="' + escHtml(p.name) + '" class="card-photo" loading="lazy">'
+            ? '<img src="' + escHtml(p.photo_url) + '" alt="' + escHtml(p.name) + '" class="card-photo" width="400" height="400" loading="lazy" decoding="async">'
             : '<div class="card-photo card-photo--empty"></div>';
         var rating = p.review_count > 0
             ? '<span class="card-rating">★ ' + parseFloat(p.avg_rating).toFixed(1) + ' (' + p.review_count + ')</span>'
@@ -599,7 +622,7 @@ foreach ($selectedValueIds as $vid) {
             ? '<span class="price-sale">' + fmtPrice(p.sale_price) + '</span>'
               + '<span class="price-original">' + fmtPrice(p.price) + '</span>'
             : fmtPrice(p.price);
-        return '<a href="/product/?id=' + p.id + '" class="product-card">'
+        return '<a href="' + escHtml(p.url) + '" class="product-card">'
             + photo
             + '<div class="card-body">'
             + '<strong class="card-name">' + escHtml(p.name) + '</strong>'

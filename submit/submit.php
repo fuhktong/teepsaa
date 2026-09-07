@@ -118,6 +118,8 @@ if (!empty($_FILES['photos']['name'][0])) {
         $filename = bin2hex(random_bytes(16)) . '.' . $ext;
 
         if (move_uploaded_file($tmp, $upload_dir . $filename)) {
+            // Small WebP copies for the card grids — see config/upload.php.
+            image_make_derivatives($upload_dir . $filename, $filename);
             $stmt = $pdo->prepare('INSERT INTO photos (business_id, filename) VALUES (?, ?)');
             $stmt->execute([$business_id, $filename]);
             $photo_count++;
@@ -134,6 +136,7 @@ if (!empty($_FILES['banner']['name']) && $_FILES['banner']['error'] === UPLOAD_E
         $ext      = $type === 'image/png' ? 'png' : 'jpg';
         $filename = 'banner_' . $_SESSION['user_id'] . '_' . time() . '.' . $ext;
         if (move_uploaded_file($tmp, $upload_dir . $filename)) {
+            image_make_derivatives($upload_dir . $filename, $filename);
             $pdo->prepare('UPDATE businesses SET banner = ? WHERE id = ?')->execute([$filename, $business_id]);
         }
     }

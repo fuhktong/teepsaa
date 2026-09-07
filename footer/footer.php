@@ -41,7 +41,7 @@ if (empty($_SESSION['user_id'])) {
         <div class="footer-head">
             <div class="footer-brandrow">
                 <a href="<?= lang_href('/') ?>" class="footer-logo">
-                    <img src="/images/<?= $lang === 'km' ? 'teepsaa_logo_khm.png' : 'teepsaa_logo_eng_myriad.png' ?>" alt="teepsaa">
+                    <img src="/images/<?= $lang === 'km' ? 'teepsaa_logo_khm.png' : 'teepsaa_logo_eng_myriad.png' ?>" alt="teepsaa" width="633" height="499" loading="lazy">
                 </a>
                 <span class="footer-tagline"<?= $lang === 'km' ? ' lang="km"' : '' ?>><?= $lang === 'km' ? 'ទិញឱ្យងាយស្រួល' : 'Shopping made easy' ?></span>
             </div>

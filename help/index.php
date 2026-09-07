@@ -38,34 +38,40 @@ foreach ($faqRows as $row) {
 ?>
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <?php
-        // Title and description come from the translation file so they match
-        // the language the body actually renders in — an English title over a
-        // Khmer page makes Google write its own snippet. seo_t() loads those
-        // strings here because header.php, which normally loads them, runs
-        // after </head>; header.php skips its own load when $t is already set.
-        require_once __DIR__ . '/../config/seo.php';
-        $t = seo_t();
-    ?>
-    <title><?= htmlspecialchars($t['footer_help_center']) ?> — teepsaa</title>
-    <?= seo_meta($t['footer_help_center'] . ' — teepsaa', $t['seo_desc_help'], '', 'https://teepsaa.com/help/') ?>
-    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
-    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/header/header.css">
-    <link rel="stylesheet" href="/footer/footer.css">
-    <link rel="stylesheet" href="/help/help.css">
-</head>
+<?php
+// Title and description come from the translation file so they match the
+// language the body actually renders in — an English title over a Khmer page
+// makes Google write its own snippet. head.php would load these itself, but
+// the title is built from them, so they're needed a line earlier.
+require_once __DIR__ . '/../config/seo.php';
+$t = seo_t();
+
+$headTitle = $t['footer_help_center'] . ' — teepsaa';
+$headDesc  = $t['seo_desc_help'];
+$headUrl   = 'https://teepsaa.com/help/';
+$headCss   = ['/breadcrumb/breadcrumb.css', '/help/help.css'];
+
+// Structured data: the questions below, restated so Google can show them
+// inside the result itself. Nearly free — $faqs is already built and already
+// looped over in the body, in the current language.
+require_once __DIR__ . '/../config/schema.php';
+
+// One array, two consumers: the visible trail below and the hidden block here.
+$crumbs = [
+    [$t['crumb_home'],         '/'],
+    [$t['footer_help_center'], ''],
+];
+
+$headExtra = schema_graph(schema_faq($faqs), schema_breadcrumb($crumbs));
+require __DIR__ . '/../head/head.php';
+?>
 <body>
 
 <?php require __DIR__ . '/../header/header.php'; ?>
 
 <main>
+    <?php require __DIR__ . '/../breadcrumb/breadcrumb.php'; ?>
+
     <div class="help-hero">
         <h1><?= $t['footer_help_center'] ?></h1>
         <p><?= $lang === 'km' ? 'រកចម្លើយចំពោះសំណួរទូទៅខាងក្រោម។' : 'Find answers to common questions below.' ?></p>

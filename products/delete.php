@@ -60,6 +60,7 @@ if (!empty($ownedIds)) {
         foreach ($filenames as $filename) {
             $path = __DIR__ . '/../uploads/' . $filename;
             if (file_exists($path)) @unlink($path);
+            image_delete_derivatives($filename);
         }
     }
 }

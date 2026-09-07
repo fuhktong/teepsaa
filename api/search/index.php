@@ -115,6 +115,14 @@ $hasMore  = count($rows) > $limit;
 $products = array_slice($rows, 0, $limit);
 
 foreach ($products as &$p) {
+    // Built before the language swap below: an address is the English name,
+    // the same one product_path() derives on a server-rendered card, so a
+    // scrolled-in card and a first-page card link to the same place.
+    $p['url']           = product_path($p);
+    // The small copy, the same one a server-rendered card uses. Sent as a
+    // finished address rather than a filename so the JS never has to know
+    // uploads/w400/ exists or guess whether a copy was made.
+    $p['photo_url']     = image_variant($p['photo'] ?? null);
     // Resolve display language server-side so the client just uses name/description
     $p['name']          = lang_field($p, 'name');
     $p['description']   = lang_field($p, 'description');

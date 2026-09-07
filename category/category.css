@@ -1,0 +1,86 @@
+/* Category page. The product grid and cards come from search/search.css —
+   only the heading block, the intro paragraph and the child-category row are
+   here. */
+
+.cat-head {
+    max-width: 68rem;
+    margin: 0 auto 1.5rem;
+    padding: 1.5rem 1rem 0;
+}
+
+.cat-title {
+    margin: 0 0 .6rem;
+    font-size: 1.9rem;
+    line-height: 1.25;
+}
+
+/* Deliberately narrow. Two or three sentences set at full page width read as
+   filler; at ~65 characters they read as writing. */
+.cat-intro {
+    max-width: 42rem;
+    margin: 0 0 1rem;
+    color: #555;
+    font-size: 1rem;
+    line-height: 1.65;
+}
+
+.cat-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 1rem;
+    margin: 0;
+    font-size: .9rem;
+}
+
+.cat-count { color: #666; }
+
+.cat-refine {
+    color: #111;
+    text-decoration: none;
+    border-bottom: 1px solid #ddd;
+}
+
+.cat-refine:hover { border-bottom-color: #111; }
+
+.cat-children {
+    max-width: 68rem;
+    margin: 0 auto 1.75rem;
+    padding: 0 1rem;
+}
+
+.cat-children-title {
+    margin: 0 0 .6rem;
+    font-size: .8rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #888;
+}
+
+.cat-children-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.cat-children-list a {
+    display: inline-block;
+    padding: .4rem .85rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 999px;
+    background: #fff;
+    color: #333;
+    font-size: .9rem;
+    text-decoration: none;
+}
+
+.cat-children-list a:hover { border-color: #bbb; background: #fafafa; }
+
+@media (max-width: 640px) {
+    .cat-title  { font-size: 1.5rem; }
+    .cat-intro  { font-size: .95rem; }
+}

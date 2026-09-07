@@ -1,0 +1,48 @@
+/* Numbered page links — see pagination/pagination.php. */
+
+.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    margin: 2.5rem 0 1rem;
+}
+
+.pg-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.4rem;
+    height: 2.4rem;
+    padding: 0 .6rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fff;
+    color: #333;
+    font-size: .95rem;
+    text-decoration: none;
+}
+
+.pg-link:hover { border-color: #bbb; background: #fafafa; }
+
+.pg-current {
+    border-color: #111;
+    background: #111;
+    color: #fff;
+    font-weight: 600;
+}
+
+.pg-step { font-weight: 500; }
+
+.pg-gap {
+    padding: 0 .2rem;
+    color: #999;
+    user-select: none;
+}
+
+@media (max-width: 480px) {
+    /* On a phone the step links are the ones a thumb actually uses. */
+    .pg-link { min-width: 2.1rem; height: 2.1rem; font-size: .875rem; }
+    .pagination { gap: .3rem; }
+}

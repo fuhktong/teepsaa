@@ -39,6 +39,7 @@ $photo = $stmt->fetch();
 if ($photo) {
     $filePath = __DIR__ . '/../uploads/' . $photo['filename'];
     if (file_exists($filePath)) @unlink($filePath);
+    image_delete_derivatives($photo['filename']);
     $pdo->prepare('DELETE FROM product_photos WHERE id = ?')->execute([$photoId]);
 
     if ($photo['is_primary']) {

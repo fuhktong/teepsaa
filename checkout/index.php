@@ -161,19 +161,12 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
 ?>
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout — teepsaa</title>
-    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
-    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/header/header.css">
-    <link rel="stylesheet" href="/footer/footer.css">
-    <link rel="stylesheet" href="/checkout/checkout.css">
-</head>
+<?php
+$headTitle = 'Checkout — teepsaa';
+$headCss   = ['/checkout/checkout.css'];
+$headSeo   = false;
+require __DIR__ . '/../head/head.php';
+?>
 <body>
 
 <?php require __DIR__ . '/../header/header.php'; ?>
@@ -295,7 +288,7 @@ $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
             <?php endif; ?>
 
             <?php if ($abaQr): ?>
-                <img src="/uploads/aba-qr.png" alt="teepsaa ABA QR Code" class="aba-qr">
+                <img src="/uploads/aba-qr.png" alt="teepsaa ABA QR Code" class="aba-qr" width="200" height="200" loading="lazy" decoding="async">
             <?php else: ?>
                 <div class="aba-qr-placeholder"><?= $t['checkout_aba_coming_soon'] ?></div>
             <?php endif; ?>

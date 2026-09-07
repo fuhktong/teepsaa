@@ -13,6 +13,7 @@
 // deliberately absent.
 require __DIR__ . '/config/db.php';
 require __DIR__ . '/config/seo.php';
+require __DIR__ . '/config/category.php';
 
 header('Content-Type: application/xml; charset=utf-8');
 echo '<?xml version="1.0" encoding="UTF-8"?>';
@@ -35,7 +36,7 @@ $pModified = $hasUpdated('products')   ? 'COALESCE(p.updated_at, p.created_at)' 
 $bModified = $hasUpdated('businesses') ? 'COALESCE(updated_at, created_at)'     : 'created_at';
 
 $products = $pdo->query("
-    SELECT p.public_id,
+    SELECT p.public_id, p.name,
            $pModified AS modified_at,
            (SELECT filename FROM product_photos WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS photo
     FROM products p
@@ -45,7 +46,7 @@ $products = $pdo->query("
 ")->fetchAll();
 
 $businesses = $pdo->query("
-    SELECT public_id, $bModified AS modified_at, banner
+    SELECT public_id, name, $bModified AS modified_at, banner
     FROM businesses
     WHERE approved = 1 AND suspended = 0
     ORDER BY id ASC
@@ -66,11 +67,33 @@ $pages = [
     ['/privacy/',  'monthly', '0.3', null, null],
     ['/terms/',    'monthly', '0.3', null, null],
 ];
+// Category pages rank for the broad searches products can't, so they sit
+// above individual listings in priority. Only the ones that actually have
+// something in them — an empty category is a thin page and listing it here
+// just spends crawl budget confirming that.
+$catCounts = [];
+foreach ($pdo->query("SELECT p.category_id, COUNT(*) AS n
+                      FROM products p
+                      JOIN businesses b ON b.id = p.business_id
+                      WHERE p.active = 1 AND p.archived = 0 AND b.approved = 1 AND b.suspended = 0
+                        AND p.category_id IS NOT NULL
+                      GROUP BY p.category_id") as $row) {
+    // A product in "Dresses" also fills "Women's" and "Clothing" above it,
+    // because the category page shows the whole branch beneath it.
+    foreach (category_ancestors($pdo, (int)$row['category_id']) as $anc) {
+        $catCounts[(int)$anc['id']] = ($catCounts[(int)$anc['id']] ?? 0) + (int)$row['n'];
+    }
+}
+foreach (category_all($pdo) as $cid => $cat) {
+    if (empty($catCounts[$cid])) continue;
+    $pages[] = [category_path($pdo, $cat), 'weekly', '0.7', null, null];
+}
+
 foreach ($businesses as $b) {
-    $pages[] = ['/business/?id=' . $b['public_id'], 'weekly', '0.7', $b['modified_at'], $b['banner']];
+    $pages[] = [business_path($b), 'weekly', '0.7', $b['modified_at'], $b['banner']];
 }
 foreach ($products as $p) {
-    $pages[] = ['/product/?id=' . $p['public_id'], 'weekly', '0.6', $p['modified_at'], $p['photo']];
+    $pages[] = [product_path($p), 'weekly', '0.6', $p['modified_at'], $p['photo']];
 }
 
 $x = fn(?string $s): string => htmlspecialchars((string)$s, ENT_QUOTES | ENT_XML1, 'UTF-8');

@@ -28,11 +28,11 @@ and clear.**
 
 There are three kinds of work in this file:
 
-| Part | What it is | When |
-|---|---|---|
-| **Part 1** | Fixing things that are currently wrong or missing | Before launch |
+| Part       | What it is                                                               | When                      |
+| ---------- | ------------------------------------------------------------------------ | ------------------------- |
+| **Part 1** | Fixing things that are currently wrong or missing                        | Before launch             |
 | **Part 2** | Adding "product info cards" so Google shows your prices and star ratings | Before launch if possible |
-| **Part 3** | Bigger improvements | After launch |
+| **Part 3** | Bigger improvements                                                      | After launch              |
 
 **Part 1 is about four hours of work in total.** Do it before the site goes
 public. Once Google has looked at your site and written down what it found,
@@ -745,8 +745,9 @@ This is the most confusing problem on the site and worth reading slowly.
 
 # Part 2 — Product info cards (structured data)
 
-**This is the single most valuable thing in this file**, and none of it
-exists yet.
+**This is the single most valuable thing in this file.** All of it now
+exists — see the status notes under each item. `config/schema.php` builds the
+blocks, and `product/`, `business/`, `help/` and the homepage emit them.
 
 ## What it is
 
@@ -767,13 +768,11 @@ Handwoven silk krama from a family workshop in Takeo...
 
 The second one gets clicked far more, and it costs nothing but the code
 below. That extra line appears because the page carries a hidden block of
-information saying, in a format Google reads directly: *this is a product, it
-costs $18.00, it's in stock, it has 4.6 stars from 12 reviews.*
+information saying, in a format Google reads directly: _this is a product, it
+costs $18.00, it's in stock, it has 4.6 stars from 12 reviews._
 
 That hidden block is called **structured data**. It's written in a format
 called JSON-LD, and it sits in the page invisibly — no visitor ever sees it.
-Running `grep` for it across the whole teepsaa codebase returns nothing, so
-none of your pages have any.
 
 The good news: **every number it needs is already sitting in your database
 and already worked out on the page.** This is packaging, not new work.
@@ -784,7 +783,17 @@ Make a new file `config/schema.php`, sitting next to `config/seo.php` and
 working the same way: functions that build a block of hidden information,
 which each page calls from its `<head>`.
 
-- [ ] **2a. Product cards on product pages** — the one that pays.
+**That file now exists.** Each page calls `schema_graph(...)` from its
+`<head>`, which emits one combined block rather than several tags. Two things
+in it are worth knowing about:
+
+- `schema_json()` escapes `</` before printing. Without that, a product
+  description containing the literal text `</script>` would close the tag
+  early and spill the rest of the block onto the page as visible text.
+- `schema_clean()` drops empty values, so a shop with no description or no
+  map pin simply omits those properties instead of claiming a blank one.
+
+- [x] **2a. Product cards on product pages** — the one that pays.
 
       `product/index.php` already calculates `$avgRating` and `$reviewCount`
       around line 85, and already has the price, stock and shop name. Add
@@ -839,7 +848,35 @@ which each page calls from its `<head>`.
       page is actually showing. `config/currency.php` supports USD and KHR,
       so if the visitor is seeing riel, the hidden block must say KHR too.
 
-- [ ] **2b. A company card and a search box on the homepage.** Two blocks
+      **Status: done**, as `schema_product()` in `config/schema.php`, called
+      from `product/index.php`. It follows the sketch above with four
+      corrections found while building it:
+
+      1. **The zero-review guard is enforced in one place, not per page.**
+         `schema_rating()` returns nothing below one review and
+         `schema_clean()` then removes the key. No caller can forget it —
+         which matters, because the penalty for getting this wrong reaches
+         the whole domain, not just the offending page.
+      2. **Variants make a price range, not a price.** A product whose
+         variants override the price shows a range on the page, so a single
+         figure would contradict what the visitor sees — the mismatch Google
+         flags. It emits `AggregateOffer` with `lowPrice`/`highPrice`
+         instead, and falls back to a plain `Offer` when every variant costs
+         the same.
+      3. **Stock follows the variants when there are any**, matching
+         `$outOfStock` in the page body — with variants, the product row's
+         own stock column is unused.
+      4. **`sale_price_for()` is only applied when the sale is live.**
+         Calling it unconditionally, as sketched above, reads a
+         `sale_percent` that may not be set. `active_sale()` decides, and on
+         a live sale `priceValidUntil` is set to the end date so Google
+         stops advertising the discount when it expires rather than at its
+         next crawl.
+
+      The address in `offers.url` carries `?lang=en` on English pages, so it
+      always names the same address as the canonical tag above it (item 3a).
+
+- [x] **2b. A company card and a search box on the homepage.** Two blocks
       in `index.php`. The first says "this website is called teepsaa, here's
       its logo, here are its social media pages" (use the `Organization`
       type with `name`, `url`, `logo` and a `sameAs` list of your Facebook,
@@ -852,13 +889,32 @@ which each page calls from its `<head>`.
       Search "schema.org WebSite SearchAction" for the exact shape; your
       search address is `https://teepsaa.com/search/?q={search_term_string}`.
 
-- [ ] **2c. Shop cards on business pages.** Same idea, using the `Store`
+      **Status: done** — `schema_organization()` and `schema_website()`,
+      emitted together from `index.php` only. Homepage-only on purpose:
+      repeating them on every page tells Google nothing it doesn't know.
+
+      **One thing left for you.** `sameAs` — the list of your social
+      profiles — is the `SCHEMA_SOCIAL` constant at the top of
+      `config/schema.php`, and it is deliberately **empty**, because the
+      footer's three social icons are still `href="#"` placeholders. Fill in
+      the real addresses there and in `footer/footer.php` at the same time.
+      An empty list is simply omitted, which is correct; a made-up or `#`
+      address would be worse than none.
+
+- [x] **2c. Shop cards on business pages.** Same idea, using the `Store`
       type: the shop's name, photo, address (you already collect city, khan
       and sangkat) and map coordinates. Add the star rating too — with the
       **same zero-reviews guard as 2a**. This is what makes shop pages
       eligible to appear in local "near me" style results.
 
-- [ ] **2d. Breadcrumb trails.** A breadcrumb is the little
+      **Status: done** — `schema_store()`, called from `business/index.php`.
+      Street is `house_number` + `address`, locality is the sangkat (falling
+      back to the city when the vendor left it blank), region is the khan,
+      country is KH, and `geo` carries the map pin — skipped when the
+      coordinates are 0,0 rather than dropping a shop into the Gulf of
+      Guinea. Same shared rating guard as 2a.
+
+- [x] **2d. Breadcrumb trails.** A breadcrumb is the little
       `Home › Bags › Silk Krama Scarf` trail near the top of a page.
       teepsaa has none — not visually, not in the code.
 
@@ -870,17 +926,65 @@ which each page calls from its `<head>`.
       replacing that with `teepsaa.com › Bags › Silk Krama Scarf` is worth
       real clicks by itself.
 
-- [ ] **2e. Question-and-answer cards on the help page.** `help/index.php`
+      **Status: done, visible and hidden.** New `/breadcrumb/` folder
+      (`breadcrumb.php` + `breadcrumb.css`, the same shape as `/header/` and
+      `/footer/`), on the product, shop and help pages.
+
+      A page sets one `$crumbs` array and both consumers read it — the
+      visible trail and `schema_breadcrumb()`. That is deliberate: Google
+      shows a breadcrumb in a result only when the visible trail and the
+      hidden block agree, and two separately-maintained copies would drift.
+
+      On a product page the trail is Home › parent category › category ›
+      product, from the `categories.parent_id` hierarchy. The category links
+      point at `/search/?category=N`, which is `noindex, follow` under item
+      1l — so Google follows them but won't rank them. Item **3c** (real
+      category pages) is what upgrades those links; when it lands, only the
+      path in `$crumbs` changes.
+
+- [x] **2e. Question-and-answer cards on the help page.** `help/index.php`
       already reads a `faq_items` table with questions and answers in both
       languages, grouped into sections. Wrapping those in an `FAQPage`
       hidden block lets Google show the questions themselves in the results,
       which takes up more room on the screen than a normal listing. This one
       is nearly free — the data is already loaded and looped over.
 
+      **Status: done** — `schema_faq($faqs)` in `help/index.php`, reading
+      the same `$faqs` array the body loops over, so it is automatically in
+      whichever language the page rendered in. Answers are stripped of HTML;
+      a row missing either its question or its answer is skipped rather than
+      emitted blank.
+
+      Worth knowing: Google narrowed FAQ rich results in 2023 and now shows
+      them mainly for government and health sites. The block is correct and
+      costs nothing, but don't expect the questions to appear in results the
+      way they would have a few years ago.
+
 - [ ] **2f. Test everything.** After the site is live, put a product page
       address into Google's **Rich Results Test** (search that name). It
       tells you exactly what Google can read and flags anything malformed.
       Test one product page, one shop page, the homepage and the help page.
+
+      **This one genuinely needs the password gate off** (item 1a) — the
+      tool fetches the page over the internet and cannot type a password.
+      It stays unticked until you run it.
+
+      **What was already checked locally**, so the tool should have little
+      to say:
+
+      - Every block parses as JSON, in Khmer and English, in USD and KHR.
+      - All four pages render with no PHP notice or warning.
+      - The visible breadcrumb and the hidden one produce identical text.
+      - No star rating is ever emitted at zero reviews.
+      - Prices match the page: sale price while a sale runs, base price
+        after it expires, riel when the visitor is seeing riel, and a
+        low/high range when variants disagree.
+      - A description containing `</script>` cannot break out of the block.
+
+      When you do run it, expect two **warnings** (not errors) on product
+      pages: `shippingDetails` and `hasMerchantReturnPolicy` are missing.
+      Those are Merchant-listing extras, not requirements, and product rich
+      results work without them.
 
 ---
 
@@ -949,7 +1053,7 @@ Facebook posts link to the old addresses those links have to be preserved.
       Google will treat them as such. Worth spot-checking a dozen products
       before expecting anything from this.
 
-- [ ] **3b. Put product names in the web address.** Today a product address
+- [x] **3b. Put product names in the web address.** Today a product address
       is `teepsaa.com/product/?id=8f14e45f-ab3c-...`. It contains no words,
       can't be read aloud, and looks untrustworthy pasted into a chat next
       to a competitor's tidy link.
@@ -960,7 +1064,34 @@ Facebook posts link to the old addresses those links have to be preserved.
       does the lookup. Old `?id=` addresses permanently forward to the new
       ones so nothing already shared breaks.
 
-- [ ] **3c. Build real category pages.** Right now the category tiles on
+      **Status: done — products *and* shops.**
+
+      `config/slug.php` holds the whole of it. `slugify()` folds a name down
+      to an address (accents flatten, apostrophes vanish so "Men's" is
+      `mens`, Khmer script is kept as-is because Khmer in an address is a
+      feature here, not a problem). `product_path()` and `business_path()`
+      glue that to the first 13 characters of the random ID:
+
+          /product/silk-krama-scarf-8f14e45f-ab3c/
+          /business/lucky-silk-3c1d9a77-2b4e/
+
+      The lookup still runs on the ID, never the words — change a product's
+      name and the old address still finds it, then forwards to the new one.
+      A 13-character prefix is short enough to read and long enough that a
+      clash is vanishingly unlikely; if one ever happened the page returns
+      "not found" rather than guessing, because it only accepts a search
+      that matched exactly one row.
+
+      Old `?id=` addresses still work and send a permanent forward to the
+      new address, so anything already shared or already in Google moves
+      across on its own. Three rewrite rules in `.htaccess` do the routing.
+
+      One thing worth knowing: the words come from the **English** name, so
+      the same product has one address in both languages. That's deliberate
+      — two addresses for one product is the duplicate-content problem 3a
+      exists to avoid.
+
+- [x] **3c. Build real category pages.** Right now the category tiles on
       the homepage link to `/search/?q=Bags` — which runs a **text search**
       for the word "Bags" across product names and descriptions. It doesn't
       even use the category filter the search page already supports. So the
@@ -977,7 +1108,35 @@ Facebook posts link to the old addresses those links have to be preserved.
       **This is probably the highest-value content work available to you,
       and it uses only things you already have.**
 
-- [ ] **3d. Make search results reachable without scrolling.** The search
+      **Status: done.** `/category/dresses/`, `/category/bags-purses/`,
+      `/category/khmer-traditional/` and 46 more — one for every row in the
+      category table. The homepage tiles now point at these instead of at a
+      text search.
+
+      Each page has a heading, the intro text, the correctly filtered grid
+      (24 per page, with the numbered page links from 3d), links down to its
+      subcategories, and a Home › Clothing › Women's › Dresses trail that
+      Google can show in a result.
+
+      Two details that mattered:
+
+      - Vendors file products against the **bottom** categories only, so
+        "Women's" on its own would have shown an empty grid. A category page
+        queries its whole branch — "Women's" shows everything in every
+        category beneath it.
+      - Seven names appear twice in your tree (Jeans, Shorts, Activewear,
+        Sleepwear, Hoodies & Sweatshirts, Jackets & Coats, Trousers &
+        Chinos — under both Men's and Women's). Where a name is shared,
+        *both* take the parent as a prefix: `mens-jeans` and `womens-jeans`,
+        never a bare `jeans` for whichever came first. That way adding
+        "Kids' Jeans" later can't silently move an address Google has
+        already indexed.
+
+      **The intro text is the part that still needs you** — see the manual
+      list. `category/intros.php` has 15 written and 34 blank, and every one
+      of them wants a native Khmer speaker's eye before it goes live.
+
+- [x] **3d. Make search results reachable without scrolling.** The search
       page loads the first batch of products, then fetches more as you
       scroll. Google's robot doesn't scroll, and there are no page-2 links
       in the page — so it sees the first batch and stops.
@@ -989,7 +1148,21 @@ Facebook posts link to the old addresses those links have to be preserved.
       rendered by the server. They can sit quietly at the bottom; they just
       have to be real links in the page.
 
-- [ ] **3e. Shrink the images.** The `uploads/` folder is 16 MB and holds
+      **Status: done.** `pagination/pagination.php` is a shared partial used
+      by both the search page and the new category pages: numbered links,
+      first and last always shown, a window around the current page, and
+      `…` for the gap. Real `<a href>` links rendered by the server, so the
+      crawler walks them.
+
+      Infinite scroll still works for people — the two coexist, and the
+      scroll now starts from the right offset so landing on `?page=3` and
+      scrolling doesn't re-show products 21–40.
+
+      Asking for a page that doesn't exist (`?page=99`) returns a genuine
+      "not found" rather than quietly serving the last page again, which
+      Google counts against you as a "soft 404".
+
+- [x] **3e. Shrink the images.** The `uploads/` folder is 16 MB and holds
       PNGs up to **1.7 MB each** — served at full size into product cards
       about 200 pixels wide. `config/upload.php` checks that an upload is
       really an image but never shrinks or re-saves it. Across the whole
@@ -1016,7 +1189,30 @@ Facebook posts link to the old addresses those links have to be preserved.
       4. **Run a one-off script** to make those smaller copies for the 16 MB
          already uploaded.
 
-- [ ] **3f. Turn on compression and caching.** `.htaccess` doesn't compress
+      **Status: all four done.**
+
+      1. `width` and `height` are on 28 `<img>` tags across 14 files — every
+         public grid, card, thumbnail, banner and avatar.
+      2. `loading="lazy"` on everything below the first screenful. The three
+         images that are *not* lazy are deliberate: the header logo, the
+         main product photo and the shop banner are the first thing a
+         visitor sees, and the last two carry `fetchpriority="high"` so the
+         browser fetches them first.
+      3. `image_make_derivatives()` in `config/upload.php` writes a 400px and
+         a 1200px WebP copy on every upload — product photos, gallery
+         photos, shop banners and avatars. `image_variant()` picks the right
+         one per slot, and falls back to the original if a copy is missing,
+         so nothing can break. It never upscales, and it throws a copy away
+         if WebP came out *bigger* than the original (which happens with
+         flat graphics like QR codes).
+      4. `database/backfill-image-derivatives.php` does the existing 16 MB.
+         **Run locally, the card images went from 15,946 KB to 794 KB — 95%
+         smaller.** It's safe to re-run and picks up where it stopped.
+
+      Deleting a photo now deletes its small copies too, so the folder can't
+      silently fill with orphans.
+
+- [x] **3f. Turn on compression and caching.** `.htaccess` doesn't compress
       anything or tell browsers to keep a copy of images and fonts. So every
       visitor re-downloads the same logo and the same font files on every
       single page. Add:
@@ -1041,15 +1237,50 @@ Facebook posts link to the old addresses those links have to be preserved.
       `curl -I https://teepsaa.com` and look for `content-encoding: gzip` in
       the reply.
 
-- [ ] **3g. Move the repeated head lines into one file.** Items 1c, 1d and
+      **Status: done, with two deliberate changes from the snippet above.**
+
+      - **Images and fonts are not in the compression list.** Compressing a
+        JPEG or a WebP again spends processor time to make the file slightly
+        *bigger*; woff2 is already compressed internally.
+      - **CSS and JavaScript get one week, not one month.** Your stylesheets
+        are at fixed addresses (`/style.css`), so a long cache would strand
+        returning visitors on the old design after a deploy. A week is the
+        compromise. Shorten it while you're actively working on the CSS.
+
+      HTML deliberately gets no caching rule at all — every page shows the
+      cart count and the signed-in name, so a cached copy would show one
+      visitor another's.
+
+      **The `curl -I https://teepsaa.com` check is still yours to run** —
+      it can only be checked on the live server.
+
+- [x] **3g. Move the repeated head lines into one file.** Items 1c, 1d and
       1g all involve making the same edit in a dozen page files. That's a
       sign the shared part should live in one place — a `head/head.php` that
       each page includes with its own title and description passed in, the
       way `header/header.php` and `footer/footer.php` already work. Do it
       once and the next SEO change is a one-file change.
 
+      **Status: done.** `head/head.php` works exactly like `header/` and
+      `footer/`: set a few variables, require it.
+
+          $headTitle = $t['about_title'] . ' — teepsaa';
+          $headDesc  = $t['seo_desc_about'];
+          $headUrl   = 'https://teepsaa.com/about/';
+          $headCss   = ['/about/about.css'];
+          require __DIR__ . '/../head/head.php';
+
+      All 45 public and vendor pages now use it. (The admin panel is left
+      alone — it's a separate English-only interface that no search engine
+      ever sees.)
+
+      This had already drifted, which is the argument for doing it: 87 pages
+      carried the font preloads but only 50 carried the favicon lines, so
+      which icon a visitor saw in their browser tab depended on which page
+      they landed on first. That's now impossible.
+
 - [ ] **3h. The part that isn't code.** Everything above makes teepsaa
-      *eligible* to rank. It doesn't make it rank. For a brand-new address
+      _eligible_ to rank. It doesn't make it rank. For a brand-new address
       with no other websites linking to it, these matter more than any of
       the technical work:
 
@@ -1073,29 +1304,30 @@ Facebook posts link to the old addresses those links have to be preserved.
 
 ## Suggested order
 
-| Do this | Item | Time | Worth | Done |
-|---|---|---|---|---|
-| 1 | 1b — the missing share picture | 5 min | High | ✅ |
-| 2 | 1c — favicon | 5 min | Medium | ✅ |
-| 3 | 1m — www redirect | 5 min | Low | ✅ |
-| 4 | 1k — robots.txt additions | 10 min | Low | ✅ |
-| 5 | 1h — homepage heading | 15 min | High | ✅ |
-| 6 | 1e + 1f — deleted products and the 404 page | 40 min | Medium | ✅ |
-| 7 | 1g — descriptions on info pages | 20 min | Medium | ✅ |
-| 8 | 1l — noindex on filtered searches | 20 min | Medium | ✅ |
-| 9 | 1d — the language mix-up | 30 min | High | ✅ |
-| 10 | 1j — per-subdomain robots.txt | 30 min | Medium | ✅ |
-| 11 | 1n — sitemap improvements | 30 min | Medium | ✅ |
-| 12 | 1i — alt text on product photos | 1 hr | High | ✅ |
-| 13 | 2a — product info cards | 2 hr | **Highest** |  |
-| 14 | 1o — Search Console and friends | 30 min | High |  |
-| — | *launch* | | |  |
-| 15 | 2b–2f — the rest of the info cards | 3 hr | High |  |
-| 16 | 3c — category pages | 1–2 days | High |  |
-| 17 | 3e + 3f — images, compression | 1–2 days | High |  |
-| 18 | 3a — one address per language | ~1 day (cheap form) | **Highest** | ✅ |
-| 19 | 3b, 3d, 3g | 2 days | Medium |  |
-| — | 3h — content and links | ongoing | High |  |
+| Do this | Item                                        | Time                | Worth       | Done |
+| ------- | ------------------------------------------- | ------------------- | ----------- | ---- |
+| 1       | 1b — the missing share picture              | 5 min               | High        | ✅   |
+| 2       | 1c — favicon                                | 5 min               | Medium      | ✅   |
+| 3       | 1m — www redirect                           | 5 min               | Low         | ✅   |
+| 4       | 1k — robots.txt additions                   | 10 min              | Low         | ✅   |
+| 5       | 1h — homepage heading                       | 15 min              | High        | ✅   |
+| 6       | 1e + 1f — deleted products and the 404 page | 40 min              | Medium      | ✅   |
+| 7       | 1g — descriptions on info pages             | 20 min              | Medium      | ✅   |
+| 8       | 1l — noindex on filtered searches           | 20 min              | Medium      | ✅   |
+| 9       | 1d — the language mix-up                    | 30 min              | High        | ✅   |
+| 10      | 1j — per-subdomain robots.txt               | 30 min              | Medium      | ✅   |
+| 11      | 1n — sitemap improvements                   | 30 min              | Medium      | ✅   |
+| 12      | 1i — alt text on product photos             | 1 hr                | High        | ✅   |
+| 13      | 2a — product info cards                     | 2 hr                | **Highest** | ✅   |
+| 14      | 1o — Search Console and friends             | 30 min              | High        |      |
+| —       | _launch_                                    |                     |             |      |
+| 15      | 2b–2e — the rest of the info cards          | 3 hr                | High        | ✅   |
+| —       | 2f — Rich Results Test                      | 15 min              | High        |      |
+| 16      | 3c — category pages                         | 1–2 days            | High        | ✅   |
+| 17      | 3e + 3f — images, compression               | 1–2 days            | High        | ✅   |
+| 18      | 3a — one address per language               | ~1 day (cheap form) | **Highest** | ✅   |
+| 19      | 3b, 3d, 3g                                  | 2 days              | Medium      | ✅   |
+| —       | 3h — content and links                      | ongoing             | High        |      |
 
 Items 1–14 come to roughly **six hours** and should all be done before the
 password comes off.

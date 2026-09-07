@@ -34,6 +34,7 @@ if (($_POST['action'] ?? '') === 'remove') {
     $old = $stmt->fetchColumn();
     if ($old && file_exists($uploadDir . $old)) {
         @unlink($uploadDir . $old);
+        image_delete_derivatives($old);
     }
     $pdo->prepare('UPDATE businesses SET banner = NULL WHERE user_id = ? AND deleted_at IS NULL')->execute([$userId]);
     $_SESSION['settings_success'] = 'Banner removed.';
@@ -60,11 +61,15 @@ $ext      = $mime === 'image/png' ? 'png' : 'jpg';
 $filename = 'banner_' . $userId . '_' . time() . '.' . $ext;
 
 if (move_uploaded_file($tmp, $uploadDir . $filename)) {
+    // Small WebP copies for the shop hero — see config/upload.php.
+    image_make_derivatives($uploadDir . $filename, $filename);
+
     $stmt = $pdo->prepare('SELECT banner FROM businesses WHERE user_id = ? AND deleted_at IS NULL');
     $stmt->execute([$userId]);
     $old = $stmt->fetchColumn();
     if ($old && file_exists($uploadDir . $old)) {
         @unlink($uploadDir . $old);
+        image_delete_derivatives($old);
     }
 
     $stmt = $pdo->prepare('UPDATE businesses SET banner = ? WHERE user_id = ? AND deleted_at IS NULL');

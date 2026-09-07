@@ -10,23 +10,36 @@ session_start([
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 
-$publicId = $_GET['id'] ?? '';
-if ($publicId === '') {
+// Same two ways in as the product page: /business/lucky-silk-3c1d9a77-2b4e/
+// is the address, /business/?id=<full uuid> is the old form and is moved
+// permanently to it below. See product/index.php for why the path is read
+// from REQUEST_URI rather than a rewritten query parameter.
+$reqPath   = rawurldecode(strtok((string)($_SERVER['REQUEST_URI'] ?? ''), '?'));
+$slugToken = preg_match('~^/business/([^/]+)/?$~', $reqPath, $m) ? token_from_slug($m[1]) : '';
+$legacyId  = trim((string)($_GET['id'] ?? ''));
+
+if ($slugToken === '' && $legacyId === '') {
     http_response_code(404);
     require __DIR__ . '/../404/index.php';
     exit;
 }
 
-$stmt = $pdo->prepare('SELECT * FROM businesses WHERE public_id = ? AND approved = 1 AND suspended = 0');
-$stmt->execute([$publicId]);
-$business = $stmt->fetch();
+$idWhere = $slugToken !== '' ? 'public_id LIKE ?' : 'public_id = ?';
+$idParam = $slugToken !== '' ? $slugToken . '%' : $legacyId;
+
+$stmt = $pdo->prepare("SELECT * FROM businesses WHERE $idWhere AND approved = 1 AND suspended = 0 LIMIT 2");
+$stmt->execute([$idParam]);
+$matches  = $stmt->fetchAll();
+$business = count($matches) === 1 ? $matches[0] : false;
 
 if (!$business) {
     // A shop that existed and was closed/suspended gets 410 (Gone); a junk id
     // gets 404. Never redirect to /search/ — Google reads that as a soft 404
     // and keeps re-crawling the dead URL.
-    $existed = $pdo->prepare('SELECT 1 FROM businesses WHERE public_id = ?');
-    $existed->execute([$publicId]);
+    $existed = $pdo->prepare($slugToken !== ''
+        ? 'SELECT 1 FROM businesses WHERE public_id LIKE ?'
+        : 'SELECT 1 FROM businesses WHERE public_id = ?');
+    $existed->execute([$idParam]);
     http_response_code($existed->fetchColumn() ? 410 : 404);
 
     $nfLang  = current_lang();
@@ -34,6 +47,15 @@ if (!$business) {
     $nfTitle = $t['nf_shop_title'];
     $nfBody  = $t['nf_shop_body'];
     require __DIR__ . '/../404/index.php';
+    exit;
+}
+
+// One shop, one address — see product/index.php.
+$canonicalPath = business_path($business);
+if (rawurldecode($canonicalPath) !== $reqPath) {
+    $qs = $_GET;
+    unset($qs['id']);
+    header('Location: ' . $canonicalPath . ($qs ? '?' . http_build_query($qs) : ''), true, 301);
     exit;
 }
 
@@ -79,44 +101,50 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
 ?>
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <?php
-        // Title and meta follow the language the page actually renders in —
-        // lang_field() is what the store <h1> uses further down, so an English
-        // title can no longer sit over Khmer body copy. The header include
-        // (which normally loads $t) comes after this block, so load it here.
-        if (!isset($t)) {
-            $bizLang = current_lang();
-            $t = require __DIR__ . '/../lang/' . (in_array($bizLang, ['en', 'km'], true) ? $bizLang : 'en') . '.php';
-        }
-        $seoName = lang_field($business, 'name');
-        $seoBody = lang_field($business, 'description');
-    ?>
-    <title><?= htmlspecialchars($seoName) ?> — teepsaa</title>
-    <?php
-        require_once __DIR__ . '/../config/seo.php';
-        $bizPhoto = $featured['photo'] ?? ($products[0]['photo'] ?? '');
-        $bizDesc  = $seoBody !== ''
-            ? $seoName . ' — ' . $seoBody
-            : sprintf($t['seo_shop_desc'], $seoName);
-        echo seo_meta(
-            $seoName . ' — teepsaa',
-            $bizDesc,
-            $bizPhoto,
-            'https://teepsaa.com/business/?id=' . $business['public_id']
-        );
-    ?>
-    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
-    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/header/header.css">
-    <link rel="stylesheet" href="/footer/footer.css">
-    <link rel="stylesheet" href="/business/business.css">
-</head>
+<?php
+// Title and meta follow the language the page actually renders in —
+// lang_field() is what the store <h1> uses further down, so an English title
+// can no longer sit over Khmer body copy. head.php would load $t itself, but
+// the title is built from it, so it is needed a line earlier.
+require_once __DIR__ . '/../config/seo.php';
+require_once __DIR__ . '/../config/schema.php';
+if (!isset($t)) $t = seo_t();
+
+$seoName = lang_field($business, 'name');
+$seoBody = lang_field($business, 'description');
+$bizPhoto = $featured['photo'] ?? ($products[0]['photo'] ?? '');
+
+$headTitle = $seoName . ' — teepsaa';
+$headDesc  = $seoBody !== ''
+    ? $seoName . ' — ' . $seoBody
+    : sprintf($t['seo_shop_desc'], $seoName);
+$headImage = $bizPhoto;
+$headUrl   = 'https://teepsaa.com' . $canonicalPath;
+$headCss   = ['/breadcrumb/breadcrumb.css', '/business/business.css'];
+
+// Structured data. Store (rather than plain Organization) is what makes this
+// page eligible for local, "near me" style results — the address and map pin
+// the vendor gave at sign-up are the reason.
+//
+// One array, two consumers: the visible trail below and the hidden block
+// here. Google shows a breadcrumb in a result only when the two agree, so
+// they read from the same variable.
+$crumbs = [
+    [$t['crumb_home'], '/'],
+    [$seoName,         ''],
+];
+
+$headExtra = schema_graph(
+    schema_store(
+        $business,
+        (float)$bizRatingRow['avg_rating'],
+        (int)$bizRatingRow['review_count'],
+        $bizPhoto
+    ),
+    schema_breadcrumb($crumbs)
+);
+require __DIR__ . '/../head/head.php';
+?>
 <body>
 
 <?php require __DIR__ . '/../header/header.php'; ?>
@@ -134,7 +162,7 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
 <!-- Full-bleed banner: sits outside <main> (like the homepage carousel) so it
      spans the whole viewport. Store name + rating are overlaid on a scrim. -->
 <div class="business-banner business-banner--hero">
-    <img src="/uploads/<?= htmlspecialchars($business['banner']) ?>" alt="<?= htmlspecialchars($seoName) ?>">
+    <img src="<?= htmlspecialchars(image_variant($business['banner'], 'w1200')) ?>" alt="<?= htmlspecialchars($seoName) ?>" width="1600" height="340" fetchpriority="high" decoding="async">
     <div class="banner-overlay">
         <div class="banner-overlay-inner">
             <div class="store-eyebrow">
@@ -161,6 +189,8 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
 <?php endif; ?>
 
 <main>
+    <?php require __DIR__ . '/../breadcrumb/breadcrumb.php'; ?>
+
     <?php if (!$business['banner']): ?>
     <div class="store-header">
         <div class="store-eyebrow store-eyebrow--dark">
@@ -191,16 +221,16 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
             <span class="featured-eyebrow"><?= $t['store_featured'] ?></span>
         </div>
         <div class="featured-card">
-            <a href="<?= lang_href('/product/?id=' . $featured['public_id']) ?>" class="featured-media">
+            <a href="<?= lang_href(product_path($featured)) ?>" class="featured-media">
                 <?php if (active_sale($featured)): ?><span class="sale-badge"><?= $t['store_sale'] ?></span><?php endif; ?>
                 <?php if ($featured['photo']): ?>
-                    <img src="/uploads/<?= htmlspecialchars($featured['photo']) ?>" alt="<?= htmlspecialchars(lang_field($featured, 'name')) ?>">
+                    <img src="<?= htmlspecialchars(image_variant($featured['photo'], 'w1200')) ?>" alt="<?= htmlspecialchars(lang_field($featured, 'name')) ?>" width="600" height="600" decoding="async">
                 <?php else: ?>
                     <span class="featured-media--empty"></span>
                 <?php endif; ?>
             </a>
             <div class="featured-body">
-                <a href="<?= lang_href('/product/?id=' . $featured['public_id']) ?>" class="featured-name"><?= htmlspecialchars(lang_field($featured, 'name')) ?></a>
+                <a href="<?= lang_href(product_path($featured)) ?>" class="featured-name"><?= htmlspecialchars(lang_field($featured, 'name')) ?></a>
                 <?php if ((int)$featured['review_count'] > 0): ?>
                 <div class="featured-rating">★ <?= number_format((float)$featured['avg_rating'], 1) ?> <span>(<?= (int)$featured['review_count'] ?> <?= (int)$featured['review_count'] === 1 ? $t['store_review'] : $t['store_reviews'] ?>)</span></div>
                 <?php endif; ?>
@@ -213,7 +243,7 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
                 <?php elseif ((int)$featured['stock'] <= 0): ?>
                 <div class="featured-stock featured-stock--out"><?= $t['product_out_of_stock'] ?></div>
                 <?php endif; ?>
-                <a href="<?= lang_href('/product/?id=' . $featured['public_id']) ?>" class="featured-cta"><?= $t['store_view_product'] ?></a>
+                <a href="<?= lang_href(product_path($featured)) ?>" class="featured-cta"><?= $t['store_view_product'] ?></a>
             </div>
         </div>
     </section>
@@ -224,10 +254,10 @@ $featuredId = $featured ? (int)$featured['id'] : 0;
         <h2><?= $t['store_shop_all'] ?></h2>
         <div class="product-grid">
             <?php foreach ($gridProducts as $p): ?>
-            <a href="<?= lang_href('/product/?id=' . $p['public_id']) ?>" class="product-card">
+            <a href="<?= lang_href(product_path($p)) ?>" class="product-card">
                 <?php if (active_sale($p)): ?><span class="sale-badge"><?= $t['store_sale'] ?></span><?php endif; ?>
                 <?php if ($p['photo']): ?>
-                    <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="<?= htmlspecialchars(lang_field($p, 'name')) ?>" class="product-photo">
+                    <img src="<?= htmlspecialchars(image_variant($p['photo'])) ?>" alt="<?= htmlspecialchars(lang_field($p, 'name')) ?>" class="product-photo" width="400" height="400" loading="lazy" decoding="async">
                 <?php else: ?>
                     <div class="product-photo product-photo--empty"></div>
                 <?php endif; ?>

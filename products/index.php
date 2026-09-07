@@ -208,24 +208,12 @@ if ($editing) {
 ?>
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $tab === 'archive' ? 'Archive' : 'My Products' ?> — teepsaa</title>
-    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
-    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/header/header.css">
-    <link rel="stylesheet" href="/footer/footer.css">
-    <link rel="stylesheet" href="/products/products.css">
-    <?php if (false): ?>
-    <link rel="stylesheet" href="/order-status/order-status.css">
-    <link rel="stylesheet" href="/refund-status/refund-status.css">
-    <link rel="stylesheet" href="/popup/popup.css">
-    <?php endif; ?>
-</head>
+<?php
+$headTitle = ($tab === 'archive' ? 'Archive' : 'My Products') . ' — teepsaa';
+$headSeo   = false;
+$headCss   = ['/products/products.css'];
+require __DIR__ . '/../head/head.php';
+?>
 <body>
 
 <?php require __DIR__ . '/../header/header.php'; ?>
@@ -277,13 +265,13 @@ if ($editing) {
         <div class="product-preview-card">
             <div class="product-preview-media">
                 <?php if (!empty($previewPhotos)): ?>
-                    <img src="/uploads/<?= htmlspecialchars($previewPhotos[0]) ?>" alt="" class="product-preview-main-photo" id="preview-main-img">
+                    <img src="<?= htmlspecialchars(image_variant($previewPhotos[0])) ?>" alt="" class="product-preview-main-photo" id="preview-main-img" width="400" height="400" decoding="async">
                     <?php if (count($previewPhotos) > 1): ?>
                     <div class="product-preview-thumbs">
                         <?php foreach ($previewPhotos as $i => $fn): ?>
-                        <img src="/uploads/<?= htmlspecialchars($fn) ?>" alt=""
-                             class="product-preview-thumb <?= $i === 0 ? 'product-preview-thumb--active' : '' ?>"
-                             data-src="/uploads/<?= htmlspecialchars($fn) ?>">
+                        <img src="<?= htmlspecialchars(image_variant($fn)) ?>" alt=""
+                             class="product-preview-thumb <?= $i === 0 ? 'product-preview-thumb--active' : '' ?>" width="56" height="56" loading="lazy" decoding="async"
+                             data-src="<?= htmlspecialchars(image_variant($fn, 'w1200')) ?>">
                         <?php endforeach; ?>
                     </div>
                     <?php endif; ?>
@@ -353,7 +341,7 @@ if ($editing) {
                 </div>
             </div>
             <div class="product-preview-actions">
-                <a href="/product/?id=<?= $editing['public_id'] ?>" target="_blank" class="btn btn-secondary"><?= $t['prod_preview'] ?></a>
+                <a href="<?= product_path($editing) ?>" target="_blank" class="btn btn-secondary"><?= $t['prod_preview'] ?></a>
             </div>
         </div>
         <script>
@@ -559,7 +547,7 @@ if ($editing) {
                 <div class="gallery-grid" id="gallery-grid">
                     <?php foreach ($galleryPhotos as $i => $gp): ?>
                     <div class="gallery-item" draggable="true" data-photo-id="<?= $gp['id'] ?>">
-                        <img src="/uploads/<?= htmlspecialchars($gp['filename']) ?>" alt="" class="gallery-thumb-img">
+                        <img src="<?= htmlspecialchars(image_variant($gp['filename'])) ?>" alt="" class="gallery-thumb-img" width="160" height="160" loading="lazy" decoding="async">
                         <?php if ($i === 0): ?>
                             <span class="gallery-primary-badge"><?= $t['prod_main'] ?></span>
                         <?php endif; ?>
@@ -877,7 +865,7 @@ if ($editing) {
                 <tr>
                     <td>
                         <?php if ($p['photo']): ?>
-                            <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="" class="thumb">
+                            <img src="<?= htmlspecialchars(image_variant($p['photo'])) ?>" alt="" class="thumb" width="48" height="40" loading="lazy" decoding="async">
                         <?php else: ?>
                             <div class="thumb thumb--empty"></div>
                         <?php endif; ?>
@@ -1080,7 +1068,7 @@ if ($editing) {
                     <tr class="product-row <?= $p['active'] ? '' : 'inactive-row' ?>" onclick="location.href='/products/?action=edit&id=<?= $p['public_id'] ?>'">
                         <td>
                             <?php if ($p['photo']): ?>
-                                <img src="/uploads/<?= htmlspecialchars($p['photo']) ?>" alt="" class="thumb">
+                                <img src="<?= htmlspecialchars(image_variant($p['photo'])) ?>" alt="" class="thumb" width="48" height="40" loading="lazy" decoding="async">
                             <?php else: ?>
                                 <div class="thumb thumb--empty"></div>
                             <?php endif; ?>

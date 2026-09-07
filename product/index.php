@@ -10,29 +10,50 @@ session_start([
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 
-$publicId = $_GET['id'] ?? '';
-if ($publicId === '') {
+// Two ways in. The address in use is
+// /product/silk-krama-scarf-8f14e45f-ab3c/, routed here by .htaccess; the old
+// /product/?id=<full uuid> form is still answered and then moved permanently
+// to the new one a few lines below, so anything already shared keeps working.
+// The path is read from REQUEST_URI rather than a rewritten query parameter
+// because slugs may be Khmer, and that is where percent-encoding gets mangled.
+$reqPath   = rawurldecode(strtok((string)($_SERVER['REQUEST_URI'] ?? ''), '?'));
+$slugToken = preg_match('~^/product/([^/]+)/?$~', $reqPath, $m) ? token_from_slug($m[1]) : '';
+$legacyId  = trim((string)($_GET['id'] ?? ''));
+
+if ($slugToken === '' && $legacyId === '') {
     http_response_code(404);
     require __DIR__ . '/../404/index.php';
     exit;
 }
 
-$stmt = $pdo->prepare('
+// Only the first two blocks of the UUID travel in the address, so the token
+// is a prefix, not a promise of uniqueness. Ask for every row starting with
+// it and accept the answer only when there is exactly one — a collision
+// (about one in five million across ten thousand listings) then reads as
+// "not found" instead of silently serving whichever row sorted first.
+$idWhere = $slugToken !== '' ? 'p.public_id LIKE ?' : 'p.public_id = ?';
+$idParam = $slugToken !== '' ? $slugToken . '%' : $legacyId;
+
+$stmt = $pdo->prepare("
     SELECT p.*, b.id AS business_id, b.public_id AS business_public_id, b.name AS business_name, b.name_km AS business_name_km
     FROM products p
     JOIN businesses b ON b.id = p.business_id
-    WHERE p.public_id = ? AND p.active = 1 AND p.archived = 0 AND b.approved = 1 AND b.suspended = 0
-');
-$stmt->execute([$publicId]);
-$product = $stmt->fetch();
+    WHERE $idWhere AND p.active = 1 AND p.archived = 0 AND b.approved = 1 AND b.suspended = 0
+    LIMIT 2
+");
+$stmt->execute([$idParam]);
+$matches = $stmt->fetchAll();
+$product = count($matches) === 1 ? $matches[0] : false;
 
 if (!$product) {
     // Was this ever a real product, or is the id junk? A listing that existed
     // and was taken down gets 410 (Gone), which Google drops from its index
     // much faster than a 404. Either way it must NOT redirect to /search/ —
     // that reads as a soft 404 and keeps the dead URL alive in the index.
-    $existed = $pdo->prepare('SELECT 1 FROM products WHERE public_id = ?');
-    $existed->execute([$publicId]);
+    $existed = $pdo->prepare($slugToken !== ''
+        ? 'SELECT 1 FROM products WHERE public_id LIKE ?'
+        : 'SELECT 1 FROM products WHERE public_id = ?');
+    $existed->execute([$idParam]);
     http_response_code($existed->fetchColumn() ? 410 : 404);
 
     $nfLang  = current_lang();
@@ -40,6 +61,18 @@ if (!$product) {
     $nfTitle = $t['nf_product_title'];
     $nfBody  = $t['nf_product_body'];
     require __DIR__ . '/../404/index.php';
+    exit;
+}
+
+// One page, one address. The old ?id= links, a slug someone hand-edited, and
+// the stale slug left behind when a vendor renames a product all land here and
+// move permanently to the canonical form, so the standing of the old address
+// transfers rather than being split across several.
+$canonicalPath = product_path($product);
+if (rawurldecode($canonicalPath) !== $reqPath) {
+    $qs = $_GET;
+    unset($qs['id']);
+    header('Location: ' . $canonicalPath . ($qs ? '?' . http_build_query($qs) : ''), true, 301);
     exit;
 }
 
@@ -109,38 +142,67 @@ $rStmt = $pdo->prepare('
 ');
 $rStmt->execute([$id]);
 $reviews = $rStmt->fetchAll();
+
+// Category trail for the breadcrumb. categories.parent_id is one level deep
+// in practice, so this walks at most Parent > Child and stops.
+$catTrail = [];
+if (!empty($product['category_id'])) {
+    $cStmt = $pdo->prepare('SELECT id, parent_id, name, name_km FROM categories WHERE id = ?');
+    $cStmt->execute([(int)$product['category_id']]);
+    if ($cat = $cStmt->fetch()) {
+        if (!empty($cat['parent_id'])) {
+            $cStmt->execute([(int)$cat['parent_id']]);
+            if ($parentCat = $cStmt->fetch()) $catTrail[] = $parentCat;
+        }
+        $catTrail[] = $cat;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <?php
-        // Title and meta must be in the same language as the body, or Google
-        // reads an English title over Khmer content and picks its own snippet.
-        // lang_field() is what the <h1> below uses, so they always agree.
-        $seoName = lang_field($product, 'name');
-        $seoDesc = lang_field($product, 'description');
-    ?>
-    <title><?= htmlspecialchars($seoName) ?> — teepsaa</title>
-    <?php
-        require_once __DIR__ . '/../config/seo.php';
-        $seoImg = $galleryPhotos[0]['filename'] ?? '';
-        echo seo_meta(
-            $seoName . ' — teepsaa',
-            $seoDesc,
-            $seoImg,
-            'https://teepsaa.com/product/?id=' . $product['public_id']
-        );
-    ?>
-    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
-    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/header/header.css">
-    <link rel="stylesheet" href="/footer/footer.css">
-    <link rel="stylesheet" href="/product/product.css">
+<?php
+// Title and meta must be in the same language as the body, or Google reads an
+// English title over Khmer content and picks its own snippet. lang_field() is
+// what the <h1> below uses, so they always agree.
+require_once __DIR__ . '/../config/seo.php';
+require_once __DIR__ . '/../config/schema.php';
+require_once __DIR__ . '/../config/category.php';
+// head.php would load $t itself, but the title and the breadcrumb labels are
+// built from it, so it is needed a few lines earlier.
+if (!isset($t)) $t = seo_t();
+
+$seoName = lang_field($product, 'name');
+$seoDesc = lang_field($product, 'description');
+$seoImg  = $galleryPhotos[0]['filename'] ?? '';
+
+$headTitle = $seoName . ' — teepsaa';
+$headDesc  = $seoDesc;
+$headImage = $seoImg;
+$headUrl   = 'https://teepsaa.com' . $canonicalPath;
+$headCss   = ['/breadcrumb/breadcrumb.css', '/product/product.css'];
+
+// Structured data: the hidden block that turns a plain blue link into
+// "★4.6 · 12 reviews · $18.00 · In stock". It is built from the same rows the
+// body renders below, never a second query — where the two disagree Google
+// treats it as a violation.
+//
+// One array, two consumers: the visible trail near the top of the page and
+// the hidden block here. Google only shows a breadcrumb in a result when both
+// agree, so they must not drift apart.
+$crumbs = [[$t['crumb_home'], '/']];
+foreach ($catTrail as $trailCat) {
+    $crumbs[] = [cat_name($trailCat), category_path($pdo, $trailCat)];
+}
+$crumbs[] = [$seoName, ''];
+
+// The variant-picker CSS is captured rather than written as a PHP string so
+// it stays editable as plain CSS.
+ob_start();
+$headExtra = schema_graph(
+    schema_product($product, $galleryPhotos, $avgRating, $reviewCount, $variants),
+    schema_breadcrumb($crumbs)
+) . "\n    ";
+?>
     <style>
     .variant-selector { margin-bottom: 0.85rem; }
     .variant-selector-label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
@@ -179,23 +241,29 @@ $reviews = $rStmt->fetchAll();
     .variant-selector--error .variant-selector-label { color: var(--error-fg); }
     .variant-selector--error .variant-opt-label { border-color: var(--error-fg); }
     </style>
-</head>
+<?php
+$headExtra .= trim(ob_get_clean());
+
+require __DIR__ . '/../head/head.php';
+?>
 <body>
 
 <?php require __DIR__ . '/../header/header.php'; ?>
 
 <main>
+    <?php require __DIR__ . '/../breadcrumb/breadcrumb.php'; ?>
+
     <div class="product-layout">
         <div class="product-photo-wrap">
             <?php $allPhotos = array_column($galleryPhotos, 'filename'); ?>
             <?php if (!empty($allPhotos)): ?>
-                <img src="/uploads/<?= htmlspecialchars($allPhotos[0]) ?>" alt="<?= htmlspecialchars($seoName) ?>" class="product-main-photo" id="product-main-img">
+                <img src="<?= htmlspecialchars(image_variant($allPhotos[0], 'w1200')) ?>" alt="<?= htmlspecialchars($seoName) ?>" class="product-main-photo" id="product-main-img" width="300" height="300" fetchpriority="high" decoding="async">
                 <?php if (count($allPhotos) > 1): ?>
                 <div class="product-thumbs">
                     <?php foreach ($allPhotos as $i => $fn): ?>
-                    <img src="/uploads/<?= htmlspecialchars($fn) ?>" alt="<?= htmlspecialchars($seoName) ?> — <?= $i + 1 ?>"
-                         class="product-thumb <?= $i === 0 ? 'product-thumb--active' : '' ?>"
-                         data-src="/uploads/<?= htmlspecialchars($fn) ?>">
+                    <img src="<?= htmlspecialchars(image_variant($fn)) ?>" alt="<?= htmlspecialchars($seoName) ?> — <?= $i + 1 ?>"
+                         class="product-thumb <?= $i === 0 ? 'product-thumb--active' : '' ?>" width="64" height="64" loading="lazy" decoding="async"
+                         data-src="<?= htmlspecialchars(image_variant($fn, 'w1200')) ?>">
                     <?php endforeach; ?>
                 </div>
                 <?php endif; ?>
@@ -205,7 +273,7 @@ $reviews = $rStmt->fetchAll();
         </div>
 
         <div class="product-info">
-            <p class="product-seller"><?= $t['product_sold_by'] ?> <a href="<?= lang_href('/business/?id=' . $product['business_public_id']) ?>"><?= htmlspecialchars(pick_lang($product['business_name'], $product['business_name_km'] ?? null)) ?></a></p>
+            <p class="product-seller"><?= $t['product_sold_by'] ?> <a href="<?= lang_href(pretty_path('business', $product['business_public_id'], $product['business_name'])) ?>"><?= htmlspecialchars(pick_lang($product['business_name'], $product['business_name_km'] ?? null)) ?></a></p>
             <h1 class="product-name"><?= htmlspecialchars(lang_field($product, 'name')) ?></h1>
             <p class="product-price" id="product-price"><?= price_html($product) ?></p>
 
@@ -225,7 +293,7 @@ $reviews = $rStmt->fetchAll();
             <form method="POST" action="/cart/add.php" class="cart-form" id="cart-form">
                 <?= csrf_input() ?>
                 <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
-                <input type="hidden" name="redirect" value="/product/?id=<?= $product['public_id'] ?>">
+                <input type="hidden" name="redirect" value="<?= htmlspecialchars($canonicalPath) ?>">
 
                 <?php if (!empty($variants)): ?>
                 <?php if ($hasOptionTypes): ?>
@@ -391,6 +459,8 @@ $reviews = $rStmt->fetchAll();
 
     function show(idx) {
         current = ((idx % photos.length) + photos.length) % photos.length;
+        // The full-size original, deliberately: this is the zoomed view, and
+        // it only loads when someone actually clicks to open it.
         lbImg.src = '/uploads/' + photos[current];
         lbCount.textContent = (current + 1) + ' / ' + photos.length;
         lb.classList.add('is-open');

@@ -84,6 +84,8 @@ if (!empty($_FILES['photo']['name'])) {
             if (!move_uploaded_file($tmp, $uploadDir . $filename)) {
                 $uploadError = 'Photo could not be saved.';
             } else {
+                // Small WebP copies for the card grids — see config/upload.php.
+                image_make_derivatives($uploadDir . $filename, $filename);
                 $photo = $filename;
             }
         }
@@ -119,6 +121,7 @@ function save_gallery_photos(PDO $pdo, string $uploadDir, array $allowed, int $p
         $ext = $mime === 'image/png' ? 'png' : 'jpg';
         $fn  = bin2hex(random_bytes(16)) . '.' . $ext;
         if (move_uploaded_file($tmp, $uploadDir . $fn)) {
+            image_make_derivatives($uploadDir . $fn, $fn);
             $isPrimary = $hasPrimary ? 0 : 1;
             $hasPrimary = true;
             $pdo->prepare('INSERT INTO product_photos (product_id, filename, sort_order, is_primary) VALUES (?, ?, ?, ?)')

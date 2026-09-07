@@ -73,11 +73,13 @@ $stmt = $pdo->prepare('SELECT filename FROM photos WHERE business_id = ?');
 $stmt->execute([$business['id']]);
 foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $filename) {
     if ($filename && file_exists($uploadDir . $filename)) @unlink($uploadDir . $filename);
+    image_delete_derivatives($filename);
 }
 $pdo->prepare('DELETE FROM photos WHERE business_id = ?')->execute([$business['id']]);
 
 if ($business['banner'] && file_exists($uploadDir . $business['banner'])) {
     @unlink($uploadDir . $business['banner']);
+    image_delete_derivatives($business['banner']);
 }
 
 // Soft delete: the row (and its orders, reviews, coupons, penalties) is kept for accounting

@@ -52,19 +52,12 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
 ?>
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings — teepsaa</title>
-    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
-    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/header/header.css">
-    <link rel="stylesheet" href="/footer/footer.css">
-    <link rel="stylesheet" href="/settings-vendor/settings-vendor.css">
-</head>
+<?php
+$headTitle = 'Settings — teepsaa';
+$headCss   = ['/settings-vendor/settings-vendor.css'];
+$headSeo   = false;
+require __DIR__ . '/../head/head.php';
+?>
 <body>
 
 <?php require __DIR__ . '/../header/header.php'; ?>
@@ -97,7 +90,7 @@ unset($_SESSION['settings_success'], $_SESSION['settings_error']);
                 <?php $vColorIdx = isset($vendor['avatar_color']) ? (int)$vendor['avatar_color'] : (abs($userId) % 5); ?>
                 <div class="avatar-preview-wrap">
                     <?php if ($vendor['avatar']): ?>
-                        <img src="/uploads/<?= htmlspecialchars($vendor['avatar']) ?>" alt="" class="avatar-preview">
+                        <img src="<?= htmlspecialchars(image_variant($vendor['avatar'])) ?>" alt="" class="avatar-preview" width="64" height="64">
                     <?php else: ?>
                         <?= _avatar_svg($userId, $vColorIdx, 64) ?>
                     <?php endif; ?>

@@ -121,19 +121,12 @@ unset($_SESSION['cart_success'], $_SESSION['cart_error']);
 ?>
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cart — teepsaa</title>
-    <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
-    <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/header/header.css">
-    <link rel="stylesheet" href="/footer/footer.css">
-    <link rel="stylesheet" href="/cart/cart.css">
-</head>
+<?php
+$headTitle = 'Cart — teepsaa';
+$headCss   = ['/cart/cart.css'];
+$headSeo   = false;
+require __DIR__ . '/../head/head.php';
+?>
 <body>
 
 <?php require __DIR__ . '/../header/header.php'; ?>
@@ -158,7 +151,7 @@ unset($_SESSION['cart_success'], $_SESSION['cart_error']);
             <?php foreach ($group['items'] as $item): ?>
             <div class="cart-item">
                 <?php if ($item['photo']): ?>
-                    <img src="/uploads/<?= htmlspecialchars($item['photo']) ?>" alt="" class="cart-item-photo">
+                    <img src="<?= htmlspecialchars(image_variant($item['photo'])) ?>" alt="" class="cart-item-photo" width="64" height="64" loading="lazy" decoding="async">
                 <?php else: ?>
                     <div class="cart-item-photo cart-item-photo--empty"></div>
                 <?php endif; ?>
