@@ -1,10 +1,10 @@
 # teepsaa — Launch day: signing up with Google
 
-Written 2026-09-07. This is item **1o** of `teepsaa-todos-seo-visibility.md`,
+Written 2026-09-07. This is item **1o** of the old SEO checklist,
 pulled out on its own because it's the only part of that checklist you do on
 launch day itself, in a browser, with no code involved.
 
-Companion files: `teepsaa-todos-seo-visibility.md` (the full SEO checklist),
+Companion files: `teepsaa-completed.md` (the SEO work already done),
 `teepsaa-manual-actions.md` (everything else that needs a human).
 
 ---

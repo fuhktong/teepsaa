@@ -25,11 +25,13 @@
 
 .product-photo-wrap {
     width: 300px;
+    max-width: 100%;
     flex-shrink: 0;
 }
 
 .product-main-photo {
     width: 300px;
+    max-width: 100%;
     height: 300px;
     object-fit: cover;
     border-radius: var(--radius);
@@ -39,6 +41,7 @@
 
 .product-main-photo--empty {
     width: 300px;
+    max-width: 100%;
     height: 300px;
     background: var(--divider);
     border-radius: var(--radius);
@@ -271,8 +274,18 @@
 }
 
 @media (max-width: 700px) {
+    /* .product-layout is flex, not grid — it stacks with flex-direction */
     .product-layout {
-        grid-template-columns: 1fr;
+        flex-direction: column;
         gap: 1.5rem;
+    }
+    .product-photo-wrap {
+        width: 100%;
+    }
+    .product-main-photo,
+    .product-main-photo--empty {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
     }
 }

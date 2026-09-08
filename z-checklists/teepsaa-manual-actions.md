@@ -1,11 +1,17 @@
 # Manual actions — the SEO work I couldn't do for you
 
-Everything in Parts 1, 2 and 3 of `teepsaa-todos-seo-visibility.md` that is
-code is written and syntax-checked. This file is the remainder: the things
-that need a live server, a Google account, a database, or a human who writes
-Khmer.
+**Every SEO code item is written, deployed and verified against the live
+site** — the full record is the "SEO & Visibility" section of
+`teepsaa-completed.md` (archived 2026-09-08, which is when the old
+`teepsaa-todos-seo-visibility.md` was retired). This file is the whole of
+what is left: the things that need a live server, a Google account, a
+database, or a human who writes Khmer.
 
 Roughly: **an hour of clicking, then the writing.**
+
+Nothing here is blocked on code. The item numbers (1o, 2f, 3a…) are the ones
+from the old SEO checklist and are kept so the archive and this file still
+line up.
 
 ---
 
@@ -72,6 +78,11 @@ Roughly: **an hour of clicking, then the writing.**
       It's safe to re-run: images already converted are skipped, so if it
       times out halfway you just run it again.
 
+      **Confirmed not yet run, 2026-09-08** — `uploads/w400/` returns 404 on
+      the live site, so every page is still serving full-size originals.
+      `image_variant()` falls back to the original, so nothing is broken;
+      you are simply paying for the full 16 MB on every visit.
+
 - [ ] **3. Check the server's PHP can write WebP.**
       The script tells you — if it prints *"This PHP build has no WebP
       support in GD"*, nothing is broken and the site keeps serving the
@@ -114,16 +125,38 @@ Roughly: **an hour of clicking, then the writing.**
 
 ## B. Sign-ups — item 1o, launch day
 
-- [ ] **Google Search Console** — add `teepsaa.com`, verify by DNS record,
-      submit `https://teepsaa.com/sitemap.xml`. This is the one that tells
-      you what Google actually thinks. Don't bother adding the vendor or
-      admin subdomains; `robots.php` already tells crawlers to stay out.
-- [ ] **Bing Webmaster Tools** — it imports straight from Search Console, so
-      it's about two minutes. Bing also feeds a chunk of AI search results.
-- [ ] **Google Analytics 4** — property, then the tag on the site.
-- [ ] **Google Merchant Center** — only if you want free product listings in
-      the Shopping tab. The product data Google needs is already on your
-      product pages from item 2a, so this is mostly form-filling.
+**Do these the same hour the site goes public, not a month later.** Getting a
+brand-new address into Google takes weeks, and none of that clock starts
+until Search Console knows the site exists. The password came off 2026-09-07;
+this is the one thing still holding up indexing. Step-by-step walkthrough:
+`teepsaa-launch-day-google-signups.md`.
+
+- [ ] **Google Search Console** — add `teepsaa.com`, choosing the **Domain**
+      option rather than "URL prefix" (Domain covers both subdomains and
+      http/https at once). It gives you a TXT record to paste into DNS in
+      Hostinger's hPanel; add it, come back, verify. Then Sitemaps → submit
+      `https://teepsaa.com/sitemap.xml`. This is the one that tells you what
+      Google actually thinks. Don't bother adding the vendor or admin
+      subdomains; `robots.php` already tells crawlers to stay out.
+- [ ] **Bing Webmaster Tools** — `bing.com/webmasters`, then the "import
+      from Google Search Console" button. About two minutes. Bing also feeds
+      a chunk of AI search results.
+- [ ] **Google Analytics 4** — create the property, then put the measurement
+      ID (the `G-XXXXXXXXXX` string) into `GA_MEASUREMENT_ID` at the top of
+      `config/seo.php`. **That one line is the whole job** — the tag is
+      emitted from `head/head.php`, which is the `<head>` of all 51 pages.
+
+      It emits nothing at all while the constant is empty, and it fires only
+      on `teepsaa.com` — vendors working in their dashboard are not
+      shoppers, and counting them would corrupt every conversion figure you
+      later look at. Confirmed still empty and still absent from the live
+      homepage as of 2026-09-08.
+- [ ] **Google Merchant Center** — free product listings in the Shopping
+      tab, which for a marketplace is a direct line to buyers already trying
+      to buy. It wants a product feed, which is largely the same information
+      the product pages already carry as structured data, so this is mostly
+      form-filling. **Do A.1b first** — Merchant Center compares your
+      declared return policy against what `/returns/` actually says.
 
 ---
 
@@ -136,8 +169,8 @@ Roughly: **an hour of clicking, then the writing.**
 - [x] **Rich Results Test** (item 2f). **Verified 2026-09-07: zero
       errors** across the homepage, a product page in both languages, a shop
       page, `/help/` and a category page — every JSON-LD block parsed and
-      carried its required fields. Full results in the 2f entry of
-      `teepsaa-todos-seo-visibility.md`.
+      carried its required fields. Full results in the 2f entry of the
+      SEO section of `teepsaa-completed.md`.
 
       Still worth pasting one product page into
       <https://search.google.com/test/rich-results> when you have a minute,
@@ -203,12 +236,26 @@ Roughly: **an hour of clicking, then the writing.**
       naturalness, not just literal accuracy — several use retail phrasing
       where a Cambodian shopper might say something shorter.
 
-- [ ] **Item 3h, in full.** None of it is code and all of it outranks the
-      code for a brand-new site:
-      Google Business Profile for teepsaa (and nudge approved vendors to
-      claim one for their own shop) · vendor interview posts · Khmer keyword
-      research across Khmer script, romanised Khmer and English · local
-      directories and Facebook groups.
+- [ ] **Item 3h, in full.** Everything that shipped makes teepsaa
+      *eligible* to rank; it does not make it rank. For a brand-new address
+      with no other websites linking to it, all four of these outrank any of
+      the technical work:
+
+      - **Google Business Profile** for teepsaa itself, and encourage
+        approved vendors to claim one for their own shop. Cambodian local
+        search leans heavily on Google Maps.
+      - **Vendor stories.** A short interview with each shop is genuinely
+        interesting to read, naturally full of the words people search for,
+        gives that vendor something to share (a link back to you and a
+        social post, free), and makes the marketplace feel populated rather
+        than empty.
+      - **Khmer keyword research.** Cambodians search in a mix of Khmer
+        script, romanised Khmer and English — three ways to write the same
+        thing. Most competitors only cover one. There is very little
+        competition for well-chosen Khmer-script product terms.
+      - **Local directories and Facebook groups.** For a Cambodian
+        marketplace these are the realistic first links from other websites,
+        far more than any formal outreach.
 
 ---
 

@@ -810,3 +810,586 @@ their own notes — moved to `teepsaa-todos-launch-readiness.md` Part 1.
 - [x] A URL with a bad/foreign public_id (product, order) shows a sane
       not-found, not an error dump
 - [x] All emails render correctly in Gmail on a phone (Khmer + English blocks)
+
+---
+
+## SEO & Visibility — completed 2026-09-07 (archived 2026-09-08 from teepsaa-todos-seo-visibility.md)
+
+Every code item in that file, verified against the live site. The non-code
+remainder — the four Google sign-ups, the `updated_at` migration, the image
+resizer on the server, and the content/links work — moved to
+`teepsaa-manual-actions.md`; the sign-ups have their own walkthrough in
+`teepsaa-launch-day-google-signups.md`.
+
+#### Part 1 — fixes
+
+- [x] **1a. Password gate off.** The "Pre-launch gate" block in `.htaccess`
+      is commented out and the site answers publicly. Verified live:
+      `curl -I https://teepsaa.com/` returns `HTTP/2 200`, and Googlebot,
+      TelegramBot and WhatsApp user agents all get a normal page rather than
+      the old `401`. (Loose end in manual actions: delete `.htpasswd` from
+      the server — the deploy uses no `--delete`.)
+- [x] **1b. Share picture.** `config/seo.php` pointed at
+      `images/og-default.png`, which did not exist — so every teepsaa link
+      pasted into Facebook, Messenger or Telegram showed a broken preview.
+      The 1200×630 file now exists.
+- [x] **1c. Favicon on public pages.** The icon files
+      (`images/teepsaa-icon-180/-192/-512.png`) existed but only one admin
+      page pointed at them. `<link rel="icon">` and `apple-touch-icon` now
+      ship on every public page (via `head/head.php`, item 3g).
+- [x] **1d. Language mix-up fixed — all three halves.** Pages were serving
+      Khmer body text under English `<title>`s inside `<html lang="en">`.
+      Now: all 49 public pages declare their real language; product, shop
+      and all eight info pages take title and description from the same
+      language the body renders in (`lang_field()`); and the default lives
+      in one place, `DEFAULT_LANG` in `config/i18n.php` — the `?? 'km'`
+      defaults scattered across 49 files are gone. **Khmer is the deliberate
+      default**, and because 3a shipped at the same time English is no
+      longer shut out of Google.
+- [x] **1e. Deleted products 404 instead of forwarding.**
+      `product/index.php` and both spots in `business/index.php` sent a
+      `Location: /search/` for a missing row, which kept dead addresses in
+      Google's index and made the search page look like a duplicate of every
+      product page. They now return a real 404.
+- [x] **1f. A real "page not found" page.** `404.php` in the project root
+      with the site's own header, footer and links back, wired up with
+      `ErrorDocument 404 /404.php` in `.htaccess`. Was Apache's grey default.
+- [x] **1g. Descriptions on the eight info pages.** `about`, `help`,
+      `privacy`, `terms`, `contact`, `careers`, `returns` and `shipping`
+      had a title but never called `seo_meta()` — so no description, no
+      preview card, no canonical. All eight now do.
+- [x] **1h. `<h1>` on the homepage and search page.** Neither had one.
+      `home_h1` added to `lang/en.php` and `lang/km.php`; the search page's
+      heading uses the search term ("Results for *scarf*", "All products"
+      when empty).
+- [x] **1i. Alt text on product photos.** All 42 images had `alt=""`. Card
+      photos, category tiles, JS-built cards, main photo and thumbnails,
+      shop banners and grids now carry the product/shop/category name via
+      `lang_field()`. Left empty on purpose: the lightbox image (JS fills
+      it) and avatars — an empty `alt` is the correct answer for decoration.
+- [x] **1j. Per-subdomain robots.** All three subdomains point at the same
+      folder, so `vendor.` and `admin.` were serving the buyer site's
+      `robots.txt`. It is now `robots.php` — any host other than
+      `teepsaa.com`/`www.` gets `Disallow: /` and stops; `.htaccess` rewrites
+      `robots.txt` to it. The `$sdGo` redirects in `config/subdomain.php`
+      were also changed from 302 to 301.
+- [x] **1k. Extra `Disallow` lines** for the per-person, one-time-use and
+      duplicate pages: logout, verify-email, resend-verification, both
+      forgot-password and both reset-password portals, unsubscribe,
+      support-thread, order-status, refund-status, review, submit, products,
+      currency, lang. `/uploads/` deliberately left crawlable — those are
+      the product photos.
+- [x] **1l. Filtered searches are `noindex,follow`.** Every filter
+      combination on `search/index.php` was a separate crawlable address.
+      The tag is emitted when `$q` is set or `$hasActiveFilters` is true —
+      done with `noindex` rather than a `Disallow`, so Google actually reads
+      the instruction.
+- [x] **1m. www → apex.** `.htaccess` forced https but kept whatever host
+      was typed, so `www.teepsaa.com` stayed on www while every page named
+      the apex as canonical. A 301 now sends www to `https://teepsaa.com`.
+- [x] **1n. Sitemap improvements** (three of four bullets):
+      the five missing info pages added; `/sitemap.xml` answers via an
+      `.htaccess` rewrite to `sitemap.php` and `robots.txt` points at it;
+      and product photos are listed with the `image:` namespace, which is
+      the cheapest route into Google Images. The fourth bullet — truthful
+      `lastmod` — is half done: `sitemap.php` detects an `updated_at` column
+      and uses it, falling back to `created_at`, but the migration itself
+      (`database/migration-seo-updated-at.sql`) is a manual paste.
+
+#### Part 2 — structured data (JSON-LD)
+
+`config/schema.php` builds every block; `product/`, `business/`, `help/` and
+the homepage emit them via `schema_graph()`. Two safety rails in that file:
+`schema_json()` escapes `</` so a description containing `</script>` can't
+break out of the block, and `schema_clean()` drops empty values so nothing
+claims a blank property.
+
+- [x] **2a. `Product` cards on product pages** — `schema_product()`. Four
+      corrections found while building it, all worth keeping in mind:
+      (1) the **zero-review guard is enforced in one place** —
+      `schema_rating()` returns nothing below one review, because the
+      penalty for claiming a rating without one reaches the whole domain,
+      not just the page; (2) products whose variants override the price emit
+      `AggregateOffer` with `lowPrice`/`highPrice` rather than a single
+      figure that would contradict the visible range; (3) stock follows the
+      variants when there are any, matching `$outOfStock` in the body;
+      (4) `sale_price_for()` is applied only when `active_sale()` says a
+      sale is live, and then `priceValidUntil` is set to the end date.
+      `offers.url` carries `?lang=en` on English pages so it always matches
+      the canonical.
+- [x] **2b. `Organization` + `WebSite`/`SearchAction` on the homepage** —
+      `schema_organization()` and `schema_website()`, emitted from
+      `index.php` only, on purpose. `sameAs` reads `SCHEMA_SOCIAL`, which is
+      empty until the accounts exist (an empty list is omitted; a `#`
+      address would be worse than none).
+- [x] **2c. `Store` cards on shop pages** — `schema_store()`. Street is
+      `house_number` + `address`, locality the sangkat (falling back to the
+      city), region the khan, country KH; `geo` carries the map pin and is
+      skipped at 0,0 rather than dropping a shop into the Gulf of Guinea.
+      Same shared rating guard as 2a.
+- [x] **2d. Breadcrumbs, visible and hidden.** New `/breadcrumb/` folder
+      (same shape as `/header/` and `/footer/`), on product, shop and help
+      pages. One `$crumbs` array feeds both the visible trail and
+      `schema_breadcrumb()` — deliberate, because Google only shows a
+      breadcrumb when the two agree, and two copies would drift. Product
+      trail is Home › parent category › category › product from
+      `categories.parent_id`.
+- [x] **2e. `FAQPage` on the help page** — `schema_faq($faqs)`, reading the
+      same array the body loops over, so it is automatically in whichever
+      language rendered. Answers stripped of HTML; rows missing a question
+      or answer are skipped. (Google narrowed FAQ rich results in 2023, so
+      don't expect much from it — but it's correct and free.)
+- [x] **2f. Tested against the live site — zero errors.** Every JSON-LD
+      block fetched from `https://teepsaa.com` as served and checked for
+      parse errors and Google's required fields: homepage
+      (Organization + WebSite), product in km and en (Product +
+      4-level BreadcrumbList), shop (Store + BreadcrumbList), `/help/`
+      (FAQPage with 23 questions + BreadcrumbList), category
+      (BreadcrumbList). Also checked locally: parses in both languages and
+      both currencies, no PHP notices, visible and hidden breadcrumbs
+      identical, never a rating at zero reviews, prices match the page on
+      sale/after expiry/in riel/with variant ranges, and `</script>` in a
+      description cannot break out.
+- [x] **`shippingDetails` and `hasMerchantReturnPolicy` filled in** — the
+      only two warnings from 2f. `schema_shipping_details()` declares the
+      band rather than a flat rate: `config/delivery-calc.php` clamps every
+      fee to the vehicle's `min_fare` and refuses anything past
+      `max_distance`, putting every possible fee between **$0.66 and
+      $8.40**, both ends computed from `config/delivery.php` at render time.
+      `schema_return_policy()` uses the 24-hour window
+      `orders-buyer/order.php` already enforces (`PAYOUT_WINDOW_SECONDS`),
+      with `returnFees: ReturnShippingFees` because the buyer pays for the
+      Grab back. **The `/returns/` copy had to be rewritten to match** —
+      Merchant Center compares the two — which is the outstanding
+      `database/update-returns-policy.php` run in manual actions.
+
+#### Part 3 — after-launch items, done early
+
+- [x] **3a. One address per language — the cheap form, a day instead of a
+      week.** Rather than `/en/` and `/km/` prefixes, the language rides in
+      the query: bare is Khmer, `?lang=en` is English, so no existing
+      address moves and no shared link breaks. `current_lang()` in
+      `config/i18n.php` lets the address win over the session, so a visitor
+      arriving on an English link from Google gets English; `seo_meta()`
+      emits the reciprocal `hreflang` pair (km, en, x-default) on every
+      indexable page and none on noindex pages; `sitemap.php` lists every
+      page twice, each naming its twin; `lang_href()` keeps the crawl path
+      in one language across nav, footer, tiles and cards; `lang/set.php`
+      strips `?lang=` from the page it returns to. This roughly doubles the
+      pages teepsaa can appear for — but it makes the English *visible*, not
+      *good* (see the spot-check in manual actions).
+- [x] **3b. Readable product and shop addresses.** `config/slug.php` —
+      `slugify()` folds a name down (accents flatten, apostrophes vanish so
+      "Men's" is `mens`, Khmer script is kept because Khmer in an address is
+      a feature here), and `product_path()`/`business_path()` glue it to the
+      first 13 characters of the random ID:
+      `/product/silk-krama-scarf-8f14e45f-ab3c/`,
+      `/business/lucky-silk-3c1d9a77-2b4e/`. The lookup still runs on the
+      ID, never the words, and only accepts a search matching exactly one
+      row. Old `?id=` addresses 301 to the new form. Words come from the
+      **English** name in both languages, deliberately — two addresses for
+      one product is the duplicate-content problem 3a exists to avoid.
+- [x] **3c. Real category pages — one per row, 49 of them.**
+      `/category/dresses/`, `/category/bags-purses/` and the rest, replacing
+      homepage tiles that ran a *text search* for the category name. Each
+      has a heading, intro text, the correctly filtered grid (24 per page),
+      links down to its subcategories and a breadcrumb trail. Two details
+      that mattered: a category page queries its **whole branch**, because
+      vendors file products against leaf categories only and "Women's" would
+      otherwise show an empty grid; and where a name appears twice in the
+      tree (Jeans, Shorts, Activewear, Sleepwear, Hoodies & Sweatshirts,
+      Jackets & Coats, Trousers & Chinos) *both* take the parent as a prefix
+      — `mens-jeans` and `womens-jeans`, never a bare `jeans` for whichever
+      came first — so adding "Kids' Jeans" later can't silently move an
+      indexed address.
+- [x] **3d. Server-rendered pagination.** `pagination/pagination.php`, a
+      shared partial used by both search and the category pages: numbered
+      links, first and last always shown, a window around the current page,
+      `…` for the gap — real `<a href>`s the crawler can walk. Infinite
+      scroll still works for people and now starts from the right offset, so
+      landing on `?page=3` doesn't re-show products 21–40. `?page=99`
+      returns a genuine 404 rather than the last page again (a soft 404).
+- [x] **3e. Images — all four sub-items.** `width`/`height` on 28 `<img>`
+      tags across 14 files; `loading="lazy"` on everything below the first
+      screenful, with three deliberate exceptions (header logo, main product
+      photo, shop banner — the last two carrying `fetchpriority="high"`);
+      `image_make_derivatives()` in `config/upload.php` writing 400px and
+      1200px WebP copies on every upload, with `image_variant()` picking per
+      slot and falling back to the original if a copy is missing; and
+      `database/backfill-image-derivatives.php` for the existing 16 MB —
+      **run locally it took the card images from 15,946 KB to 794 KB, 95%
+      smaller**. It never upscales, throws away a WebP that came out bigger
+      than the original (flat graphics like QR codes), and deleting a photo
+      now deletes its copies so the folder can't fill with orphans.
+      (Running it on the server is a manual action.)
+- [x] **3f. Compression and caching in `.htaccess`**, with two deliberate
+      departures from the standard snippet: images and fonts are **not** in
+      the compression list (recompressing a JPEG or WebP costs CPU to make
+      the file slightly bigger; woff2 is already compressed), and CSS/JS get
+      **one week, not one month**, because they sit at fixed addresses with
+      no version in the filename and a long cache would strand returning
+      visitors on the old design. HTML gets no caching rule at all — every
+      page carries the cart count and the signed-in name. **Verified live
+      2026-09-07: LiteSpeed answers `content-encoding: br`** (Brotli, which
+      beats gzip), so no support ticket was needed.
+- [x] **3g. One shared `<head>`.** `head/head.php` works like `header/` and
+      `footer/` — set `$headTitle`, `$headDesc`, `$headUrl`, `$headCss` and
+      require it. All 45 public and vendor pages use it; the admin panel is
+      left alone as a separate English-only interface no search engine sees.
+      The argument for doing it was that the copy-paste had **already
+      drifted**: 87 pages carried the font preloads but only 50 carried the
+      favicon lines, so which icon a visitor saw depended on where they
+      landed. That's now impossible.
+
+#### Beyond the original list (2026-09-07)
+
+- [x] **Dead social links removed.** The footer shipped three `href="#"`
+      icons on every page while `SCHEMA_SOCIAL` sat empty — two places that
+      had to agree and didn't. The footer now draws from
+      `schema_social_links()`, so filling in an address makes the icon
+      appear and leaving it empty renders no icon at all.
+- [x] **`og:type` is `product` on product pages**, was hardcoded `website`
+      everywhere. Pass `$headType` to `head/head.php`. This is what lets a
+      shared product link render as a product card.
+- [x] **Analytics wired but dormant.** The GA4 tag is emitted from
+      `head/head.php`, gated on `GA_MEASUREMENT_ID` in `config/seo.php`
+      being non-empty **and** the host being `teepsaa.com` — so the site
+      ships clean until the ID is filled in, and vendors working in their
+      dashboard never pollute the conversion figures. Filling in the ID is
+      the manual half.
+
+---
+
+## Launch Readiness — completed items (archived 2026-09-08 from teepsaa-todos-launch-readiness.md)
+
+Parts 1 and 2 of that checklist closed out entirely — the last functional-testing
+gaps, and the whole code & security audit. Also here: the Findings items that have
+since been fixed, and the notes explaining what the static pass could not reach
+(all of which were later run live). Parts 3, 4 and 5 — real-device testing, the
+email deploy and the flip to production — are still open and stay in
+`teepsaa-todos-launch-readiness.md`.
+
+### Part 1 — functional testing gaps
+
+#### 1a. Vendor account lifecycle
+
+These were the never-started tests. All need a fresh vendor registered with a
++alias; two of them need a second throwaway vendor as well.
+
+- [x] **Before approval, the business is invisible.** Register a vendor, submit
+      a business, then in a logged-out browser search for the business name. It
+      must not appear anywhere: search, homepage, category pages.
+      (verified live 2026-08-23)
+- [x] **Before approval, products cannot be created at all.** You can't add a
+      product to an unapproved business — the form isn't offered. Confirm the
+      _server_ enforces that too, not just the UI: with the vendor logged in and
+      their business still pending, POST directly to `/products/save.php` with
+      any product fields. It must redirect to `/products/` and create nothing.
+      Check the products table afterwards to be sure. The gate is
+      `SELECT ... WHERE user_id = ? AND approved = 1` followed by an early exit
+      when empty, repeated in all nine product action files.
+- [x] **Approve, and the store goes live.** As admin, approve the business.
+      The vendor should get the `business_approved` email, and the business
+      page should now be reachable to a logged-out visitor. Add a product as the
+      vendor and confirm it appears in search and on the business page.
+- [x] **Reject, and the vendor sees why.** Use a second throwaway vendor.
+      Reject the business as admin, then log in as that vendor and confirm the
+      dashboard shows a rejection state rather than a blank or broken page.
+      They should get the `business_rejected` email.
+- [x] **Rejecting an already-approved business hides its products.** This is the
+      only way a product can exist under a non-approved business, so it's the
+      real test of the invisibility rule. Approve a business, add a product,
+      confirm the product is publicly visible — then reject the business as
+      admin (`approved` goes to `-1`) and confirm in a logged-out browser that
+      both the business page and the product disappear from search, homepage
+      and category pages. A stale product still reachable by direct URL is the
+      failure to watch for.
+- [x] **The vendor portal rejects buyer credentials.** Enter a known-good
+      _buyer_ email and password at `/login-vendor/`. It must fail with the
+      same generic "Invalid email or password" — it must not reveal that the
+      account exists as a buyer. (The mirror of this, vendor creds at
+      `/login-buyer/`, already passed.)
+- [x] **Vendor forgot-password works end to end.** Request a reset at
+      `/forgot-password-vendor/`, click the emailed link, set a new password.
+      Then confirm three things: the old password no longer works, the new one
+      does, and clicking the same reset link a second time is rejected.
+
+#### 1b. Six tests that were marked done but never fully ran
+
+In the old checklists these were ticked off, but the note next to each one
+admitted part of the test was skipped. That skipped part is what you're
+testing here. Each item says which accounts you need and where to click.
+
+- [x] **Clicking a bell notification marks it read.** Any account with unread
+      notifications works — easiest is the vendor from the test above, who just
+      got one. 1. Click the bell in the header. Note the unread count. 2. Click one notification. The count should drop by one. 3. Click "mark all read". Count goes to zero. 4. Reload the page. Count must still be zero — if the unread count comes
+      back after a reload, the "read" never reached the database.
+- [x] **The vendor bell fires for a new order and for low stock.** Needs a
+      buyer, a vendor, and the admin. 1. New-order bell: as a buyer, order one of the vendor's products; as
+      admin, confirm the payment (admin → Orders → Payments). Log in as the
+      vendor — the bell should show the new paid order. 2. Low-stock bell: as the vendor, edit a product so its low-stock
+      threshold is _higher_ than its current stock (e.g. stock 3,
+      threshold 5). As the buyer, buy one. The vendor's bell should show a
+      low-stock notification.
+- [x] **"Mark paid out" actually works.** As admin, on an order the buyer has
+      confirmed as delivered (the server's payout window is currently 60
+      seconds, so a minute after delivery is enough). 1. Admin → Orders → Payouts. The order should be listed. 2. Click "mark paid out". 3. Confirm three things: the order's status becomes completed, it is
+      gone from the payouts list, and the vendor receives the `payout_sent`
+      email.
+- [x] **Rejecting a refund doesn't strand the order.** Needs a buyer with a
+      delivered order, and the admin. 1. As the buyer, open the order at `/orders-buyer/` and request a refund. 2. As admin, go to Orders → Refunds and _reject_ it (the approve path
+      already passed — you're testing reject). 3. The buyer should get the `refund_rejected` email, and the buyer's
+      order page should show a normal status again (delivered), not be
+      stuck saying refund requested or show anything broken.
+- [x] **A wrong vendor verification code is rejected, and resend works.**
+      Register a fresh vendor with a +alias to get to the "enter the code we
+      emailed you" screen. 1. Type a wrong code — it must be rejected with an error. 2. Click resend. A second email arrives with a new code. 3. The old code from the first email must now fail, and the new code
+      must work.
+
+(The old list had a seventh item — buyer credentials rejected at
+`/login-vendor/` — but that's the same test as the last item in 1a, which
+already passed.)
+
+### Part 2 — code & security audit
+
+The last chance to catch something before real money moves through the site.
+
+**Status:** the static half was run 2026-08-31 — eleven checks passed and are
+ticked below. What is left needs a browser, a running database, or a paid tool:
+`/code-review ultra` (2a), the `display_errors` click-through (2b), the five
+integrity queries (2e), and the image-404 sweep (2f). What the static pass
+turned up is written up under **Findings** near the end of this file.
+
+#### 2a. Automated review
+
+- [x] **Run `/code-review ultra` in Claude Code.** It's a multi-agent review of
+      the branch covering bugs, security and inefficiency. You have to trigger
+      it yourself — Claude can't launch it.
+- [x] **Feed it in sections rather than all at once**, most-recent work first:
+      `products/`, `analytics/`, `settings-vendor/` and `business-vendor/`, then `cart/ checkout/ product/
+search/`, then `header/ footer/ config/ api/`.
+
+#### 2b. PHP and server
+
+- [x] **Turn on `display_errors` in dev and click through every page.** You're
+      hunting notices and warnings that don't fatal but reveal bugs — undefined
+      array keys, null property reads. Remember to turn it back off (Part 5).
+      (verified 2026-09-04 — 384 URLs across 88 distinct pages swept by curl as
+      public/buyer/vendor/admin. **`display_errors` alone was a false pass:**
+      hPanel had it `On` but `error_reporting` was `-32768` (= report nothing),
+      so PHP printed no diagnostics regardless. Proved with a throwaway probe,
+      then forced with `php_value error_reporting 32767` in the server's root
+      `.htaccess` — `php_value` does work under Hostinger's LiteSpeed. Two live
+      bugs found, both listed under Findings. Note the web SAPI is PHP 8.3.33
+      while the CLI is 8.1.34, so the Part 2b `php -l` pass ran on a different
+      PHP than serves the site. POST-only paths — checkout, submit, register,
+      uploads — are NOT covered by this sweep and still need the Part 1 flows
+      re-run by hand with errors visible.)
+- [x] **Run `php -l` over the whole tree** to catch syntax errors in anything
+      heavily edited:
+      `find . -name '*.php' -not -path './vendor/*' -exec php -l {} \; | grep -v 'No syntax errors'`
+      Silence means clean.
+      (verified 2026-08-31 — clean, zero syntax errors across the tree)
+- [x] **Confirm every `session_start()` has the full options block.** `.user.ini`
+      is disabled on Hostinger so nothing is inherited. Each one needs
+      `gc_maxlifetime => 28800` and the `cookie_domain` line. Find the odd ones
+      out: `grep -rn "session_start" --include="*.php" . | wc -l` then compare
+      against `grep -rn "gc_maxlifetime" --include="*.php" . | wc -l` — the two
+      counts should match.
+      (verified 2026-08-31 — 187 real `session_start(` calls, 187 `gc_maxlifetime`
+      lines, per-file counts match. The raw grep shows 190 vs 187: the extra
+      three are the word `session_start` inside comments in `config/subdomain.php`
+      and `admin/go.php`, not calls.)
+- [x] **Confirm CSRF is on every POST form.** List the forms
+      (`grep -rln "method=\"post\"" --include="*.php" .`) and check each one
+      calls `csrf_input()`, and that its action file calls `csrf_verify()`.
+      (verified 2026-08-31 — every file containing `method="post"` calls
+      `csrf_input()`. Four `$_POST` handlers verify no token: see Findings.)
+
+#### 2c. Security
+
+Four of the original six are already in place — magic-byte upload validation in
+`config/upload.php`, `/uploads/` blocking PHP execution via `.htaccess`, and
+both cross-role rejection tests passing in functional testing. These two remain:
+
+- [x] **Check output escaping.** Every place user-supplied text is printed needs
+      `htmlspecialchars()`. The risky spots are product names/descriptions,
+      business names, review text, support messages and admin notes — anywhere a
+      vendor or buyer's own words get rendered.
+      (verified 2026-08-31 — zero unescaped echoes of a user-text column
+      (`name`, `description`, `body`, `comment`, `notes`, `reason`, `message`,
+      `subject`, `answer`, `*_name`, `address`, …) in either `<?=` or `echo`
+      form, and no variable assigned raw from one of those columns is echoed
+      unescaped. `render_markdown()` calls `htmlspecialchars()` before parsing;
+      `$storeName` in `business/index.php` is escaped at assignment.)
+- [x] **Check every query is prepared.** Search for string interpolation into
+      SQL: `grep -rn 'query("' --include="*.php" .` and
+      `grep -rnE '\$(_POST|_GET)\[' --include="*.php" . | grep -i "select\|insert\|update\|delete"`.
+      Anything that concatenates a variable into SQL instead of binding it is a
+      bug.
+      (verified 2026-08-31 — every `$pdo->query()` is a static string; the only
+      interpolations are `PAYOUT_WINDOW_SECONDS` (an int constant), generated
+      `?` placeholder lists (all 24 built with `array_fill(…, '?')`), and
+      `{$table}` which is always a hardcoded `'buyers'`/`'vendors'` ternary.
+      `admin/refunds.php` whitelists its filter _and_ `$pdo->quote()`s it;
+      `admin/audit.php` builds only `?` placeholders with bound params.)
+
+#### 2d. Dead code
+
+Cheap to do and it shrinks what you have to maintain forever.
+
+- [x] **Find orphaned action files.** For each `*-action.php` or similar, grep
+      the tree for its filename. If nothing references it, no form posts to it
+      and it can go.
+      (verified 2026-08-31 — none. The three deleted this session
+      (`photo-delete-action.php`, `photo-upload-action.php`,
+      `storefront-action.php`) have no remaining references either.)
+- [x] **Confirm `photo-set-primary.php` is still used.** The star button that
+      called it was removed. If nothing references it, delete it.
+      (resolved 2026-08-31 — the file no longer exists anywhere in the tree and
+      nothing references it. Already deleted.)
+- [x] **Find unused CSS classes**, especially after the `products/` and
+      vendor-portal refactors. Pull the class names out of a page's CSS
+      and grep the matching PHP for each.
+      (verified 2026-08-31 — ~40 dead classes found, listed under Findings.
+      Note `--modifier` classes built by string concatenation
+      (`thread-badge--<?= $th['status'] ?>`) and the `mapboxgl-*` library
+      classes are live, not dead.)
+- [x] **Find unused JS.** `js/` currently holds `boundary.js`, `geo-capture.js`,
+      `notifications.js`, `photo-shrink.js`, `square-cropper.js`,
+      `status-refresh.js`. Grep for each filename; anything nothing includes is
+      dead.
+      (verified 2026-08-31 — all seven are referenced. `cat-cascade.js` also
+      exists and is referenced; it was missing from the list above.)
+
+#### 2e. Database integrity
+
+Run each query against the live database. Each should return zero rows, or a
+result you can explain.
+
+- [x] **Orphaned product photos:**
+      `SELECT COUNT(*) FROM product_photos p LEFT JOIN products pr ON pr.id = p.product_id WHERE pr.id IS NULL;`
+      (verified 2026-09-04 — returns **0**.)
+- [x] **Orphaned cart items:**
+      `SELECT COUNT(*) FROM cart_items c LEFT JOIN products p ON p.id = c.product_id WHERE p.id IS NULL;`
+      (verified 2026-09-04 — returns **0**.)
+- [x] **Order items with a deleted product.** Expect some — products get
+      deleted. What matters is that order pages still render the snapshot name
+      instead of blowing up. Find one and open the order as buyer, vendor and
+      admin.
+      (verified 2026-09-04 — 2 such rows: `order_items` 35 ("Sunflower Dress",
+      order 34 / `09ca8911…`) and 36 ("White Dress", order 35 / `3ec66fc1…`),
+      both with a NULL `product_id`. All six views fetched with `display_errors`
+      on — buyer `/orders-buyer/order.php`, vendor `/orders-vendor/order.php`,
+      admin `/admin/order.php` — every one returned 200, rendered the
+      `order_items.product_name` snapshot, and emitted zero PHP diagnostics. The
+      snapshot columns (`product_name`, `product_name_km`, `variant_label`,
+      `price_at_purchase`) are doing their job.)
+- [x] **Confirm `archived = 0` is filtered everywhere buyers see products.**
+      Grep every buyer-facing query — homepage, search, business page, category
+      — and check the filter is present. An archived product leaking into search
+      is the failure.
+      (verified 2026-08-31 — filter present in `index.php`, `search/index.php`,
+      `api/search/index.php`, `business/index.php`, `product/index.php`,
+      `api/recently-viewed/index.php`. `wishlist/index.php` deliberately selects
+      `archived`/`active`/`approved` and renders an unavailable state instead of
+      filtering — correct for a wishlist. `cart/add.php` gates on `active`, and
+      `archive.php` forces `active = 0`, so archived items cannot be carted.
+      One gap: see the `products/toggle.php` finding.)
+- [x] **Confirm at most one primary photo per product:**
+      `SELECT product_id, COUNT(*) FROM product_photos WHERE is_primary = 1 GROUP BY product_id HAVING COUNT(*) > 1;`
+      (verified 2026-09-04 — 0 rows.)
+
+#### 2f. Frontend
+
+Mobile layout checks live in Part 3. These are the desktop ones.
+
+- [x] **Confirm images load everywhere**: homepage, search, business page,
+      product detail, vendor products list, vendor dashboard. Open dev tools and
+      watch for 404s rather than trusting your eyes — a broken image can look
+      like an intentional gap.
+- [x] **Click every link in the header and footer** in both languages. Broken
+      footer links are the easiest thing to ship and the most embarrassing.
+
+### Findings, since fixed
+
+From the `display_errors` sweep (2026-09-04) and the static audit pass
+(2026-08-31). The one remaining open finding — the two include-fragments that
+are directly web-reachable — stays in the live file.
+
+- [x] **`/sitemap.php` fatals on every single request.** Not an edge case — the
+      page is 100% dead:
+      `Uncaught PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown
+  column 'p.updated_at'`. Line 9 selects `p.updated_at` from `products` and
+      line 18 selects `updated_at` from `businesses`; neither column exists —
+      `database/migration.sql` only ever defines `created_at`. Consequence:
+      Google Search Console reads the sitemap as unparseable, so product pages
+      do not get indexed. Fix is `updated_at` → `created_at` in both queries
+      (`created_at` is a fine `lastmod` value), or add the columns if you want
+      true modification times.
+      (fixed 2026-09-04 — both queries and both `lastmod` reads now use
+      `created_at`. **A second bug in the same file was found while fixing it:**
+      the sitemap listed `https://teepsaa.com/browse/`, which is a 404 — there is
+      no `browse/` folder in the repo — so that entry was removed. Uploaded to
+      the server and live-verified: `/sitemap.php` returns valid XML that parses
+      cleanly, 31 `<url>` entries (19 products, 7 businesses, 5 static pages),
+      26 `<lastmod>` tags, zero PHP diagnostics. The local file is fixed but
+      **not yet committed** — it will go out with the next normal deploy.)
+
+- [x] **`sitemap.php` lists `/browse/`, which does not exist.** Line 34. There
+      is no `browse/` directory anywhere in the tree and nothing else in the
+      site links to it. Google will fetch it, get a 404, and log a sitemap
+      error on the first crawl after the gate comes off. Delete the `<url>`
+      block (one-line fix, not a new page).
+      (fixed 2026-09-04 alongside the `updated_at` fatal above — same file,
+      found while fixing that one. Live-verified 2026-09-08: no `browse`
+      entry appears anywhere in `https://teepsaa.com/sitemap.xml`.)
+
+
+- [x] **Three footer social links are `href="#"` placeholders** —
+      `footer/footer.php`, the Instagram/Facebook/Telegram row. Telegram
+      especially, given Part 3e already flags Telegram sharing as important in
+      Cambodia. Point them at real accounts or drop the row before launch.
+      (fixed 2026-09-07 during the SEO work. This was two places that had to
+      agree and didn't — the footer shipped three dead `href="#"` links on
+      every page while `SCHEMA_SOCIAL` in `config/schema.php` sat empty. The
+      footer now draws its icons from `schema_social_links()`, so an empty
+      list renders **no icon at all** — which is the correct state until the
+      accounts exist — and filling in an address there makes the icon appear
+      in the footer and the profile reach Google's brand panel at once.
+      Verified live 2026-09-08: zero `href="#"` links on the homepage.
+      Filling in the real addresses is item A.5 of
+      `teepsaa-manual-actions.md`.)
+
+
+### Part 5 — flip to production (the one item already done)
+
+- [x] **Search for leftover `TODO` and `FIXME` comments** —
+      `grep -rn "TODO\|FIXME" --include="*.php" . | grep -v z-checklists` — and
+      either fix or delete each one.
+      (verified 2026-08-31 — zero matches across php/js/css.)
+
+### Static-pass gaps, since closed
+
+Listed on 2026-08-31 as "what could not be checked from here". Each was later
+run against the live site; the results are in the ticked items above.
+
+- **Part 2e database integrity** — the five queries need a running database.
+  Local MySQL is not up, and the checklist calls for the live one anyway. Run
+  them in hPanel → phpMyAdmin.
+- **Part 2b `display_errors` click-through** — needs a browser against the
+  running site. Note there is no `display_errors` directive anywhere in the
+  repo, and the top of `.htaccess` records that `php_flag`/`php_value` do not
+  work under PHP-FPM — so this has to be set in hPanel's PHP config, not in a
+  file, and Part 5's "set it back to Off" means the same place.
+- **Part 2f image 404s** — needs dev tools. Static check done instead: every
+  `/images/`, `/flags/`, `/fonts/`, `/icons/` path referenced from PHP or CSS
+  resolves to a file that exists, including the two built by a language
+  ternary. What remains is uploaded product photos, which only the live site
+  can answer.
+- **Part 2f header/footer links** — every internal `href` in `header.php` and
+  `footer.php` resolves to a real file or folder (30 of them). Both languages
+  share one set of URLs — only the `$t[…]` labels differ — so this covers both.
+  The three `href="#"` placeholders above were the only broken ones, and
+  they are gone as of 2026-09-07 — the footer renders no icon rather than a
+  dead link.
