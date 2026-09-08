@@ -46,15 +46,21 @@ header nav a.active {
   color: #4a4a4a;
 }
 
+/* min-width:0 on both the form and the input: a flex item defaults to
+   min-width:auto, and a text input's min-content width is its intrinsic
+   ~20-character size. Without these the header can't shrink below ~380px
+   and pushes the whole page into horizontal scroll on a 320/360 phone. */
 .header-search {
   display: flex;
   flex: 1;
+  min-width: 0;
   max-width: 420px;
   margin: 0 2rem;
 }
 
 .header-search input[type="search"] {
   flex: 1;
+  min-width: 0;
   padding: 0.4rem 0.75rem;
   border: 1px solid #ddd;
   border-right: none;

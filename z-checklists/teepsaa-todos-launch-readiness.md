@@ -20,11 +20,11 @@ uploads, real `.htaccess`. Use Gmail +aliases for throwaway accounts
 
 ## What's left
 
-| Part                    | Checks | What it is                         |
-| ----------------------- | ------ | ---------------------------------- |
+| Part                    | Checks | What it is                             |
+| ----------------------- | ------ | -------------------------------------- |
 | 3. Real-device testing  | 27     | Mobile only — sweep first, then phones |
-| 4. Email deploy + tests | 8      | 14 built templates awaiting deploy |
-| 5. Flip to production   | 5      | Config changes and the gate        |
+| 4. Email deploy + tests | 8      | 14 built templates awaiting deploy     |
+| 5. Flip to production   | 5      | Config changes and the gate            |
 
 **Parts 1 and 2 are finished** — the last functional-testing gaps and the whole
 code & security audit, 34 checks, closed out between 2026-08-23 and 2026-09-04.
@@ -71,7 +71,7 @@ would have shown up months ago. What is left is mobile.
 
 Cheapest pass available and it finds most layout bugs before you touch a
 device. Only two engines matter: **Blink** (Chrome, Edge, Samsung Internet,
-Opera, Brave, and DuckDuckGo on Android) and **WebKit** (Safari, and *every*
+Opera, Brave, and DuckDuckGo on Android) and **WebKit** (Safari, and _every_
 browser on iOS — Chrome and DuckDuckGo included, because Apple forces the
 engine). Firefox's Gecko is a rounding error here. So the sweep runs twice,
 once in each, and no other browser needs its own pass.
@@ -81,21 +81,38 @@ once in each, and no other browser needs its own pass.
 Develop → Enter Responsive Design Mode (⌘⌃R). In both, type an exact width
 rather than picking a device preset — the number is the thing being tested.
 
+Chrome — four from that list, plus one typed:
+
+- Samsung Galaxy S8+ = 360px — this is the important one, the most common Android width in Cambodia
+- iPhone SE = 375px
+- iPhone 12 Pro = 390px
+- iPhone 14 Pro Max = 430px
+- Responsive (top of the list) → type 320 for the stress test
+
+Skip every iPad, Surface, Nest Hub, and the folds. Pixel 7/8/9/10 and Galaxy S20 Ultra are all ~412 — close enough to 430 that they add nothing.
+
+Safari — it has no Android widths, so:
+
+- iPhone SE size = 375
+- iPhone size = 393 (the readout beside the dropdown shows it, as in your screenshot)
+- iPhone Pro Max size = ~430
+- Custom size → type 360, and 320 if you want the stress test
+
 Widths, and what each one is for:
 
-| Width  | What it represents                     |
-| ------ | -------------------------------------- |
-| 320px  | Smallest phone still in use — where things break first |
-| 360px  | **The most common Android width in Cambodia** |
-| 390px  | iPhone 14 / Pixel, the modern typical  |
-| 430px  | Pro Max / large Android                |
+| Width | What it represents                                     |
+| ----- | ------------------------------------------------------ |
+| 320px | Smallest phone still in use — where things break first |
+| 360px | **The most common Android width in Cambodia**          |
+| 390px | iPhone 14 / Pixel, the modern typical                  |
+| 430px | Pro Max / large Android                                |
 
 - [ ] **Chrome — all four widths.** Homepage, search, a product page, cart,
       checkout, a vendor product form.
 - [ ] **Safari — all four widths.** Same pages. Same engine as every iOS
       browser, so this one pass covers all of them.
 - [ ] **Drag the width slowly from 320 up to ~500 in each**, rather than only
-      stopping at the four numbers. Breakpoints fail *between* the presets,
+      stopping at the four numbers. Breakpoints fail _between_ the presets,
       and dragging is what finds them.
 - [ ] **Watch for horizontal scroll at every width** — see the 3b check. If
       the page slides sideways, something has a fixed width.
