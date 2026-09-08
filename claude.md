@@ -57,3 +57,12 @@ holds one PHP session for all of them.
 none`). Page CSS should only set `width`. Two traps: the `background`
 shorthand wipes the chevron — use `background-color`; and re-declaring
 `padding` resets `padding-right`, putting text under the arrow.
+
+## Answering
+
+Answer the question asked, then stop. A question gets a one- or two-sentence
+answer — not a table, not adjacent findings, not a bullet recap. Save anything
+extra for when it's asked about or when it actually blocks the work.
+
+Long write-ups are for work that was requested: a multi-file change, a review,
+an investigation. Those still end with a short plain-language summary.

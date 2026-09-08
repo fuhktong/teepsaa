@@ -24,6 +24,37 @@ Roughly: **an hour of clicking, then the writing.**
       Remember `database/` is excluded from deploys, so this file is on your
       machine, not the server. Copy the text out of it.
 
+- [ ] **1b. Fix the returns and shipping copy on the live site.**
+      The `/returns/` page currently tells buyers that returns are "handled
+      between the buyer and the individual vendor" on a "case-by-case
+      basis". That was true before the in-app refund flow was built and is
+      not true now — a buyer requests a refund on the order, within 24 hours
+      of delivery, and you decide. Four FAQ answers were wrong the same way,
+      including one promising money back "within 3–5 business days to your
+      original payment method", which is not how it works either.
+
+      This is not just a tidiness problem. Product pages now declare that
+      24-hour window to Google (`hasMerchantReturnPolicy`), and Merchant
+      Center checks the declaration against the page. Until the page agrees,
+      the schema is the risk rather than the benefit.
+
+      The copy lives in the `content_pages` and `faq_items` tables, not in
+      the repo, so a deploy cannot carry it. Two ways to apply it:
+
+      **Easier —** upload `database/update-returns-policy.php` to the server
+      and open it in your browser once. It rewrites both content pages and
+      the four Returns & Refunds answers, in English and Khmer, and prints
+      what it changed. Safe to run twice. Delete it afterwards.
+
+      **Or by hand —** `/admin/content.php` for the two pages and
+      `/admin/faq.php` for the four answers, pasting from
+      `database/seed-content.php`. Twelve paste operations, half of them
+      Khmer, which is why the script exists.
+
+      One line to confirm before it goes out: the returns page now says you
+      send the refund **by ABA transfer**. If you refund some other way, say
+      so instead.
+
 - [ ] **2. Make the small image copies on the server.**
       This is the single biggest speed win in the whole checklist — locally
       it took the card images from **15,946 KB to 794 KB**.
@@ -51,24 +82,26 @@ Roughly: **an hour of clicking, then the writing.**
       makes `uploads/w400/` and `uploads/w1200/` on first run. If they don't
       appear, the folder permissions need to be 755.
 
-- [ ] **4. Take the password gate off** (item 1a).
-      Delete the whole `# ── Pre-launch gate ──` block at the bottom of
-      `.htaccess`, and delete the `.htpasswd` file from the server. The site
-      is invisible to Google until this is gone — nothing else in this
-      checklist matters while it's up.
+- [x] **4. Take the password gate off** (item 1a). **Done 2026-09-07** —
+      the block is commented out in `.htaccess` and deployed;
+      `curl -I https://teepsaa.com/` returns `HTTP/2 200`.
 
-- [ ] **5. Fill in your social links, or remove the icons.**
-      Two places, and they should agree:
+      One loose end: **delete `.htpasswd` from the server**. It is inert
+      now, but it is still a password file in your web root, and
+      `deploy-sftp.sh` uses no `--delete`, so it will sit there until you
+      remove it in File Manager.
 
-      - `config/schema.php` — `SCHEMA_SOCIAL` is three commented-out lines
-        near the top. These are what Google reads to connect your Facebook
-        page to your website in its brand panel.
-      - `footer/footer.php` — the Instagram, Facebook and Telegram icons are
-        all `href="#"` (lines 50, 57, 62), which is a dead link on every
-        page of the site.
+- [ ] **5. Fill in your social links — one place now, and no rush.**
+      **Fixed 2026-09-07:** this used to be two places that had to agree and
+      didn't — the footer shipped three `href="#"` dead links while
+      `SCHEMA_SOCIAL` sat empty. The footer now draws its icons from that
+      same list.
 
-      If teepsaa has no social accounts yet, delete the three icons from the
-      footer rather than shipping dead links.
+      So: put your addresses in `SCHEMA_SOCIAL` at the top of
+      `config/schema.php` and the icons appear in the footer and the
+      profiles reach Google's brand panel, both at once. Leave them empty
+      and **no icon renders** — which is the correct state until the
+      accounts exist, and needs no action from you.
 
 - [ ] **6. Spot-check that the English is real.**
       Open a dozen products and look at `name_en` and `description_en`. All
@@ -96,45 +129,79 @@ Roughly: **an hour of clicking, then the writing.**
 
 ## C. Check it worked — after deploy, in this order
 
-- [ ] **Compression** (item 3f). Run `curl -I https://teepsaa.com` and look
-      for `content-encoding: gzip` in the reply. If it's missing, LiteSpeed
-      is ignoring the `mod_deflate` block and it's worth a support ticket.
-- [ ] **Rich Results Test** (item 2f). Paste each of these into
-      <https://search.google.com/test/rich-results>:
-      a product page, a shop page, `/help/`, and a category page. You're
-      looking for zero errors — warnings about optional fields are fine.
-- [ ] **The new addresses.** Open a product from the homepage and check the
-      address reads like `/product/silk-krama-scarf-8f14e45f-ab3c/`. Then
-      paste an *old* `/product/?id=...` link and confirm it lands on the new
-      one.
-- [ ] **A category page.** `/category/dresses/` should show a heading, the
-      intro text, subcategory links and a filtered grid. Try a parent like
-      `/category/womens/` too — it should show everything beneath it, not an
-      empty grid.
-- [ ] **Page 2.** Scroll to the bottom of `/search/` and click "2". Then try
-      `/search/?page=999` — that should be a proper "not found" page.
-- [ ] **A general click-through.** The `<head>` of all 45 public and vendor
-      pages was rewritten (item 3g). It's mechanical and it lints clean, but
-      a five-minute walk around the site — log in as a buyer, add to cart,
-      check out, log in as a vendor — is cheap insurance.
+- [x] **Compression** (item 3f). **Verified 2026-09-07: working**, and
+      better than expected — LiteSpeed answers `content-encoding: br`
+      (Brotli), which compresses smaller than gzip. No support ticket
+      needed.
+- [x] **Rich Results Test** (item 2f). **Verified 2026-09-07: zero
+      errors** across the homepage, a product page in both languages, a shop
+      page, `/help/` and a category page — every JSON-LD block parsed and
+      carried its required fields. Full results in the 2f entry of
+      `teepsaa-todos-seo-visibility.md`.
+
+      Still worth pasting one product page into
+      <https://search.google.com/test/rich-results> when you have a minute,
+      purely because it renders the visual preview.
+- [x] **The new addresses.** **Verified 2026-09-07.** Live product pages
+      serve at the readable form — e.g.
+      `/product/classic-white-tee-fdcaa416-6668/` — and the sitemap lists 19
+      products, 12 shops and 12 categories, each in both languages.
+
+      Note if you test the old form yourself: `?id=` takes the **full UUID**
+      `public_id`, not the numeric row id, so `/product/?id=1` correctly
+      returns 404 rather than redirecting. The 301 to the canonical address
+      is at `product/index.php:75` and fires on a real UUID.
+- [x] **A category page.** **Verified 2026-09-07.** `/category/clothing/`
+      returns 200 with an `<h1>`, its intro paragraph and 19 products;
+      `/category/womens/` renders its own intro and pulls products from
+      beneath it rather than showing an empty grid.
+
+      Leaf categories with no intro yet — `/category/mens-jeans/` was the one
+      checked — render the heading and grid with no paragraph, exactly as
+      designed. All 49 intros are written now, so that resolves on deploy.
+- [x] **Page 2.** **Verified 2026-09-07**, with a caveat worth writing
+      down: `/search/?page=2` currently returns **404, and that is correct** —
+      there are 19 live products and the page holds 20, so there is no page
+      2 to serve. `?page=999` also 404s properly.
+
+      This means the pagination guard is proven but the pagination *links*
+      aren't — nothing renders a "2" to click yet. Re-check once you pass 20
+      live products.
+- [ ] **A general click-through.** Still yours — it needs a browser and
+      real logins, which I can't do from here.
+
+      Now worth five minutes rather than two, because `footer/footer.php`
+      and `head/head.php` both changed on 2026-09-07 and they are on **every
+      page of the site**, buyer and vendor. Both lint clean and the footer
+      was render-tested in isolation, but a walk around the real site — log
+      in as a buyer, add to cart, check out, log in as a vendor — is the
+      only thing that proves it end to end.
 
 ---
 
 ## D. The writing — only you can do this
 
-- [ ] **The category intros.** `category/intros.php` has 49 slots. **15 are
-      written, 34 are blank.** A blank one isn't broken — the page falls back
-      to a generic sentence — but the intro is the entire reason a category
-      page ranks for "bags Phnom Penh" instead of just existing.
+- [x] **The category intros.** **Done 2026-09-07 — all 49 slots are now
+      filled**, in English and Khmer. The remaining 34 were written to be
+      specific rather than interchangeable, which is the whole point: each
+      names what's actually in the category and gives one practical buying
+      note. The recurring hooks are the ones that are true here and not
+      elsewhere — heat and humidity driving fabric choice, rainy season and
+      motorbike commuting, Khmer/Thai/Chinese sizing disagreeing, and
+      measuring in centimetres rather than trusting a size letter.
 
-      Two or three real sentences each. Text that would fit any category is
-      worse than none: say what people actually buy in it, name the
-      materials, name the occasions.
+      Checked: no blanks, no duplicated English, none padded to length.
 
-- [ ] **Have a native Khmer speaker read all 49.** The `km` half is what
-      most of your visitors see and it's the half that matters most. The 15
-      I wrote are a starting point, not finished copy. Do this before they
-      go live, not after.
+- [ ] **Have a native Khmer speaker read all 49.** This is now the one
+      content job left, and it matters — the `km` half is what most of your
+      visitors actually read. **All 49 Khmer strings are machine-written and
+      none has been reviewed by a native speaker.** They are a solid
+      starting draft, not finished copy.
+
+      Do this before they earn traffic, not after. Budget an hour with
+      someone who writes Khmer well and have them read for register and
+      naturalness, not just literal accuracy — several use retail phrasing
+      where a Cambodian shopper might say something shorter.
 
 - [ ] **Item 3h, in full.** None of it is code and all of it outranks the
       code for a brand-new site:

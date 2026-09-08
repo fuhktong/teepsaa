@@ -26,6 +26,9 @@
 //   $headAlt     false on a noindex page: telling Google about translations of
 //                a page you've asked it to ignore only muddies the signal.
 //   $headRobots  e.g. 'noindex, follow'.
+//   $headType    Open Graph object type. 'product' on a page selling one
+//                thing, which is what makes a shared link render as a
+//                product card. Everything else leaves it at 'website'.
 //   $headExtra   raw markup appended last — JSON-LD, a preload, a page's own
 //                <style> block.
 //   $headSeo     false skips seo_meta() entirely (no description, no canonical,
@@ -51,6 +54,7 @@ $headImage  = $headImage  ?? '';
 $headCss    = $headCss    ?? [];
 $headAlt    = $headAlt    ?? true;
 $headRobots = $headRobots ?? '';
+$headType   = $headType   ?? 'website';
 $headExtra  = $headExtra  ?? '';
 $headSeo    = $headSeo    ?? true;
 ?>
@@ -62,7 +66,7 @@ $headSeo    = $headSeo    ?? true;
     <meta name="robots" content="<?= htmlspecialchars($headRobots, ENT_QUOTES, 'UTF-8') ?>">
 <?php endif; ?>
 <?php if ($headSeo): ?>
-    <?= seo_meta($headTitle, $headDesc, $headImage, $headUrl, $headAlt) ?>
+    <?= seo_meta($headTitle, $headDesc, $headImage, $headUrl, $headAlt, $headType) ?>
 
 <?php endif; ?>
     <link rel="preload" href="/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -76,7 +80,22 @@ $headSeo    = $headSeo    ?? true;
     <link rel="stylesheet" href="<?= htmlspecialchars($headSheet, ENT_QUOTES, 'UTF-8') ?>">
 <?php endforeach; ?>
 <?= $headExtra !== '' ? '    ' . $headExtra . "\n" : '' ?>
+<?php
+// Google Analytics, buyer site only. Vendors working in their dashboard
+// aren't shoppers, and counting them corrupts every conversion figure.
+// Emits nothing until GA_MEASUREMENT_ID is filled in (config/seo.php).
+if (GA_MEASUREMENT_ID !== '' && ($_SERVER['HTTP_HOST'] ?? '') === 'teepsaa.com'):
+    $gaId = rawurlencode(GA_MEASUREMENT_ID);
+?>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=<?= $gaId ?>"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '<?= $gaId ?>');
+    </script>
+<?php endif; ?>
 </head>
 <?php
 unset($headTitle, $headDesc, $headUrl, $headImage, $headCss,
-      $headAlt, $headRobots, $headExtra, $headSeo, $headSheet);
+      $headAlt, $headRobots, $headType, $headExtra, $headSeo, $headSheet);

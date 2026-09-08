@@ -4,6 +4,19 @@
 // the description, the canonical address, the hreflang pair, and the
 // Facebook/Twitter share tags.
 
+// Google Analytics. Paste the measurement ID from the GA4 property here —
+// it looks like 'G-XXXXXXXXXX' — and the tag appears on every public page.
+// Left empty, nothing is emitted at all, which is why the site currently
+// ships with no analytics: this is the one line that turns it on.
+//
+// The ID is not a secret (it's visible in the page source of every site that
+// uses one), so unlike config/db.php this file deploys normally.
+//
+// Buyer pages only, by design — see head/head.php. Vendor and admin pages
+// are people doing their job, not shoppers, and mixing them into the same
+// property makes every conversion number wrong.
+const GA_MEASUREMENT_ID = '';
+
 // A page's <head> runs before header.php loads $t, so any page wanting a
 // translated title or meta description needs the strings earlier than that.
 // Returns the same array header.php would; it checks isset($t) itself, so
@@ -49,7 +62,12 @@ function seo_url(string $path, string $lang): string {
 // stripped and re-applied). $alternates emits the hreflang pair; pass false
 // on a noindex page, where telling Google about translations of a page it
 // has been told to ignore only muddies the signal.
-function seo_meta(string $title, string $description = '', string $image = '', string $canonicalUrl = '', bool $alternates = true): string {
+//
+// $type is the Open Graph object type. 'website' suits every page that
+// describes teepsaa itself; a page describing one thing for sale passes
+// 'product', which is what lets a shared product link render as a product
+// card rather than a generic page card.
+function seo_meta(string $title, string $description = '', string $image = '', string $canonicalUrl = '', bool $alternates = true, string $type = 'website'): string {
     static $base = 'https://teepsaa.com';
     $defaultDesc = 'Shop from local Phnom Penh businesses on teepsaa — fast delivery, authentic products.';
 
@@ -93,7 +111,7 @@ function seo_meta(string $title, string $description = '', string $image = '', s
         '<meta property="og:url" content="' . $h($url) . '">',
         '<meta property="og:locale" content="' . (current_lang() === 'km' ? 'km_KH' : 'en_US') . '">',
         '<meta property="og:site_name" content="teepsaa">',
-        '<meta property="og:type" content="website">',
+        '<meta property="og:type" content="' . $h($type) . '">',
         '<meta name="twitter:card" content="summary_large_image">',
         '<meta name="twitter:title" content="' . $h($title) . '">',
         '<meta name="twitter:description" content="' . $h($description) . '">',

@@ -179,6 +179,7 @@ $headTitle = $seoName . ' — teepsaa';
 $headDesc  = $seoDesc;
 $headImage = $seoImg;
 $headUrl   = 'https://teepsaa.com' . $canonicalPath;
+$headType  = 'product';
 $headCss   = ['/breadcrumb/breadcrumb.css', '/product/product.css'];
 
 // Structured data: the hidden block that turns a plain blue link into

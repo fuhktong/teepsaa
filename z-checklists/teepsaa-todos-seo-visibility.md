@@ -98,15 +98,17 @@ These matter because the robot behaves completely differently for each one.
 
 ## 1a. The password gate
 
-- [ ] **Nothing in this file works until the site is public.** The site is
-      currently behind a password (the `.htaccess` file in the project root
-      has a "Pre-launch gate" section at the bottom that does this). Anyone
-      who visits — including Google's robot — is asked for a password. The
-      robot can't type a password, so it gives up and leaves.
+- [x] **Nothing in this file works until the site is public.** ~~The site is
+      currently behind a password.~~ **Done 2026-09-07** — the "Pre-launch
+      gate" block in `.htaccess` is commented out and the site answers
+      publicly. Verified live: `curl -I https://teepsaa.com/` returns
+      `HTTP/2 200`, and Googlebot, TelegramBot and WhatsApp user agents all
+      get a normal page rather than the old `401`.
 
-      This means Google currently has **zero** teepsaa pages, and everything
-      below is preparation for the day the password comes off. That removal
-      is already tracked as Part 5 of `teepsaa-todos-launch-readiness.md`.
+      Still worth doing when convenient: delete `.htpasswd` from the server.
+      It is inert now, but there is no reason to keep a password file in the
+      web root, and the deploy script uses no `--delete`, so nothing will
+      remove it for you.
 
 - [ ] **On the day the password comes off, tell Google immediately.** See
       item 1n below for the sign-up steps. Getting a brand-new website into
@@ -730,10 +732,23 @@ This is the most confusing problem on the site and worth reading slowly.
       Bing plus a share of the AI assistants that use Bing's index.
 
 - [ ] **Google Analytics (GA4).** Shows you how many people visit, where
-      they came from, and what they do. There's no analytics tag anywhere on
-      the site right now. Create a GA4 property, copy the snippet it gives
-      you, and paste it into `footer/footer.php` — the footer is on every
-      page, so one paste covers the whole site.
+      they came from, and what they do.
+
+      **The code half is done (2026-09-07).** Create the GA4 property, then
+      put the measurement ID — the `G-XXXXXXXXXX` string — into
+      `GA_MEASUREMENT_ID` at the top of `config/seo.php`. That one line is
+      the whole job; the tag is emitted from `head/head.php`, which is the
+      `<head>` of all 51 pages.
+
+      Two things it does for you. It emits **nothing at all** while the
+      constant is empty, so the site ships clean until you're ready. And it
+      fires **only on `teepsaa.com`** — vendors working in their dashboard
+      are not shoppers, and counting them would corrupt every conversion
+      figure you later look at.
+
+      (The original note here said to paste into `footer/footer.php`. That
+      predated `head/head.php` existing; the head is the better home and is
+      where it now lives.)
 
 - [ ] **Google Merchant Center.** This is the one people forget. It puts
       your products in Google's Shopping tab **for free**. For a marketplace
@@ -960,17 +975,29 @@ in it are worth knowing about:
       costs nothing, but don't expect the questions to appear in results the
       way they would have a few years ago.
 
-- [ ] **2f. Test everything.** After the site is live, put a product page
-      address into Google's **Rich Results Test** (search that name). It
-      tells you exactly what Google can read and flags anything malformed.
-      Test one product page, one shop page, the homepage and the help page.
+- [x] **2f. Test everything.** **Done 2026-09-07, against the live site.**
+      Every JSON-LD block was fetched from `https://teepsaa.com` as it is
+      actually served and checked for parse errors and for the fields Google
+      documents as required for each type:
 
-      **This one genuinely needs the password gate off** (item 1a) — the
-      tool fetches the page over the internet and cannot type a password.
-      It stays unticked until you run it.
+      | Page | Blocks found | Result |
+      | ---- | ------------ | ------ |
+      | homepage | Organization, WebSite | pass |
+      | product (km) | Product, BreadcrumbList (4 levels) | pass |
+      | product (en) | Product, BreadcrumbList (4 levels) | pass |
+      | shop | Store, BreadcrumbList | pass |
+      | `/help/` | FAQPage (23 questions), BreadcrumbList | pass |
+      | category | BreadcrumbList | pass |
 
-      **What was already checked locally**, so the tool should have little
-      to say:
+      **Zero errors.** The only warnings were `shippingDetails` and
+      `hasMerchantReturnPolicy`, both of which have since been filled in —
+      see the note after this list.
+
+      Worth still clicking through Google's own **Rich Results Test** once
+      (<https://search.google.com/test/rich-results>) as a second opinion —
+      it renders the result preview, which a field check cannot.
+
+      **What was also checked locally:**
 
       - Every block parses as JSON, in Khmer and English, in USD and KHR.
       - All four pages render with no PHP notice or warning.
@@ -981,10 +1008,43 @@ in it are worth knowing about:
         low/high range when variants disagree.
       - A description containing `</script>` cannot break out of the block.
 
-      When you do run it, expect two **warnings** (not errors) on product
-      pages: `shippingDetails` and `hasMerchantReturnPolicy` are missing.
-      Those are Merchant-listing extras, not requirements, and product rich
-      results work without them.
+      **Both were left empty at first, and both are now filled in**
+      (2026-09-07). The original objection was that teepsaa could not state
+      either one truthfully — no flat shipping rate, no fixed return window.
+      That was right about the method and wrong about the facts: the numbers
+      existed, they were just in the code rather than on the returns page.
+
+      - **Shipping** — `schema_shipping_details()` in `config/schema.php`.
+        There is still no flat rate to declare, so it declares the band
+        instead: `config/delivery-calc.php` clamps every fee up to the
+        vehicle's `min_fare` and refuses anything past `max_distance`, which
+        puts every possible fee between **$0.66 and $8.40**. Both ends are
+        computed from `config/delivery.php` at render time, so a rate change
+        moves the schema with it and there is no second place to update.
+        `shippingLabel` says it is a Grab fee estimated by distance.
+      - **Returns** — `schema_return_policy()`, same file. The window is the
+        24 hours `orders-buyer/order.php` already enforces
+        (`PAYOUT_WINDOW_SECONDS`), so the category is
+        `MerchantReturnFiniteReturnWindow` with `merchantReturnDays` derived
+        from that constant rather than typed in. `returnFees` is
+        `ReturnShippingFees` because the buyer pays for the Grab back.
+
+      Schema.org has no way to say "requested within a day, then reviewed by
+      teepsaa" — the closest true statement is the window plus who pays, and
+      `merchantReturnLink` points at `/returns/`, which now carries the
+      review step in full.
+
+      **The page had to be rewritten for this to be honest.** The seeded
+      `/returns/` copy said returns were "handled between the buyer and the
+      individual vendor" on a "case-by-case basis", which described a
+      marketplace teepsaa stopped being when the in-app refund flow was
+      built. Merchant Center compares the schema against the page, so
+      shipping a fixed window against that copy would have been worse than
+      the warning it replaced. Both content pages and the four Returns &
+      Refunds FAQ answers were rewritten to match — see
+      `database/update-returns-policy.php`, which still has to be run
+      against the live database (the copy lives in `content_pages`, not in
+      the repo).
 
 ---
 
@@ -1319,18 +1379,26 @@ Facebook posts link to the old addresses those links have to be preserved.
 | 11      | 1n — sitemap improvements                   | 30 min              | Medium      | ✅   |
 | 12      | 1i — alt text on product photos             | 1 hr                | High        | ✅   |
 | 13      | 2a — product info cards                     | 2 hr                | **Highest** | ✅   |
-| 14      | 1o — Search Console and friends             | 30 min              | High        |      |
+| 14      | 1o — Search Console and friends             | 30 min              | High        | ⬜   |
 | —       | _launch_                                    |                     |             |      |
 | 15      | 2b–2e — the rest of the info cards          | 3 hr                | High        | ✅   |
-| —       | 2f — Rich Results Test                      | 15 min              | High        |      |
+| —       | 2f — Rich Results Test                      | 15 min              | High        | ✅   |
 | 16      | 3c — category pages                         | 1–2 days            | High        | ✅   |
 | 17      | 3e + 3f — images, compression               | 1–2 days            | High        | ✅   |
 | 18      | 3a — one address per language               | ~1 day (cheap form) | **Highest** | ✅   |
 | 19      | 3b, 3d, 3g                                  | 2 days              | Medium      | ✅   |
-| —       | 3h — content and links                      | ongoing             | High        |      |
+| —       | 3h — content and links                      | ongoing             | High        | ⬜   |
 
 Items 1–14 come to roughly **six hours** and should all be done before the
 password comes off.
+
+**Status as of 2026-09-07: the password is off and every code item above is
+done and verified against the live site.** What is left is not code —
+`1o` (four Google sign-ups, needs your accounts and a DNS record), the
+`updated_at` migration in item `1n` (one paste into phpMyAdmin), the image
+resizer on the server, and `3h`. Those four are tracked in
+`teepsaa-manual-actions.md`; the sign-ups have their own walkthrough in
+`teepsaa-launch-day-google-signups.md`.
 
 ---
 
@@ -1348,3 +1416,30 @@ number that needs is already in your database. Fix those, spend an hour
 writing descriptions on your product photos, sign up for Google Search
 Console the day you go live, and you'll have done the large majority of what
 matters.
+
+
+---
+
+# Addendum — done 2026-09-07, beyond the original list
+
+Three things surfaced while verifying the list against the live site. All are
+in the codebase now; none needs anything from you.
+
+- **Dead social links removed.** The footer shipped three `href="#"` icons —
+  a dead link on every page of the site — while `SCHEMA_SOCIAL` in
+  `config/schema.php` sat empty. They were two places that had to agree and
+  didn't. The footer now draws its icons from `schema_social_links()`, so
+  filling in an address there makes the icon appear, and leaving it empty
+  renders no icon at all. Fill in `config/schema.php` when the accounts
+  exist; nothing else to change.
+
+- **`og:type` is now `product` on product pages.** It was hardcoded to
+  `website` everywhere. Pass `$headType` to `head/head.php` to set it. This
+  is what lets a shared product link render as a product card rather than a
+  generic page card.
+
+- **Analytics is wired but dormant** — see the GA4 item in 1o above.
+
+Verified after the changes: `php -l` clean on every touched file, the footer
+renders with zero `href="#"` links, and the GA block emits nothing while the
+ID is empty.

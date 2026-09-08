@@ -15,16 +15,26 @@
 require_once __DIR__ . '/seo.php';
 
 // Your public profiles, once they exist. Google uses these to connect the
-// site to its social accounts in the brand panel on the right of a result.
-// The footer's three icons are still href="#" placeholders — fill these in
-// (e.g. 'https://www.facebook.com/teepsaa') and the footer at the same time.
-// Left empty the key is simply omitted, which is correct; a made-up or "#"
-// address is worse than none.
+// site to its social accounts in the brand panel on the right of a result,
+// and the footer draws its icons from this same list — fill an address in
+// here and the icon appears; leave it empty and no icon renders.
+//
+// That single source is deliberate. These used to be two places that had to
+// be kept in step, and they weren't: the footer shipped three href="#" icons
+// — a dead link on every page of the site — while this list sat empty.
+//
+// Keys name the icon to draw, so only facebook/instagram/telegram are
+// understood. A made-up or "#" address is worse than none.
 const SCHEMA_SOCIAL = [
-    // 'https://www.facebook.com/...',
-    // 'https://www.instagram.com/...',
-    // 'https://t.me/...',
+    'facebook'  => '',   // 'https://www.facebook.com/teepsaa'
+    'instagram' => '',   // 'https://www.instagram.com/teepsaa'
+    'telegram'  => '',   // 'https://t.me/teepsaa'
 ];
+
+// The subset that's actually filled in, in the order above.
+function schema_social_links(): array {
+    return array_filter(SCHEMA_SOCIAL, fn($url) => trim((string)$url) !== '');
+}
 
 // ── Emitting ─────────────────────────────────────────────────────────
 
@@ -135,7 +145,7 @@ function schema_organization(): array {
             'width'  => 512,
             'height' => 512,
         ],
-        'sameAs' => array_values(SCHEMA_SOCIAL),
+        'sameAs' => array_values(schema_social_links()),
     ]);
 }
 
@@ -159,6 +169,105 @@ function schema_website(): array {
             'query-input' => 'required name=search_term_string',
         ],
     ]);
+}
+
+// ── Shipping and returns ──────────────────────────────────────────────
+//
+// Two optional Offer fields Google reads. Both were left empty at first,
+// because the obvious way to fill them is to invent a flat delivery rate
+// and a returns promise — and Merchant Center cross-checks both against
+// what checkout actually charges and what /returns/ actually says, so an
+// invented figure is worse than an absent one.
+//
+// Neither number below is invented. The delivery band is derived from
+// config/delivery.php, and the return window is the same 24 hours
+// orders-buyer/order.php measures against, so a rate change or a policy
+// change moves this block with it.
+
+// Delivery is Grab, priced by distance — there is no flat rate to state.
+// What is true is the band: the calculator in config/delivery-calc.php
+// clamps every fee up to the vehicle's minimum fare and refuses anything
+// past max_distance, so the cheapest fee any order can produce is the
+// lowest min_fare and the dearest is the priciest vehicle at the cap.
+// Both ends carry the same 5% markup checkout applies.
+function schema_shipping_details(): array {
+    static $cfg = null;
+    if ($cfg === null) $cfg = require __DIR__ . '/delivery.php';
+
+    $markup = 1 + (float)($cfg['markup'] ?? 0);
+    $maxKm  = (float)($cfg['max_distance'] ?? 0);
+
+    $fares = [];
+    foreach ($cfg as $rates) {
+        // 'markup' and 'max_distance' are scalars, not vehicles.
+        if (!is_array($rates) || !isset($rates['min_fare'])) continue;
+        $fares[] = round($rates['min_fare'] * $markup, 2);
+        $fares[] = round(($rates['base_fare'] + $rates['per_km'] * $maxKm) * $markup, 2);
+    }
+    if (!$fares) return [];
+
+    [$low,  $currency] = schema_price(min($fares));
+    [$high, ]          = schema_price(max($fares));
+
+    return [
+        '@type'        => 'OfferShippingDetails',
+        'shippingRate' => [
+            '@type'    => 'MonetaryAmount',
+            'minValue' => $low,
+            'maxValue' => $high,
+            'currency' => $currency,
+        ],
+        'shippingDestination' => [
+            '@type'          => 'DefinedRegion',
+            'addressCountry' => 'KH',
+            'addressRegion'  => 'Phnom Penh',
+        ],
+        // Grab is same-day; a vendor who has to pack first may dispatch the
+        // next. One day at each stage covers both without promising an hour
+        // nobody has committed to.
+        'deliveryTime' => [
+            '@type'        => 'ShippingDeliveryTime',
+            'handlingTime' => ['@type' => 'QuantitativeValue', 'minValue' => 0, 'maxValue' => 1, 'unitCode' => 'DAY'],
+            'transitTime'  => ['@type' => 'QuantitativeValue', 'minValue' => 0, 'maxValue' => 1, 'unitCode' => 'DAY'],
+        ],
+        'shippingLabel' => 'Grab delivery in Phnom Penh — fee estimated by distance at checkout',
+    ];
+}
+
+// The refund window: 24 hours from delivery. That is
+// PAYOUT_WINDOW_SECONDS in config/db.php, which is what
+// orders-buyer/order.php counts against — but the constant drops to 60
+// seconds on localhost, and rounding *that* to days would publish a
+// zero-day window. So the constant is the floor and the live value wins
+// whenever it is a whole day or more — lengthen the window in db.php and
+// this follows, without a second place to remember.
+const SCHEMA_RETURN_DAYS = 1;
+
+function schema_return_days(): int {
+    if (defined('PAYOUT_WINDOW_SECONDS') && PAYOUT_WINDOW_SECONDS >= 86400) {
+        return (int) floor(PAYOUT_WINDOW_SECONDS / 86400);
+    }
+    return SCHEMA_RETURN_DAYS;
+}
+
+// Schema.org has no vocabulary for "request within a day, reviewed by
+// teepsaa, item returned before the money moves" — the closest true
+// statement is the window itself plus who pays to send it back, which is
+// the buyer, via Grab. /returns/ carries the review step in full, and
+// merchantReturnLink points there.
+function schema_return_policy(): array {
+    return [
+        '@type'                    => 'MerchantReturnPolicy',
+        'applicableCountry'        => 'KH',
+        'returnPolicyCategory'     => 'https://schema.org/MerchantReturnFiniteReturnWindow',
+        'merchantReturnDays'       => schema_return_days(),
+        'returnMethod'             => 'https://schema.org/ReturnByMail',
+        'returnFees'               => 'https://schema.org/ReturnShippingFees',
+        // The return trip is the delivery run in reverse — same Grab, same
+        // calculator, same band.
+        'returnShippingFeesAmount' => schema_shipping_details()['shippingRate'] ?? null,
+        'merchantReturnLink'       => 'https://teepsaa.com/returns/',
+    ];
 }
 
 // A product, with its price, stock and — only when it has them — its stars.
@@ -223,6 +332,12 @@ function schema_product(array $product, array $photos, float $avgRating, int $re
             $offers['priceValidUntil'] = date('Y-m-d', strtotime($product['sale_ends_at']));
         }
     }
+
+    // Same delivery band and same return window on every listing — teepsaa
+    // sets both, not the vendor — so these hang off the offer rather than
+    // being threaded through from the page.
+    $offers['shippingDetails']         = schema_shipping_details();
+    $offers['hasMerchantReturnPolicy'] = schema_return_policy();
 
     return schema_clean([
         '@context'    => 'https://schema.org',

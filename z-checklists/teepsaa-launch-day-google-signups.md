@@ -158,14 +158,22 @@ indexed.
    brand, rating. That's the same data a feed would carry, so Google can read
    your products straight off the pages.
 
-### Two things Merchant Center will complain about
+### Shipping and returns are already declared
 
-Both are **warnings, not errors**, and products list fine without them:
+Merchant Center used to warn about two missing fields, `shippingDetails` and
+`hasMerchantReturnPolicy`. Both are now on every product page, built from the
+same numbers the site runs on: the delivery band out of `config/delivery.php`
+($0.66–$8.40, Grab, by distance) and the 24-hour refund window out of
+`PAYOUT_WINDOW_SECONDS`.
 
-- `shippingDetails` missing
-- `hasMerchantReturnPolicy` missing
+Merchant Center will offer to let you set shipping and returns in its own
+forms as well. **Don't** — if the forms and the schema disagree, that
+disagreement is itself the policy problem. Leave them empty and let it read
+the pages.
 
-You fill those in through the Merchant Center forms in step 3, not in code.
+One thing to check when you get there: Merchant Center compares the declared
+return window against what `/returns/` says. That page only agrees once
+`database/update-returns-policy.php` has been run on the live database.
 
 ---
 
@@ -194,8 +202,8 @@ sign-up, just a check:
 <https://search.google.com/test/rich-results>
 
 Paste in one product page, one shop page, `/help/`, and a category page.
-You're looking for **zero errors**. Warnings about `shippingDetails` and
-`hasMerchantReturnPolicy` on product pages are expected — see above.
+You're looking for **zero errors**. There should now be no warnings either —
+the two that used to appear on product pages have been filled in.
 
 ---
 

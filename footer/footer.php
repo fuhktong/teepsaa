@@ -1,4 +1,9 @@
 <?php
+// SCHEMA_SOCIAL / schema_social_links() drive the social icons below. The
+// footer is on every page, including ones that never build structured data,
+// so it loads this itself rather than assuming a page already did.
+require_once __DIR__ . '/../config/schema.php';
+
 $lang     = current_lang();
 $currency = $_SESSION['currency'] ?? 'USD';
 
@@ -46,25 +51,32 @@ if (empty($_SESSION['user_id'])) {
                 <span class="footer-tagline"<?= $lang === 'km' ? ' lang="km"' : '' ?>><?= $lang === 'km' ? 'ទិញឱ្យងាយស្រួល' : 'Shopping made easy' ?></span>
             </div>
 
+            <?php
+            // Icons come from SCHEMA_SOCIAL in config/schema.php, so a network
+            // with no address simply doesn't render. Previously these were
+            // three hard-coded href="#" links — dead on every page.
+            $footerSocialSvg = [
+                'instagram' => '<rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/>'
+                             . '<circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/>'
+                             . '<circle cx="17.2" cy="6.8" r="1.2" fill="currentColor"/>',
+                'facebook'  => '<path fill="currentColor" d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.88 3.77-3.88 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12z"/>',
+                'telegram'  => '<path fill="currentColor" d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3l-4.1-1.3c-.88-.25-.9-.86.2-1.3l15.97-6.16c.73-.27 1.37.18 1.09 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.98 1.93c-.22.22-.4.42-.84.42z"/>',
+            ];
+            $footerSocial = schema_social_links();
+            ?>
+            <?php if ($footerSocial): ?>
             <div class="footer-social">
-                <a href="#" class="footer-social-link" aria-label="teepsaa on Instagram">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/>
-                        <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/>
-                        <circle cx="17.2" cy="6.8" r="1.2" fill="currentColor"/>
-                    </svg>
+                <?php foreach ($footerSocial as $footerNet => $footerUrl): ?>
+                <?php if (isset($footerSocialSvg[$footerNet])): ?>
+                <a href="<?= htmlspecialchars($footerUrl, ENT_QUOTES, 'UTF-8') ?>"
+                   class="footer-social-link" target="_blank" rel="noopener"
+                   aria-label="teepsaa on <?= ucfirst($footerNet) ?>">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><?= $footerSocialSvg[$footerNet] ?></svg>
                 </a>
-                <a href="#" class="footer-social-link" aria-label="teepsaa on Facebook">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path fill="currentColor" d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.88 3.77-3.88 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12z"/>
-                    </svg>
-                </a>
-                <a href="#" class="footer-social-link" aria-label="teepsaa on Telegram">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path fill="currentColor" d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3l-4.1-1.3c-.88-.25-.9-.86.2-1.3l15.97-6.16c.73-.27 1.37.18 1.09 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.98 1.93c-.22.22-.4.42-.84.42z"/>
-                    </svg>
-                </a>
+                <?php endif; ?>
+                <?php endforeach; ?>
             </div>
+            <?php endif; ?>
         </div>
         <div class="footer-columns">
 
