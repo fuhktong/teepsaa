@@ -270,8 +270,11 @@ $headExtra = schema_graph(schema_organization(), schema_website()) . "\n    ";
             transition: opacity 0.2s, background 0.15s;
         }
         .scroll-arrow:hover { background: #fff; box-shadow: 0 3px 12px rgba(0,0,0,0.18); }
-        .scroll-arrow--left  { left: -30px; }
-        .scroll-arrow--right { right: -30px; }
+        /* The outer corners are squared off: that edge sits against the
+           screen edge on a narrow window, and a rounded corner there reads as
+           a gap rather than a button running off the page. */
+        .scroll-arrow--left  { left: -30px; border-radius: 0 var(--radius) var(--radius) 0; }
+        .scroll-arrow--right { right: -30px; border-radius: var(--radius) 0 0 var(--radius); }
         /* -30px sits the arrows just off the card row, which reads better on a
            wide window. main is a 1200px border-box with 1.5rem gutters, so
            -30px hangs 6px past the page edge and scrolls the whole page
