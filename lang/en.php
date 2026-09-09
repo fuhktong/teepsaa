@@ -179,6 +179,7 @@ return [
     'checkout_cod_note1'      => 'Grab delivery is paid <strong>directly to the driver on arrival</strong> — cash or QR code. This is separate from your teepsaa payment.',
     'checkout_cod_note2'      => 'Fee shown is an estimate based on your saved address and the business location.',
     'checkout_scan_instructions' => 'Scan the QR code below in your ABA app and pay exactly %s. Then click "I\'ve paid" to place your order.',
+    'checkout_qr_phone_note' => 'Paying on this same phone? Press and hold the QR code to save it to your photos, then open your bank app, choose scan, and pick the saved image from your gallery.',
     'checkout_notes_placeholder' => 'Gate code, call on arrival, etc.',
     'checkout_order_instructions' => 'Special instructions for this order (optional)',
     'checkout_confirm_note'   => 'Your order will be confirmed once we verify your payment. This usually takes less than 1 hour.',

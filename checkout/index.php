@@ -289,6 +289,13 @@ require __DIR__ . '/../head/head.php';
 
             <?php if ($abaQr): ?>
                 <img src="/uploads/aba-qr.png" alt="teepsaa ABA QR Code" class="aba-qr" width="200" height="200" loading="lazy" decoding="async">
+                <?php /* Most buyers are on a phone, where they cannot point that
+                   phone's camera at its own screen. Saving the image and
+                   scanning it from the gallery is the only route until the
+                   PayWay API gives us a KHQR deep link. Shown to everyone:
+                   a tablet buyer has the same problem, and a desktop buyer
+                   reads the opening question and skips it. */ ?>
+                <p class="checkout-qr-phone-note"><?= $t['checkout_qr_phone_note'] ?></p>
             <?php else: ?>
                 <div class="aba-qr-placeholder"><?= $t['checkout_aba_coming_soon'] ?></div>
             <?php endif; ?>

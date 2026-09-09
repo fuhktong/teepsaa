@@ -51,3 +51,13 @@ This is the current payment flow using a static ABA QR code and manual admin con
 - Manual confirmation adds delay — buyer expectation should be set at under 1 hour
 - Vendor payout SLA: 2–3 business days after delivery confirmation
 - See `teepsaa-afterlaunch-payway-api.md` to upgrade this flow with the ABA PayWay API later
+- **Same-phone problem, worked around 2026-09-09.** Cambodia is mobile-first,
+  and a buyer on a phone cannot point that phone's camera at its own screen.
+  Checkout now tells them to press and hold the QR to save it, then scan it
+  from their gallery in whichever bank app they use
+  (`checkout_qr_phone_note`, shown under the QR in both languages). This is a
+  stopgap: the real fix is a KHQR deep link that opens the bank app with the
+  amount prefilled, which needs the QR's payload string rather than a PNG —
+  so it waits for the PayWay API. Until then there is no account number or
+  name shown at checkout, so the saved-image route is the only path for a
+  mobile buyer.

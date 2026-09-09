@@ -413,6 +413,17 @@
     margin-bottom: 1.25rem;
 }
 
+.checkout-qr-phone-note {
+    font-size: 0.8rem;
+    color: var(--text-soft);
+    line-height: 1.5;
+    max-width: 34ch;
+    /* centred to sit under the centred QR; the image already carries the
+       1.25rem gap above, so this only needs its own below */
+    margin: 0 auto 1.25rem;
+    text-align: center;
+}
+
 .aba-qr {
     display: block;
     width: 200px;
