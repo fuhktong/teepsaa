@@ -44,4 +44,3 @@ Deferred post-launch build: a homepage row of products the buyer has ordered bef
 
 - [ ] **SSH key authentication** — in hPanel, if SSH access is enabled, switch it to key-based auth (or keep SSH disabled); a weak SSH password is full-account access
 - [ ] **Shared hosting risk** — on shared hosting a breach of a neighboring site can expose your database; revisit moving to a VPS once the site has real revenue (accepted risk for launch)
-- [ ] **Extra Basic Auth on `admin.teepsaa.com`** — second lock on the admin door: same `.htpasswd` technique as the pre-launch gate but scoped by host (`SetEnvIf Host ^admin\.teepsaa\.com ADMIN_HOST`). Best added AT launch, when the site-wide pre-launch gate comes off — doing it earlier means two password prompts on admin

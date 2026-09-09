@@ -1697,3 +1697,69 @@ recorded above. The second:
 - `/product/` and `/business/` 302 to `/search/` when the `public_id` does not
   match — both key on a UUID `public_id`, never a numeric id, so `?id=1` never
   reaches the page body.
+
+---
+
+## Post-launch cleanup — closed out 2026-09-09 (archived from teepsaa-todos-launch-readiness.md)
+
+Three items cut from launch scope on 2026-09-03, all built and deployed
+2026-09-09.
+
+### CSRF tokens on 4 minor POST handlers
+
+- `api/notifications/mark-read.php`, `api/wishlist/toggle.php`, `lang/set.php`
+  and `currency/set.php` verify a token. `config/csrf.php` gained
+  `csrf_valid()` — the boolean form — so the two JSON endpoints refuse in JSON
+  rather than the plain text `csrf_verify()` emits.
+- `header/header.php` publishes the token as `window.CSRF` beside `window.T`.
+  Six JS call sites send it: `postAndReload` in both `header/header.php` and
+  `footer/footer.php`, both fetches in `js/notifications.js`,
+  `product/index.php:810` and `wishlist/index.php:99`.
+- `js/notifications.js` is cached for a week by the `ExpiresByType` rule, so
+  its `<script src>` in `header/header.php:377` was given a `filemtime()`
+  cache-buster. Without it, returning visitors would have run the old file
+  against the new endpoints.
+- **Pre-existing bug found and fixed in passing:** `lang/set.php` and
+  `currency/set.php` had no `REQUEST_METHOD` check at all. A bare GET to
+  either reset the visitor's language or currency to English/USD. Both now
+  return 405 to anything that is not a POST.
+- Verified live 2026-09-09 after deploy: GET to `/lang/set.php` and
+  `/currency/set.php` returns 405; POST without a token returns 403; POST with
+  a real session cookie and the token lifted from the homepage returns 302.
+  Anonymous POSTs to the two API endpoints hit their login gate before the
+  token check, which is correct — a real CSRF attack rides a logged-in
+  session, and that path reaches the token check before any DB work.
+
+### `products/toggle.php` — archived products can no longer be activated
+
+- `AND archived = 0` added to the UPDATE, so the toggle cannot produce a row
+  that is both archived and active.
+- Checked against the live DB before the change: `products.archived` exists,
+  and 0 rows had `archived=1 AND active=1`, so there was nothing to clean up.
+- No test was needed and none is possible from the UI: `products/index.php:157`
+  already filters the active list to `archived = 0`, and the archived table at
+  line 864 renders only Unarchive and Delete. The single form posting to
+  `toggle.php` is at line 323, inside the active list. So the guard only ever
+  fires against a hand-crafted POST — it cannot change anything a vendor sees.
+
+### Host-scoped Basic Auth on `admin.teepsaa.com` — live and working
+
+- `.htaccess` uses `SetEnvIf Host` plus `<RequireAny>`, the same Apache 2.4
+  style the pre-launch gate used. `teepsaa.com` and `vendor.teepsaa.com` are
+  unaffected — verified: main host serves normally, admin host returns 401
+  without credentials.
+- The password file is `public_html/.htpasswd-admin`, username `admin`,
+  created on the server and never deployed (`.htpasswd*` is an rsync exclude).
+  The server has no `htpasswd` binary, so the hash comes from PHP's
+  `password_hash()`; LiteSpeed accepts bcrypt, confirmed by test against the
+  live admin host alongside md5-crypt and SHA1.
+- **The file must be `chmod 644`, not `600`.** LiteSpeed's server core reads
+  `AuthUserFile` as a different system user than PHP runs as, so a 600 file is
+  invisible to it and every login fails with nothing in any error log — the
+  browser just re-prompts forever. Cost most of the debugging on 2026-09-09.
+  Proven with an isolated test directory: same file, same password, 600 = 401
+  and 644 = 200. World-readable is safe here — the `FilesMatch` rule returns
+  403 for it on both hosts (checked), and it holds a bcrypt hash.
+- The creation one-liner, the 644 warning and the rollback instruction all
+  live in the `.htaccess` comment above the block. Rollback is to comment out
+  the six lines, either in the repo or directly on the server.

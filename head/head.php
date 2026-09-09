@@ -73,11 +73,28 @@ $headSeo    = $headSeo    ?? true;
     <link rel="preload" href="/fonts/noto-sans-khmer-khmer.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="icon" href="/images/teepsaa-icon-192.png" sizes="192x192">
     <link rel="apple-touch-icon" href="/images/teepsaa-icon-180.png">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/header/header.css">
-    <link rel="stylesheet" href="/footer/footer.css">
+<?php
+// .htaccess caches CSS for a week, so without a version string a deployed
+// stylesheet change stays invisible to returning visitors for up to 7 days.
+// filemtime() changes only when the file does, so the cache still works.
+if (!function_exists('asset_url')) {
+    function asset_url(string $path): string {
+        // Anything not a local root-relative path (submit/ loads Mapbox's CSS
+        // from a CDN) goes out untouched.
+        if ($path === '' || $path[0] !== '/') {
+            return htmlspecialchars($path, ENT_QUOTES, 'UTF-8');
+        }
+        $file = dirname(__DIR__) . $path;
+        $v    = is_file($file) ? filemtime($file) : false;
+        return htmlspecialchars($v ? $path . '?v=' . $v : $path, ENT_QUOTES, 'UTF-8');
+    }
+}
+?>
+    <link rel="stylesheet" href="<?= asset_url('/style.css') ?>">
+    <link rel="stylesheet" href="<?= asset_url('/header/header.css') ?>">
+    <link rel="stylesheet" href="<?= asset_url('/footer/footer.css') ?>">
 <?php foreach ($headCss as $headSheet): ?>
-    <link rel="stylesheet" href="<?= htmlspecialchars($headSheet, ENT_QUOTES, 'UTF-8') ?>">
+    <link rel="stylesheet" href="<?= asset_url($headSheet) ?>">
 <?php endforeach; ?>
 <?= $headExtra !== '' ? '    ' . $headExtra . "\n" : '' ?>
 <?php

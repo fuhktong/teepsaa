@@ -115,7 +115,15 @@ AddType application/manifest+json .webmanifest
 #   ssh -t teepsaa 'read -rsp "New admin password: " p; echo; \
 #     /opt/alt/php83/usr/bin/php -r "echo \"admin:\".password_hash(\$argv[1], PASSWORD_BCRYPT).PHP_EOL;" "$p" \
 #     > ~/domains/teepsaa.com/public_html/.htpasswd-admin \
-#     && chmod 600 ~/domains/teepsaa.com/public_html/.htpasswd-admin && echo created'
+#     && chmod 644 ~/domains/teepsaa.com/public_html/.htpasswd-admin && echo created'
+#
+# 644, NOT 600. LiteSpeed's server core reads AuthUserFile as a different
+# system user than PHP runs as, so a 600 file is unreadable to it and every
+# login fails with no error anywhere — the browser just re-prompts forever.
+# Verified 2026-09-09: same file, same password, 600 = 401 and 644 = 200.
+# Leaving it world-readable is safe here: the FilesMatch rule above returns
+# 403 for it (checked on both hosts) and it holds a bcrypt hash, not a
+# password.
 #
 # TO TURN IT OFF: comment out the six lines below and redeploy, or on the
 # server edit public_html/.htaccess directly for an instant fix.
