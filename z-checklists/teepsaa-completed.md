@@ -1729,6 +1729,10 @@ Three items cut from launch scope on 2026-09-03, all built and deployed
   Anonymous POSTs to the two API endpoints hit their login gate before the
   token check, which is correct — a real CSRF attack rides a logged-in
   session, and that path reaches the token check before any DB work.
+- Browser-side confirmed 2026-09-09: a wishlist heart and the notification
+  bell both work while logged in. That was the last step no command-line test
+  could cover — a token that failed to arrive would leave the button silently
+  doing nothing rather than showing an error.
 
 ### `products/toggle.php` — archived products can no longer be activated
 

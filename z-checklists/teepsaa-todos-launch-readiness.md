@@ -157,14 +157,6 @@ Widths, and what each one is for:
 
 # Still to check
 
-- [ ] **Click a wishlist heart and the notification bell once, while logged
-      in.** Everything else about the 2026-09-09 CSRF change is verified live:
-      `window.CSRF` is in the served HTML, all six JS call sites read it, the
-      `notifications.js` cache-buster is live, and language and currency were
-      tested end to end from the command line. Only a browser can run the last
-      step. If the token were not arriving the button would do nothing at all,
-      with no error shown — that silence is the only reason this is here.
-
 - [ ] **Read the error log once, after the Part 3 device testing above.**
       `ssh teepsaa "tail -50 ~/.logs/error_log_teepsaa_com"` — look for
       anything newer than when you started. `log_errors` is on permanently, so

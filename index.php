@@ -265,8 +265,17 @@ $headExtra = schema_graph(schema_organization(), schema_website()) . "\n    ";
             transition: opacity 0.2s, background 0.15s;
         }
         .scroll-arrow:hover { background: #fff; box-shadow: 0 3px 12px rgba(0,0,0,0.18); }
-        .scroll-arrow--left  { left: -10px; }
-        .scroll-arrow--right { right: -10px; }
+        .scroll-arrow--left  { left: -30px; }
+        .scroll-arrow--right { right: -30px; }
+        /* -30px sits the arrows just off the card row, which reads better on a
+           wide window. main is a 1200px border-box with 1.5rem gutters, so
+           -30px hangs 6px past the page edge and scrolls the whole page
+           sideways once the window is under ~1212px. Below that, pull them
+           back to the gutter, where they end up flush with the screen edge. */
+        @media (max-width: 1220px) {
+            .scroll-arrow--left  { left: -24px; }
+            .scroll-arrow--right { right: -24px; }
+        }
 
         /* Product card */
         .home-scroll .product-card {
