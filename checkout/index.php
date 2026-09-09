@@ -288,7 +288,7 @@ require __DIR__ . '/../head/head.php';
             <?php endif; ?>
 
             <?php if ($abaQr): ?>
-                <img src="/uploads/aba-qr.png" alt="teepsaa ABA QR Code" class="aba-qr" width="200" height="200" loading="lazy" decoding="async">
+                <img src="/uploads/aba-qr.png" alt="teepsaa payment QR code" class="aba-qr" width="200" height="200" loading="lazy" decoding="async">
                 <?php /* Most buyers are on a phone, where they cannot point that
                    phone's camera at its own screen. Saving the image and
                    scanning it from the gallery is the only route until the
