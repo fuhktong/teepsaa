@@ -99,7 +99,7 @@ document.querySelectorAll('.wl-remove').forEach(function (btn) {
         fetch('/api/wishlist/toggle.php', {
             method: 'POST',
             credentials: 'same-origin',
-            body: new URLSearchParams({ product_id: productId })
+            body: new URLSearchParams({ product_id: productId, csrf_token: window.CSRF || '' })
         }).then(function () {
             card.style.opacity = '0';
             card.style.transition = 'opacity 0.2s';

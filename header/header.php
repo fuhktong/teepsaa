@@ -13,6 +13,7 @@ if (!isset($t)) {
 if (!isset($pdo) && (!empty($_SESSION['user_id']) || !empty($_SESSION['admin_id']))) {
     require_once __DIR__ . '/../config/db.php';
 }
+require_once __DIR__ . '/../config/csrf.php';
 if (!function_exists('admin_can') && !empty($_SESSION['admin_id'])) {
     require_once __DIR__ . '/../config/admin-auth.php';
 }
@@ -74,7 +75,8 @@ $activeFlag = $lang === 'km'
     'refresh_error'        => $t['js_refresh_error'],
     'no_notifications'     => $t['js_no_notifications'],
     'loading'              => $t['js_loading'],
-], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
+], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+window.CSRF = <?= json_encode(csrf_token(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
 <?php
 $isVendorHeader = ($_SESSION['role'] ?? '') === 'vendor';
 $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer';
@@ -307,6 +309,7 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
         sessionStorage.setItem(SCROLL_KEY, window.scrollY);
         var fd = new FormData();
         Object.keys(data).forEach(function (k) { fd.append(k, data[k]); });
+        fd.append('csrf_token', window.CSRF || '');
         fetch(url, { method: 'POST', body: fd }).then(function () { location.reload(); });
     }
 
@@ -371,4 +374,4 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
     });
 })();
 </script>
-<script src="/js/notifications.js"></script>
+<script src="/js/notifications.js?v=<?= filemtime(__DIR__ . '/../js/notifications.js') ?>"></script>

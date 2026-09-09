@@ -86,7 +86,7 @@
                 fetch('/api/notifications/mark-read.php', {
                     method: 'POST',
                     credentials: 'same-origin',
-                    body: new URLSearchParams({ id: id })
+                    body: new URLSearchParams({ id: id, csrf_token: window.CSRF || '' })
                 });
                 this.classList.remove('bell-item--unread');
             });
@@ -146,7 +146,7 @@
             fetch('/api/notifications/mark-read.php', {
                 method: 'POST',
                 credentials: 'same-origin',
-                body: new URLSearchParams({ id: '0' })
+                body: new URLSearchParams({ id: '0', csrf_token: window.CSRF || '' })
             }).then(function () {
                 updateBadge(0);
                 bellItems.querySelectorAll('.bell-item--unread').forEach(function (el) {

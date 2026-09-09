@@ -43,6 +43,8 @@ rsync -rlptvz $DRY \
     --exclude 'CLAUDE.md' \
     --exclude 'uploads/' \
     --exclude 'z-checklists/' \
+    --exclude 'z-notes/' \
+    --exclude 'z-reference/' \
     --exclude 'database/' \
     --exclude 'config/db.php' \
     --exclude 'config/smtp.php' \

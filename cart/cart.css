@@ -172,15 +172,6 @@
     text-align: right;
 }
 
-.cart-total-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 2rem;
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    margin-bottom: 0.2rem;
-}
-
 .cart-total {
     font-size: 1.1rem;
     color: var(--text-soft);

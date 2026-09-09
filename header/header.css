@@ -222,10 +222,6 @@ header nav a.active {
   opacity: 0.75;
 }
 
-.lang-chevron {
-  display: none;
-}
-
 .lang-dropdown {
   display: none;
   position: absolute;

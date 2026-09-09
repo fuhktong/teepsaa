@@ -7,6 +7,14 @@ session_start([
     'cookie_domain'   => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : '',
 ]);
 
+require __DIR__ . '/../config/csrf.php';
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    exit('POST only.');
+}
+csrf_verify();
+
 $lang = $_POST['lang'] ?? 'en';
 $lang = in_array($lang, ['en', 'km'], true) ? $lang : 'en';
 $_SESSION['lang'] = $lang;

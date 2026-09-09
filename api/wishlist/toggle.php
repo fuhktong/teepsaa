@@ -8,6 +8,7 @@ session_start([
 ]);
 
 require __DIR__ . '/../../config/db.php';
+require __DIR__ . '/../../config/csrf.php';
 
 header('Content-Type: application/json');
 
@@ -19,6 +20,12 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['error' => 'method_not_allowed']);
+    exit;
+}
+
+if (!csrf_valid()) {
+    http_response_code(403);
+    echo json_encode(['error' => 'bad_csrf']);
     exit;
 }
 

@@ -26,7 +26,7 @@ Let buyers filter products by category on the browse/map page.
 
 Does acting as a payment intermediary (collecting buyer payments, paying out vendors) require a financial license in Cambodia?
 
-- See item #4 in `teepsaa-notes-open-questions.md`.
+- See item #4 in `../z-notes/teepsaa-notes-open-questions.md`.
 - Also related to the refund royalty policy above — both shape how money flows through the platform.
 
 ---

@@ -810,7 +810,7 @@ function applyVariantStock(stockEl, stock) {
         fetch('/api/wishlist/toggle.php', {
             method: 'POST',
             credentials: 'same-origin',
-            body: new URLSearchParams({ product_id: pid })
+            body: new URLSearchParams({ product_id: pid, csrf_token: window.CSRF || '' })
         })
         .then(function (r) { return r.json(); })
         .then(function (data) {

@@ -326,19 +326,6 @@ main {
   font-size: 0.85em;
   margin-left: 0.35rem;
 }
-.flash-badge {
-  display: inline-block;
-  background: #e53935;
-  color: #fff;
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 0.15rem 0.5rem;
-  border-radius: var(--radius-sm);
-  margin-left: 0.5rem;
-  vertical-align: middle;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
 
 /* Real text that screen readers and search engines read, but that does not
    appear on screen. Used for page headings on layouts (the homepage, the

@@ -54,11 +54,6 @@
   color: #111;
 }
 
-.order-card-business {
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
 .order-card-date {
   font-size: 0.8rem;
   color: var(--text-muted);
@@ -85,11 +80,6 @@
 
 .order-card-status {
   margin-bottom: 0.75rem;
-}
-
-.order-card-action {
-  padding-top: 0.5rem;
-  border-top: 1px solid #f3f4f6;
 }
 
 .btn-confirm {
@@ -122,18 +112,6 @@
 
 .btn-secondary:hover {
   background: #f3f4f6;
-}
-
-.order-track-link {
-  display: inline-block;
-  font-size: 0.85rem;
-  color: var(--primary);
-  text-decoration: none;
-  margin-top: 0.5rem;
-}
-
-.order-track-link:hover {
-  text-decoration: underline;
 }
 
 .refund-dot {

@@ -87,12 +87,6 @@
     margin-bottom: 1.1rem;
 }
 
-.settings-field-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
 .settings-field label {
     display: block;
     font-size: 0.875rem;
@@ -208,9 +202,6 @@
 }
 
 /* Avatar upload */
-.avatar-form {
-    margin-bottom: 0;
-}
 
 .avatar-preview-wrap {
     display: flex;
@@ -398,7 +389,6 @@
     }
 }
 
-
 /* Avatar color picker */
 .avatar-color-picker {
   display: flex;
@@ -427,7 +417,6 @@
 .avatar-color-swatch:hover {
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ac);
 }
-
 
 .settings-field-label {
   display: block;

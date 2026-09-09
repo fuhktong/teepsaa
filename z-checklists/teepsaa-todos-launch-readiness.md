@@ -1,52 +1,23 @@
 # teepsaa — Launch Readiness
 
-Everything between now and taking the pre-launch Basic Auth gate off. Work top
-to bottom: each part assumes the one before it passed.
+The work still outstanding. Everything already finished is in
+`teepsaa-completed.md` — including Parts 1, 2, 4 and 5 of this file, so the
+numbering starts at 3 and is deliberately not renumbered (every "Part 2b"
+reference elsewhere still points at the same thing).
 
-Consolidated 2026-08-23 from `todos-functional-testing`, `todos-audit`,
-`todos-device-testing`, `todos-email`.
+**The site is live.** The pre-launch gate came off 2026-09-09.
 
 Companion files: `teepsaa-todos-mobile-app.md` (after launch),
 `teepsaa-todos-seed-content.md` (the full seed comes last, after both apps —
 but read its "minimum you need earlier" section, because several checks below
 need products to exist), `teepsaa-production-deploy.md`,
-`teepsaa-open-questions.md`.
+`teepsaa-open-questions.md`, `../z-reference/teepsaa-email-reference.md`.
 
 **Build order:** website → buyer app → Seller app → full content seed → pitch.
 
 **Test on the live Hostinger site, not local MAMP** — real emails, real
 uploads, real `.htaccess`. Use Gmail +aliases for throwaway accounts
 (`dustint505+test1@gmail.com`).
-
-## What's left
-
-| Part                   | Checks | What it is                             |
-| ---------------------- | ------ | -------------------------------------- |
-| 3. Real-device testing | 27     | Mobile only — sweep first, then phones |
-
-**Part 3 is the only part left.** Everything else is finished and archived in
-`teepsaa-completed.md`:
-
-- **Parts 1 and 2** — the last functional-testing gaps and the whole code &
-  security audit, 34 checks, closed out between 2026-08-23 and 2026-09-04.
-- **Part 4 — Email**, closed out 2026-09-09: the deploy, the 31-template seed,
-  the digest crons and all five live sends.
-- **Part 5 — Flip to production**, closed out 2026-09-09: the payout window,
-  PHP error settings, the cron interpreter, `/uploads/`, and the pre-launch
-  gate. **The site is now publicly reachable** — the gate came off that day.
-
-The part numbers here are deliberately not renumbered, so every "Part 2b"
-reference still points at the same thing.
-
-Below Part 3 sit two Findings sections. Nothing in them blocks launch: one
-hardening item, one deferred re-run of the POST-only paths, and a
-post-launch cleanup list.
-
-**Also already done and not repeated here:** 96 of 101 functional tests, and the
-whole of `teepsaa-completed.md`. Audit sections for Buyer Flow, Vendor Flow and
-Admin Flow (17 checks) were dropped during consolidation because every one of
-them is already ticked in functional testing — cross-role rejection, cart and
-checkout, product CRUD, archive, approvals, order management, messages.
 
 ---
 
@@ -184,153 +155,41 @@ Widths, and what each one is for:
 
 ---
 
-# Findings from the display_errors sweep (2026-09-04)
+# Still to check
 
-Two live bugs, from 384 URLs / 88 pages swept as public, buyer, vendor and
-admin. The first — `/sitemap.php` fatalling on every request — was fixed
-2026-09-04 and is in `teepsaa-completed.md`. This is the other one.
-
-- [ ] **`/order-status/order-status.php` and `/refund-status/refund-status.php`
-      are directly web-reachable but are include-fragments, not pages.** Both
-      open with `// Expects $orderStatus (string) to be set before including.`,
-      so a direct GET renders a broken partial plus
-      `Warning: Undefined variable $orderStatus`, which leaks the absolute
-      server path. Harmless to the app's own flows (every real include sets the
-      variable first) — this is hardening, not a launch blocker. Either guard
-      the top of each file with a `defined()`/`isset()` bail-out, or deny them
-      in `.htaccess`.
-
-Explicitly NOT covered by this sweep, and still to do by hand with errors
-visible: every POST-only path — checkout, cart mutations, product submit,
-registration, file uploads, admin action endpoints (`*-action.php`). Those only
-execute on a real form submission. Re-run the Part 1 functional flows once with
-`display_errors` on.
-**Note this now costs more than it did.** `display_errors` was set to `Off` on
-2026-09-09 as part of Part 5, and the site is live, so doing this means turning
-errors back on in hPanel while real visitors are on the site. Either accept
-that for a short window at a quiet hour, or read `~/.logs/error_log_teepsaa_com`
-instead — `log_errors` is `On` and `error_reporting` is `E_ALL`, so the same
-warnings are being written there without being shown to anyone.
-
-Deliberate behaviour confirmed as correct, not bugs: `/support-thread/` returns
-404 on a missing/invalid `?t=` token (`http_response_code(404)`), `/admin/` 302s
-to `/admin/orders.php`, and `/product/` + `/business/` 302 to `/search/` when the
-`public_id` does not match — note those two key on a UUID `public_id`, never a
-numeric id, so `?id=1` never reaches the page body.
+- [ ] **Re-run the Part 1 functional flows with errors visible, covering the
+      POST-only paths** — checkout, cart mutations, product submit,
+      registration, file uploads, admin action endpoints (`*-action.php`).
+      These only execute on a real form submission, so the 2026-09-04 sweep of
+      384 URLs could not reach them.
+      **Do it by reading the log, not by turning errors on.** `display_errors`
+      is `Off` and the site is public, so switching it on shows errors to real
+      visitors. `log_errors` is `On` and `error_reporting` is `E_ALL`, so the
+      same warnings land in `~/.logs/error_log_teepsaa_com`. Use the flows
+      normally, then `ssh teepsaa "tail -50 ~/.logs/error_log_teepsaa_com"` and
+      look for anything newer than your start time.
 
 ---
 
-# Findings from the static audit pass (2026-08-31)
+# Post-launch cleanup — not launch work
 
-Everything in Part 2 that could be checked by reading the code rather than
-clicking the site was run; eleven checks passed and are archived in
-`teepsaa-completed.md`. What follows is what those checks turned up and is
-still outstanding. The two public-facing findings — the `/browse/` sitemap
-entry and the dead footer social links — were both fixed and are archived with
-the rest. None of what remains blocks launch.
+Cut from launch scope 2026-09-03. None of these block anything; do them
+whenever.
 
-## Cut from launch scope 2026-09-03 — post-launch cleanup, not launch work
-
-None of these block launch and none are tests. Kept as one-liners so the
-findings aren't lost; do them whenever, after launch:
-
-- CSRF tokens on 4 minor POST handlers (`api/notifications/mark-read.php`,
-  `api/wishlist/toggle.php`, `lang/set.php`, `currency/set.php`) — already
-  mitigated by the `SameSite=Strict` cookie; worst case is nuisance writes on
-  the attacker's victim's own account.
-- `products/toggle.php` — add `AND archived = 0` to its UPDATE. Nothing leaks
-  publicly today; it just allows an odd `archived=1, active=1` row.
-- Delete the dead CSS classes in the table below.
-- Host-scoped Basic Auth on `admin.teepsaa.com` (was an "optional" Part 5
-  item) — already tracked in `teepsaa-open-questions.md`.
-
-## Dead CSS
-
-`--modifier` classes composed at runtime and the `mapboxgl-*` library classes
-were excluded, so these are genuinely unreferenced:
-
-| File                                     | Dead classes                                                                                                                                                                                                                                                                                                              |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `admin/admin.css`                        | `add-cat-form`, `admin-card-actions`, `admin-card-info`, `admin-list`, `cat-desc`, `cat-section`, `cat-table`, `order-card-business`, `payout-card`, `payout-no-qr`, `payout-note`, `payout-qr`, `refund-popup-note`, `refund-popup-reason`, `review-vendor-sub`, `section-divider`, `suspend-details`, `suspend-summary` |
-| `popup/popup.css`                        | `popup-close`, `popup-inline-form`, `popup-modal`, `popup-overlay`, `popup-payout-box`, `popup-photos`, `popup-status-bar`, `popup-title`, `popup-total--payout`                                                                                                                                                          |
-| `orders-buyer/orders-buyer.css`          | `order-card-action`, `order-card-business`, `order-track-link`                                                                                                                                                                                                                                                            |
-| `settings-buyer/settings-buyer.css`      | `avatar-form`, `settings-field-row`                                                                                                                                                                                                                                                                                       |
-| `privacy/privacy.css`, `terms/terms.css` | `legal-effective`, `legal-note` (both files)                                                                                                                                                                                                                                                                              |
-| `cart/cart.css`                          | `cart-total-row`                                                                                                                                                                                                                                                                                                          |
-| `checkout/checkout.css`                  | `checkout-total-row`                                                                                                                                                                                                                                                                                                      |
-| `admin/order-detail.css`                 | `od-back`                                                                                                                                                                                                                                                                                                                 |
-| `header/header.css`                      | `lang-chevron`                                                                                                                                                                                                                                                                                                            |
-| `style.css`                              | `flash-badge`                                                                                                                                                                                                                                                                                                             |
-
-(Post-launch cleanup — see "Cut from launch scope" above. `popup.css` is the
-interesting one: the modal shell itself (`popup-modal`, `popup-overlay`,
-`popup-close`, `popup-title`) is dead while the contents (`popup-row`,
-`popup-items`, `popup-total`) are live, so the shell was reimplemented
-somewhere else and the old rules were left behind. Worth a look before
-deleting, in case the new shell is the duplicate.)
-
-# Appendix — what emails exist today
-
-Reference, not a checklist. Kept so you don't have to grep for it.
-
-## Buyer
-
-| Event                            | Template            | Sent from                                             |
-| -------------------------------- | ------------------- | ----------------------------------------------------- |
-| Registration → verification code | `verify_code`       | `register-buyer/register-buyer.php`                   |
-| Resend verification code         | `verify_code`       | `resend-verification/resend.php`                      |
-| Password reset link              | `reset_password`    | `forgot-password-buyer/request.php`                   |
-| Order placed                     | `order_received`    | `checkout/confirm.php`                                |
-| Payment confirmed by admin       | `payment_confirmed` | `admin/payments-action.php`                           |
-| Order dispatched                 | `order_dispatched`  | `analytics/dispatch.php`                              |
-| Abandoned cart reminder          | `abandoned_cart`    | `cron/abandoned-cart.php` (daily)                     |
-| Review reminder after delivery   | `review_reminder`   | `cron/review-reminder.php` (daily)                    |
-| Welcome after verification       | `welcome_buyer`     | `verify-email/verify.php`                             |
-| Order cancelled                  | `order_cancelled`   | `admin/order-action.php`, `admin/payments-action.php` |
-| Return approved                  | `refund_approved`   | `admin/refund-action.php`                             |
-| Refund declined                  | `refund_rejected`   | `admin/refund-action.php`                             |
-| Refund sent via ABA              | `refund_sent`       | `admin/refund-action.php`                             |
-| Password changed                 | `password_changed`  | `settings-buyer/password-action.php`                  |
-| Account deleted                  | `account_deleted`   | `settings-buyer/delete-action.php`                    |
-| Account suspended by admin       | `buyer_suspended`   | `admin/buyer-action.php`                              |
-| Account reinstated by admin      | `buyer_reinstated`  | `admin/buyer-action.php`                              |
-
-## Vendor
-
-| Event                            | Template              | Sent from                                                               |
-| -------------------------------- | --------------------- | ----------------------------------------------------------------------- |
-| Registration → verification code | `verify_code`         | `register-vendor/register-vendor.php`                                   |
-| Resend verification code         | `verify_code`         | `resend-verification/resend.php`                                        |
-| Password reset link              | `reset_password`      | `forgot-password-vendor/request.php`                                    |
-| Low stock after a sale           | `low_stock`           | `checkout/confirm.php`                                                  |
-| Buyer confirmed delivery         | `delivery_confirmed`  | `orders-buyer/confirm-delivery.php`                                     |
-| Payout sent                      | `payout_sent`         | `admin/payouts-action.php`                                              |
-| Welcome after verification       | `welcome_vendor`      | `verify-email/verify.php`                                               |
-| Business submitted               | `business_submitted`  | `submit/submit.php`                                                     |
-| Business approved                | `business_approved`   | `admin/action.php`                                                      |
-| Business rejected                | `business_rejected`   | `admin/action.php`                                                      |
-| Business deleted                 | `business_deleted`    | `settings-vendor/business-delete-action.php`, `admin/vendor-action.php` |
-| New paid order                   | `vendor_new_order`    | `admin/payments-action.php`                                             |
-| Refund requested                 | `refund_requested`    | `orders-buyer/refund-request.php`                                       |
-| Password changed                 | `password_changed`    | `settings-vendor/password-action.php`                                   |
-| Account deleted                  | `account_deleted`     | `settings-vendor/delete-action.php`                                     |
-| Account suspended by admin       | `vendor_suspended`    | `admin/vendor-action.php`                                               |
-| Account reinstated by admin      | `vendor_reinstated`   | `admin/vendor-action.php`                                               |
-| ABA payout details changed       | `vendor_bank_changed` | `business-vendor/aba-qr-action.php`                                     |
-
-## Admin
-
-| Event               | Template                    | Sent from                                                                                                                                                |
-| ------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| New job application | inline HTML, not a template | `careers/apply.php` → `ADMIN_EMAIL`                                                                                                                      |
-| Daily digest        | `cron/admin-digest.php`     | pending payments, refund requests, business approvals, unread support threads, payouts due, canvassing follow-ups — sends only when a queue is non-empty |
-
-All 31 templates are seeded into the live `email_templates` table and editable
-at Admin → Messages → Emails as of 2026-09-09, and both digest crons are
-registered. A second daily cron, `cron/admin-activity-digest.php`, mails
-yesterday's completed admin actions from `admin_audit` — the counterpart to the
-digest above, so that money leaving the business generates mail rather than
-silence.
-
-Before the digest existed, the job application was the admin's _only_ email —
-everything else was dashboard-badge only and required logging in to notice.
+- [ ] **CSRF tokens on 4 minor POST handlers — code written 2026-09-09, needs
+      deploy and testing.** `api/notifications/mark-read.php`,
+      `api/wishlist/toggle.php`, `lang/set.php`, `currency/set.php` now verify a
+      token. `header/header.php` publishes it as `window.CSRF` beside
+      `window.T`; the six JS call sites send it. `config/csrf.php` gained
+      `csrf_valid()` so the two JSON endpoints can refuse in JSON rather than
+      the plain text `csrf_verify()` emits.
+      **After deploying, test all four or they are broken, not hardened:**
+      language switcher (header and footer), currency switcher, wishlist hearts
+      on a product page and on `/wishlist/`, and the notification bell's
+      per-item and "mark all read" actions.
+      `lang/set.php` and `currency/set.php` also gained a `POST only` guard;
+      they previously reset the choice to English/USD on a bare GET.
+- [ ] `products/toggle.php` — add `AND archived = 0` to its UPDATE. Nothing
+      leaks publicly today; it just allows an odd `archived=1, active=1` row.
+- [ ] Host-scoped Basic Auth on `admin.teepsaa.com` (was an "optional" Part 5
+      item) — also tracked in `teepsaa-open-questions.md`.

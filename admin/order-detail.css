@@ -10,18 +10,6 @@
   padding-left: 1rem;
 }
 
-.od-back {
-  font-size: 0.875rem;
-  color: var(--text-muted);
-  text-decoration: none;
-  white-space: nowrap;
-  margin-right: 0.25rem;
-}
-
-.od-back:hover {
-  color: #111;
-}
-
 .od-header h1 {
   font-size: 1.4rem;
   margin: 0;
@@ -78,7 +66,6 @@
   display: flex;
   justify-content: space-between;
 }
-
 
 .od-table-head {
   padding: 0 0 0.45rem;

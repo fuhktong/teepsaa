@@ -4,265 +4,265 @@
 
 ## Phase 1 — Foundation
 
-- [x] Database migration — `database/migration.sql` with `users`, `businesses`, `photos` tables
-- [x] DB config — `config/db.php` with PDO connection
-- [x] Header component — `header/header.php` + `header/header.css`
-- [x] Footer component — `footer/footer.php` + `footer/footer.css`
-- [x] Homepage — `index.php` landing page
-- [x] Global CSS — `style.css` base reset
+- Database migration — `database/migration.sql` with `users`, `businesses`, `photos` tables
+- DB config — `config/db.php` with PDO connection
+- Header component — `header/header.php` + `header/header.css`
+- Footer component — `footer/footer.php` + `footer/footer.css`
+- Homepage — `index.php` landing page
+- Global CSS — `style.css` base reset
 
 ---
 
 ## Phase 2 — Auth
 
-- [x] Register page — `register/index.php` + `register/register.php` with CSRF, password_hash
-- [x] Login page — `login/index.php` + `login/login.php`, session start, redirect on success
-- [x] Logout — `logout/logout.php` — destroy session, redirect to home
-- [x] Nav — Login/Register when logged out, Dashboard/Logout when logged in
+- Register page — `register/index.php` + `register/register.php` with CSRF, password_hash
+- Login page — `login/index.php` + `login/login.php`, session start, redirect on success
+- Logout — `logout/logout.php` — destroy session, redirect to home
+- Nav — Login/Register when logged out, Dashboard/Logout when logged in
 
 ---
 
 ## Phase 3 — Map
 
-- [x] Businesses API — `api/businesses/index.php` — returns approved businesses as JSON
-- [x] Map JS — `js/map.js` — Mapbox GL JS v2.15.0, locked to Phnom Penh bounds, markers with popups
-- [x] City boundary mask — `js/boundary.js` — dark overlay outside Phnom Penh polygon
-- [x] Browse page — `browse/index.php` — list/map toggle, header search bar
+- Businesses API — `api/businesses/index.php` — returns approved businesses as JSON
+- Map JS — `js/map.js` — Mapbox GL JS v2.15.0, locked to Phnom Penh bounds, markers with popups
+- City boundary mask — `js/boundary.js` — dark overlay outside Phnom Penh polygon
+- Browse page — `browse/index.php` — list/map toggle, header search bar
 
 ---
 
 ## Phase 4 — Business Submission
 
-- [x] Photo upload — `api/upload/index.php` — jpg/png only, max 2MB, UUID filenames, saved to `/uploads/`
-- [x] Submit page — `submit/index.php` — vendor-only, click map to set lat/lng, CSRF protected
+- Photo upload — `api/upload/index.php` — jpg/png only, max 2MB, UUID filenames, saved to `/uploads/`
+- Submit page — `submit/index.php` — vendor-only, click map to set lat/lng, CSRF protected
 
 ---
 
 ## Phase 5 — Vendor Dashboard
 
-- [x] Dashboard — `dashboard/index.php` — lists user's businesses with approval status
-- [x] Products table — id, business_id, name, description, price, stock, photo, active
-- [x] Product management — `products/index.php` — add, edit, deactivate (vendor-only)
-- [x] Business profile — `business/index.php` — public page showing business info and active products
+- Dashboard — `dashboard/index.php` — lists user's businesses with approval status
+- Products table — id, business_id, name, description, price, stock, photo, active
+- Product management — `products/index.php` — add, edit, deactivate (vendor-only)
+- Business profile — `business/index.php` — public page showing business info and active products
 
 ---
 
 ## Phase 6 — Admin
 
-- [x] Admin panel — `admin/index.php` — pending business approvals, approve/reject actions
-- [x] Admin login — `login-admin/index.php` — separate portal, only accepts `is_admin = 1`
+- Admin panel — `admin/index.php` — pending business approvals, approve/reject actions
+- Admin login — `login-admin/index.php` — separate portal, only accepts `is_admin = 1`
 
 ---
 
 ## Phase 7 — Role Separation
 
-- [x] `role ENUM('buyer','vendor')` on users table
-- [x] `/login-buyer/` — hard wall, rejects vendors
-- [x] `/login-vendor/` — hard wall, rejects buyers
-- [x] `/login-admin/` — rejects anyone without `is_admin = 1`
-- [x] `/register-buyer/` and `/register-vendor/` — separate registration flows
-- [x] `/dashboard-buyer/` and `/dashboard-vendor/` — separate dashboards
-- [x] Vendors can buy and sell — buyers can only buy
+- `role ENUM('buyer','vendor')` on users table
+- `/login-buyer/` — hard wall, rejects vendors
+- `/login-vendor/` — hard wall, rejects buyers
+- `/login-admin/` — rejects anyone without `is_admin = 1`
+- `/register-buyer/` and `/register-vendor/` — separate registration flows
+- `/dashboard-buyer/` and `/dashboard-vendor/` — separate dashboards
+- Vendors can buy and sell — buyers can only buy
 
 ---
 
 ## Phase 8 — Cart & Orders
 
-- [x] `cart_items`, `payments`, `orders`, `order_items` tables
-- [x] `/cart/` — view cart grouped by vendor, update/remove items
-- [x] `/cart/add.php` and `/cart/update.php` — cart handlers
-- [x] `/checkout/` — order summary, ABA QR code, "I've paid" button
-- [x] `/checkout/confirm.php` — transaction: payment + orders + order_items, stock decrement, cart clear
+- `cart_items`, `payments`, `orders`, `order_items` tables
+- `/cart/` — view cart grouped by vendor, update/remove items
+- `/cart/add.php` and `/cart/update.php` — cart handlers
+- `/checkout/` — order summary, ABA QR code, "I've paid" button
+- `/checkout/confirm.php` — transaction: payment + orders + order_items, stock decrement, cart clear
 
 ---
 
 ## Marketplace — Auth Tables
 
-- [x] Separate `buyers`, `vendors`, and `admins` tables (split from single `users` table)
-- [x] `buyers` — buyers only, login at `/login-buyer/`, role='buyer'
-- [x] `vendors` — vendors only, login at `/login-vendor/`, role='vendor'; includes `aba_qr` column
-- [x] `admins` — admins only, login at `/login-admin/`, role='admin' + is_admin=1
-- [x] Name field on buyers and vendors (`name VARCHAR(255) NOT NULL DEFAULT ''`)
-- [x] 1 vendor account = 1 shop enforced at submit
+- Separate `buyers`, `vendors`, and `admins` tables (split from single `users` table)
+- `buyers` — buyers only, login at `/login-buyer/`, role='buyer'
+- `vendors` — vendors only, login at `/login-vendor/`, role='vendor'; includes `aba_qr` column
+- `admins` — admins only, login at `/login-admin/`, role='admin' + is_admin=1
+- Name field on buyers and vendors (`name VARCHAR(255) NOT NULL DEFAULT ''`)
+- 1 vendor account = 1 shop enforced at submit
 
 ---
 
 ## Marketplace — Payment Confirmation
 
-- [x] Admin orders tab: `pending_confirmation` payments shown in order popup at `/admin/orders.php`
-- [x] Admin clicks Confirm payment — payment status → `confirmed`, all linked orders → `paid`
-- [x] Reject option — payment → `rejected`, orders → `cancelled`
-- [x] Vendor dashboard: incoming orders appear once status is `paid`
-- [x] Vendor clicks Mark dispatched → order status → `dispatched`
+- Admin orders tab: `pending_confirmation` payments shown in order popup at `/admin/orders.php`
+- Admin clicks Confirm payment — payment status → `confirmed`, all linked orders → `paid`
+- Reject option — payment → `rejected`, orders → `cancelled`
+- Vendor dashboard: incoming orders appear once status is `paid`
+- Vendor clicks Mark dispatched → order status → `dispatched`
 
 ---
 
 ## Marketplace — Delivery
 
-- [x] Vendor sees paid orders in dashboard, marks as `dispatched`
-- [x] Buyer sees all orders with status bar in `/dashboard-buyer/`
-- [x] Buyer clicks Confirm delivery → order status → `delivered`
-- [x] Auto-confirm after 24 hours — `cron/auto-confirm.php` marks stale `dispatched` orders as `delivered`, emails admin payout list
+- Vendor sees paid orders in dashboard, marks as `dispatched`
+- Buyer sees all orders with status bar in `/dashboard-buyer/`
+- Buyer clicks Confirm delivery → order status → `delivered`
+- Auto-confirm after 24 hours — `cron/auto-confirm.php` marks stale `dispatched` orders as `delivered`, emails admin payout list
 
 ---
 
 ## Marketplace — Vendor Payout
 
-- [x] `aba_qr` column on `vendors` table — vendors upload their ABA QR from vendor dashboard
-- [x] Admin Orders popup — `delivered` orders show vendor ABA QR and Mark completed button
-- [x] Admin clicks Mark completed → order status → `completed`
-- [x] Vendor dashboard shows ABA QR upload section with current QR preview
+- `aba_qr` column on `vendors` table — vendors upload their ABA QR from vendor dashboard
+- Admin Orders popup — `delivered` orders show vendor ABA QR and Mark completed button
+- Admin clicks Mark completed → order status → `completed`
+- Vendor dashboard shows ABA QR upload section with current QR preview
 
 ---
 
 ## Marketplace — Admin Dashboard
 
-- [x] Admin dashboard: 2 tabs — Vendors and Orders
-- [x] Vendors tab — all vendors (approved/pending/rejected), click → popup with business info, approve/reject actions
-- [x] Orders tab — all orders, filterable by status with counts, click → popup with full order detail
-- [x] Payment confirm/reject and vendor payout both handled inside order popup
-- [x] Order popups: itemized table, status bar, vendor ABA QR for payouts
+- Admin dashboard: 2 tabs — Vendors and Orders
+- Vendors tab — all vendors (approved/pending/rejected), click → popup with business info, approve/reject actions
+- Orders tab — all orders, filterable by status with counts, click → popup with full order detail
+- Payment confirm/reject and vendor payout both handled inside order popup
+- Order popups: itemized table, status bar, vendor ABA QR for payouts
 
 ---
 
 ## Marketplace — UX
 
-- [x] Order detail popup — clicking any order (admin/vendor/buyer) shows full breakdown
-- [x] Vendor pending visibility — vendors see orders in `pending` state before payment confirmed
-- [x] Buyer payment status — "Payment submitted" label; amber note on pending orders
-- [x] Shared 5-step order status bar (`/order-status/order-status.php`) across all stakeholders
-- [x] Order ID format: `YYMMDD-0000` (e.g. `260514-0003`)
-- [x] Popup modal pattern — `js/popup.js` + `/popup/popup.css` used across admin, vendor, buyer
+- Order detail popup — clicking any order (admin/vendor/buyer) shows full breakdown
+- Vendor pending visibility — vendors see orders in `pending` state before payment confirmed
+- Buyer payment status — "Payment submitted" label; amber note on pending orders
+- Shared 5-step order status bar (`/order-status/order-status.php`) across all stakeholders
+- Order ID format: `YYMMDD-0000` (e.g. `260514-0003`)
+- Popup modal pattern — `js/popup.js` + `/popup/popup.css` used across admin, vendor, buyer
 
 ---
 
 ## Marketplace — Account Settings
 
-- [x] Schema — `phone`, `address`, `address_notes`, `lat`, `lng`, `lang`, `avatar` added to `buyers`; `phone`, `lang`, `avatar` added to `vendors`; `name` added to `admins`
-- [x] Buyer settings — `/dashboard-buyer/settings/` with Account (name, phone, avatar upload), Address (street, notes, Mapbox drop pin), Password, Danger zone (hard delete with password confirm)
-- [x] Vendor settings — `/dashboard-vendor/settings/` with Account (name, phone, avatar upload), Business (map pin reposition, ABA QR upload), Password, Danger zone (blocked if open orders)
-- [x] Admin settings — password change form as a Settings tab in the admin panel (`/admin/settings.php`) alongside Vendors and Orders
-- [x] Avatar dropdown — buyer and vendor headers replace Settings + Logout links with a circle avatar button (photo or name initial) that opens a Settings/Logout dropdown
-- [x] Session sync — `user_name` and `user_avatar` stored in session at login, updated on save; avatar initial updates immediately without re-login
-- [x] Vendor orders moved to Products tab — `/products/?tab=orders` replaces standalone vendor dashboard orders; header trimmed to Products + avatar dropdown
+- Schema — `phone`, `address`, `address_notes`, `lat`, `lng`, `lang`, `avatar` added to `buyers`; `phone`, `lang`, `avatar` added to `vendors`; `name` added to `admins`
+- Buyer settings — `/dashboard-buyer/settings/` with Account (name, phone, avatar upload), Address (street, notes, Mapbox drop pin), Password, Danger zone (hard delete with password confirm)
+- Vendor settings — `/dashboard-vendor/settings/` with Account (name, phone, avatar upload), Business (map pin reposition, ABA QR upload), Password, Danger zone (blocked if open orders)
+- Admin settings — password change form as a Settings tab in the admin panel (`/admin/settings.php`) alongside Vendors and Orders
+- Avatar dropdown — buyer and vendor headers replace Settings + Logout links with a circle avatar button (photo or name initial) that opens a Settings/Logout dropdown
+- Session sync — `user_name` and `user_avatar` stored in session at login, updated on save; avatar initial updates immediately without re-login
+- Vendor orders moved to Products tab — `/products/?tab=orders` replaces standalone vendor dashboard orders; header trimmed to Products + avatar dropdown
 
 ---
 
 ## Marketplace — Order Status Refresh
 
-- [x] API endpoint — `api/order-status.php` — role-aware GET endpoint, returns `{"status":"…"}` or 401/404
-- [x] JS module — `js/status-refresh.js` — `initStatusRefresh()`, re-renders status bar in-place, updates matching popup if open
-- [x] Single refresh button per section — SVG icon next to "My Orders", "Incoming Orders", "Orders" headings; spins on click
-- [x] Toast — green viewport-spanning bar on status change, red on error or session expiry
-- [x] Action button sync — dispatch/confirm-delivery/payout buttons show/hide based on new status without page reload
-- [x] Admin filter note — toast appends "Reload page to remove from this filter" when viewing a filtered status list
+- API endpoint — `api/order-status.php` — role-aware GET endpoint, returns `{"status":"…"}` or 401/404
+- JS module — `js/status-refresh.js` — `initStatusRefresh()`, re-renders status bar in-place, updates matching popup if open
+- Single refresh button per section — SVG icon next to "My Orders", "Incoming Orders", "Orders" headings; spins on click
+- Toast — green viewport-spanning bar on status change, red on error or session expiry
+- Action button sync — dispatch/confirm-delivery/payout buttons show/hide based on new status without page reload
+- Admin filter note — toast appends "Reload page to remove from this filter" when viewing a filtered status list
 
 ---
 
 ## Admin Filters & Search
 
-- [x] Vendors tab — search by name or email; filter by All / Pending / Approved / Rejected / No business
-- [x] Orders tab — search by order ID, buyer name, or business name; filter by date range; filter by status (`?status=` query param)
+- Vendors tab — search by name or email; filter by All / Pending / Approved / Rejected / No business
+- Orders tab — search by order ID, buyer name, or business name; filter by date range; filter by status (`?status=` query param)
 
 ---
 
 ## Security
 
-- [x] Brute force protection — `login_attempts` table + `config/rate-limit.php`; 5 failures per IP in 15 min triggers 15 min lockout on all three login portals
-- [x] XSS in map popups — `escHtml()` in `map.js` escapes all vendor-supplied strings before DOM injection
-- [x] File upload hardening — `config/upload.php` validates magic bytes (JPEG/PNG) in all 8 upload handlers; `uploads/.htaccess` blocks PHP execution in `/uploads/` (also closes off disguised-PHP-shell-via-upload and raw DB access via a web shell)
-- [x] `/dev/` folder deleted
-- [x] HTTPS enforcement — root `.htaccess` redirects `teepsaa.com`/`www.teepsaa.com` to HTTPS via `mod_rewrite`; `session.cookie_secure` set dynamically per-request (true only when the request is actually HTTPS), so local MAMP HTTP dev is unaffected
-- [x] IDOR audit on orders — every buyer/vendor-facing file accepting a user-suppliable ID (`dashboard-buyer/`, `dashboard-vendor/`, `orders-vendor/`, `messages-*`, `review/`, `cart/`, `api/`, `products/`, `contact-*`, `wishlist/`, `checkout/`) scopes its query to the authenticated user (`buyer_user_id=?`, `b.user_id=?` vendor→business join, or `sender_id=?`/`role=?`)
-- [x] Stock race condition — `checkout/confirm.php` checks `rowCount()` after stock decrement; rolls back if stock ran out mid-checkout
-- [x] Session cookie hardening — all `session_start()` call sites (165+) pass `cookie_httponly`/`cookie_samesite=Strict`/`cookie_secure` directly, so it works under PHP-FPM/MAMP with no `php.ini`/`.htaccess` dependency
-- [x] `config/db.php` exposure — `config/.htaccess` has `Deny from all`, blocking any request into `/config/` regardless of PHP misconfiguration
-- [x] Sequential IDs → UUIDs — random `public_id` (UUID v4) column added to `businesses`, `products`, `orders` (`database/migration-public-ids.sql`), generated via `uuid_v4()` in `config/db.php`. All buyer/vendor-facing URLs, outgoing links, canonical/SEO URLs, sitemap entries, and notification/email links use `public_id` instead of the sequential int `id`; the int `id` stays as the internal PK for joins/FKs and ownership-scoped POST actions. Admin pages intentionally keep the int `id` (admin is fully trusted)
-- [x] SQL injection — PDO prepared statements on all queries
-- [x] CSRF — `csrf_verify()` on all POST forms
-- [x] Password storage — bcrypt via `password_hash()`
-- [x] Session fixation — `session_regenerate_id(true)` on every login
-- [x] Role enforcement — hard walls between buyer, vendor, and admin logins
-- [x] Ownership checks — vendors can only edit their own products and businesses
+- Brute force protection — `login_attempts` table + `config/rate-limit.php`; 5 failures per IP in 15 min triggers 15 min lockout on all three login portals
+- XSS in map popups — `escHtml()` in `map.js` escapes all vendor-supplied strings before DOM injection
+- File upload hardening — `config/upload.php` validates magic bytes (JPEG/PNG) in all 8 upload handlers; `uploads/.htaccess` blocks PHP execution in `/uploads/` (also closes off disguised-PHP-shell-via-upload and raw DB access via a web shell)
+- `/dev/` folder deleted
+- HTTPS enforcement — root `.htaccess` redirects `teepsaa.com`/`www.teepsaa.com` to HTTPS via `mod_rewrite`; `session.cookie_secure` set dynamically per-request (true only when the request is actually HTTPS), so local MAMP HTTP dev is unaffected
+- IDOR audit on orders — every buyer/vendor-facing file accepting a user-suppliable ID (`dashboard-buyer/`, `dashboard-vendor/`, `orders-vendor/`, `messages-*`, `review/`, `cart/`, `api/`, `products/`, `contact-*`, `wishlist/`, `checkout/`) scopes its query to the authenticated user (`buyer_user_id=?`, `b.user_id=?` vendor→business join, or `sender_id=?`/`role=?`)
+- Stock race condition — `checkout/confirm.php` checks `rowCount()` after stock decrement; rolls back if stock ran out mid-checkout
+- Session cookie hardening — all `session_start()` call sites (165+) pass `cookie_httponly`/`cookie_samesite=Strict`/`cookie_secure` directly, so it works under PHP-FPM/MAMP with no `php.ini`/`.htaccess` dependency
+- `config/db.php` exposure — `config/.htaccess` has `Deny from all`, blocking any request into `/config/` regardless of PHP misconfiguration
+- Sequential IDs → UUIDs — random `public_id` (UUID v4) column added to `businesses`, `products`, `orders` (`database/migration-public-ids.sql`), generated via `uuid_v4()` in `config/db.php`. All buyer/vendor-facing URLs, outgoing links, canonical/SEO URLs, sitemap entries, and notification/email links use `public_id` instead of the sequential int `id`; the int `id` stays as the internal PK for joins/FKs and ownership-scoped POST actions. Admin pages intentionally keep the int `id` (admin is fully trusted)
+- SQL injection — PDO prepared statements on all queries
+- CSRF — `csrf_verify()` on all POST forms
+- Password storage — bcrypt via `password_hash()`
+- Session fixation — `session_regenerate_id(true)` on every login
+- Role enforcement — hard walls between buyer, vendor, and admin logins
+- Ownership checks — vendors can only edit their own products and businesses
 
 ### Found & Fixed (2026-07-04 review)
-- [x] Verification OTP leaked to browser in production — `$_SESSION['dev_otp']` set unconditionally in `register-buyer.php`/`register-vendor.php`/`resend-verification/resend.php`, echoed via `console.log()` in `verify-email/index.php` regardless of environment; gated behind `DEV_MODE` at both the set and display sites
-- [x] Cart/checkout missing buyer-role check — `cart/add.php`, `cart/index.php`, `cart/update.php`, `checkout/index.php`, `checkout/confirm.php` only checked `isset($_SESSION['user_id'])`, not `role === 'buyer'`; a logged-in vendor could hit another user's cart/address/order data on an id collision between the separate `buyers`/`vendors` tables. Added the `role !== 'buyer'` guard used everywhere else
-- [x] Dead legacy auth cluster (`/login/`, `/register/`, `/dashboard/`) — pre-role-split pages querying a `users` table that no longer exists; `footer/footer.php`'s logged-out links pointed here instead of `/login-buyer/`/`/register-buyer/`. Footer links fixed, dead folders removed
-- [x] No throttling on email-verification code guesses — `verify-email/verify.php` wired into the existing `config/rate-limit.php` (5-per-15-min IP limiter)
-- [x] No throttling on password-reset / resend-verification / job applications — added `check_rate_limit()`/`record_failed_attempt()` to `forgot-password-buyer/request.php`, `forgot-password-vendor/request.php`, `resend-verification/resend.php`, `careers/apply.php`
-- [x] Open redirect via `redirect` POST param / `HTTP_REFERER` — `cart/add.php` echoed `$_POST['redirect']` straight into `header('Location: ...')`; `lang/set.php`/`currency/set.php` did the same with the raw referer. `cart/add.php` now requires a same-site relative path (rejects `//host` too); the other two verify the referer's host matches `HTTP_HOST`
+- Verification OTP leaked to browser in production — `$_SESSION['dev_otp']` set unconditionally in `register-buyer.php`/`register-vendor.php`/`resend-verification/resend.php`, echoed via `console.log()` in `verify-email/index.php` regardless of environment; gated behind `DEV_MODE` at both the set and display sites
+- Cart/checkout missing buyer-role check — `cart/add.php`, `cart/index.php`, `cart/update.php`, `checkout/index.php`, `checkout/confirm.php` only checked `isset($_SESSION['user_id'])`, not `role === 'buyer'`; a logged-in vendor could hit another user's cart/address/order data on an id collision between the separate `buyers`/`vendors` tables. Added the `role !== 'buyer'` guard used everywhere else
+- Dead legacy auth cluster (`/login/`, `/register/`, `/dashboard/`) — pre-role-split pages querying a `users` table that no longer exists; `footer/footer.php`'s logged-out links pointed here instead of `/login-buyer/`/`/register-buyer/`. Footer links fixed, dead folders removed
+- No throttling on email-verification code guesses — `verify-email/verify.php` wired into the existing `config/rate-limit.php` (5-per-15-min IP limiter)
+- No throttling on password-reset / resend-verification / job applications — added `check_rate_limit()`/`record_failed_attempt()` to `forgot-password-buyer/request.php`, `forgot-password-vendor/request.php`, `resend-verification/resend.php`, `careers/apply.php`
+- Open redirect via `redirect` POST param / `HTTP_REFERER` — `cart/add.php` echoed `$_POST['redirect']` straight into `header('Location: ...')`; `lang/set.php`/`currency/set.php` did the same with the raw referer. `cart/add.php` now requires a same-site relative path (rejects `//host` too); the other two verify the referer's host matches `HTTP_HOST`
 
 ---
 
 ## Privacy Policy & Terms of Service
 
-- [x] `/privacy/index.php` — covers data collected, purpose, storage, third parties (Mapbox, Grab, ABA), cookies, retention, user rights, changes, contact
-- [x] `/privacy/privacy.css`
-- [x] `/terms/index.php` — covers acceptance, eligibility, buyer/vendor obligations, prohibited content, payments, delivery, royalty fees, refunds/disputes, termination, liability, governing law (Cambodia)
-- [x] `/terms/terms.css`
-- [x] Footer Help column — Privacy Policy and Terms of Service links added
-- [x] Register buyer + vendor — "By registering you agree to our Terms of Service and Privacy Policy" added below submit button
+- `/privacy/index.php` — covers data collected, purpose, storage, third parties (Mapbox, Grab, ABA), cookies, retention, user rights, changes, contact
+- `/privacy/privacy.css`
+- `/terms/index.php` — covers acceptance, eligibility, buyer/vendor obligations, prohibited content, payments, delivery, royalty fees, refunds/disputes, termination, liability, governing law (Cambodia)
+- `/terms/terms.css`
+- Footer Help column — Privacy Policy and Terms of Service links added
+- Register buyer + vendor — "By registering you agree to our Terms of Service and Privacy Policy" added below submit button
 
 ---
 
 ## Guest Contact Form
 
-- [x] `/contact/index.php` — name, email, subject, message; redirects logged-in buyers → `/contact-buyer/`, vendors → `/contact-vendor/`; honeypot hidden field
-- [x] `/contact/contact.css`
-- [x] `/contact/submit.php` — honeypot check, 60s session rate limit, stores thread + message to DB as sender_role='guest'
-- [x] `/contact/thanks/index.php` — confirmation page
-- [x] Footer: `/help/` is the entry point; contact accessible via Help Center CTA
+- `/contact/index.php` — name, email, subject, message; redirects logged-in buyers → `/contact-buyer/`, vendors → `/contact-vendor/`; honeypot hidden field
+- `/contact/contact.css`
+- `/contact/submit.php` — honeypot check, 60s session rate limit, stores thread + message to DB as sender_role='guest'
+- `/contact/thanks/index.php` — confirmation page
+- Footer: `/help/` is the entry point; contact accessible via Help Center CTA
 
 ---
 
 ## Support Messaging System
 
-- [x] `support_threads` + `support_messages` tables — guest_name, guest_email columns added for contact form submissions
-- [x] `/contact-buyer/` — structured intake form (issue type, order, subject, message) with pending barrier
-- [x] `/contact-vendor/` — same for vendors
-- [x] `/contact/` — guest contact form (name, email, subject, message); stores to DB as sender_role='guest'
-- [x] `/contact/submit.php` — inserts thread + message, no DB auth required
-- [x] `/contact/thanks/` — confirmation page
-- [x] `/help/` — FAQ page with accordion sections; role-aware "Still need help?" CTA
-- [x] `/messages-buyer/` — thread list with unread dot, status badge; Contact Support button (context-aware: pending → view thread, else → contact form)
-- [x] `/messages-vendor/` — same
-- [x] `/messages-buyer/thread.php` — pending: ticket view (labeled blocks, no input); open: chat bubble view with reply input + 10s polling; auto-reloads on first admin reply
-- [x] `/messages-vendor/thread.php` — same
-- [x] `/admin/messages/` — Buyers / Vendors / Contact Form tabs, Pending/Open/Closed filters, unread dot per thread
-- [x] `/admin/messages/thread.php` — chat bubble view; pending notice + status badge update instantly on reply without reload; role tabs replace admin section tabs
-- [x] `/api/messages/reply.php` — handles buyer/vendor/admin/guest senders; auto-opens pending threads on admin reply; emails guest at their address when admin replies
-- [x] `/api/messages/poll.php` — used by all thread views for live updates
-- [x] Messages link in header dropdown for buyer and vendor with unread count badge
-- [x] Messages link in admin header with unread count badge
-- [x] Support buttons removed from dashboard-buyer and dashboard-vendor (redundant with header link)
-- [x] Footer: Help Center link added; Contact Support removed (friction layer via /help/ is intentional)
+- `support_threads` + `support_messages` tables — guest_name, guest_email columns added for contact form submissions
+- `/contact-buyer/` — structured intake form (issue type, order, subject, message) with pending barrier
+- `/contact-vendor/` — same for vendors
+- `/contact/` — guest contact form (name, email, subject, message); stores to DB as sender_role='guest'
+- `/contact/submit.php` — inserts thread + message, no DB auth required
+- `/contact/thanks/` — confirmation page
+- `/help/` — FAQ page with accordion sections; role-aware "Still need help?" CTA
+- `/messages-buyer/` — thread list with unread dot, status badge; Contact Support button (context-aware: pending → view thread, else → contact form)
+- `/messages-vendor/` — same
+- `/messages-buyer/thread.php` — pending: ticket view (labeled blocks, no input); open: chat bubble view with reply input + 10s polling; auto-reloads on first admin reply
+- `/messages-vendor/thread.php` — same
+- `/admin/messages/` — Buyers / Vendors / Contact Form tabs, Pending/Open/Closed filters, unread dot per thread
+- `/admin/messages/thread.php` — chat bubble view; pending notice + status badge update instantly on reply without reload; role tabs replace admin section tabs
+- `/api/messages/reply.php` — handles buyer/vendor/admin/guest senders; auto-opens pending threads on admin reply; emails guest at their address when admin replies
+- `/api/messages/poll.php` — used by all thread views for live updates
+- Messages link in header dropdown for buyer and vendor with unread count badge
+- Messages link in admin header with unread count badge
+- Support buttons removed from dashboard-buyer and dashboard-vendor (redundant with header link)
+- Footer: Help Center link added; Contact Support removed (friction layer via /help/ is intentional)
 
 ---
 
 ## Email Verification
 
-- [x] Schema — `email_verified_at DATETIME NULL` and `verify_token VARCHAR(64) NULL` added to `buyers` and `vendors` → `database/add-email-verification.sql`
-- [x] Buyer registration — generates token, stores in `verify_token`, sends verification email, redirects to `/resend-verification/`
-- [x] Vendor registration — same flow
-- [x] `/verify-email/` — accepts `?token=X&role=buyer|vendor`, sets `email_verified_at = NOW()`, clears token, redirects to login with success flash
-- [x] Enforcement — buyer checkout (`checkout/confirm.php`) and vendor submit (`submit/submit.php`) block unverified accounts and redirect to `/resend-verification/`
-- [x] `/resend-verification/` — logged-in buyer or vendor can request a new email; POST handler at `/resend-verification/resend.php`
-- [x] Email — subject "Verify your Teepsaa email address"; token has no expiry, replaced on resend; uses `config/mail.php`
-- [x] Edge cases — invalid token, already verified, unverified login allowed but checkout/submit blocked
+- Schema — `email_verified_at DATETIME NULL` and `verify_token VARCHAR(64) NULL` added to `buyers` and `vendors` → `database/add-email-verification.sql`
+- Buyer registration — generates token, stores in `verify_token`, sends verification email, redirects to `/resend-verification/`
+- Vendor registration — same flow
+- `/verify-email/` — accepts `?token=X&role=buyer|vendor`, sets `email_verified_at = NOW()`, clears token, redirects to login with success flash
+- Enforcement — buyer checkout (`checkout/confirm.php`) and vendor submit (`submit/submit.php`) block unverified accounts and redirect to `/resend-verification/`
+- `/resend-verification/` — logged-in buyer or vendor can request a new email; POST handler at `/resend-verification/resend.php`
+- Email — subject "Verify your Teepsaa email address"; token has no expiry, replaced on resend; uses `config/mail.php`
+- Edge cases — invalid token, already verified, unverified login allowed but checkout/submit blocked
 
 ---
 
 ## Forgot Password / Reset Password
 
-- [x] Schema — `password_resets` table: `id`, `role ENUM('buyer','vendor')`, `user_id`, `token VARCHAR(64) UNIQUE`, `created_at`, `used_at` → `database/add-password-resets.sql`
-- [x] Buyer flow — `/forgot-password-buyer/` email form + `request.php` handler; `/reset-password-buyer/` new password form + `reset.php` handler
-- [x] Vendor flow — same as buyer, queries `vendors` table
-- [x] Token — `bin2hex(random_bytes(32))`, expires after 1 hour, marked `used_at = NOW()` on use
-- [x] Email — subject "Reset your Teepsaa password"; link valid 1 hour; always shows success on request (prevents enumeration); uses `config/mail.php`
-- [x] Links — "Forgot password?" on `/login-buyer/`, `/login-vendor/`, and footer "Your Account" column
-- [x] Edge cases — used token, expired token, not-found token (generic message), password < 8 chars rejected
-- [x] Cleanup — `cron/purge-password-resets.php` purges old used/expired tokens
+- Schema — `password_resets` table: `id`, `role ENUM('buyer','vendor')`, `user_id`, `token VARCHAR(64) UNIQUE`, `created_at`, `used_at` → `database/add-password-resets.sql`
+- Buyer flow — `/forgot-password-buyer/` email form + `request.php` handler; `/reset-password-buyer/` new password form + `reset.php` handler
+- Vendor flow — same as buyer, queries `vendors` table
+- Token — `bin2hex(random_bytes(32))`, expires after 1 hour, marked `used_at = NOW()` on use
+- Email — subject "Reset your Teepsaa password"; link valid 1 hour; always shows success on request (prevents enumeration); uses `config/mail.php`
+- Links — "Forgot password?" on `/login-buyer/`, `/login-vendor/`, and footer "Your Account" column
+- Edge cases — used token, expired token, not-found token (generic message), password < 8 chars rejected
+- Cleanup — `cron/purge-password-resets.php` purges old used/expired tokens
 
 ---
 
@@ -270,16 +270,16 @@
 
 Rate = base category rate + sum of active vendor penalties, snapshotted on each order at checkout. Buyers never see it; vendors see it in payout breakdowns and the product price tool.
 
-- [x] `categories` table — `id`, `parent_id`, `name`, `royalty_rate DECIMAL(5,4)` (default 0.0500)
-- [x] `vendor_penalties` table — `id`, `business_id`, `rate_increase`, `admin_note`, `start_date`, `end_date`, `cleared_at`, `notified_at`
-- [x] `vendor_notifications` table — for penalty expiry notices to vendors
-- [x] `orders` — `royalty_rate`, `royalty_amount`, `vendor_payout` columns
-- [x] Admin Categories tab — hierarchical tree view, add/edit/reparent, rates on leaf nodes only; parent categories show `—`
-- [x] Vendor product form — leaf-only category dropdown with server-side enforcement; live payout preview as vendor types price
-- [x] Checkout — effective rate computed as category rate + active penalty sum; all three columns snapshotted per order
-- [x] Admin payout view — full breakdown: subtotal / royalty deduction / vendor payout
-- [x] Admin penalty management — apply/remove penalties on vendor popup; multiple penalties stack additively, auto-expire by end date
-- [x] Vendor penalty notice — banner on products page if penalty active; dismissible expiry notification on auto-expiry
+- `categories` table — `id`, `parent_id`, `name`, `royalty_rate DECIMAL(5,4)` (default 0.0500)
+- `vendor_penalties` table — `id`, `business_id`, `rate_increase`, `admin_note`, `start_date`, `end_date`, `cleared_at`, `notified_at`
+- `vendor_notifications` table — for penalty expiry notices to vendors
+- `orders` — `royalty_rate`, `royalty_amount`, `vendor_payout` columns
+- Admin Categories tab — hierarchical tree view, add/edit/reparent, rates on leaf nodes only; parent categories show `—`
+- Vendor product form — leaf-only category dropdown with server-side enforcement; live payout preview as vendor types price
+- Checkout — effective rate computed as category rate + active penalty sum; all three columns snapshotted per order
+- Admin payout view — full breakdown: subtotal / royalty deduction / vendor payout
+- Admin penalty management — apply/remove penalties on vendor popup; multiple penalties stack additively, auto-expire by end date
+- Vendor penalty notice — banner on products page if penalty active; dismissible expiry notification on auto-expiry
 
 ---
 
@@ -287,156 +287,156 @@ Rate = base category rate + sum of active vendor penalties, snapshotted on each 
 
 One review per order item (enforced by UNIQUE on `order_item_id`). Only available on `delivered` or `completed` orders.
 
-- [x] `reviews` table — `id`, `order_item_id UNIQUE`, `buyer_id`, `product_id` (nullable), `business_id`, `rating TINYINT(1–5)`, `comment TEXT`, `created_at`; FKs: order_items ON DELETE CASCADE, buyers ON DELETE CASCADE, products ON DELETE SET NULL, businesses ON DELETE CASCADE
-- [x] `database/migration-reviews.sql`
-- [x] `/review/index.php` — review form: interactive star rating (1–5), optional comment (max 1000 chars), char counter
-- [x] `/review/review.css` — CSS-only star highlight via `~` sibling selector on reversed radio inputs
-- [x] `/review/submit.php` — CSRF, ownership check, status check, duplicate guard, inserts `product_id` + `business_id` snapshotted at insert
-- [x] `/dashboard-buyer/order.php` — Reviews section per item: "Leave a review" button or "Reviewed ✓" label for delivered/completed orders; tracking link hidden after delivery
-- [x] `/dashboard-buyer/index.php` — "★ Leave a review for this order" prompt on order cards with pending reviews
-- [x] `/product/index.php` — rating summary (avg + count) + individual review list (newest first, buyer first name + last initial)
-- [x] `/search/index.php` — avg rating + count on product cards
-- [x] `index.php` (homepage) — avg rating + count on all product card sections (featured, best sellers, new arrivals, you might like)
-- [x] `/business/index.php` — overall vendor rating in store header; per-product avg rating on product cards
-- [x] `/products/index.php` (vendor) — Rating column in product table
-- [x] `/admin/product.php` — Reviews card: all reviews for the product with delete button
-- [x] `/admin/reviews.php` — standalone Reviews tab: all reviews across all products, searchable by vendor/business, delete per row
-- [x] `/admin/review-action.php` — delete handler; redirects to product page or reviews tab based on `redirect_to` param
+- `reviews` table — `id`, `order_item_id UNIQUE`, `buyer_id`, `product_id` (nullable), `business_id`, `rating TINYINT(1–5)`, `comment TEXT`, `created_at`; FKs: order_items ON DELETE CASCADE, buyers ON DELETE CASCADE, products ON DELETE SET NULL, businesses ON DELETE CASCADE
+- `database/migration-reviews.sql`
+- `/review/index.php` — review form: interactive star rating (1–5), optional comment (max 1000 chars), char counter
+- `/review/review.css` — CSS-only star highlight via `~` sibling selector on reversed radio inputs
+- `/review/submit.php` — CSRF, ownership check, status check, duplicate guard, inserts `product_id` + `business_id` snapshotted at insert
+- `/dashboard-buyer/order.php` — Reviews section per item: "Leave a review" button or "Reviewed ✓" label for delivered/completed orders; tracking link hidden after delivery
+- `/dashboard-buyer/index.php` — "★ Leave a review for this order" prompt on order cards with pending reviews
+- `/product/index.php` — rating summary (avg + count) + individual review list (newest first, buyer first name + last initial)
+- `/search/index.php` — avg rating + count on product cards
+- `index.php` (homepage) — avg rating + count on all product card sections (featured, best sellers, new arrivals, you might like)
+- `/business/index.php` — overall vendor rating in store header; per-product avg rating on product cards
+- `/products/index.php` (vendor) — Rating column in product table
+- `/admin/product.php` — Reviews card: all reviews for the product with delete button
+- `/admin/reviews.php` — standalone Reviews tab: all reviews across all products, searchable by vendor/business, delete per row
+- `/admin/review-action.php` — delete handler; redirects to product page or reviews tab based on `redirect_to` param
 
 ---
 
 ## Notifications
 
-- [x] `database/migration-notifications.sql` — `notifications` table: role, user_id, type, message, link, read_at
-- [x] `config/notify.php` — `notify()` in-app helper + `notification_email_html()` email template builder
-- [x] `api/notifications/index.php` — GET, returns unread count + last 15 items for polling
-- [x] `api/notifications/mark-read.php` — POST, marks one or all notifications read
-- [x] `js/notifications.js` — polls every 15s, updates badge, renders dropdown on open, mark-read on click
-- [x] Bell icon in header — buyer and vendor only; red badge with unread count; server-rendered initial count; dropdown with "Mark all read"
-- [x] Email + in-app notification wired at all 4 order trigger points: payment confirmed (→ buyer), order dispatched (→ buyer), delivery confirmed (→ vendor), payout sent (→ vendor)
+- `database/migration-notifications.sql` — `notifications` table: role, user_id, type, message, link, read_at
+- `config/notify.php` — `notify()` in-app helper + `notification_email_html()` email template builder
+- `api/notifications/index.php` — GET, returns unread count + last 15 items for polling
+- `api/notifications/mark-read.php` — POST, marks one or all notifications read
+- `js/notifications.js` — polls every 15s, updates badge, renders dropdown on open, mark-read on click
+- Bell icon in header — buyer and vendor only; red badge with unread count; server-rendered initial count; dropdown with "Mark all read"
+- Email + in-app notification wired at all 4 order trigger points: payment confirmed (→ buyer), order dispatched (→ buyer), delivery confirmed (→ vendor), payout sent (→ vendor)
 
 ---
 
 ## Refunds & Returns
 
-- [x] `database/migration-refunds.sql` + `migration-refund-status-enum.sql` + `migration-return-steps.sql` — no separate refunds table: refund columns (`refund_reason`, `refund_requested_at`, `refunded_at`, `return_tracking_url`) and refund/return statuses added to `orders`
-- [x] `/dashboard-buyer/refund-request.php` — buyer submits refund request on delivered/completed orders
-- [x] `/dashboard-buyer/return-dispatch.php` — buyer marks return item dispatched with tracking URL
-- [x] `/orders-vendor/refund.php` — vendor view of refund requests
-- [x] `/products/return-received.php` — vendor marks returned item received
-- [x] `/returns/index.php` — shared returns status page
-- [x] `/admin/refunds.php`, `/admin/refund.php`, `/admin/refund-action.php` — admin refund management (approve/reject/complete)
-- [x] `/refund-status/refund-status.php` — shared refund status bar component
+- `database/migration-refunds.sql` + `migration-refund-status-enum.sql` + `migration-return-steps.sql` — no separate refunds table: refund columns (`refund_reason`, `refund_requested_at`, `refunded_at`, `return_tracking_url`) and refund/return statuses added to `orders`
+- `/dashboard-buyer/refund-request.php` — buyer submits refund request on delivered/completed orders
+- `/dashboard-buyer/return-dispatch.php` — buyer marks return item dispatched with tracking URL
+- `/orders-vendor/refund.php` — vendor view of refund requests
+- `/products/return-received.php` — vendor marks returned item received
+- `/returns/index.php` — shared returns status page
+- `/admin/refunds.php`, `/admin/refund.php`, `/admin/refund-action.php` — admin refund management (approve/reject/complete)
+- `/refund-status/refund-status.php` — shared refund status bar component
 
 ---
 
 ## Delivery & Shipping
 
-- [x] `config/delivery.php` — delivery config constants (base fee, per-km rate, etc.)
-- [x] `config/delivery-calc.php` — distance/fee calculation helper
-- [x] `/shipping/index.php` — shipping info page
-- [x] `database/migration-add-delivery.sql` — delivery fee, distance columns on orders
+- `config/delivery.php` — delivery config constants (base fee, per-km rate, etc.)
+- `config/delivery-calc.php` — distance/fee calculation helper
+- `/shipping/index.php` — shipping info page
+- `database/migration-add-delivery.sql` — delivery fee, distance columns on orders
 
 ---
 
 ## Admin Buyers Tab
 
-- [x] `/admin/buyers.php` — all buyers list with search/filter
-- [x] `/admin/buyer.php` — buyer detail popup (profile, orders, ban action)
-- [x] `/admin/buyer-action.php` — ban/unban handler
-- [x] `/admin/buyer-map.php` — buyer address map view
+- `/admin/buyers.php` — all buyers list with search/filter
+- `/admin/buyer.php` — buyer detail popup (profile, orders, ban action)
+- `/admin/buyer-action.php` — ban/unban handler
+- `/admin/buyer-map.php` — buyer address map view
 
 ---
 
 ## Currency Switcher
 
-- [x] `/currency/set.php` — POST handler sets `$_SESSION['currency']`; language/currency toggle in header switches between USD and KHR with live page reload
+- `/currency/set.php` — POST handler sets `$_SESSION['currency']`; language/currency toggle in header switches between USD and KHR with live page reload
 
 ---
 
 ## Ecommerce Features
 
-- [x] Order confirmation email — sent to buyer immediately on checkout submit; itemised receipt with total and delivery note; uses `contact@teepsaa.com`
-- [x] Buyer order notes — `buyer_notes VARCHAR(500)` on `orders` table; textarea at checkout; shown to vendor (highlighted) and admin in order detail views
-- [x] Wishlist — `wishlists` table; heart button on product detail page; `/wishlist/` page with remove; toggle API at `api/wishlist/toggle.php`; Wishlist link in buyer dropdown
-- [x] SEO meta tags — `config/seo.php` helper; description, og:title, og:description, og:image, og:url, canonical wired to homepage, product, business, and search pages; product/business descriptions used as meta descriptions automatically
-- [x] `sitemap.php` — dynamic XML sitemap listing all live products and approved businesses with `lastmod` dates
-- [x] `robots.txt` — blocks admin/api/checkout/dashboards from indexing; points Google to `sitemap.php`
+- Order confirmation email — sent to buyer immediately on checkout submit; itemised receipt with total and delivery note; uses `contact@teepsaa.com`
+- Buyer order notes — `buyer_notes VARCHAR(500)` on `orders` table; textarea at checkout; shown to vendor (highlighted) and admin in order detail views
+- Wishlist — `wishlists` table; heart button on product detail page; `/wishlist/` page with remove; toggle API at `api/wishlist/toggle.php`; Wishlist link in buyer dropdown
+- SEO meta tags — `config/seo.php` helper; description, og:title, og:description, og:image, og:url, canonical wired to homepage, product, business, and search pages; product/business descriptions used as meta descriptions automatically
+- `sitemap.php` — dynamic XML sitemap listing all live products and approved businesses with `lastmod` dates
+- `robots.txt` — blocks admin/api/checkout/dashboards from indexing; points Google to `sitemap.php`
 
 ---
 
 ## Vendor Analytics & Low Stock Alert
 
-- [x] Vendor sales analytics — `dashboard-vendor/index.php` analytics section (only shown when approved); 4 stat cards: all-time revenue, current-month revenue, total orders, current-month orders; best sellers table (top 5 by units sold from delivered/completed orders)
-- [x] Low stock alert — `database/migration-low-stock.sql` adds `low_stock_threshold TINYINT DEFAULT 3` and `low_stock_notified_at DATETIME NULL` to `products`; `checkout/confirm.php` fires after commit: if any purchased product's new stock is ≤ threshold and no alert was sent in the last 24h, sends in-app notification + email to vendor via `notify()` + `send_email()`; `products/save.php` clears `low_stock_notified_at` when vendor restocks above threshold so they'll be alerted again next time it drops low
-- [x] Low stock badge — "Low" / "Out" badge on stock column in vendor dashboard products table (`stock-low-badge` CSS class)
+- Vendor sales analytics — `dashboard-vendor/index.php` analytics section (only shown when approved); 4 stat cards: all-time revenue, current-month revenue, total orders, current-month orders; best sellers table (top 5 by units sold from delivered/completed orders)
+- Low stock alert — `database/migration-low-stock.sql` adds `low_stock_threshold TINYINT DEFAULT 3` and `low_stock_notified_at DATETIME NULL` to `products`; `checkout/confirm.php` fires after commit: if any purchased product's new stock is ≤ threshold and no alert was sent in the last 24h, sends in-app notification + email to vendor via `notify()` + `send_email()`; `products/save.php` clears `low_stock_notified_at` when vendor restocks above threshold so they'll be alerted again next time it drops low
+- Low stock badge — "Low" / "Out" badge on stock column in vendor dashboard products table (`stock-low-badge` CSS class)
 
 ---
 
 ## Admin Accounting
 
-- [x] `admin/accounting.php` — platform accounting page; date range filter; 6 summary stat cards: confirmed GMV, royalty earned, platform revenue (collected on completed orders), royalty pending (delivered not yet paid out), payouts made, payouts outstanding; top 10 vendors by royalty contribution; monthly breakdown table (last 24 months) with orders, GMV, royalty, payouts made, outstanding; "Accounting" tab added to all admin pages
+- `admin/accounting.php` — platform accounting page; date range filter; 6 summary stat cards: confirmed GMV, royalty earned, platform revenue (collected on completed orders), royalty pending (delivered not yet paid out), payouts made, payouts outstanding; top 10 vendors by royalty contribution; monthly breakdown table (last 24 months) with orders, GMV, royalty, payouts made, outstanding; "Accounting" tab added to all admin pages
 
 ---
 
 ## Search & Filtering
 
-- [x] Infinite scroll on search — 20 products at a time via `/api/search/`, IntersectionObserver triggers next page
-- [x] Sort — 5 options: Newest, Price low→high, Price high→low, Top rated, Most popular; auto-submits on change
-- [x] Price range filter — Min/Max USD inputs with Apply button on search sidebar
-- [x] Category filter — leaf categories with active products; auto-submits on change
-- [x] Rating filter — ★4+, ★3+, ★2+; auto-submits on change
-- [x] Vertical filter sidebar — sticky left sidebar on desktop; collapses behind Filters toggle on mobile
-- [x] Responsive product grid — 4 columns → 3 → 2 → 1 as viewport shrinks
-- [x] Active filter chips — pill tags above results; each chip removes just that filter on click; sort chip only appears when not default
+- Infinite scroll on search — 20 products at a time via `/api/search/`, IntersectionObserver triggers next page
+- Sort — 5 options: Newest, Price low→high, Price high→low, Top rated, Most popular; auto-submits on change
+- Price range filter — Min/Max USD inputs with Apply button on search sidebar
+- Category filter — leaf categories with active products; auto-submits on change
+- Rating filter — ★4+, ★3+, ★2+; auto-submits on change
+- Vertical filter sidebar — sticky left sidebar on desktop; collapses behind Filters toggle on mobile
+- Responsive product grid — 4 columns → 3 → 2 → 1 as viewport shrinks
+- Active filter chips — pill tags above results; each chip removes just that filter on click; sort chip only appears when not default
 
 ---
 
 ## Flash Sales
 
-- [x] `database/migration-flash-sale.sql` — `sale_price DECIMAL(10,2) NULL`, `sale_ends_at DATETIME NULL` added to `products`
-- [x] `config/currency.php` — `active_sale(array $p): bool` and `price_html(array $p): string` helpers
-- [x] `style.css` — `.price-sale` (red), `.price-original` (strikethrough grey), `.flash-badge` CSS classes
-- [x] Vendor form — `products/index.php` split date + half-hour time select fields for sale end; `products/save.php` parses and saves both columns
-- [x] Cancel sale — "Cancel sale" button in vendor preview card when sale is active; `products/cancel-sale.php` clears both columns
-- [x] Buyer-facing price display — `price_html()` used on homepage, search, business page, product page, wishlist
-- [x] Infinite scroll cards — JS `cardHtml()` in `search/index.php` and `index.php` renders sale price from API response
-- [x] API responses — `api/search/index.php` and `api/recently-viewed/index.php` expose `sale_price` + `sale_ends_at`
-- [x] Product page variant JS — price display updates correctly when variant selected; falls back to sale price when no variant override
-- [x] Checkout pricing — `cart/index.php`, `checkout/index.php`, `checkout/confirm.php` use `COALESCE(variant_override, IF(sale active, sale_price, NULL), base_price)` as effective price
+- `database/migration-flash-sale.sql` — `sale_price DECIMAL(10,2) NULL`, `sale_ends_at DATETIME NULL` added to `products`
+- `config/currency.php` — `active_sale(array $p): bool` and `price_html(array $p): string` helpers
+- `style.css` — `.price-sale` (red), `.price-original` (strikethrough grey), `.flash-badge` CSS classes
+- Vendor form — `products/index.php` split date + half-hour time select fields for sale end; `products/save.php` parses and saves both columns
+- Cancel sale — "Cancel sale" button in vendor preview card when sale is active; `products/cancel-sale.php` clears both columns
+- Buyer-facing price display — `price_html()` used on homepage, search, business page, product page, wishlist
+- Infinite scroll cards — JS `cardHtml()` in `search/index.php` and `index.php` renders sale price from API response
+- API responses — `api/search/index.php` and `api/recently-viewed/index.php` expose `sale_price` + `sale_ends_at`
+- Product page variant JS — price display updates correctly when variant selected; falls back to sale price when no variant override
+- Checkout pricing — `cart/index.php`, `checkout/index.php`, `checkout/confirm.php` use `COALESCE(variant_override, IF(sale active, sale_price, NULL), base_price)` as effective price
 
 ---
 
 ## Abandoned Cart Email
 
-- [x] `database/migration-abandoned-cart.sql` — `abandoned_cart_notified_at DATETIME NULL` added to `buyers`
-- [x] `cron/abandoned-cart.php` — queries buyers with 24h+ old cart items, skips if order placed since, sends email + in-app notification, marks notified
-- [x] `checkout/confirm.php` — resets `abandoned_cart_notified_at = NULL` on successful checkout so buyers can be re-reminded on future abandonment
+- `database/migration-abandoned-cart.sql` — `abandoned_cart_notified_at DATETIME NULL` added to `buyers`
+- `cron/abandoned-cart.php` — queries buyers with 24h+ old cart items, skips if order placed since, sends email + in-app notification, marks notified
+- `checkout/confirm.php` — resets `abandoned_cart_notified_at = NULL` on successful checkout so buyers can be re-reminded on future abandonment
 
 ## Review Reminder Email
 
-- [x] `database/migration-review-reminder.sql` — `review_reminder_sent_at DATETIME NULL` added to `orders`
-- [x] `cron/review-reminder.php` — queries delivered orders 24h+ ago with unreviewed items, sends email + in-app notification, marks sent
+- `database/migration-review-reminder.sql` — `review_reminder_sent_at DATETIME NULL` added to `orders`
+- `cron/review-reminder.php` — queries delivered orders 24h+ ago with unreviewed items, sends email + in-app notification, marks sent
 
 ## Buyer Address Book
 
-- [x] `database/migration-address-book.sql` — `buyer_addresses` table with label, house_number, address, address_notes, khan, sangkat, lat, lng, is_default
-- [x] `dashboard-buyer/settings/index.php` — "Saved addresses" tab: list with set-default/delete buttons; "Add new address" details panel with full Mapbox map; `updateNewSangkats()` JS for the add form
-- [x] `dashboard-buyer/settings/address-book-action.php` — POST handler for add / set_default / delete actions; set_default syncs to `buyers` table
-- [x] `dashboard-buyer/settings/settings.css` — styles for saved address list, items, labels, badges, action buttons
-- [x] `checkout/index.php` — address switcher bar shows current delivery address + saved addresses; posting to `set-address.php` switches address mid-checkout
-- [x] `checkout/set-address.php` — verifies ownership, syncs selected address to `buyers` table, marks as default
-- [x] `checkout/checkout.css` — styles for checkout address switcher component
+- `database/migration-address-book.sql` — `buyer_addresses` table with label, house_number, address, address_notes, khan, sangkat, lat, lng, is_default
+- `dashboard-buyer/settings/index.php` — "Saved addresses" tab: list with set-default/delete buttons; "Add new address" details panel with full Mapbox map; `updateNewSangkats()` JS for the add form
+- `dashboard-buyer/settings/address-book-action.php` — POST handler for add / set_default / delete actions; set_default syncs to `buyers` table
+- `dashboard-buyer/settings/settings.css` — styles for saved address list, items, labels, badges, action buttons
+- `checkout/index.php` — address switcher bar shows current delivery address + saved addresses; posting to `set-address.php` switches address mid-checkout
+- `checkout/set-address.php` — verifies ownership, syncs selected address to `buyers` table, marks as default
+- `checkout/checkout.css` — styles for checkout address switcher component
 
 ## Product Variants
 
-- [x] Product variants — multi-dimensional option types (Size, Color, etc.); each combination is a variant with its own stock; buyer sees one selector per option type on the product page
-- [x] `database/migration-product-variants.sql` — variant schema
-- [x] `products/index.php` + `products/save.php` — vendor variant management
-- [x] `product/index.php` — buyer-facing option selectors
-- [x] `cart/add.php`, `cart/update.php`, `cart/index.php` — variant-aware cart
-- [x] `checkout/index.php`, `checkout/confirm.php` — variant stock decrement at checkout
-- [x] `dashboard-buyer/index.php`, `dashboard-buyer/order.php`, `orders-vendor/` — variant display in order views
+- Product variants — multi-dimensional option types (Size, Color, etc.); each combination is a variant with its own stock; buyer sees one selector per option type on the product page
+- `database/migration-product-variants.sql` — variant schema
+- `products/index.php` + `products/save.php` — vendor variant management
+- `product/index.php` — buyer-facing option selectors
+- `cart/add.php`, `cart/update.php`, `cart/index.php` — variant-aware cart
+- `checkout/index.php`, `checkout/confirm.php` — variant stock decrement at checkout
+- `dashboard-buyer/index.php`, `dashboard-buyer/order.php`, `orders-vendor/` — variant display in order views
 
 ---
 
@@ -445,35 +445,35 @@ One review per order item (enforced by UNIQUE on `order_item_id`). Only availabl
 Full EN/KM language toggle across the whole app. A header flag toggle sets `$_SESSION['lang']` (default `km`); every page loads `$t` from `lang/en.php` / `lang/km.php` (~581 keys, EN/KM parity maintained). Admin dashboard stays English by design.
 
 ### Infrastructure
-- [x] `lang/en.php` + `lang/km.php` — keyed string dictionaries (real Khmer, not machine placeholders); `header/header.php` loads `$t` per session lang; `footer/footer.php` has its own `$t` guard-load
-- [x] Toggle `lang/set.php`; **persistence** — writes choice to the `buyers`/`vendors` `lang` column, restored into the session at login (`login-buyer.php`/`login-vendor.php`); column default aligned to `km` (`migration-lang-default-km.sql`)
-- [x] Khmer web font — **Noto Sans Khmer** in `style.css` `@import` + body font stack (per-glyph fallback)
-- [x] Brand renders uniformly as **`ទីផ្សារ`** in Khmer; per-language footer tagline (Pacifico EN / Metal KM)
-- [x] Shared display helpers in `config/db.php`: `lang_field($row,$field)` (for `field`/`field_km` rows) and `pick_lang($base,$km)` (for aliased columns) — Khmer optional, English fallback
-- [x] Date localization — `config/i18n.php` `fmt_date($fmt,$when)` + `km_num()` (Khmer month/weekday names, am/pm, Khmer numerals); swept 12 non-admin display files (`date(` → `fmt_date(`), data/input `date('Y-m-d…')` left untouched
-- [x] Global JS strings — `header/header.php` emits `window.T` (per-language `js_*` keys); `js/status-refresh.js` (status-bar labels, toasts) + `js/notifications.js` ("No notifications yet"/"Loading…") read it with English fallbacks
+- `lang/en.php` + `lang/km.php` — keyed string dictionaries (real Khmer, not machine placeholders); `header/header.php` loads `$t` per session lang; `footer/footer.php` has its own `$t` guard-load
+- Toggle `lang/set.php`; **persistence** — writes choice to the `buyers`/`vendors` `lang` column, restored into the session at login (`login-buyer.php`/`login-vendor.php`); column default aligned to `km` (`migration-lang-default-km.sql`)
+- Khmer web font — **Noto Sans Khmer** in `style.css` `@import` + body font stack (per-glyph fallback)
+- Brand renders uniformly as **`ទីផ្សារ`** in Khmer; per-language footer tagline (Pacifico EN / Metal KM)
+- Shared display helpers in `config/db.php`: `lang_field($row,$field)` (for `field`/`field_km` rows) and `pick_lang($base,$km)` (for aliased columns) — Khmer optional, English fallback
+- Date localization — `config/i18n.php` `fmt_date($fmt,$when)` + `km_num()` (Khmer month/weekday names, am/pm, Khmer numerals); swept 12 non-admin display files (`date(` → `fmt_date(`), data/input `date('Y-m-d…')` left untouched
+- Global JS strings — `header/header.php` emits `window.T` (per-language `js_*` keys); `js/status-refresh.js` (status-bar labels, toasts) + `js/notifications.js` ("No notifications yet"/"Loading…") read it with English fallbacks
 
 ### UI wired to `$t` (every user-facing page)
-- [x] Header, footer, homepage, search (+ sort labels/chips), product page (+ inline JS), cart, checkout
-- [x] Login/register — all portals (`login/`, `login-buyer/`, `login-vendor/`, `register/`, `register-buyer/`, `register-vendor/`); auth recovery (`forgot-password-*`, `reset-password-*`, `verify-email/`, `resend-verification/`)
-- [x] Buyer dashboard — wishlist, orders, settings (all tabs + address JS), messages, order detail + full refund/return flow; shared `order-status`/`refund-status` bars
-- [x] Vendor dashboard — dashboard, orders-vendor (list/detail/refund), settings (all tabs), submit, messages, and the 1156-line `products/index.php` product manager (+ inline JS)
-- [x] Contact forms (`contact/`, `contact-buyer/`, `contact-vendor/` — issue-type value→label maps), `business/` storefront, `review/` form (+ JS star labels)
-- [x] Static content pages — `about/`, and `privacy/`, `terms/`, `shipping/`, `returns/`, `help/` (FAQ) as per-page bilingual `$lang` blocks (one block per page for native Khmer review)
+- Header, footer, homepage, search (+ sort labels/chips), product page (+ inline JS), cart, checkout
+- Login/register — all portals (`login/`, `login-buyer/`, `login-vendor/`, `register/`, `register-buyer/`, `register-vendor/`); auth recovery (`forgot-password-*`, `reset-password-*`, `verify-email/`, `resend-verification/`)
+- Buyer dashboard — wishlist, orders, settings (all tabs + address JS), messages, order detail + full refund/return flow; shared `order-status`/`refund-status` bars
+- Vendor dashboard — dashboard, orders-vendor (list/detail/refund), settings (all tabs), submit, messages, and the 1156-line `products/index.php` product manager (+ inline JS)
+- Contact forms (`contact/`, `contact-buyer/`, `contact-vendor/` — issue-type value→label maps), `business/` storefront, `review/` form (+ JS star labels)
+- Static content pages — `about/`, and `privacy/`, `terms/`, `shipping/`, `returns/`, `help/` (FAQ) as per-page bilingual `$lang` blocks (one block per page for native Khmer review)
 
 ### Bilingual content (vendor/admin-entered, KM optional + EN fallback)
-- [x] Bilingual **banners** — `title_km`/`subtitle_km`; admin edit form with EN+KM fields
-- [x] **Category names** — `categories.name_km`; admin editor; displayed on homepage tiles, search filter, vendor cascades
-- [x] **Product name + description** — `products.name_km`/`description_km`; vendor form + save; displayed on product page, cards (homepage/search/`api/search`), storefront, wishlist, cart, checkout, product manager
-- [x] **Business name + description** — `businesses.name_km`/`description_km`; vendor settings; storefront + all buyer-facing seller-name displays (incl. `api/recently-viewed` — added missing `session_start()`)
-- [x] **Variant / option labels** — `product_option_types.name_km`, `product_option_values.label_km`, `product_variants.label_km`; KM box beside each EN box in both variant builders; composed variant `label_km` auto-built from values
-- [x] **Job postings / careers** — `job_postings.title_km`/`location_km`/`description_km`; `employment_type` via `$t` map; admin form + public `careers/`/`apply.php`
-- [x] **Order-item snapshots** — `order_items.product_name_km`/`variant_label_km` captured at checkout (`checkout/confirm.php`); order-detail/history/review pages show the language-correct snapshot (`dashboard-buyer/order.php`, `orders-vendor/order.php` + `refund.php`, `review/index.php`), old rows fall back to English
+- Bilingual **banners** — `title_km`/`subtitle_km`; admin edit form with EN+KM fields
+- **Category names** — `categories.name_km`; admin editor; displayed on homepage tiles, search filter, vendor cascades
+- **Product name + description** — `products.name_km`/`description_km`; vendor form + save; displayed on product page, cards (homepage/search/`api/search`), storefront, wishlist, cart, checkout, product manager
+- **Business name + description** — `businesses.name_km`/`description_km`; vendor settings; storefront + all buyer-facing seller-name displays (incl. `api/recently-viewed` — added missing `session_start()`)
+- **Variant / option labels** — `product_option_types.name_km`, `product_option_values.label_km`, `product_variants.label_km`; KM box beside each EN box in both variant builders; composed variant `label_km` auto-built from values
+- **Job postings / careers** — `job_postings.title_km`/`location_km`/`description_km`; `employment_type` via `$t` map; admin form + public `careers/`/`apply.php`
+- **Order-item snapshots** — `order_items.product_name_km`/`variant_label_km` captured at checkout (`checkout/confirm.php`); order-detail/history/review pages show the language-correct snapshot (`dashboard-buyer/order.php`, `orders-vendor/order.php` + `refund.php`, `review/index.php`), old rows fall back to English
 
 ### Bilingual emails + notifications
-- [x] **All user-facing emails are bilingual** — Khmer on top, English below. `notification_email_html_bi()` + `email_subject_bi()` in `config/notify.php`; covers order received, payment/dispatch/payout/delivery, low stock, abandoned cart, review reminder, verification code, password reset (job-application email → admin stays English)
-- [x] **In-app notifications** render in the current toggle language — `notifications.data` JSON column stores params; `notification_text($row,$t)` translates by `type` (`notif_*` keys); `api/notifications/` translates message + time-ago; old rows fall back to stored English
-- [x] **Staff-editable email templates** — `email_templates` table + `config/email-templates.php` defaults/fallback + `database/seed-email-templates.php` (10 templates); `render_email_template($pdo,$key,$data)` substitutes `{tokens}`; admin UI under `admin/messages/` (`emails.php` list → `email-edit.php` bilingual editor with live preview → `email-save.php` with required-token protection), tab in the messages role-tab bar
+- **All user-facing emails are bilingual** — Khmer on top, English below. `notification_email_html_bi()` + `email_subject_bi()` in `config/notify.php`; covers order received, payment/dispatch/payout/delivery, low stock, abandoned cart, review reminder, verification code, password reset (job-application email → admin stays English)
+- **In-app notifications** render in the current toggle language — `notifications.data` JSON column stores params; `notification_text($row,$t)` translates by `type` (`notif_*` keys); `api/notifications/` translates message + time-ago; old rows fall back to stored English
+- **Staff-editable email templates** — `email_templates` table + `config/email-templates.php` defaults/fallback + `database/seed-email-templates.php` (10 templates); `render_email_template($pdo,$key,$data)` substitutes `{tokens}`; admin UI under `admin/messages/` (`emails.php` list → `email-edit.php` bilingual editor with live preview → `email-save.php` with required-token protection), tab in the messages role-tab bar
 
 ### Intentionally left English
 - `<title>` tags (browser-tab text, brand convention); `/admin/*` dashboard; user-authored content (reviews, support messages, refund-reason free text, buyer addresses)
@@ -484,12 +484,12 @@ Full EN/KM language toggle across the whole app. A header flag toggle sets `$_SE
 
 Early vendors get a 0% royalty trial via a promo code from vendor pitches; trial ends once BOTH 3 months have passed AND the vendor exceeds $100 in completed sales.
 
-- [x] `promo_codes` table + `businesses.promo_code_id`/`trial_starts_at`/`trial_ends_at`/`royalty_free_threshold` — `database/migration-vendorpromo.sql`
-- [x] `admin/promo-codes.php` — create/list codes, uses_count/uses_limit, active toggle
-- [x] Vendor registration — optional promo code field, validated and captured
-- [x] Trial starts on approval (not registration) — `admin/action.php`
-- [x] Checkout royalty override — `checkout/confirm.php` sets `$effectiveRate = 0` while trial active
-- [x] Vendor dashboard trial banner — progress toward $100/3-month trial end
+- `promo_codes` table + `businesses.promo_code_id`/`trial_starts_at`/`trial_ends_at`/`royalty_free_threshold` — `database/migration-vendorpromo.sql`
+- `admin/promo-codes.php` — create/list codes, uses_count/uses_limit, active toggle
+- Vendor registration — optional promo code field, validated and captured
+- Trial starts on approval (not registration) — `admin/action.php`
+- Checkout royalty override — `checkout/confirm.php` sets `$effectiveRate = 0` while trial active
+- Vendor dashboard trial banner — progress toward $100/3-month trial end
 
 ---
 
@@ -497,8 +497,8 @@ Early vendors get a 0% royalty trial via a promo code from vendor pitches; trial
 
 Transactional email via Resend — `config/mail.php`.
 
-- [x] All 4 original trigger points — payment confirmed → buyer, order dispatched → buyer, delivery confirmed → vendor, payout sent → vendor
-- [x] Plus more added since — abandoned cart, review reminders, low stock alerts (see their own sections above)
+- All 4 original trigger points — payment confirmed → buyer, order dispatched → buyer, delivery confirmed → vendor, payout sent → vendor
+- Plus more added since — abandoned cart, review reminders, low stock alerts (see their own sections above)
 
 ---
 
@@ -506,14 +506,14 @@ Transactional email via Resend — `config/mail.php`.
 
 Buyers apply a code at checkout for a percent/fixed discount, capped by min order and max uses. Discount is a platform-absorbed marketing cost — vendor royalty/payout stays on the pre-discount subtotal.
 
-- [x] `coupons` + `coupon_uses` tables, `orders.coupon_id`/`coupon_code`/`discount_amount` — `database/migration-coupons.sql`
-- [x] `config/coupon.php` — shared `validate_coupon()` (active/date-window/max-uses/min-order/one-use-per-buyer), used by checkout preview, confirm.php, and the API endpoint alike
-- [x] `admin/coupons.php` + `admin/coupon-action.php` — inline-editable list (create/edit/toggle/delete); expired codes read-only; delete blocked once a code has been used
-- [x] `api/coupon/validate.php` — JSON validation endpoint
-- [x] `checkout/apply-coupon.php` + `checkout/index.php` — session-based apply/remove UX, live discount line on summary
-- [x] `checkout/confirm.php` — re-validates server-side, atomic race-safe `used_count` increment, proportional discount allocation across multi-vendor order groups, `coupon_uses` row per order, discount line in confirmation email
-- [x] Refund/total displays corrected for discount everywhere `orders.subtotal` was shown as the buyer-paid amount — `dashboard-buyer/order.php`, `orders-vendor/refund.php`, `admin/refunds.php`, `admin/refund.php`, `admin/order.php`
-- [x] Bilingual UI strings — `lang/en.php` / `lang/km.php`
+- `coupons` + `coupon_uses` tables, `orders.coupon_id`/`coupon_code`/`discount_amount` — `database/migration-coupons.sql`
+- `config/coupon.php` — shared `validate_coupon()` (active/date-window/max-uses/min-order/one-use-per-buyer), used by checkout preview, confirm.php, and the API endpoint alike
+- `admin/coupons.php` + `admin/coupon-action.php` — inline-editable list (create/edit/toggle/delete); expired codes read-only; delete blocked once a code has been used
+- `api/coupon/validate.php` — JSON validation endpoint
+- `checkout/apply-coupon.php` + `checkout/index.php` — session-based apply/remove UX, live discount line on summary
+- `checkout/confirm.php` — re-validates server-side, atomic race-safe `used_count` increment, proportional discount allocation across multi-vendor order groups, `coupon_uses` row per order, discount line in confirmation email
+- Refund/total displays corrected for discount everywhere `orders.subtotal` was shown as the buyer-paid amount — `dashboard-buyer/order.php`, `orders-vendor/refund.php`, `admin/refunds.php`, `admin/refund.php`, `admin/order.php`
+- Bilingual UI strings — `lang/en.php` / `lang/km.php`
 
 ---
 
@@ -521,13 +521,13 @@ Buyers apply a code at checkout for a percent/fixed discount, capped by min orde
 
 Replaced the all-or-nothing admin (`is_admin=1` → full access) with a **super + granular per-section** model: one bypass-all role, plus custom admins scoped to exactly the sections they're granted.
 
-- [x] `database/migration-admin-roles.sql` — `admins.admin_role ENUM('super','custom')`; `admin_permissions` join table (`admin_id`, `section`, FK ON DELETE CASCADE)
-- [x] `config/admin-auth.php` — `admin_can()`/`admin_require()`/`admin_is_super()`/`admin_home_url()`; `ADMIN_SECTION_GROUPS` (Admin/Orders/Marketing/Messages); `'admins'` section hardcoded super-only so a super can never hand out the ability to create more supers
-- [x] Guard threaded into every `/admin/*.php` page (redirect to home section with `?denied=1`) and every `*-action.php` handler (enforcement is server-side, not just hidden nav — a scoped admin can't bypass by POSTing directly)
-- [x] Nav filtered by granted sections — `admin/admin-tabs.php` + header admin nav, desktop and mobile
-- [x] `admin/admins.php` + `admin/admins-action.php` — super-only management screen: clickable admin rows expand into an inline edit form (shared `admin_form_fields()` renders both create and edit); real CSS toggle switches per section plus a per-group toggle that grants/revokes a whole group at once; "Clear all"; "Add new admin" section at the bottom; "Reset password" field on existing admins (labeled to reflect there's no separate admin forgot-password flow — it's the only account-recovery path)
-- [x] Guards — last active super admin can't be deleted/deactivated/demoted; an admin can't delete or deactivate themselves
-- [x] `is_owner` flag on `admins` — settable only via direct DB write, never exposed in any form; `do_delete()`/`do_toggle_active()` hard-block deletion/deactivation of an owner account regardless of who's requesting it or how many other supers exist; roster shows a green "Owner" badge and hides Delete/Reactivate on that row for everyone
+- `database/migration-admin-roles.sql` — `admins.admin_role ENUM('super','custom')`; `admin_permissions` join table (`admin_id`, `section`, FK ON DELETE CASCADE)
+- `config/admin-auth.php` — `admin_can()`/`admin_require()`/`admin_is_super()`/`admin_home_url()`; `ADMIN_SECTION_GROUPS` (Admin/Orders/Marketing/Messages); `'admins'` section hardcoded super-only so a super can never hand out the ability to create more supers
+- Guard threaded into every `/admin/*.php` page (redirect to home section with `?denied=1`) and every `*-action.php` handler (enforcement is server-side, not just hidden nav — a scoped admin can't bypass by POSTing directly)
+- Nav filtered by granted sections — `admin/admin-tabs.php` + header admin nav, desktop and mobile
+- `admin/admins.php` + `admin/admins-action.php` — super-only management screen: clickable admin rows expand into an inline edit form (shared `admin_form_fields()` renders both create and edit); real CSS toggle switches per section plus a per-group toggle that grants/revokes a whole group at once; "Clear all"; "Add new admin" section at the bottom; "Reset password" field on existing admins (labeled to reflect there's no separate admin forgot-password flow — it's the only account-recovery path)
+- Guards — last active super admin can't be deleted/deactivated/demoted; an admin can't delete or deactivate themselves
+- `is_owner` flag on `admins` — settable only via direct DB write, never exposed in any form; `do_delete()`/`do_toggle_active()` hard-block deletion/deactivation of an owner account regardless of who's requesting it or how many other supers exist; roster shows a green "Owner" badge and hides Delete/Reactivate on that row for everyone
 
 ---
 
@@ -535,14 +535,14 @@ Replaced the all-or-nothing admin (`is_admin=1` → full access) with a **super 
 
 Moved the hardcoded static content pages (Privacy, Terms, Shipping, Returns) and the Help Center FAQ out of code and into the database so admins can edit them (bilingual EN + KM) without a deploy. Body text is Markdown, rendered server-side by a small dependency-free renderer. About page intentionally stays on `$t` translation keys (not migrated).
 
-- [x] `database/migration-content-pages.sql` — `content_pages` (slug, title_en/km, body_en/km MEDIUMTEXT, updated_at, updated_by) + `faq_items` (section_en/km, question_en/km, answer_en/km, sort_order, active)
-- [x] `database/seed-content.php` — idempotent PDO seed; migrated existing hand-written EN/KM prose (privacy/terms/shipping/returns) into Markdown, and the Help page's hardcoded FAQ arrays into `faq_items` (23 items across 6 sections)
-- [x] `config/markdown.php` — `render_markdown()`: escapes all HTML first, then parses `## headings`, `- lists`, blank-line paragraphs, `**bold**`, `*italic*`, `[text](url)` (scheme-allowlisted against `javascript:` links). No third-party library needed
-- [x] RBAC — new `'Content' => ['content' => 'Pages', 'faq' => 'FAQ']` group in `config/admin-auth.php`'s `ADMIN_SECTION_GROUPS`/`ADMIN_SECTION_HOME`; own top-level nav group (desktop + mobile + admin tab bar), not folded into Marketing
-- [x] `admin/content.php` + `admin/content-action.php` — accordion list of the 4 fixed-slug pages; clicking a row (native `<details>`/`<summary>`, no JS) expands its edit form inline — English fields (Title, Body) grouped under an "English" heading, Khmer fields under a "ខ្មែរ" heading; no separate Edit button/page
-- [x] `admin/faq.php` + `admin/faq-action.php` — same accordion-per-row pattern for FAQ items, grouped by section; per-row controls (reorder ▲▼, Hide/Show, Delete) stay in the clickable row header via `event.stopPropagation()` on their forms; "Add FAQ item" is its own dropdown styled as a plain button (no card chrome); redirects reopen the correct row/add-panel on validation error or after save
-- [x] Public pages rewritten to read from DB with `pick_lang()` bilingual fallback — `privacy/`, `terms/`, `shipping/`, `returns/index.php` (+ preserved original CSS look via `:has()`-based structural selectors since the generic renderer no longer emits page-specific classes), `help/index.php` (FAQ grouped by resolved section name, `WHERE active = 1`)
-- [x] Verified: migration + seed run against dev DB (4 content_pages rows, 23 faq_items rows across the expected 6 sections), all touched files pass `php -l`, admin screens and public pages checked in-browser
+- `database/migration-content-pages.sql` — `content_pages` (slug, title_en/km, body_en/km MEDIUMTEXT, updated_at, updated_by) + `faq_items` (section_en/km, question_en/km, answer_en/km, sort_order, active)
+- `database/seed-content.php` — idempotent PDO seed; migrated existing hand-written EN/KM prose (privacy/terms/shipping/returns) into Markdown, and the Help page's hardcoded FAQ arrays into `faq_items` (23 items across 6 sections)
+- `config/markdown.php` — `render_markdown()`: escapes all HTML first, then parses `## headings`, `- lists`, blank-line paragraphs, `**bold**`, `*italic*`, `[text](url)` (scheme-allowlisted against `javascript:` links). No third-party library needed
+- RBAC — new `'Content' => ['content' => 'Pages', 'faq' => 'FAQ']` group in `config/admin-auth.php`'s `ADMIN_SECTION_GROUPS`/`ADMIN_SECTION_HOME`; own top-level nav group (desktop + mobile + admin tab bar), not folded into Marketing
+- `admin/content.php` + `admin/content-action.php` — accordion list of the 4 fixed-slug pages; clicking a row (native `<details>`/`<summary>`, no JS) expands its edit form inline — English fields (Title, Body) grouped under an "English" heading, Khmer fields under a "ខ្មែរ" heading; no separate Edit button/page
+- `admin/faq.php` + `admin/faq-action.php` — same accordion-per-row pattern for FAQ items, grouped by section; per-row controls (reorder ▲▼, Hide/Show, Delete) stay in the clickable row header via `event.stopPropagation()` on their forms; "Add FAQ item" is its own dropdown styled as a plain button (no card chrome); redirects reopen the correct row/add-panel on validation error or after save
+- Public pages rewritten to read from DB with `pick_lang()` bilingual fallback — `privacy/`, `terms/`, `shipping/`, `returns/index.php` (+ preserved original CSS look via `:has()`-based structural selectors since the generic renderer no longer emits page-specific classes), `help/index.php` (FAQ grouped by resolved section name, `WHERE active = 1`)
+- Verified: migration + seed run against dev DB (4 content_pages rows, 23 faq_items rows across the expected 6 sections), all touched files pass `php -l`, admin screens and public pages checked in-browser
 
 ---
 
@@ -550,16 +550,16 @@ Moved the hardcoded static content pages (Privacy, Terms, Shipping, Returns) and
 
 Same codebase, same `public_html`, same database — a host check routes which paths answer on which domain. `teepsaa.com` = buyers + all public pages; `vendor.teepsaa.com` = vendor portal; `admin.teepsaa.com` = admin only (admin paths 404 everywhere else). Subdomains are not secret (SSL cert-transparency logs list them) — the win is separation plus a place for extra locks.
 
-- [x] `config/subdomain.php` — routing brain behind `SUBDOMAINS_ENABLED` (now `true`); always inert on localhost/CLI, so MAMP and cron behave as a single domain. Defines `IS_VENDOR_SUBDOMAIN` / `IS_ADMIN_SUBDOMAIN` + `BASE_URL_MAIN/VENDOR/ADMIN` (empty when inactive so relative links keep working)
-- [x] Enforcement (central path-prefix map, query strings preserved): vendor paths off the vendor host → 302 to `vendor.teepsaa.com`; admin paths (`/admin/`, `/login-admin/`) anywhere but the admin host → 404; public paths on vendor/admin hosts → 302 to `teepsaa.com` (`/` → `/dashboard-vendor/` on vendor, `/admin/` on admin); neutral paths (`/api/`, `/lang/`, `/currency/`, `/logout/`, `/cron/`, `/verify-email/`, `/resend-verification/`) answer on every host
-- [x] Wrong door, right person — logged-in vendor on the bare `teepsaa.com` homepage → vendor dashboard (homepage only; vendors can still preview their public product/business pages)
-- [x] Load hooks — `require_once` in `config/i18n.php` (loaded via db.php on every page; db.php itself is unmanaged on the server so it can't hold the require) **and** `config/csrf.php` (pages like `login-admin/` use csrf.php without db.php), plus direct requires in the 5 public pages that load neither (`about/`, `contact/`, `contact/thanks/`, `orders/`, `account/`)
-- [x] Shared session cookie across subdomains — `'cookie_domain' => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : ''` added to every `session_start()` options block (171 files; empty string on localhost keeps MAMP host-only cookies). Done in code because **Hostinger disables `.user.ini` entirely** (`user_ini.filename` is empty on their LiteSpeed PHP 8.3) — the planned `.user.ini` approach silently did nothing and the server file was deleted
-- [x] hPanel — `vendor` + `admin` subdomains created pointing at the same `public_html` ("Custom folder" + "Use public_html directory"), DNS auto-created, SSL valid on all three; pre-launch Basic Auth gate covers all three (same folder, same `.htaccess`)
-- [x] `.htaccess` — `.user.ini` added to the blocked-files pattern (harmless belt-and-braces)
-- [x] Live tests passed (curl, all three hosts): routing redirects/404s exactly per the map above; `Set-Cookie: PHPSESSID=…; domain=.teepsaa.com; secure; HttpOnly; SameSite=Strict` issued on all three hosts; `/style.css` + `/js/*` load 200 on all three; localhost unaffected
-- [x] Found & fixed during review: (1) `/login-admin/` returned 200 on main/vendor hosts because 14 pages never load db.php — fixed via the csrf.php hook + 5 direct requires; (2) session cookie had no `domain=` because Hostinger ignores `.user.ini` — fixed with the 171-file `cookie_domain` insert
-- [x] Deferred (optional): link-audit polish — cross-domain links currently work by bounce (relative link → enforcement redirect); emails/hot links could use the `BASE_URL_*` constants to skip the hop. Extra Basic Auth on `admin.teepsaa.com` moved to `teepsaa-launch-priorities.md`
+- `config/subdomain.php` — routing brain behind `SUBDOMAINS_ENABLED` (now `true`); always inert on localhost/CLI, so MAMP and cron behave as a single domain. Defines `IS_VENDOR_SUBDOMAIN` / `IS_ADMIN_SUBDOMAIN` + `BASE_URL_MAIN/VENDOR/ADMIN` (empty when inactive so relative links keep working)
+- Enforcement (central path-prefix map, query strings preserved): vendor paths off the vendor host → 302 to `vendor.teepsaa.com`; admin paths (`/admin/`, `/login-admin/`) anywhere but the admin host → 404; public paths on vendor/admin hosts → 302 to `teepsaa.com` (`/` → `/dashboard-vendor/` on vendor, `/admin/` on admin); neutral paths (`/api/`, `/lang/`, `/currency/`, `/logout/`, `/cron/`, `/verify-email/`, `/resend-verification/`) answer on every host
+- Wrong door, right person — logged-in vendor on the bare `teepsaa.com` homepage → vendor dashboard (homepage only; vendors can still preview their public product/business pages)
+- Load hooks — `require_once` in `config/i18n.php` (loaded via db.php on every page; db.php itself is unmanaged on the server so it can't hold the require) **and** `config/csrf.php` (pages like `login-admin/` use csrf.php without db.php), plus direct requires in the 5 public pages that load neither (`about/`, `contact/`, `contact/thanks/`, `orders/`, `account/`)
+- Shared session cookie across subdomains — `'cookie_domain' => str_ends_with($_SERVER['HTTP_HOST'] ?? '', 'teepsaa.com') ? '.teepsaa.com' : ''` added to every `session_start()` options block (171 files; empty string on localhost keeps MAMP host-only cookies). Done in code because **Hostinger disables `.user.ini` entirely** (`user_ini.filename` is empty on their LiteSpeed PHP 8.3) — the planned `.user.ini` approach silently did nothing and the server file was deleted
+- hPanel — `vendor` + `admin` subdomains created pointing at the same `public_html` ("Custom folder" + "Use public_html directory"), DNS auto-created, SSL valid on all three; pre-launch Basic Auth gate covers all three (same folder, same `.htaccess`)
+- `.htaccess` — `.user.ini` added to the blocked-files pattern (harmless belt-and-braces)
+- Live tests passed (curl, all three hosts): routing redirects/404s exactly per the map above; `Set-Cookie: PHPSESSID=…; domain=.teepsaa.com; secure; HttpOnly; SameSite=Strict` issued on all three hosts; `/style.css` + `/js/*` load 200 on all three; localhost unaffected
+- Found & fixed during review: (1) `/login-admin/` returned 200 on main/vendor hosts because 14 pages never load db.php — fixed via the csrf.php hook + 5 direct requires; (2) session cookie had no `domain=` because Hostinger ignores `.user.ini` — fixed with the 171-file `cookie_domain` insert
+- Deferred (optional): link-audit polish — cross-domain links currently work by bounce (relative link → enforcement redirect); emails/hot links could use the `BASE_URL_*` constants to skip the hop. Extra Basic Auth on `admin.teepsaa.com` moved to `teepsaa-launch-priorities.md`
 
 ---
 
@@ -568,16 +568,16 @@ Same codebase, same `public_html`, same database — a host check routes which p
 Closed out `teepsaa-afterlaunch-security.md` by auditing the live server with a one-shot probe (uploaded via FTP, read once, deleted, confirmed 404 — reported booleans/lengths only, never secrets).
 
 ### Found & fixed
-- [x] **`DEV_MODE` was `true` in production** — `config/app.php` is deployed by the mirror (unlike db.php), so the dev value shipped live, leaving the OTP-leak gate open: registration echoed the email verification code to the browser console on the live site. Fixed permanently by making it host-derived — `DEV_MODE` is now `true` only on `localhost`/`127.0.0.1`, so a deploy can never switch it on in production. Deployed and probe-verified: `false` live, `true` on MAMP
+- **`DEV_MODE` was `true` in production** — `config/app.php` is deployed by the mirror (unlike db.php), so the dev value shipped live, leaving the OTP-leak gate open: registration echoed the email verification code to the browser console on the live site. Fixed permanently by making it host-derived — `DEV_MODE` is now `true` only on `localhost`/`127.0.0.1`, so a deploy can never switch it on in production. Deployed and probe-verified: `false` live, `true` on MAMP
 
 ### Verified already done (server-side, via probe + curl)
-- [x] Server `config/db.php` — non-root MySQL user (18 chars), 14-char password (not `root`, not reused from dev), `PAYOUT_WINDOW_SECONDS = 86400` — the "dev values on server" flag was already resolved when the server copy was hand-created
-- [x] `database/migration-public-ids.sql` ran on the live DB — `public_id` present on `products`, `businesses`, `orders`
-- [x] Admin account email obscurity — neither of the 2 admin accounts uses a guessable local part (admin@/info@/support@ etc.)
-- [x] phpMyAdmin exposure — nothing DB-admin-shaped answers on the domain (`/phpmyadmin/`, `/pma/`, `/adminer.php` all 404); Hostinger's phpMyAdmin sits behind the hPanel login, not a public URL
+- Server `config/db.php` — non-root MySQL user (18 chars), 14-char password (not `root`, not reused from dev), `PAYOUT_WINDOW_SECONDS = 86400` — the "dev values on server" flag was already resolved when the server copy was hand-created
+- `database/migration-public-ids.sql` ran on the live DB — `public_id` present on `products`, `businesses`, `orders`
+- Admin account email obscurity — neither of the 2 admin accounts uses a guessable local part (admin@/info@/support@ etc.)
+- phpMyAdmin exposure — nothing DB-admin-shaped answers on the domain (`/phpmyadmin/`, `/pma/`, `/adminer.php` all 404); Hostinger's phpMyAdmin sits behind the hPanel login, not a public URL
 
 ### Moved, not lost
-- [x] Three hosting-level decisions moved to `teepsaa-launch-priorities.md`: SSH key auth, shared-hosting→VPS consideration (accepted risk for launch), and the optional extra Basic Auth on `admin.teepsaa.com` (best added at launch when the pre-launch gate comes off). (They now live in `teepsaa-open-questions.md` after launch-priorities was retired on 2026-07-10)
+- Three hosting-level decisions moved to `teepsaa-launch-priorities.md`: SSH key auth, shared-hosting→VPS consideration (accepted risk for launch), and the optional extra Basic Auth on `admin.teepsaa.com` (best added at launch when the pre-launch gate comes off). (They now live in `teepsaa-open-questions.md` after launch-priorities was retired on 2026-07-10)
 
 ---
 
@@ -585,15 +585,15 @@ Closed out `teepsaa-afterlaunch-security.md` by auditing the live server with a 
 
 Retired `teepsaa-launch-priorities.md`. Its development items were already archived in their own sections above (vendor promo trial, session cookie hardening, coupons, Khmer localization, subdomains); still-open items moved to `teepsaa-open-questions.md` (buy-again row, payment-license question, hosting-level security decisions) and `teepsaa-production-deploy.md` (cron registration — the ONE deployment task left). What's newly recorded here is the deployment verification and server fixes from the 2026-07-09 review:
 
-- [x] "Browse by category" homepage grid — done ("Shop by category" section, bilingual category tiles); was listed as a post-launch build but had already been built
-- [x] Server `config/db.php` — live credentials (non-root user, 14-char password), `PAYOUT_WINDOW_SECONDS = 86400` — probe-verified
-- [x] `config/app.php` — `SITE_URL = 'https://teepsaa.com'`, `FROM_EMAIL = orders@teepsaa.com`; `DEV_MODE` host-derived (see Production Security Review above)
-- [x] Server `config/mapbox.php` — exists with a `pk.` production token — probe-verified
-- [x] `display_errors = Off` in production — probe-verified
-- [x] All migrations applied to the production DB — probe-verified: all 31 tables the code references exist; spot-checked columns (sale_price, refund/return columns, coupon_id, admin_role, trial dates) and the full 12-value orders status enum
-- [x] Admin accounts live (2), HTTPS 301 redirect working, valid SSL on all three subdomains
-- [x] **Found & fixed: `/uploads/` did not exist on the server** — the deploy mirror excludes it and nothing ever created it, so every avatar/product-photo/QR upload on live would have failed, and photo paths in the production DB (imported from the dev dump) pointed at missing files. Created 755 on 2026-07-09, seeded with local uploads incl. the PHP-blocking `.htaccess`; live-tested: images serve 200, a `.php` file in `/uploads/` returns 403
-- [x] `uploads/aba-qr.png` serves 200 on live (came in with the uploads seed) — known fake filler QR; real one gets uploaded during live testing
+- "Browse by category" homepage grid — done ("Shop by category" section, bilingual category tiles); was listed as a post-launch build but had already been built
+- Server `config/db.php` — live credentials (non-root user, 14-char password), `PAYOUT_WINDOW_SECONDS = 86400` — probe-verified
+- `config/app.php` — `SITE_URL = 'https://teepsaa.com'`, `FROM_EMAIL = orders@teepsaa.com`; `DEV_MODE` host-derived (see Production Security Review above)
+- Server `config/mapbox.php` — exists with a `pk.` production token — probe-verified
+- `display_errors = Off` in production — probe-verified
+- All migrations applied to the production DB — probe-verified: all 31 tables the code references exist; spot-checked columns (sale_price, refund/return columns, coupon_id, admin_role, trial dates) and the full 12-value orders status enum
+- Admin accounts live (2), HTTPS 301 redirect working, valid SSL on all three subdomains
+- **Found & fixed: `/uploads/` did not exist on the server** — the deploy mirror excludes it and nothing ever created it, so every avatar/product-photo/QR upload on live would have failed, and photo paths in the production DB (imported from the dev dump) pointed at missing files. Created 755 on 2026-07-09, seeded with local uploads incl. the PHP-blocking `.htaccess`; live-tested: images serve 200, a `.php` file in `/uploads/` returns 403
+- `uploads/aba-qr.png` serves 200 on live (came in with the uploads seed) — known fake filler QR; real one gets uploaded during live testing
 
 ---
 
@@ -601,35 +601,35 @@ Retired `teepsaa-launch-priorities.md`. Its development items were already archi
 
 Completed portion of `teepsaa-production-deploy.md` (that file now holds only the open pre-launch tasks). Most server/config verification is recorded in the Launch Priorities section above; new here:
 
-- [x] Full codebase deployed to `public_html` via the `deploycode.txt` lftp mirror; site live behind the pre-launch Basic Auth gate
-- [x] Production database created in hPanel with a strong-password non-root user; schema imported via phpMyAdmin (full dump incl. all migrations)
-- [x] Sensitive folder protection live-verified — `/config/db.php` → 403, `/cron/auto-confirm.php` → 403 (both `.htaccess` files deployed and working)
-- [x] PHP 8.3.30 (LiteSpeed LSAPI) — well above the 8.0 minimum
-- [x] Email — in-house Hostinger SMTP via the server's hand-managed `config/smtp.php`, live-verified (the checklist's Resend plan was superseded; Resend is not used)
-- [x] Domain & DNS — resolves to Hostinger, HTTPS with valid SSL on teepsaa.com + vendor/admin subdomains, SPF/DKIM handled with the Hostinger email setup
+- Full codebase deployed to `public_html` via the `deploycode.txt` lftp mirror; site live behind the pre-launch Basic Auth gate
+- Production database created in hPanel with a strong-password non-root user; schema imported via phpMyAdmin (full dump incl. all migrations)
+- Sensitive folder protection live-verified — `/config/db.php` → 403, `/cron/auto-confirm.php` → 403 (both `.htaccess` files deployed and working)
+- PHP 8.3.30 (LiteSpeed LSAPI) — well above the 8.0 minimum
+- Email — in-house Hostinger SMTP via the server's hand-managed `config/smtp.php`, live-verified (the checklist's Resend plan was superseded; Resend is not used)
+- Domain & DNS — resolves to Hostinger, HTTPS with valid SSL on teepsaa.com + vendor/admin subdomains, SPF/DKIM handled with the Hostinger email setup
 
 ### Cron jobs registered (2026-07-10)
 All four registered in hPanel → Advanced → Cron Jobs under teepsaa.com only (all three subdomains share the same folder/DB, so once is correct). Screenshot-verified: every command uses `/usr/bin/php` + the full script path.
-- [x] `cron/auto-confirm.php` — hourly (`0 * * * *`)
-- [x] `cron/abandoned-cart.php` — daily at midnight (`0 0 * * *`)
-- [x] `cron/review-reminder.php` — daily at midnight (`0 0 * * *`)
-- [x] `cron/purge-password-resets.php` — monthly, 2am on the 1st (`0 2 1 * *`) — weekly was suggested, monthly is fine for token housekeeping
-- [x] Leftover cron from an old website (`send-subscription-reminders.php`) deleted
+- `cron/auto-confirm.php` — hourly (`0 * * * *`)
+- `cron/abandoned-cart.php` — daily at midnight (`0 0 * * *`)
+- `cron/review-reminder.php` — daily at midnight (`0 0 * * *`)
+- `cron/purge-password-resets.php` — monthly, 2am on the 1st (`0 2 1 * *`) — weekly was suggested, monthly is fine for token housekeeping
+- Leftover cron from an old website (`send-subscription-reminders.php`) deleted
 - Note: execution gets confirmed during the live order-flow test (auto-confirm is triggered manually there)
 
 ### Found & fixed (2026-07-10): z-checklists/ and database/ were publicly served
 The deploy mirror shipped both folders, and `https://teepsaa.com/database/migration.sql` + `https://teepsaa.com/z-checklists/teepsaa-notes-test-accounts.md` returned 200 — only the pre-launch Basic Auth gate hid them; at launch this would have been schema + test-account disclosure. Fixed three ways, all live-verified (both URLs now 404, homepage unaffected):
-- [x] `--exclude 'z-checklists/'` and `--exclude 'database/'` added to the mirror command in `deploycode.txt`
-- [x] Both folders deleted from the server
-- [x] Root `.htaccess` FilesMatch extended to deny `.md` and `.sql` (belt-and-braces if a stray copy ever deploys)
+- `--exclude 'z-checklists/'` and `--exclude 'database/'` added to the mirror command in `deploycode.txt`
+- Both folders deleted from the server
+- Root `.htaccess` FilesMatch extended to deny `.md` and `.sql` (belt-and-braces if a stray copy ever deploys)
 
 ### Email sending — Hostinger SMTP setup (2026-07-08, moved from teepsaa-todos-email.md 2026-07-13)
 Decision: Option A — in-house Hostinger SMTP, no external services. Resend option removed; `config/resend.php` deleted.
-- [x] hPanel → Emails → mailbox `contact@teepsaa.com` created, password noted
-- [x] `send_email()` in `config/mail.php` rewritten to send via `smtp.hostinger.com` (port 465, SSL) — pure PHP, no libraries, same function signature, keeps the mail.log fallback when no password is configured (local dev unchanged), failed sends logged to mail.log with the SMTP error
-- [x] On the SERVER, `config/smtp.php` created (replaces the server's old `config/resend.php`) with SMTP_HOST/PORT/USER/PASS + MAIL_FROM/MAIL_FROM_NAME — the real password lives only on the server
-- [x] Updated `config/mail.php` deployed (uploaded directly 2026-07-08; deploy script excludes `config/smtp.php` so the server's password is never overwritten)
-- [x] Live test: registered on the live site with a real personal email via vendor registration (2026-07-08) — verification code arrived in the inbox, WORKS
+- hPanel → Emails → mailbox `contact@teepsaa.com` created, password noted
+- `send_email()` in `config/mail.php` rewritten to send via `smtp.hostinger.com` (port 465, SSL) — pure PHP, no libraries, same function signature, keeps the mail.log fallback when no password is configured (local dev unchanged), failed sends logged to mail.log with the SMTP error
+- On the SERVER, `config/smtp.php` created (replaces the server's old `config/resend.php`) with SMTP_HOST/PORT/USER/PASS + MAIL_FROM/MAIL_FROM_NAME — the real password lives only on the server
+- Updated `config/mail.php` deployed (uploaded directly 2026-07-08; deploy script excludes `config/smtp.php` so the server's password is never overwritten)
+- Live test: registered on the live site with a real personal email via vendor registration (2026-07-08) — verification code arrived in the inbox, WORKS
 
 ---
 
@@ -640,176 +640,176 @@ passed; the remainder — plus seven of these that admit unfinished work in
 their own notes — moved to `teepsaa-todos-launch-readiness.md` Part 1.
 
 #### Buyer — account lifecycle
-- [x] Register: blank/invalid fields rejected with messages
-- [x] Register: duplicate email rejected
-- [x] Register: success → verification email arrives with code
-- [x] Verify email: wrong code rejected, correct code verifies
-- [x] Resend verification works (and old code stops working)
-- [x] Login: wrong password shows error (and does NOT say which field was wrong)
-- [x] Login: repeated wrong passwords triggers rate limit / lockout
-- [x] Login: vendor credentials on buyer portal are rejected
+- Register: blank/invalid fields rejected with messages
+- Register: duplicate email rejected
+- Register: success → verification email arrives with code
+- Verify email: wrong code rejected, correct code verifies
+- Resend verification works (and old code stops working)
+- Login: wrong password shows error (and does NOT say which field was wrong)
+- Login: repeated wrong passwords triggers rate limit / lockout
+- Login: vendor credentials on buyer portal are rejected
       (verified live — "Invalid email or password"; mirror test buyer→vendor portal not run yet)
-- [x] Forgot password: email arrives, reset link works, old password dead,
+- Forgot password: email arrives, reset link works, old password dead,
       new password logs in; used/expired reset link rejected
-- [x] Logout works from every page
+- Logout works from every page
 
 #### Buyer — shopping
-- [x] Recently viewed row appears on homepage after browsing products
-- [x] Wishlist: heart toggles on/off, wishlist page lists items, unavailable
+- Recently viewed row appears on homepage after browsing products
+- Wishlist: heart toggles on/off, wishlist page lists items, unavailable
       items are marked (verified live Jul 2026)
-- [x] Add to cart: works for simple product
-- [x] Add to cart: product with variants requires choosing a size first
-- [x] Add to cart: out-of-stock product/variant is blocked, button disabled
+- Add to cart: works for simple product
+- Add to cart: product with variants requires choosing a size first
+- Add to cart: out-of-stock product/variant is blocked, button disabled
       on product page
-- [x] Cart: quantities update, line + grand totals recalculate, remove works
-- [x] Cart: cannot exceed available stock
-- [x] Checkout blocked until email verified (redirects to resend-verification)
-- [x] Checkout blocked until delivery address + map pin set
-- [x] Set address: khan/sangkat dropdowns, map pin, address book (add a
+- Cart: quantities update, line + grand totals recalculate, remove works
+- Cart: cannot exceed available stock
+- Checkout blocked until email verified (redirects to resend-verification)
+- Checkout blocked until delivery address + map pin set
+- Set address: khan/sangkat dropdowns, map pin, address book (add a
       second address, switch between them, delete one)
-- [x] Coupon: valid code applies discount; invalid/expired/over-max-uses
+- Coupon: valid code applies discount; invalid/expired/over-max-uses
       rejected with clear message; discount survives to order total
-- [x] Place order: succeeds, cart empties, success message shows
+- Place order: succeeds, cart empties, success message shows
       (live order run-through, Jul 2026)
-- [x] Order confirmation email arrives — items, business names, totals,
+- Order confirmation email arrives — items, business names, totals,
       discount line, delivery note all correct (recently fixed — verify!)
-- [x] Order from 2 different vendors in one checkout → splits into 2 orders
-- [x] Stock decremented after order (check product page / vendor side)
+- Order from 2 different vendors in one checkout → splits into 2 orders
+- Stock decremented after order (check product page / vendor side)
 
 #### Buyer — after ordering
-- [x] Dashboard lists orders, newest first, correct statuses
-- [x] Order detail: items, prices, status timeline all correct
-- [x] Status updates appear (paid → dispatched → delivered) as vendor/admin
+- Dashboard lists orders, newest first, correct statuses
+- Order detail: items, prices, status timeline all correct
+- Status updates appear (paid → dispatched → delivered) as vendor/admin
       advances the order — check the live status-refresh polling too
-- [x] Confirm delivery button works when dispatched arrives
+- Confirm delivery button works when dispatched arrives
       (live order run-through — buyer confirmed, delivered_at set)
-- [x] Review: can review a delivered item once (form rejects a second review);
+- Review: can review a delivered item once (form rejects a second review);
       rating + text appear on the product page
-- [x] Refund request: submit with reason; status changes to Refund Requested
+- Refund request: submit with reason; status changes to Refund Requested
       (buyer submitted during refund test; vendor refund-requested email fired,
-- [x] Return dispatch: after admin approves return, buyer can submit
+- Return dispatch: after admin approves return, buyer can submit
       tracking; status advances
-- [x] Refund status page shows the correct step at each stage
+- Refund status page shows the correct step at each stage
       (verified all three roles; buyer/vendor/admin status timeline now renders
-- [x] Messages (support desk — buyer ↔ admin, NOT buyer↔vendor): from
+- Messages (support desk — buyer ↔ admin, NOT buyer↔vendor): from
       /contact-buyer/ send a support message (optionally attach one of your
-- [x] Notifications bell: shows order updates, mark-as-read works,
+- Notifications bell: shows order updates, mark-as-read works,
       mark-all-read works
-- [x] Settings: change name/profile, avatar upload, avatar color, password
+- Settings: change name/profile, avatar upload, avatar color, password
       change (old sessions still valid?), language preference persists
-- [x] Delete account: works, login afterwards impossible, orders retained
+- Delete account: works, login afterwards impossible, orders retained
       for vendor/admin
-- [x] Buyer CANNOT open /dashboard-vendor/, /products/, /orders-vendor/
+- Buyer CANNOT open /dashboard-vendor/, /products/, /orders-vendor/
       (rejected), nor /admin/
 
 #### Vendor — account lifecycle
-- [x] Register with business details (en + km names)
+- Register with business details (en + km names)
       (registered live 2026-07-08 with a real email)
-- [x] Email verification flow (same checks as buyer)
+- Email verification flow (same checks as buyer)
       (code arrived by email in the 2026-07-08 live registration;
 
 #### Vendor — products
-- [x] Add product: all fields, en + km, category cascade, price, stock,
+- Add product: all fields, en + km, category cascade, price, stock,
       delivery method, up to 9 photos
-- [x] Photo upload rejects non-images (try a renamed .txt → should fail on
+- Photo upload rejects non-images (try a renamed .txt → should fail on
       magic-byte check)
-- [x] Edit product: change fields, save, verify on buyer side
-- [x] Photo gallery: drag to reorder, order persists after reload, first
+- Edit product: change fields, save, verify on buyer side
+- Photo gallery: drag to reorder, order persists after reload, first
       photo becomes the primary shown to buyers
-- [x] Photo delete works
-- [x] Variants: add sizes with stock/price overrides; buyer side shows them;
+- Photo delete works
+- Variants: add sizes with stock/price overrides; buyer side shows them;
       deleting a variant removes it
-- [x] Sale price + end date: badge shows for buyers, price reverts after end
+- Sale price + end date: badge shows for buyers, price reverts after end
       date; cancel sale works
-- [x] Product status toggle (active/inactive): inactive product disappears
+- Product status toggle (active/inactive): inactive product disappears
       from buyer surfaces
-- [x] Archive: product moves to archive tab, invisible to buyers;
+- Archive: product moves to archive tab, invisible to buyers;
       unarchive returns it (inactive until re-activated)
-- [x] Delete: gone from lists; existing orders still display its name
+- Delete: gone from lists; existing orders still display its name
       (snapshot), buyer's cart handles it gracefully
-- [x] Low stock: set threshold, sell past it → vendor notification + email
-- [x] Coupons: create vendor coupon, buyer applies it, discount comes out of
+- Low stock: set threshold, sell past it → vendor notification + email
+- Coupons: create vendor coupon, buyer applies it, discount comes out of
       vendor payout (check the numbers in admin accounting)
-- [x] Products list: sorting works, orders tab shows full history
+- Products list: sorting works, orders tab shows full history
 
 #### Vendor — orders & money
-- [x] New order appears on dashboard (pending/paid only)
+- New order appears on dashboard (pending/paid only)
       (live order run-through; vendor Orders nav badge added since)
-- [x] Dispatch flow: mark dispatched (+ tracking URL), buyer sees it
+- Dispatch flow: mark dispatched (+ tracking URL), buyer sees it
       (live order run-through — Grab link entered, buyer saw it and
-- [x] Order detail shows royalty/payout breakdown correctly
-- [x] Return received: vendor marks returned item received
+- Order detail shows royalty/payout breakdown correctly
+- Return received: vendor marks returned item received
       (verified in full refund run-through, Jul 2026)
-- [x] ABA QR upload in settings (payout method)
-- [x] Messages (support desk — vendor ↔ admin, NOT vendor↔buyer): from
+- ABA QR upload in settings (payout method)
+- Messages (support desk — vendor ↔ admin, NOT vendor↔buyer): from
       /contact-vendor/ send a support message (optionally attach an order);
-- [x] Notifications: new order, low stock, refund request all arrive
+- Notifications: new order, low stock, refund request all arrive
       (refund request bell confirmed in the refund run-through;
-- [x] Settings: profile, avatar, banner, business info edit, business
+- Settings: profile, avatar, banner, business info edit, business
       address + map pin, password change, delete account
-- [x] Vendor CANNOT open /cart/, /checkout/, /dashboard-buyer/, /wishlist/
+- Vendor CANNOT open /cart/, /checkout/, /dashboard-buyer/, /wishlist/
       (rejected), nor /admin/
 
 #### Admin
-- [x] Login: only admin accounts work; buyer/vendor creds rejected;
+- Login: only admin accounts work; buyer/vendor creds rejected;
       rate-limited
-- [x] Vendor approvals: pending list, approve (vendor + business go live),
+- Vendor approvals: pending list, approve (vendor + business go live),
       reject
-- [x] Vendor detail page + vendor map load
-- [x] Buyers: list, search, detail, ban/unban (banned buyer can't log in),
+- Vendor detail page + vendor map load
+- Buyers: list, search, detail, ban/unban (banned buyer can't log in),
       notes
-- [x] Products: list, search, view, moderate (deactivate a product → gone
+- Products: list, search, view, moderate (deactivate a product → gone
       from buyer side)
-- [x] Orders: list, filters by status, search by buyer/vendor/order id,
+- Orders: list, filters by status, search by buyer/vendor/order id,
       date range
-- [x] Order detail: confirm payment (pending → paid), advance/cancel status,
+- Order detail: confirm payment (pending → paid), advance/cancel status,
       buyer + vendor notified at each step
-- [x] Payments page reflects order payments correctly
+- Payments page reflects order payments correctly
       (reworked to a click-through list → order page; used in live test)
-- [x] Payouts: delivered order appears after PAYOUT_WINDOW (24h in prod —
+- Payouts: delivered order appears after PAYOUT_WINDOW (24h in prod —
       test with a delivered order older than the window), mark paid out
-- [x] Refunds: full cycle — request appears → approve return → buyer
+- Refunds: full cycle — request appears → approve return → buyer
       dispatches → vendor received → mark refunded; also test reject
-- [x] Penalties: add a vendor penalty, verify it raises the effective
+- Penalties: add a vendor penalty, verify it raises the effective
       royalty on the vendor's next order
-- [x] Coupons + promo codes: create sitewide coupon, limits (max uses,
+- Coupons + promo codes: create sitewide coupon, limits (max uses,
       expiry, min subtotal) all enforced at checkout
-- [x] Banners: create/edit/delete, en + km, ordering, live on homepage
-- [x] Categories: create/edit, hierarchy (parent/child), Khmer names,
+- Banners: create/edit/delete, en + km, ordering, live on homepage
+- Categories: create/edit, hierarchy (parent/child), Khmer names,
       royalty rate set per category
-- [x] Content: edit a page (e.g. About) in both languages, verify live
-- [x] FAQ: add/edit/delete, verify on Help page
-- [x] Careers: post a job (en + km), see application + resume download
-- [x] Reviews: moderate/remove a review, gone from product page
-- [x] Messages (support desk): all support threads visible — guest (via
+- Content: edit a page (e.g. About) in both languages, verify live
+- FAQ: add/edit/delete, verify on Help page
+- Careers: post a job (en + km), see application + resume download
+- Reviews: moderate/remove a review, gone from product page
+- Messages (support desk): all support threads visible — guest (via
       /contact/, replies to a token link at /support-thread/), buyer, and
-- [x] Email templates: edit one, send test, verify the change
-- [x] Accounting: totals match the test orders you placed
-- [x] Admins: create a second admin, role restrictions apply
+- Email templates: edit one, send test, verify the change
+- Accounting: totals match the test orders you placed
+- Admins: create a second admin, role restrictions apply
       (non-super admin only sees allowed sections), deactivate admin
-- [x] Admin password change
-- [x] Admin session CANNOT access buyer or vendor portals
+- Admin password change
+- Admin session CANNOT access buyer or vendor portals
 
 #### Cron jobs (run each one manually on the server, check the effect)
-- [x] `cron/auto-confirm.php` — dispatched orders older than the window
+- `cron/auto-confirm.php` — dispatched orders older than the window
       auto-complete to delivered
-- [x] `cron/review-reminder.php` — buyer gets review reminder email after
+- `cron/review-reminder.php` — buyer gets review reminder email after
       delivery
-- [x] `cron/abandoned-cart.php` — buyer with items sitting in cart gets
+- `cron/abandoned-cart.php` — buyer with items sitting in cart gets
       the reminder email (once, not repeatedly)
-- [x] `cron/purge-password-resets.php` — expired reset tokens removed
-- [x] Then: schedule all four in hPanel → Cron Jobs (use PHP CLI, not HTTP —
+- `cron/purge-password-resets.php` — expired reset tokens removed
+- Then: schedule all four in hPanel → Cron Jobs (use PHP CLI, not HTTP —
       HTTP is blocked by the pre-launch Basic Auth gate)
 
 #### Cross-cutting
-- [x] Every flash message (success/error) appears once and clears on
+- Every flash message (success/error) appears once and clears on
       reload/next page
-- [x] Browser back button after form submits doesn't double-submit orders
-- [x] Session expiry mid-session: next action redirects to login without
+- Browser back button after form submits doesn't double-submit orders
+- Session expiry mid-session: next action redirects to login without
       errors, ajax pages (notifications, status refresh) handle it
-- [x] A URL with a bad/foreign public_id (product, order) shows a sane
+- A URL with a bad/foreign public_id (product, order) shows a sane
       not-found, not an error dump
-- [x] All emails render correctly in Gmail on a phone (Khmer + English blocks)
+- All emails render correctly in Gmail on a phone (Khmer + English blocks)
 
 ---
 
@@ -823,21 +823,21 @@ resizer on the server, and the content/links work — moved to
 
 #### Part 1 — fixes
 
-- [x] **1a. Password gate off.** The "Pre-launch gate" block in `.htaccess`
+- **1a. Password gate off.** The "Pre-launch gate" block in `.htaccess`
       is commented out and the site answers publicly. Verified live:
       `curl -I https://teepsaa.com/` returns `HTTP/2 200`, and Googlebot,
       TelegramBot and WhatsApp user agents all get a normal page rather than
       the old `401`. (Loose end in manual actions: delete `.htpasswd` from
       the server — the deploy uses no `--delete`.)
-- [x] **1b. Share picture.** `config/seo.php` pointed at
+- **1b. Share picture.** `config/seo.php` pointed at
       `images/og-default.png`, which did not exist — so every teepsaa link
       pasted into Facebook, Messenger or Telegram showed a broken preview.
       The 1200×630 file now exists.
-- [x] **1c. Favicon on public pages.** The icon files
+- **1c. Favicon on public pages.** The icon files
       (`images/teepsaa-icon-180/-192/-512.png`) existed but only one admin
       page pointed at them. `<link rel="icon">` and `apple-touch-icon` now
       ship on every public page (via `head/head.php`, item 3g).
-- [x] **1d. Language mix-up fixed — all three halves.** Pages were serving
+- **1d. Language mix-up fixed — all three halves.** Pages were serving
       Khmer body text under English `<title>`s inside `<html lang="en">`.
       Now: all 49 public pages declare their real language; product, shop
       and all eight info pages take title and description from the same
@@ -846,48 +846,48 @@ resizer on the server, and the content/links work — moved to
       defaults scattered across 49 files are gone. **Khmer is the deliberate
       default**, and because 3a shipped at the same time English is no
       longer shut out of Google.
-- [x] **1e. Deleted products 404 instead of forwarding.**
+- **1e. Deleted products 404 instead of forwarding.**
       `product/index.php` and both spots in `business/index.php` sent a
       `Location: /search/` for a missing row, which kept dead addresses in
       Google's index and made the search page look like a duplicate of every
       product page. They now return a real 404.
-- [x] **1f. A real "page not found" page.** `404.php` in the project root
+- **1f. A real "page not found" page.** `404.php` in the project root
       with the site's own header, footer and links back, wired up with
       `ErrorDocument 404 /404.php` in `.htaccess`. Was Apache's grey default.
-- [x] **1g. Descriptions on the eight info pages.** `about`, `help`,
+- **1g. Descriptions on the eight info pages.** `about`, `help`,
       `privacy`, `terms`, `contact`, `careers`, `returns` and `shipping`
       had a title but never called `seo_meta()` — so no description, no
       preview card, no canonical. All eight now do.
-- [x] **1h. `<h1>` on the homepage and search page.** Neither had one.
+- **1h. `<h1>` on the homepage and search page.** Neither had one.
       `home_h1` added to `lang/en.php` and `lang/km.php`; the search page's
       heading uses the search term ("Results for *scarf*", "All products"
       when empty).
-- [x] **1i. Alt text on product photos.** All 42 images had `alt=""`. Card
+- **1i. Alt text on product photos.** All 42 images had `alt=""`. Card
       photos, category tiles, JS-built cards, main photo and thumbnails,
       shop banners and grids now carry the product/shop/category name via
       `lang_field()`. Left empty on purpose: the lightbox image (JS fills
       it) and avatars — an empty `alt` is the correct answer for decoration.
-- [x] **1j. Per-subdomain robots.** All three subdomains point at the same
+- **1j. Per-subdomain robots.** All three subdomains point at the same
       folder, so `vendor.` and `admin.` were serving the buyer site's
       `robots.txt`. It is now `robots.php` — any host other than
       `teepsaa.com`/`www.` gets `Disallow: /` and stops; `.htaccess` rewrites
       `robots.txt` to it. The `$sdGo` redirects in `config/subdomain.php`
       were also changed from 302 to 301.
-- [x] **1k. Extra `Disallow` lines** for the per-person, one-time-use and
+- **1k. Extra `Disallow` lines** for the per-person, one-time-use and
       duplicate pages: logout, verify-email, resend-verification, both
       forgot-password and both reset-password portals, unsubscribe,
       support-thread, order-status, refund-status, review, submit, products,
       currency, lang. `/uploads/` deliberately left crawlable — those are
       the product photos.
-- [x] **1l. Filtered searches are `noindex,follow`.** Every filter
+- **1l. Filtered searches are `noindex,follow`.** Every filter
       combination on `search/index.php` was a separate crawlable address.
       The tag is emitted when `$q` is set or `$hasActiveFilters` is true —
       done with `noindex` rather than a `Disallow`, so Google actually reads
       the instruction.
-- [x] **1m. www → apex.** `.htaccess` forced https but kept whatever host
+- **1m. www → apex.** `.htaccess` forced https but kept whatever host
       was typed, so `www.teepsaa.com` stayed on www while every page named
       the apex as canonical. A 301 now sends www to `https://teepsaa.com`.
-- [x] **1n. Sitemap improvements** (three of four bullets):
+- **1n. Sitemap improvements** (three of four bullets):
       the five missing info pages added; `/sitemap.xml` answers via an
       `.htaccess` rewrite to `sitemap.php` and `robots.txt` points at it;
       and product photos are listed with the `image:` namespace, which is
@@ -904,7 +904,7 @@ the homepage emit them via `schema_graph()`. Two safety rails in that file:
 break out of the block, and `schema_clean()` drops empty values so nothing
 claims a blank property.
 
-- [x] **2a. `Product` cards on product pages** — `schema_product()`. Four
+- **2a. `Product` cards on product pages** — `schema_product()`. Four
       corrections found while building it, all worth keeping in mind:
       (1) the **zero-review guard is enforced in one place** —
       `schema_rating()` returns nothing below one review, because the
@@ -917,29 +917,29 @@ claims a blank property.
       sale is live, and then `priceValidUntil` is set to the end date.
       `offers.url` carries `?lang=en` on English pages so it always matches
       the canonical.
-- [x] **2b. `Organization` + `WebSite`/`SearchAction` on the homepage** —
+- **2b. `Organization` + `WebSite`/`SearchAction` on the homepage** —
       `schema_organization()` and `schema_website()`, emitted from
       `index.php` only, on purpose. `sameAs` reads `SCHEMA_SOCIAL`, which is
       empty until the accounts exist (an empty list is omitted; a `#`
       address would be worse than none).
-- [x] **2c. `Store` cards on shop pages** — `schema_store()`. Street is
+- **2c. `Store` cards on shop pages** — `schema_store()`. Street is
       `house_number` + `address`, locality the sangkat (falling back to the
       city), region the khan, country KH; `geo` carries the map pin and is
       skipped at 0,0 rather than dropping a shop into the Gulf of Guinea.
       Same shared rating guard as 2a.
-- [x] **2d. Breadcrumbs, visible and hidden.** New `/breadcrumb/` folder
+- **2d. Breadcrumbs, visible and hidden.** New `/breadcrumb/` folder
       (same shape as `/header/` and `/footer/`), on product, shop and help
       pages. One `$crumbs` array feeds both the visible trail and
       `schema_breadcrumb()` — deliberate, because Google only shows a
       breadcrumb when the two agree, and two copies would drift. Product
       trail is Home › parent category › category › product from
       `categories.parent_id`.
-- [x] **2e. `FAQPage` on the help page** — `schema_faq($faqs)`, reading the
+- **2e. `FAQPage` on the help page** — `schema_faq($faqs)`, reading the
       same array the body loops over, so it is automatically in whichever
       language rendered. Answers stripped of HTML; rows missing a question
       or answer are skipped. (Google narrowed FAQ rich results in 2023, so
       don't expect much from it — but it's correct and free.)
-- [x] **2f. Tested against the live site — zero errors.** Every JSON-LD
+- **2f. Tested against the live site — zero errors.** Every JSON-LD
       block fetched from `https://teepsaa.com` as served and checked for
       parse errors and Google's required fields: homepage
       (Organization + WebSite), product in km and en (Product +
@@ -950,7 +950,7 @@ claims a blank property.
       identical, never a rating at zero reviews, prices match the page on
       sale/after expiry/in riel/with variant ranges, and `</script>` in a
       description cannot break out.
-- [x] **`shippingDetails` and `hasMerchantReturnPolicy` filled in** — the
+- **`shippingDetails` and `hasMerchantReturnPolicy` filled in** — the
       only two warnings from 2f. `schema_shipping_details()` declares the
       band rather than a flat rate: `config/delivery-calc.php` clamps every
       fee to the vehicle's `min_fare` and refuses anything past
@@ -965,7 +965,7 @@ claims a blank property.
 
 #### Part 3 — after-launch items, done early
 
-- [x] **3a. One address per language — the cheap form, a day instead of a
+- **3a. One address per language — the cheap form, a day instead of a
       week.** Rather than `/en/` and `/km/` prefixes, the language rides in
       the query: bare is Khmer, `?lang=en` is English, so no existing
       address moves and no shared link breaks. `current_lang()` in
@@ -978,7 +978,7 @@ claims a blank property.
       strips `?lang=` from the page it returns to. This roughly doubles the
       pages teepsaa can appear for — but it makes the English *visible*, not
       *good* (see the spot-check in manual actions).
-- [x] **3b. Readable product and shop addresses.** `config/slug.php` —
+- **3b. Readable product and shop addresses.** `config/slug.php` —
       `slugify()` folds a name down (accents flatten, apostrophes vanish so
       "Men's" is `mens`, Khmer script is kept because Khmer in an address is
       a feature here), and `product_path()`/`business_path()` glue it to the
@@ -989,7 +989,7 @@ claims a blank property.
       row. Old `?id=` addresses 301 to the new form. Words come from the
       **English** name in both languages, deliberately — two addresses for
       one product is the duplicate-content problem 3a exists to avoid.
-- [x] **3c. Real category pages — one per row, 49 of them.**
+- **3c. Real category pages — one per row, 49 of them.**
       `/category/dresses/`, `/category/bags-purses/` and the rest, replacing
       homepage tiles that ran a *text search* for the category name. Each
       has a heading, intro text, the correctly filtered grid (24 per page),
@@ -1002,14 +1002,14 @@ claims a blank property.
       — `mens-jeans` and `womens-jeans`, never a bare `jeans` for whichever
       came first — so adding "Kids' Jeans" later can't silently move an
       indexed address.
-- [x] **3d. Server-rendered pagination.** `pagination/pagination.php`, a
+- **3d. Server-rendered pagination.** `pagination/pagination.php`, a
       shared partial used by both search and the category pages: numbered
       links, first and last always shown, a window around the current page,
       `…` for the gap — real `<a href>`s the crawler can walk. Infinite
       scroll still works for people and now starts from the right offset, so
       landing on `?page=3` doesn't re-show products 21–40. `?page=99`
       returns a genuine 404 rather than the last page again (a soft 404).
-- [x] **3e. Images — all four sub-items.** `width`/`height` on 28 `<img>`
+- **3e. Images — all four sub-items.** `width`/`height` on 28 `<img>`
       tags across 14 files; `loading="lazy"` on everything below the first
       screenful, with three deliberate exceptions (header logo, main product
       photo, shop banner — the last two carrying `fetchpriority="high"`);
@@ -1022,7 +1022,7 @@ claims a blank property.
       than the original (flat graphics like QR codes), and deleting a photo
       now deletes its copies so the folder can't fill with orphans.
       (Running it on the server is a manual action.)
-- [x] **3f. Compression and caching in `.htaccess`**, with two deliberate
+- **3f. Compression and caching in `.htaccess`**, with two deliberate
       departures from the standard snippet: images and fonts are **not** in
       the compression list (recompressing a JPEG or WebP costs CPU to make
       the file slightly bigger; woff2 is already compressed), and CSS/JS get
@@ -1032,7 +1032,7 @@ claims a blank property.
       page carries the cart count and the signed-in name. **Verified live
       2026-09-07: LiteSpeed answers `content-encoding: br`** (Brotli, which
       beats gzip), so no support ticket was needed.
-- [x] **3g. One shared `<head>`.** `head/head.php` works like `header/` and
+- **3g. One shared `<head>`.** `head/head.php` works like `header/` and
       `footer/` — set `$headTitle`, `$headDesc`, `$headUrl`, `$headCss` and
       require it. All 45 public and vendor pages use it; the admin panel is
       left alone as a separate English-only interface no search engine sees.
@@ -1043,15 +1043,15 @@ claims a blank property.
 
 #### Beyond the original list (2026-09-07)
 
-- [x] **Dead social links removed.** The footer shipped three `href="#"`
+- **Dead social links removed.** The footer shipped three `href="#"`
       icons on every page while `SCHEMA_SOCIAL` sat empty — two places that
       had to agree and didn't. The footer now draws from
       `schema_social_links()`, so filling in an address makes the icon
       appear and leaving it empty renders no icon at all.
-- [x] **`og:type` is `product` on product pages**, was hardcoded `website`
+- **`og:type` is `product` on product pages**, was hardcoded `website`
       everywhere. Pass `$headType` to `head/head.php`. This is what lets a
       shared product link render as a product card.
-- [x] **Analytics wired but dormant.** The GA4 tag is emitted from
+- **Analytics wired but dormant.** The GA4 tag is emitted from
       `head/head.php`, gated on `GA_MEASUREMENT_ID` in `config/seo.php`
       being non-empty **and** the host being `teepsaa.com` — so the site
       ships clean until the ID is filled in, and vendors working in their
@@ -1077,11 +1077,11 @@ and is archived in its own section at the end of this file.
 These were the never-started tests. All need a fresh vendor registered with a
 +alias; two of them need a second throwaway vendor as well.
 
-- [x] **Before approval, the business is invisible.** Register a vendor, submit
+- **Before approval, the business is invisible.** Register a vendor, submit
       a business, then in a logged-out browser search for the business name. It
       must not appear anywhere: search, homepage, category pages.
       (verified live 2026-08-23)
-- [x] **Before approval, products cannot be created at all.** You can't add a
+- **Before approval, products cannot be created at all.** You can't add a
       product to an unapproved business — the form isn't offered. Confirm the
       _server_ enforces that too, not just the UI: with the vendor logged in and
       their business still pending, POST directly to `/products/save.php` with
@@ -1089,15 +1089,15 @@ These were the never-started tests. All need a fresh vendor registered with a
       Check the products table afterwards to be sure. The gate is
       `SELECT ... WHERE user_id = ? AND approved = 1` followed by an early exit
       when empty, repeated in all nine product action files.
-- [x] **Approve, and the store goes live.** As admin, approve the business.
+- **Approve, and the store goes live.** As admin, approve the business.
       The vendor should get the `business_approved` email, and the business
       page should now be reachable to a logged-out visitor. Add a product as the
       vendor and confirm it appears in search and on the business page.
-- [x] **Reject, and the vendor sees why.** Use a second throwaway vendor.
+- **Reject, and the vendor sees why.** Use a second throwaway vendor.
       Reject the business as admin, then log in as that vendor and confirm the
       dashboard shows a rejection state rather than a blank or broken page.
       They should get the `business_rejected` email.
-- [x] **Rejecting an already-approved business hides its products.** This is the
+- **Rejecting an already-approved business hides its products.** This is the
       only way a product can exist under a non-approved business, so it's the
       real test of the invisibility rule. Approve a business, add a product,
       confirm the product is publicly visible — then reject the business as
@@ -1105,12 +1105,12 @@ These were the never-started tests. All need a fresh vendor registered with a
       both the business page and the product disappear from search, homepage
       and category pages. A stale product still reachable by direct URL is the
       failure to watch for.
-- [x] **The vendor portal rejects buyer credentials.** Enter a known-good
+- **The vendor portal rejects buyer credentials.** Enter a known-good
       _buyer_ email and password at `/login-vendor/`. It must fail with the
       same generic "Invalid email or password" — it must not reveal that the
       account exists as a buyer. (The mirror of this, vendor creds at
       `/login-buyer/`, already passed.)
-- [x] **Vendor forgot-password works end to end.** Request a reset at
+- **Vendor forgot-password works end to end.** Request a reset at
       `/forgot-password-vendor/`, click the emailed link, set a new password.
       Then confirm three things: the old password no longer works, the new one
       does, and clicking the same reset link a second time is rejected.
@@ -1121,28 +1121,28 @@ In the old checklists these were ticked off, but the note next to each one
 admitted part of the test was skipped. That skipped part is what you're
 testing here. Each item says which accounts you need and where to click.
 
-- [x] **Clicking a bell notification marks it read.** Any account with unread
+- **Clicking a bell notification marks it read.** Any account with unread
       notifications works — easiest is the vendor from the test above, who just
       got one. 1. Click the bell in the header. Note the unread count. 2. Click one notification. The count should drop by one. 3. Click "mark all read". Count goes to zero. 4. Reload the page. Count must still be zero — if the unread count comes
       back after a reload, the "read" never reached the database.
-- [x] **The vendor bell fires for a new order and for low stock.** Needs a
+- **The vendor bell fires for a new order and for low stock.** Needs a
       buyer, a vendor, and the admin. 1. New-order bell: as a buyer, order one of the vendor's products; as
       admin, confirm the payment (admin → Orders → Payments). Log in as the
       vendor — the bell should show the new paid order. 2. Low-stock bell: as the vendor, edit a product so its low-stock
       threshold is _higher_ than its current stock (e.g. stock 3,
       threshold 5). As the buyer, buy one. The vendor's bell should show a
       low-stock notification.
-- [x] **"Mark paid out" actually works.** As admin, on an order the buyer has
+- **"Mark paid out" actually works.** As admin, on an order the buyer has
       confirmed as delivered (the server's payout window is currently 60
       seconds, so a minute after delivery is enough). 1. Admin → Orders → Payouts. The order should be listed. 2. Click "mark paid out". 3. Confirm three things: the order's status becomes completed, it is
       gone from the payouts list, and the vendor receives the `payout_sent`
       email.
-- [x] **Rejecting a refund doesn't strand the order.** Needs a buyer with a
+- **Rejecting a refund doesn't strand the order.** Needs a buyer with a
       delivered order, and the admin. 1. As the buyer, open the order at `/orders-buyer/` and request a refund. 2. As admin, go to Orders → Refunds and _reject_ it (the approve path
       already passed — you're testing reject). 3. The buyer should get the `refund_rejected` email, and the buyer's
       order page should show a normal status again (delivered), not be
       stuck saying refund requested or show anything broken.
-- [x] **A wrong vendor verification code is rejected, and resend works.**
+- **A wrong vendor verification code is rejected, and resend works.**
       Register a fresh vendor with a +alias to get to the "enter the code we
       emailed you" screen. 1. Type a wrong code — it must be rejected with an error. 2. Click resend. A second email arrives with a new code. 3. The old code from the first email must now fail, and the new code
       must work.
@@ -1163,16 +1163,16 @@ turned up is written up under **Findings** near the end of this file.
 
 #### 2a. Automated review
 
-- [x] **Run `/code-review ultra` in Claude Code.** It's a multi-agent review of
+- **Run `/code-review ultra` in Claude Code.** It's a multi-agent review of
       the branch covering bugs, security and inefficiency. You have to trigger
       it yourself — Claude can't launch it.
-- [x] **Feed it in sections rather than all at once**, most-recent work first:
+- **Feed it in sections rather than all at once**, most-recent work first:
       `products/`, `analytics/`, `settings-vendor/` and `business-vendor/`, then `cart/ checkout/ product/
 search/`, then `header/ footer/ config/ api/`.
 
 #### 2b. PHP and server
 
-- [x] **Turn on `display_errors` in dev and click through every page.** You're
+- **Turn on `display_errors` in dev and click through every page.** You're
       hunting notices and warnings that don't fatal but reveal bugs — undefined
       array keys, null property reads. Remember to turn it back off (Part 5).
       (verified 2026-09-04 — 384 URLs across 88 distinct pages swept by curl as
@@ -1186,12 +1186,12 @@ search/`, then `header/ footer/ config/ api/`.
       PHP than serves the site. POST-only paths — checkout, submit, register,
       uploads — are NOT covered by this sweep and still need the Part 1 flows
       re-run by hand with errors visible.)
-- [x] **Run `php -l` over the whole tree** to catch syntax errors in anything
+- **Run `php -l` over the whole tree** to catch syntax errors in anything
       heavily edited:
       `find . -name '*.php' -not -path './vendor/*' -exec php -l {} \; | grep -v 'No syntax errors'`
       Silence means clean.
       (verified 2026-08-31 — clean, zero syntax errors across the tree)
-- [x] **Confirm every `session_start()` has the full options block.** `.user.ini`
+- **Confirm every `session_start()` has the full options block.** `.user.ini`
       is disabled on Hostinger so nothing is inherited. Each one needs
       `gc_maxlifetime => 28800` and the `cookie_domain` line. Find the odd ones
       out: `grep -rn "session_start" --include="*.php" . | wc -l` then compare
@@ -1201,7 +1201,7 @@ search/`, then `header/ footer/ config/ api/`.
       lines, per-file counts match. The raw grep shows 190 vs 187: the extra
       three are the word `session_start` inside comments in `config/subdomain.php`
       and `admin/go.php`, not calls.)
-- [x] **Confirm CSRF is on every POST form.** List the forms
+- **Confirm CSRF is on every POST form.** List the forms
       (`grep -rln "method=\"post\"" --include="*.php" .`) and check each one
       calls `csrf_input()`, and that its action file calls `csrf_verify()`.
       (verified 2026-08-31 — every file containing `method="post"` calls
@@ -1213,7 +1213,7 @@ Four of the original six are already in place — magic-byte upload validation i
 `config/upload.php`, `/uploads/` blocking PHP execution via `.htaccess`, and
 both cross-role rejection tests passing in functional testing. These two remain:
 
-- [x] **Check output escaping.** Every place user-supplied text is printed needs
+- **Check output escaping.** Every place user-supplied text is printed needs
       `htmlspecialchars()`. The risky spots are product names/descriptions,
       business names, review text, support messages and admin notes — anywhere a
       vendor or buyer's own words get rendered.
@@ -1223,7 +1223,7 @@ both cross-role rejection tests passing in functional testing. These two remain:
       form, and no variable assigned raw from one of those columns is echoed
       unescaped. `render_markdown()` calls `htmlspecialchars()` before parsing;
       `$storeName` in `business/index.php` is escaped at assignment.)
-- [x] **Check every query is prepared.** Search for string interpolation into
+- **Check every query is prepared.** Search for string interpolation into
       SQL: `grep -rn 'query("' --include="*.php" .` and
       `grep -rnE '\$(_POST|_GET)\[' --include="*.php" . | grep -i "select\|insert\|update\|delete"`.
       Anything that concatenates a variable into SQL instead of binding it is a
@@ -1239,24 +1239,24 @@ both cross-role rejection tests passing in functional testing. These two remain:
 
 Cheap to do and it shrinks what you have to maintain forever.
 
-- [x] **Find orphaned action files.** For each `*-action.php` or similar, grep
+- **Find orphaned action files.** For each `*-action.php` or similar, grep
       the tree for its filename. If nothing references it, no form posts to it
       and it can go.
       (verified 2026-08-31 — none. The three deleted this session
       (`photo-delete-action.php`, `photo-upload-action.php`,
       `storefront-action.php`) have no remaining references either.)
-- [x] **Confirm `photo-set-primary.php` is still used.** The star button that
+- **Confirm `photo-set-primary.php` is still used.** The star button that
       called it was removed. If nothing references it, delete it.
       (resolved 2026-08-31 — the file no longer exists anywhere in the tree and
       nothing references it. Already deleted.)
-- [x] **Find unused CSS classes**, especially after the `products/` and
+- **Find unused CSS classes**, especially after the `products/` and
       vendor-portal refactors. Pull the class names out of a page's CSS
       and grep the matching PHP for each.
       (verified 2026-08-31 — ~40 dead classes found, listed under Findings.
       Note `--modifier` classes built by string concatenation
       (`thread-badge--<?= $th['status'] ?>`) and the `mapboxgl-*` library
       classes are live, not dead.)
-- [x] **Find unused JS.** `js/` currently holds `boundary.js`, `geo-capture.js`,
+- **Find unused JS.** `js/` currently holds `boundary.js`, `geo-capture.js`,
       `notifications.js`, `photo-shrink.js`, `square-cropper.js`,
       `status-refresh.js`. Grep for each filename; anything nothing includes is
       dead.
@@ -1268,13 +1268,13 @@ Cheap to do and it shrinks what you have to maintain forever.
 Run each query against the live database. Each should return zero rows, or a
 result you can explain.
 
-- [x] **Orphaned product photos:**
+- **Orphaned product photos:**
       `SELECT COUNT(*) FROM product_photos p LEFT JOIN products pr ON pr.id = p.product_id WHERE pr.id IS NULL;`
       (verified 2026-09-04 — returns **0**.)
-- [x] **Orphaned cart items:**
+- **Orphaned cart items:**
       `SELECT COUNT(*) FROM cart_items c LEFT JOIN products p ON p.id = c.product_id WHERE p.id IS NULL;`
       (verified 2026-09-04 — returns **0**.)
-- [x] **Order items with a deleted product.** Expect some — products get
+- **Order items with a deleted product.** Expect some — products get
       deleted. What matters is that order pages still render the snapshot name
       instead of blowing up. Find one and open the order as buyer, vendor and
       admin.
@@ -1286,7 +1286,7 @@ result you can explain.
       `order_items.product_name` snapshot, and emitted zero PHP diagnostics. The
       snapshot columns (`product_name`, `product_name_km`, `variant_label`,
       `price_at_purchase`) are doing their job.)
-- [x] **Confirm `archived = 0` is filtered everywhere buyers see products.**
+- **Confirm `archived = 0` is filtered everywhere buyers see products.**
       Grep every buyer-facing query — homepage, search, business page, category
       — and check the filter is present. An archived product leaking into search
       is the failure.
@@ -1297,7 +1297,7 @@ result you can explain.
       filtering — correct for a wishlist. `cart/add.php` gates on `active`, and
       `archive.php` forces `active = 0`, so archived items cannot be carted.
       One gap: see the `products/toggle.php` finding.)
-- [x] **Confirm at most one primary photo per product:**
+- **Confirm at most one primary photo per product:**
       `SELECT product_id, COUNT(*) FROM product_photos WHERE is_primary = 1 GROUP BY product_id HAVING COUNT(*) > 1;`
       (verified 2026-09-04 — 0 rows.)
 
@@ -1305,11 +1305,11 @@ result you can explain.
 
 Mobile layout checks live in Part 3. These are the desktop ones.
 
-- [x] **Confirm images load everywhere**: homepage, search, business page,
+- **Confirm images load everywhere**: homepage, search, business page,
       product detail, vendor products list, vendor dashboard. Open dev tools and
       watch for 404s rather than trusting your eyes — a broken image can look
       like an intentional gap.
-- [x] **Click every link in the header and footer** in both languages. Broken
+- **Click every link in the header and footer** in both languages. Broken
       footer links are the easiest thing to ship and the most embarrassing.
 
 ### Findings, since fixed
@@ -1318,7 +1318,7 @@ From the `display_errors` sweep (2026-09-04) and the static audit pass
 (2026-08-31). The one remaining open finding — the two include-fragments that
 are directly web-reachable — stays in the live file.
 
-- [x] **`/sitemap.php` fatals on every single request.** Not an edge case — the
+- **`/sitemap.php` fatals on every single request.** Not an edge case — the
       page is 100% dead:
       `Uncaught PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown
   column 'p.updated_at'`. Line 9 selects `p.updated_at` from `products` and
@@ -1337,7 +1337,7 @@ are directly web-reachable — stays in the live file.
       26 `<lastmod>` tags, zero PHP diagnostics. The local file is fixed but
       **not yet committed** — it will go out with the next normal deploy.)
 
-- [x] **`sitemap.php` lists `/browse/`, which does not exist.** Line 34. There
+- **`sitemap.php` lists `/browse/`, which does not exist.** Line 34. There
       is no `browse/` directory anywhere in the tree and nothing else in the
       site links to it. Google will fetch it, get a 404, and log a sitemap
       error on the first crawl after the gate comes off. Delete the `<url>`
@@ -1347,7 +1347,7 @@ are directly web-reachable — stays in the live file.
       entry appears anywhere in `https://teepsaa.com/sitemap.xml`.)
 
 
-- [x] **Three footer social links are `href="#"` placeholders** —
+- **Three footer social links are `href="#"` placeholders** —
       `footer/footer.php`, the Instagram/Facebook/Telegram row. Telegram
       especially, given Part 3e already flags Telegram sharing as important in
       Cambodia. Point them at real accounts or drop the row before launch.
@@ -1368,7 +1368,7 @@ are directly web-reachable — stays in the live file.
 The other four Part 5 items closed a week later — see "Flip to production"
 at the end of this file.
 
-- [x] **Search for leftover `TODO` and `FIXME` comments** —
+- **Search for leftover `TODO` and `FIXME` comments** —
       `grep -rn "TODO\|FIXME" --include="*.php" . | grep -v z-checklists` — and
       either fix or delete each one.
       (verified 2026-08-31 — zero matches across php/js/css.)
@@ -1422,11 +1422,11 @@ spam to check.
 
 #### 4a. Deploy the new templates
 
-- [x] **Deploy the code** — done. `./deploy-sftp.sh --dry-run` transfers
+- **Deploy the code** — done. `./deploy-sftp.sh --dry-run` transfers
       nothing: all 409 files match. `config/email-templates.php`,
       `config/notify.php` and both `cron/` digests are byte-identical to local
       (md5 match).
-- [x] **Run `database/seed-email-templates.php` against the live database.**
+- **Run `database/seed-email-templates.php` against the live database.**
       Done 2026-09-09. `database/` is excluded from the deploy, so the script
       was `scp`'d up, run, and deleted again — the directory is empty on the
       server as intended. All 31 keys from `config/email-templates.php` are now
@@ -1437,7 +1437,7 @@ spam to check.
       and `tokens`, never `sort_order`, so `business_suspended` and
       `business_reinstated` still sit near the top of the admin list from their
       2026-09-01 insert rather than in the script's order. Harmless.
-- [x] **Register the digest cron in hPanel** — done 2026-09-09, after finding
+- **Register the digest cron in hPanel** — done 2026-09-09, after finding
       one registered cron had been failing every run since it was added:
       `~/.logs/cronjob_ACj3c0HSnD` held nothing but
       `    Could not open input file: /home/USER/domains/teepsaa.com/public_html/cron/admin-activity-digest.php`
@@ -1473,20 +1473,20 @@ on the server only records **failures** (see
 `config/mail.php` — the plain-text log path is the `!SMTP_PASS` dev branch).
 Its last entry is 2026-07-08, so nothing has failed to send since.
 
-- [x] **Verify a new account** — vendor 17 (`whynottaco718@gmail.com`) created
+- **Verify a new account** — vendor 17 (`whynottaco718@gmail.com`) created
       2026-09-04 05:57:29 and `email_verified_at` 05:58:35, one minute later.
       The code only reaches the form by email, so `verify_code` arrived.
       Buyer 13 the same on 2026-07-27.
-- [x] **Do a password reset** — done live 2026-09-09: the mail arrived and the
+- **Do a password reset** — done live 2026-09-09: the mail arrived and the
       link worked. Nothing records this after the fact —
       `cron/purge-password-resets.php` deletes rows after 24 hours — so this
       one rests on the run itself, not on database evidence.
-- [x] **Place a test order** — orders 36 and 37, both 2026-09-03, both now
+- **Place a test order** — orders 36 and 37, both 2026-09-03, both now
       `completed`. `order_received` fires on placement.
-- [x] **Approve a business** — `admin_audit` id 1, `business.approve` on
+- **Approve a business** — `admin_audit` id 1, `business.approve` on
       business 12, 2026-09-01 10:05:48. `admin/action.php:75` sends
       `business_approved` on that path.
-- [x] **Confirm a payment as admin** — `admin_audit` ids 6 and 7,
+- **Confirm a payment as admin** — `admin_audit` ids 6 and 7,
       `payment.confirm` on payments 35 and 36, 2026-09-03. The
       `vendor_new_order` send at `admin/payments-action.php:91` has been in the
       deployed code since 2026-07-13, so it ran. "Vendors have been notified"
@@ -1494,12 +1494,12 @@ Its last entry is 2026-07-08, so nothing has failed to send since.
 
 #### 4c. If email misbehaves
 
-- [ ] **If anything lands in spam:** (never triggered — kept here as the
+- **If anything lands in spam:** (never triggered — kept here as the
       procedure if it ever does) hPanel → Emails → confirm the mailbox
       exists and SPF/DKIM records are set. Hostinger adds these automatically
       when DNS is hosted with them, but check hPanel → Emails → DNS settings
       rather than assuming.
-- [x] **If sends fail outright:** read `mail.log` on the server. Checked
+- **If sends fail outright:** read `mail.log` on the server. Checked
       2026-09-09 — clean since 2026-07-08. SMTP errors are logged there
       together with the server's own reply, which usually names the problem.
 
@@ -1523,7 +1523,7 @@ Two of the five turned out to need something the item did not anticipate: the
 crons were running a different PHP than the website, and the digest cron had
 been failing silently on a bad path.
 
-- [x] **Set `PAYOUT_WINDOW_SECONDS` to `86400`** in the server's
+- **Set `PAYOUT_WINDOW_SECONDS` to `86400`** in the server's
       `config/db.php`. Done — and better than a hand-edited constant: it is now
       derived from the host, so a deploy cannot get it wrong.
       Verified in the server's own `config/db.php` on 2026-09-09 (that file is
@@ -1537,7 +1537,7 @@ been failing silently on a bad path.
       describing the old hand-edited version and inviting someone to "fix" it
       back. Local has the correct comment. `config/db.php` is never deployed,
       so paste the local lines 9-11 over the server's line 3 by hand.
-- [x] **Set `display_errors = Off`, and undo the `.htaccess` block added for
+- **Set `display_errors = Off`, and undo the `.htaccess` block added for
       the Part 2b sweep** (that sweep is archived in `teepsaa-completed.md`).
       Done 2026-09-09. The live web settings are in
       `~/.cl.selector/alt_php83.cfg` and now read exactly what this item asks
@@ -1556,7 +1556,7 @@ rm domains/teepsaa.com/public_html/.htaccess.bak-errortest`
       as the site's version gives the wrong answer for every one of these
       settings — see the cron item below, which is the same confusion with real
       consequences.
-- [x] **Point the cron jobs at PHP 8.3.** Done 2026-09-09. All seven jobs were
+- **Point the cron jobs at PHP 8.3.** Done 2026-09-09. All seven jobs were
       re-entered in hPanel with `/opt/alt/php83/usr/bin/php` instead of
       `/usr/bin/php`, so cron and the website now run the same PHP as each
       other. Verified from the screenshot of the job list and from the server:
@@ -1569,7 +1569,7 @@ rm domains/teepsaa.com/public_html/.htaccess.bak-errortest`
       matters, so its `log_errors` setting no longer needs changing.
       Note the log filenames all changed — deleting and re-adding a job gives
       it a new `~/.logs/cronjob_XXXX` id, so old logs are gone.
-- [x] **Confirm `/uploads/` is writable by the web server user**, and that its
+- **Confirm `/uploads/` is writable by the web server user**, and that its
       `.htaccess` PHP-execution block is still in place after the deploy.
       Both verified 2026-09-09. The folder is owned by `u767733958`, the user
       PHP runs as, and holds 48 files with writes as recent as 2026-09-02 — so
@@ -1583,7 +1583,7 @@ rm domains/teepsaa.com/public_html/.htaccess.bak-errortest`
       A deploy cannot break this — `uploads/` is in the rsync exclude list, so
       the folder is never touched. That is why its `.htaccess` still carries
       its original 2026-05-23 date.
-- [x] **Remove the pre-launch gate** — done 2026-09-09. `https://teepsaa.com/`
+- **Remove the pre-launch gate** — done 2026-09-09. `https://teepsaa.com/`
       answers 200 with no credentials. The exposure fix this was waiting on
       (removing `z-checklists/` and `database/`) was completed 2026-07-10, and
       still holds live: `/z-checklists/` and `/deploycode.txt` 404, while
@@ -1622,3 +1622,78 @@ the repo.
 Also confirmed while looking: `.htpasswd` and `config/db.php` are both
 gitignored and untracked, and the tracked `config/smtp.php` carries an empty
 `SMTP_PASS`, so no secret is in the repo.
+
+## Dead CSS cleanup, closed out 2026-09-09 (archived from teepsaa-todos-launch-readiness.md)
+
+## Dead CSS — DONE 2026-09-09
+
+Re-verified against the current code, then removed: **343 lines across 11 CSS
+files**, deletions only, no rule rewritten except two grouped selectors in
+`privacy.css` / `terms.css` where only the dead half was dropped.
+
+Two entries in the table below were **wrong** — `popup-payout-box` and
+`popup-total--payout` are both live in `orders-vendor/order.php:200,213`, so
+they were kept. The 2026-08-31 static pass had missed them. The other 36 were
+confirmed absent from every `.php`, `.js` and `.html` file, and absent from
+runtime class composition (`classList.add/remove/toggle`, `className =`, and
+interpolated `class="..."` attributes were all enumerated and checked).
+
+The `popup.css` question is answered: the modal shell is dead because the
+modals were replaced by **real pages** (`orders-buyer/order.php`,
+`orders-vendor/order.php`, `admin/order.php`, `orders-vendor/refund.php`),
+which reuse the popup _contents_ classes inside ordinary page sections. Nothing
+reimplemented the shell — it was simply left behind. Shell removed.
+
+Not a defect, checked while in there: `popup-body` is an element **id** used by
+`js/status-refresh.js:150`, not a class; `popup-row-value--warn` is styled in
+`admin/admin.css` and used in `admin/buyer.php`, which loads it.
+
+Original table, kept for the record:
+
+| File                                     | Dead classes                                                                                                                                                                                                                                                                                                              |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `admin/admin.css`                        | `add-cat-form`, `admin-card-actions`, `admin-card-info`, `admin-list`, `cat-desc`, `cat-section`, `cat-table`, `order-card-business`, `payout-card`, `payout-no-qr`, `payout-note`, `payout-qr`, `refund-popup-note`, `refund-popup-reason`, `review-vendor-sub`, `section-divider`, `suspend-details`, `suspend-summary` |
+| `popup/popup.css`                        | `popup-close`, `popup-inline-form`, `popup-modal`, `popup-overlay`, `popup-payout-box`, `popup-photos`, `popup-status-bar`, `popup-title`, `popup-total--payout`                                                                                                                                                          |
+| `orders-buyer/orders-buyer.css`          | `order-card-action`, `order-card-business`, `order-track-link`                                                                                                                                                                                                                                                            |
+| `settings-buyer/settings-buyer.css`      | `avatar-form`, `settings-field-row`                                                                                                                                                                                                                                                                                       |
+| `privacy/privacy.css`, `terms/terms.css` | `legal-effective`, `legal-note` (both files)                                                                                                                                                                                                                                                                              |
+| `cart/cart.css`                          | `cart-total-row`                                                                                                                                                                                                                                                                                                          |
+| `checkout/checkout.css`                  | `checkout-total-row`                                                                                                                                                                                                                                                                                                      |
+| `admin/order-detail.css`                 | `od-back`                                                                                                                                                                                                                                                                                                                 |
+| `header/header.css`                      | `lang-chevron`                                                                                                                                                                                                                                                                                                            |
+| `style.css`                              | `flash-badge`                                                                                                                                                                                                                                                                                                             |
+
+(Post-launch cleanup — see "Cut from launch scope" above. `popup.css` is the
+interesting one: the modal shell itself (`popup-modal`, `popup-overlay`,
+`popup-close`, `popup-title`) is dead while the contents (`popup-row`,
+`popup-items`, `popup-total`) are live, so the shell was reimplemented
+somewhere else and the old rules were left behind. Worth a look before
+deleting, in case the new shell is the duplicate.)
+
+## display_errors sweep findings — closed out 2026-09-09 (archived from teepsaa-todos-launch-readiness.md)
+
+The 2026-09-04 sweep covered 384 URLs / 88 pages as public, buyer, vendor and
+admin, and turned up two live bugs. Both are now fixed, so the section is
+closed. `/sitemap.php` fatalling on every request was fixed 2026-09-04 and is
+recorded above. The second:
+
+- `/order-status/order-status.php` and `/refund-status/refund-status.php` were
+  directly web-reachable but are include-fragments, not pages. Both open with
+  `// Expects $orderStatus (string) to be set before including.`, so a direct
+  GET rendered a broken partial plus `Warning: Undefined variable $orderStatus`,
+  leaking the absolute server path. Never affected the app's own flows — all 13
+  real `require` sites set the variable first.
+  **Fixed and deployed 2026-09-09** with an `isset()` bail-out rather than an
+  `.htaccess` deny, so the real include sites are untouched. First line of each
+  file is now `if (!isset($orderStatus)) { http_response_code(404); return; }`.
+  Verified live: both URLs return 404, and neither request writes anything to
+  `~/.logs/error_log_teepsaa_com`.
+
+### Deliberate behaviour confirmed as correct during the same sweep, not bugs
+
+- `/support-thread/` returns 404 on a missing or invalid `?t=` token
+  (`http_response_code(404)`).
+- `/admin/` 302s to `/admin/orders.php`.
+- `/product/` and `/business/` 302 to `/search/` when the `public_id` does not
+  match — both key on a UUID `public_id`, never a numeric id, so `?id=1` never
+  reaches the page body.

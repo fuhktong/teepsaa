@@ -149,6 +149,7 @@ if (empty($_SESSION['user_id'])) {
         sessionStorage.setItem(SCROLL_KEY, window.scrollY);
         var fd = new FormData();
         Object.keys(data).forEach(function (k) { fd.append(k, data[k]); });
+        fd.append('csrf_token', window.CSRF || '');
         fetch(url, { method: 'POST', body: fd }).then(function () { location.reload(); });
     }
 
