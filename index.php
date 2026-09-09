@@ -248,10 +248,15 @@ $headExtra = schema_graph(schema_organization(), schema_website()) . "\n    ";
         /* Scroll arrows */
         .scroll-arrow {
             position: absolute;
+            /* Stretch to the row instead of a fixed height: .scroll-wrap is
+               exactly as tall as its cards (.home-scroll's padding and its
+               equal negative margins cancel out), so the arrow fits a 200px
+               category square and a taller product card alike, and any row
+               added later without touching this. */
             top: 0;
+            bottom: 0;
             z-index: 10;
             width: 36px;
-            height: 200px;
             border-radius: var(--radius);
             border: 1px solid var(--border);
             background: rgba(255,255,255,0.92);
