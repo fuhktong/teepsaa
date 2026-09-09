@@ -1,5 +1,7 @@
 <?php
 // Expects $refundStatus (string) to be set before including.
+if (!isset($refundStatus)) { http_response_code(404); return; } // not a page — included only
+
 if (!isset($t)) {
     $_rl = current_lang();
     $t = require __DIR__ . '/../lang/' . (in_array($_rl, ['en', 'km']) ? $_rl : 'en') . '.php';

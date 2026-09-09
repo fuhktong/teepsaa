@@ -20,18 +20,27 @@ uploads, real `.htaccess`. Use Gmail +aliases for throwaway accounts
 
 ## What's left
 
-| Part                    | Checks | What it is                             |
-| ----------------------- | ------ | -------------------------------------- |
-| 3. Real-device testing  | 27     | Mobile only — sweep first, then phones |
-| 4. Email deploy + tests | 8      | 14 built templates awaiting deploy     |
-| 5. Flip to production   | 5      | Config changes and the gate            |
+| Part                   | Checks | What it is                             |
+| ---------------------- | ------ | -------------------------------------- |
+| 3. Real-device testing | 27     | Mobile only — sweep first, then phones |
 
-**Parts 1 and 2 are finished** — the last functional-testing gaps and the whole
-code & security audit, 34 checks, closed out between 2026-08-23 and 2026-09-04.
-They were archived 2026-09-08 into the "Launch Readiness" section of
-`teepsaa-completed.md`, along with the two Findings entries that have since been
-fixed. The part numbers here are deliberately not renumbered, so every "Part 2b"
+**Part 3 is the only part left.** Everything else is finished and archived in
+`teepsaa-completed.md`:
+
+- **Parts 1 and 2** — the last functional-testing gaps and the whole code &
+  security audit, 34 checks, closed out between 2026-08-23 and 2026-09-04.
+- **Part 4 — Email**, closed out 2026-09-09: the deploy, the 31-template seed,
+  the digest crons and all five live sends.
+- **Part 5 — Flip to production**, closed out 2026-09-09: the payout window,
+  PHP error settings, the cron interpreter, `/uploads/`, and the pre-launch
+  gate. **The site is now publicly reachable** — the gate came off that day.
+
+The part numbers here are deliberately not renumbered, so every "Part 2b"
 reference still points at the same thing.
+
+Below Part 3 sit two Findings sections. Nothing in them blocks launch: one
+hardening item, one deferred re-run of the POST-only paths, and a
+post-launch cleanup list.
 
 **Also already done and not repeated here:** 96 of 101 functional tests, and the
 whole of `teepsaa-completed.md`. Audit sections for Buyer Flow, Vendor Flow and
@@ -175,79 +184,6 @@ Widths, and what each one is for:
 
 ---
 
-# Part 4 — Email
-
-SMTP is live (Hostinger, `contact@teepsaa.com`). Templates are bilingual and
-staff-editable at Admin → Messages → Emails, with fallback defaults in
-`config/email-templates.php` so sends work even before seeding.
-
-**14 new templates are built but not deployed.** Do the deploy steps first,
-then the tests.
-
-## 4a. Deploy the new templates
-
-- [ ] **Deploy the code** — lftp mirror per `deploycode.txt`.
-- [ ] **Run `database/seed-email-templates.php` against the live database.**
-      It only inserts missing keys and never overwrites staff edits, so it's
-      safe to re-run. Afterwards the 14 new templates should be listed in
-      Admin → Messages → Emails.
-- [ ] **Register the digest cron in hPanel** — `/usr/bin/php` plus the full
-      path to `cron/admin-digest.php`, once daily around 07:00 Phnom Penh. Use
-      PHP CLI, not an HTTP hit: HTTP is blocked by the Basic Auth gate.
-
-## 4b. Live tests
-
-- [ ] **Verify a new account** and confirm the welcome email arrives.
-- [ ] **Do a password reset** and confirm that email arrives and the link works.
-- [ ] **Place a test order** and confirm the order confirmation arrives with
-      correct items, business names, totals, discount line and delivery note.
-- [ ] **Approve a business** and confirm the vendor gets `business_approved`.
-- [ ] **Confirm a payment as admin** and check the vendor gets the new-order
-      email — this is what finally makes the "Vendors have been notified"
-      message on screen actually true.
-
-## 4c. If email misbehaves
-
-- [ ] **If anything lands in spam:** hPanel → Emails → confirm the mailbox
-      exists and SPF/DKIM records are set. Hostinger adds these automatically
-      when DNS is hosted with them, but check hPanel → Emails → DNS settings
-      rather than assuming.
-- [ ] **If sends fail outright:** read `mail.log` on the server. SMTP errors are
-      logged there together with the server's own reply, which usually names the
-      problem.
-
----
-
-# Part 5 — Flip to production
-
-Do these last, together, in one sitting. Several checklists listed the same
-items — they're deduplicated here.
-
-- [ ] **Set `PAYOUT_WINDOW_SECONDS` to `86400`** in the server's
-      `config/db.php`. It is currently **`60`**, the dev value. Leaving it means
-      vendors can be paid out a minute after delivery.
-- [ ] **Set `display_errors = Off`, and undo the `.htaccess` block added for
-      the Part 2b sweep** (that sweep is archived in `teepsaa-completed.md`).
-      Two separate places: hPanel's `display_errors`, _and_ the temporary block
-      appended to the server's root `.htaccess` on 2026-09-04:
-      `    ssh teepsaa
-cd domains/teepsaa.com/public_html
-cp .htaccess.bak-errortest .htaccess && rm .htaccess.bak-errortest`
-      Running `./deploy-sftp.sh` also clears it, since `.htaccess` is not in the
-      rsync exclude list. Leave `log_errors` on — it is what catches `/api/` and
-      `/cron/` problems, which never render in a browser.
-- [ ] **Confirm `/uploads/` is writable by the web server user**, and that its
-      `.htaccess` PHP-execution block is still in place after the deploy.
-- [ ] **Remove the pre-launch gate** — delete the Basic Auth block from
-      `.htaccess` and remove `.htpasswd` from the server. The exposure fix this
-      was waiting on (removing `z-checklists/` and `database/`) was completed
-      2026-07-10.
-      (Host-scoped Basic Auth on `admin.teepsaa.com` was listed here as optional —
-      cut from launch scope 2026-09-03; it stays tracked in
-      `teepsaa-open-questions.md`.)
-
----
-
 # Findings from the display_errors sweep (2026-09-04)
 
 Two live bugs, from 384 URLs / 88 pages swept as public, buyer, vendor and
@@ -268,7 +204,13 @@ Explicitly NOT covered by this sweep, and still to do by hand with errors
 visible: every POST-only path — checkout, cart mutations, product submit,
 registration, file uploads, admin action endpoints (`*-action.php`). Those only
 execute on a real form submission. Re-run the Part 1 functional flows once with
-`display_errors` still on.
+`display_errors` on.
+**Note this now costs more than it did.** `display_errors` was set to `Off` on
+2026-09-09 as part of Part 5, and the site is live, so doing this means turning
+errors back on in hPanel while real visitors are on the site. Either accept
+that for a short window at a quiet hour, or read `~/.logs/error_log_teepsaa_com`
+instead — `log_errors` is `On` and `error_reporting` is `E_ALL`, so the same
+warnings are being written there without being shown to anyone.
 
 Deliberate behaviour confirmed as correct, not bugs: `/support-thread/` returns
 404 on a missing/invalid `?t=` token (`http_response_code(404)`), `/admin/` 302s
@@ -327,28 +269,6 @@ interesting one: the modal shell itself (`popup-modal`, `popup-overlay`,
 somewhere else and the old rules were left behind. Worth a look before
 deleting, in case the new shell is the duplicate.)
 
-## What could not be checked from here, and why
-
-Only the Part 5 entries are still open; the Part 2 ones were all run live
-afterwards and moved to `teepsaa-completed.md`.
-
-- **Part 5 `PAYOUT_WINDOW_SECONDS`** — the _local_ `config/db.php` already
-  derives it from the host (60 on localhost, 86400 everywhere else), so it
-  needs no edit. But `config/db.php` is gitignored and excluded from the
-  deploy, so the server holds its own older copy — that is the one stuck at
-  60, and it has to be edited by hand in hPanel. Copying the local
-  host-derived block up would make it self-configuring and remove this item
-  from every future launch checklist.
-- **Part 5 `/uploads/` `.htaccess`** — the block is present and correct in the
-  repo (`FilesMatch` denying `php|php\d|phtml|phar|shtml`). Whether it
-  survived on the server is a post-deploy check.
-
-Also confirmed while looking: `.htpasswd` and `config/db.php` are both
-gitignored and untracked, and the tracked `config/smtp.php` carries an empty
-`SMTP_PASS`, so no secret is in the repo.
-
----
-
 # Appendix — what emails exist today
 
 Reference, not a checklist. Kept so you don't have to grep for it.
@@ -365,42 +285,52 @@ Reference, not a checklist. Kept so you don't have to grep for it.
 | Order dispatched                 | `order_dispatched`  | `analytics/dispatch.php`                              |
 | Abandoned cart reminder          | `abandoned_cart`    | `cron/abandoned-cart.php` (daily)                     |
 | Review reminder after delivery   | `review_reminder`   | `cron/review-reminder.php` (daily)                    |
-| Welcome after verification ⚠     | `welcome_buyer`     | `verify-email/verify.php`                             |
-| Order cancelled ⚠                | `order_cancelled`   | `admin/order-action.php`, `admin/payments-action.php` |
-| Return approved ⚠                | `refund_approved`   | `admin/refund-action.php`                             |
-| Refund declined ⚠                | `refund_rejected`   | `admin/refund-action.php`                             |
-| Refund sent via ABA ⚠            | `refund_sent`       | `admin/refund-action.php`                             |
-| Password changed ⚠               | `password_changed`  | `settings-buyer/password-action.php`                  |
-| Account deleted ⚠                | `account_deleted`   | `settings-buyer/delete-action.php`                    |
+| Welcome after verification       | `welcome_buyer`     | `verify-email/verify.php`                             |
+| Order cancelled                  | `order_cancelled`   | `admin/order-action.php`, `admin/payments-action.php` |
+| Return approved                  | `refund_approved`   | `admin/refund-action.php`                             |
+| Refund declined                  | `refund_rejected`   | `admin/refund-action.php`                             |
+| Refund sent via ABA              | `refund_sent`       | `admin/refund-action.php`                             |
+| Password changed                 | `password_changed`  | `settings-buyer/password-action.php`                  |
+| Account deleted                  | `account_deleted`   | `settings-buyer/delete-action.php`                    |
+| Account suspended by admin       | `buyer_suspended`   | `admin/buyer-action.php`                              |
+| Account reinstated by admin      | `buyer_reinstated`  | `admin/buyer-action.php`                              |
 
 ## Vendor
 
-| Event                            | Template             | Sent from                                                               |
-| -------------------------------- | -------------------- | ----------------------------------------------------------------------- |
-| Registration → verification code | `verify_code`        | `register-vendor/register-vendor.php`                                   |
-| Resend verification code         | `verify_code`        | `resend-verification/resend.php`                                        |
-| Password reset link              | `reset_password`     | `forgot-password-vendor/request.php`                                    |
-| Low stock after a sale           | `low_stock`          | `checkout/confirm.php`                                                  |
-| Buyer confirmed delivery         | `delivery_confirmed` | `orders-buyer/confirm-delivery.php`                                     |
-| Payout sent                      | `payout_sent`        | `admin/payouts-action.php`                                              |
-| Welcome after verification ⚠     | `welcome_vendor`     | `verify-email/verify.php`                                               |
-| Business submitted ⚠             | `business_submitted` | `submit/submit.php`                                                     |
-| Business approved ⚠              | `business_approved`  | `admin/action.php`                                                      |
-| Business rejected ⚠              | `business_rejected`  | `admin/action.php`                                                      |
-| Business deleted ⚠               | `business_deleted`   | `settings-vendor/business-delete-action.php`, `admin/vendor-action.php` |
-| New paid order ⚠                 | `vendor_new_order`   | `admin/payments-action.php`                                             |
-| Refund requested ⚠               | `refund_requested`   | `orders-buyer/refund-request.php`                                       |
-| Password changed ⚠               | `password_changed`   | `settings-vendor/password-action.php`                                   |
-| Account deleted ⚠                | `account_deleted`    | `settings-vendor/delete-action.php`                                     |
+| Event                            | Template              | Sent from                                                               |
+| -------------------------------- | --------------------- | ----------------------------------------------------------------------- |
+| Registration → verification code | `verify_code`         | `register-vendor/register-vendor.php`                                   |
+| Resend verification code         | `verify_code`         | `resend-verification/resend.php`                                        |
+| Password reset link              | `reset_password`      | `forgot-password-vendor/request.php`                                    |
+| Low stock after a sale           | `low_stock`           | `checkout/confirm.php`                                                  |
+| Buyer confirmed delivery         | `delivery_confirmed`  | `orders-buyer/confirm-delivery.php`                                     |
+| Payout sent                      | `payout_sent`         | `admin/payouts-action.php`                                              |
+| Welcome after verification       | `welcome_vendor`      | `verify-email/verify.php`                                               |
+| Business submitted               | `business_submitted`  | `submit/submit.php`                                                     |
+| Business approved                | `business_approved`   | `admin/action.php`                                                      |
+| Business rejected                | `business_rejected`   | `admin/action.php`                                                      |
+| Business deleted                 | `business_deleted`    | `settings-vendor/business-delete-action.php`, `admin/vendor-action.php` |
+| New paid order                   | `vendor_new_order`    | `admin/payments-action.php`                                             |
+| Refund requested                 | `refund_requested`    | `orders-buyer/refund-request.php`                                       |
+| Password changed                 | `password_changed`    | `settings-vendor/password-action.php`                                   |
+| Account deleted                  | `account_deleted`     | `settings-vendor/delete-action.php`                                     |
+| Account suspended by admin       | `vendor_suspended`    | `admin/vendor-action.php`                                               |
+| Account reinstated by admin      | `vendor_reinstated`   | `admin/vendor-action.php`                                               |
+| ABA payout details changed       | `vendor_bank_changed` | `business-vendor/aba-qr-action.php`                                     |
 
 ## Admin
 
 | Event               | Template                    | Sent from                                                                                                                                                |
 | ------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | New job application | inline HTML, not a template | `careers/apply.php` → `ADMIN_EMAIL`                                                                                                                      |
-| Daily digest ⚠      | `cron/admin-digest.php`     | pending payments, refund requests, business approvals, unread support threads, payouts due, canvassing follow-ups — sends only when a queue is non-empty |
+| Daily digest        | `cron/admin-digest.php`     | pending payments, refund requests, business approvals, unread support threads, payouts due, canvassing follow-ups — sends only when a queue is non-empty |
 
-⚠ = built but awaiting the Part 4a deploy.
+All 31 templates are seeded into the live `email_templates` table and editable
+at Admin → Messages → Emails as of 2026-09-09, and both digest crons are
+registered. A second daily cron, `cron/admin-activity-digest.php`, mails
+yesterday's completed admin actions from `admin_audit` — the counterpart to the
+digest above, so that money leaving the business generates mail rather than
+silence.
 
 Before the digest existed, the job application was the admin's _only_ email —
 everything else was dashboard-badge only and required logging in to notice.

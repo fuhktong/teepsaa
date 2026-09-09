@@ -1065,9 +1065,10 @@ claims a blank property.
 Parts 1 and 2 of that checklist closed out entirely — the last functional-testing
 gaps, and the whole code & security audit. Also here: the Findings items that have
 since been fixed, and the notes explaining what the static pass could not reach
-(all of which were later run live). Parts 3, 4 and 5 — real-device testing, the
-email deploy and the flip to production — are still open and stay in
-`teepsaa-todos-launch-readiness.md`.
+(all of which were later run live). Parts 3 and 5 — real-device testing and the
+flip to production — are still open and stay in
+`teepsaa-todos-launch-readiness.md`. Part 4, email, was closed out a day later
+and is archived in its own section at the end of this file.
 
 ### Part 1 — functional testing gaps
 
@@ -1364,6 +1365,9 @@ are directly web-reachable — stays in the live file.
 
 ### Part 5 — flip to production (the one item already done)
 
+The other four Part 5 items closed a week later — see "Flip to production"
+at the end of this file.
+
 - [x] **Search for leftover `TODO` and `FIXME` comments** —
       `grep -rn "TODO\|FIXME" --include="*.php" . | grep -v z-checklists` — and
       either fix or delete each one.
@@ -1393,3 +1397,228 @@ run against the live site; the results are in the ticked items above.
   The three `href="#"` placeholders above were the only broken ones, and
   they are gone as of 2026-09-07 — the footer renders no icon rather than a
   dead link.
+
+---
+
+## Email — Part 4 of Launch Readiness, closed out 2026-09-09 (archived from teepsaa-todos-launch-readiness.md)
+
+The email deploy, the template seed, the digest crons and all five live sends.
+The reference tables listing every email the site sends stay in the Appendix of
+`teepsaa-todos-launch-readiness.md`, since they describe the running site
+rather than work that finished.
+
+### Part 4 — Email
+
+SMTP is live (Hostinger, `contact@teepsaa.com`). Templates are bilingual and
+staff-editable at Admin → Messages → Emails, with fallback defaults in
+`config/email-templates.php` so sends work even before seeding.
+
+Closed out 2026-09-09. Every item was verified against the live server rather
+than assumed: file md5s and an rsync dry run for the deploy, `email_templates`
+rows for the seed, `admin_audit` and the `buyers`/`vendors`/`orders` tables for
+the send-triggering actions, and `mail.log` for failures. Only 4c's spam check
+stayed unticked, and only because it is a conditional — nothing has landed in
+spam to check.
+
+#### 4a. Deploy the new templates
+
+- [x] **Deploy the code** — done. `./deploy-sftp.sh --dry-run` transfers
+      nothing: all 409 files match. `config/email-templates.php`,
+      `config/notify.php` and both `cron/` digests are byte-identical to local
+      (md5 match).
+- [x] **Run `database/seed-email-templates.php` against the live database.**
+      Done 2026-09-09. `database/` is excluded from the deploy, so the script
+      was `scp`'d up, run, and deleted again — the directory is empty on the
+      server as intended. All 31 keys from `config/email-templates.php` are now
+      rows in `email_templates` and appear in Admin → Messages → Emails. No
+      staff edits were touched: the 26 pre-existing rows kept their original
+      `updated_at`, only the five new ones carry today's date.
+      One cosmetic leftover: `ON DUPLICATE KEY UPDATE` only refreshes `label`
+      and `tokens`, never `sort_order`, so `business_suspended` and
+      `business_reinstated` still sit near the top of the admin list from their
+      2026-09-01 insert rather than in the script's order. Harmless.
+- [x] **Register the digest cron in hPanel** — done 2026-09-09, after finding
+      one registered cron had been failing every run since it was added:
+      `~/.logs/cronjob_ACj3c0HSnD` held nothing but
+      `    Could not open input file: /home/USER/domains/teepsaa.com/public_html/cron/admin-activity-digest.php`
+      The literal `USER` came from the suggested-cron comment at the top of
+      `cron/admin-activity-digest.php`, pasted into hPanel without substituting
+      the account name. **If you ever re-add that job, the path is
+      `/home/u767733958/...`** — the comment in the file still says `USER`.
+      Corrected in hPanel to
+      `    /usr/bin/php /home/u767733958/domains/teepsaa.com/public_html/cron/admin-activity-digest.php`
+      and the old failing log is gone, replaced by a fresh job that had not yet
+      fired. `/usr/bin/php` is PHP 8.1.34 CLI and both digest scripts pass
+      `php -l` there, so the path was the only fault. **The proof is the next
+      run:** `ssh teepsaa` then `cat ~/.logs/cronjob_*` — an empty file is a
+      clean run, since both scripts `exit` silently on a quiet day.
+      **Final state, 2026-09-09:** all seven cron scripts are registered, and
+      all seven were re-entered on PHP 8.3 (`/opt/alt/php83/usr/bin/php`) to
+      match the website — see the Part 5 item in
+      `teepsaa-todos-launch-readiness.md`. `cron/announcement-send.php` had
+      never been registered at all and was added at `*/5 * * * *`; until then,
+      an announcement queued in admin would have sat unsent forever.
+      **Cron times are UTC, and Phnom Penh is UTC+7.** Both digests are on
+      `0 21 * * *`, which is 04:00 Phnom Penh, not the 07:00 this item asked
+      for. Harmless — each script derives its own dates in `Asia/Phnom_Penh`,
+      so at 04:00 the "yesterday" and "today" they report are still the right
+      days — but `0 0 * * *` is the change if the mail should land at 07:00
+      local, as `review-reminder` and `abandoned-cart` already do.
+
+#### 4b. Live tests
+
+All five pass. Most were exercised in normal use, with evidence from the live
+database; the password reset was run by hand on 2026-09-09. Note `mail.log`
+on the server only records **failures** (see
+`config/mail.php` — the plain-text log path is the `!SMTP_PASS` dev branch).
+Its last entry is 2026-07-08, so nothing has failed to send since.
+
+- [x] **Verify a new account** — vendor 17 (`whynottaco718@gmail.com`) created
+      2026-09-04 05:57:29 and `email_verified_at` 05:58:35, one minute later.
+      The code only reaches the form by email, so `verify_code` arrived.
+      Buyer 13 the same on 2026-07-27.
+- [x] **Do a password reset** — done live 2026-09-09: the mail arrived and the
+      link worked. Nothing records this after the fact —
+      `cron/purge-password-resets.php` deletes rows after 24 hours — so this
+      one rests on the run itself, not on database evidence.
+- [x] **Place a test order** — orders 36 and 37, both 2026-09-03, both now
+      `completed`. `order_received` fires on placement.
+- [x] **Approve a business** — `admin_audit` id 1, `business.approve` on
+      business 12, 2026-09-01 10:05:48. `admin/action.php:75` sends
+      `business_approved` on that path.
+- [x] **Confirm a payment as admin** — `admin_audit` ids 6 and 7,
+      `payment.confirm` on payments 35 and 36, 2026-09-03. The
+      `vendor_new_order` send at `admin/payments-action.php:91` has been in the
+      deployed code since 2026-07-13, so it ran. "Vendors have been notified"
+      is now true.
+
+#### 4c. If email misbehaves
+
+- [ ] **If anything lands in spam:** (never triggered — kept here as the
+      procedure if it ever does) hPanel → Emails → confirm the mailbox
+      exists and SPF/DKIM records are set. Hostinger adds these automatically
+      when DNS is hosted with them, but check hPanel → Emails → DNS settings
+      rather than assuming.
+- [x] **If sends fail outright:** read `mail.log` on the server. Checked
+      2026-09-09 — clean since 2026-07-08. SMTP errors are logged there
+      together with the server's own reply, which usually names the problem.
+
+---
+
+## Flip to production — Part 5 of Launch Readiness, closed out 2026-09-09 (archived from teepsaa-todos-launch-readiness.md)
+
+The last configuration work before launch: the payout window, PHP error
+settings, the cron interpreter, the uploads folder, and the pre-launch gate.
+With this and Part 4, only Part 3 — real-device testing — remains in
+`teepsaa-todos-launch-readiness.md`.
+
+### Part 5 — Flip to production
+
+Closed out 2026-09-09, in one sitting as intended. Every item was verified
+against the live server rather than taken on trust — the payout constant read
+out of the server's own `config/db.php`, the PHP settings read out of
+`~/.cl.selector/alt_php83.cfg`, the uploads execution block tested with a real
+HTTP request, and the gate confirmed by fetching the site with no credentials.
+Two of the five turned out to need something the item did not anticipate: the
+crons were running a different PHP than the website, and the digest cron had
+been failing silently on a bad path.
+
+- [x] **Set `PAYOUT_WINDOW_SECONDS` to `86400`** in the server's
+      `config/db.php`. Done — and better than a hand-edited constant: it is now
+      derived from the host, so a deploy cannot get it wrong.
+      Verified in the server's own `config/db.php` on 2026-09-09 (that file is
+      rsync-excluded, so local is not evidence). Both code paths give 86400 on
+      the live host — over HTTP `HTTP_HOST` is `teepsaa.com`, and under CLI it
+      is unset, so `strtok('', ':')` returns `false` and misses the
+      localhost list. The CLI path matters: `cron/admin-digest.php` reads this
+      constant to count payouts due.
+      Loose end: the comment above it on the server still reads
+      `// Set to 60 for dev testing; change to 86400 (24h) for production`,
+      describing the old hand-edited version and inviting someone to "fix" it
+      back. Local has the correct comment. `config/db.php` is never deployed,
+      so paste the local lines 9-11 over the server's line 3 by hand.
+- [x] **Set `display_errors = Off`, and undo the `.htaccess` block added for
+      the Part 2b sweep** (that sweep is archived in `teepsaa-completed.md`).
+      Done 2026-09-09. The live web settings are in
+      `~/.cl.selector/alt_php83.cfg` and now read exactly what this item asks
+      for: `display_errors=Off`, `error_reporting=E_ALL`, `log_errors=On`.
+      The `.htaccess` half needed nothing — the temporary block appended on
+      2026-09-04 was already gone, cleared by a later deploy, since `.htaccess`
+      is not in the rsync exclude list. The live file is the deployed one,
+      5802 bytes dated 2026-09-07. Only the leftover backup was still there:
+      `    ssh teepsaa
+rm domains/teepsaa.com/public_html/.htaccess.bak-errortest`
+      `log_errors` stays on — it is what catches `/api/` and `/cron/` problems,
+      which never render in a browser.
+      **The site runs PHP 8.3, so read `alt_php83.cfg`, not `alt_php81.cfg`.**
+      `~/.cl.selector/defaults.cfg` says `php = 8.1`, but that is the PHP
+      Selector default for the *shell*, not the website's version. Reading it
+      as the site's version gives the wrong answer for every one of these
+      settings — see the cron item below, which is the same confusion with real
+      consequences.
+- [x] **Point the cron jobs at PHP 8.3.** Done 2026-09-09. All seven jobs were
+      re-entered in hPanel with `/opt/alt/php83/usr/bin/php` instead of
+      `/usr/bin/php`, so cron and the website now run the same PHP as each
+      other. Verified from the screenshot of the job list and from the server:
+      the `*/5` announcement job fired at 08:20 UTC with an empty log, which is
+      a clean run.
+      This also closed the real problem behind the item, without needing the
+      separate fix: `/usr/bin/php` pointed at 8.1, whose profile has
+      `log_errors=Off`, so a cron that fatalled wrote to nothing at all. On 8.3
+      it lands in `~/.logs/`. The 8.1 profile is now unused by anything that
+      matters, so its `log_errors` setting no longer needs changing.
+      Note the log filenames all changed — deleting and re-adding a job gives
+      it a new `~/.logs/cronjob_XXXX` id, so old logs are gone.
+- [x] **Confirm `/uploads/` is writable by the web server user**, and that its
+      `.htaccess` PHP-execution block is still in place after the deploy.
+      Both verified 2026-09-09. The folder is owned by `u767733958`, the user
+      PHP runs as, and holds 48 files with writes as recent as 2026-09-02 — so
+      it is writable in practice, not just on paper.
+      The execution block was **tested, not just read**, because
+      `Order Deny,Allow` is Apache 2.2 syntax that some 2.4 servers ignore: an
+      inert text file named `zz-blocktest.php` (no PHP tags in it) was placed
+      in `/uploads/` and requested over the web. It returned **403**, so the
+      block is live. The file was deleted immediately; real images still
+      return 200.
+      A deploy cannot break this — `uploads/` is in the rsync exclude list, so
+      the folder is never touched. That is why its `.htaccess` still carries
+      its original 2026-05-23 date.
+- [x] **Remove the pre-launch gate** — done 2026-09-09. `https://teepsaa.com/`
+      answers 200 with no credentials. The exposure fix this was waiting on
+      (removing `z-checklists/` and `database/`) was completed 2026-07-10, and
+      still holds live: `/z-checklists/` and `/deploycode.txt` 404, while
+      `/database/`, `/config/db.php` and `/.htpasswd` return 403.
+      **Two leftovers, neither of them load-bearing.** The Basic Auth block was
+      commented out rather than deleted (`.htaccess` lines 104-116), and
+      `.htpasswd` is still on the server. Both are inert — the commented block
+      does nothing, and `.htpasswd` is unreachable behind the `FilesMatch` on
+      line 55 — but the credentials file should not outlive the gate:
+      `    ssh teepsaa
+cd domains/teepsaa.com/public_html
+rm .htpasswd .htaccess.bak-errortest`
+      Local and server `.htaccess` are byte-identical (both commented), so
+      there is no risk of a deploy switching the gate back on.
+      (Host-scoped Basic Auth on `admin.teepsaa.com` was listed here as optional —
+      cut from launch scope 2026-09-03; it stays tracked in
+      `teepsaa-open-questions.md`.)
+
+### Static-pass gaps from 2026-08-31, both since closed
+
+Both were closed on 2026-09-09 by the Part 5 work above. Kept because each one
+correctly predicted where the answer would have to come from — the server, not
+the repo.
+
+- **Part 5 `PAYOUT_WINDOW_SECONDS`** — the _local_ `config/db.php` already
+  derives it from the host (60 on localhost, 86400 everywhere else), so it
+  needs no edit. But `config/db.php` is gitignored and excluded from the
+  deploy, so the server holds its own older copy — that is the one stuck at
+  60, and it has to be edited by hand in hPanel. Copying the local
+  host-derived block up would make it self-configuring and remove this item
+  from every future launch checklist.
+- **Part 5 `/uploads/` `.htaccess`** — the block is present and correct in the
+  repo (`FilesMatch` denying `php|php\d|phtml|phar|shtml`). Whether it
+  survived on the server is a post-deploy check.
+
+Also confirmed while looking: `.htpasswd` and `config/db.php` are both
+gitignored and untracked, and the tracked `config/smtp.php` carries an empty
+`SMTP_PASS`, so no secret is in the repo.

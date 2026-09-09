@@ -1,5 +1,7 @@
 <?php
 // Expects $orderStatus (string) to be set before including.
+if (!isset($orderStatus)) { http_response_code(404); return; } // not a page — included only
+
 $_oRefundStatuses = ['refund_requested', 'return_approved', 'return_dispatched', 'return_received', 'refunded', 'refund_rejected'];
 if (in_array($orderStatus, $_oRefundStatuses)) {
     $refundStatus = $orderStatus;
