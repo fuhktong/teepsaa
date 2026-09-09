@@ -227,7 +227,9 @@ $headExtra = schema_graph(schema_organization(), schema_website()) . "\n    ";
         .home-section-head h2 a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
         /* Horizontal scroll row */
-        .scroll-wrap { position: relative; }
+        /* flow-root keeps .home-scroll's negative top margin from collapsing
+           through the wrapper, so the arrows' top:0 lands on the cards' top edge */
+        .scroll-wrap { position: relative; display: flow-root; }
         .home-scroll {
             display: flex;
             gap: 1rem;
@@ -282,7 +284,9 @@ $headExtra = schema_graph(schema_organization(), schema_website()) . "\n    ";
                         6px 10px 16px rgba(0,0,0,0.10);
         }
 
-        .card-photo { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+        /* height:auto beats the img height="400" attribute; without it the
+           attribute wins and aspect-ratio is ignored */
+        .card-photo { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; display: block; }
         .card-photo--empty { background: #efefef; aspect-ratio: 1; }
         .card-body { padding: 0.65rem 0.75rem; display: flex; flex-direction: column; gap: 0.15rem; }
         .card-name { font-size: 0.88rem; color: #111; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
