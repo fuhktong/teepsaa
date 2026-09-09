@@ -383,9 +383,16 @@
     }
     .settings-nav a {
         flex: 1;
+        /* "Delete account" wraps to two lines and the flex row stretches every
+           tab to match it, so a one-line label would otherwise sit at the top
+           of its box. Centring each label inside its own tab lines them up. */
+        display: flex;
+        align-items: center;
+        justify-content: center;
         text-align: center;
         font-size: 0.8rem;
         padding: 0.5rem 0.4rem;
+        margin-bottom: 0; /* the stacked-list gap; a row does not want it */
     }
 }
 
