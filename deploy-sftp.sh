@@ -42,6 +42,7 @@ rsync -rlptvz $DRY \
     --exclude 'print.md' \
     --exclude 'CLAUDE.md' \
     --exclude 'uploads/' \
+    --exclude '.htpasswd*' \
     --exclude 'z-checklists/' \
     --exclude 'z-notes/' \
     --exclude 'z-reference/' \

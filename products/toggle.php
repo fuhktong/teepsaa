@@ -34,7 +34,9 @@ $publicId = null;
 if (!empty($ownedIds)) {
     $placeholders = implode(',', array_fill(0, count($ownedIds), '?'));
     $params = array_merge([$productId], array_map('intval', $ownedIds));
-    $stmt = $pdo->prepare("UPDATE products SET active = 1 - active WHERE id = ? AND business_id IN ($placeholders)");
+    // AND archived = 0: an archived product must stay inactive. Without it the
+    // toggle could produce an archived row that is also active.
+    $stmt = $pdo->prepare("UPDATE products SET active = 1 - active WHERE id = ? AND archived = 0 AND business_id IN ($placeholders)");
     $stmt->execute($params);
     $stmt = $pdo->prepare("SELECT public_id FROM products WHERE id = ? AND business_id IN ($placeholders)");
     $stmt->execute($params);

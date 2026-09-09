@@ -189,7 +189,21 @@ whenever.
       per-item and "mark all read" actions.
       `lang/set.php` and `currency/set.php` also gained a `POST only` guard;
       they previously reset the choice to English/USD on a bare GET.
-- [ ] `products/toggle.php` — add `AND archived = 0` to its UPDATE. Nothing
-      leaks publicly today; it just allows an odd `archived=1, active=1` row.
-- [ ] Host-scoped Basic Auth on `admin.teepsaa.com` (was an "optional" Part 5
-      item) — also tracked in `teepsaa-open-questions.md`.
+- [ ] **`products/toggle.php` — done in code 2026-09-09, needs deploy.**
+      `AND archived = 0` added to the UPDATE. Verified against the live DB
+      first: `products.archived` exists and there are currently 0 rows with
+      `archived=1 AND active=1`, so there is nothing to clean up. After
+      deploying, check a vendor can still activate/deactivate a live product
+      from `/products/`.
+- [ ] **Host-scoped Basic Auth on `admin.teepsaa.com` — written in `.htaccess`
+      2026-09-09, NOT yet safe to deploy.** Uses `SetEnvIf Host` plus
+      `<RequireAny>`, the same Apache 2.4 style the pre-launch gate used and
+      which is known to work on this LiteSpeed server. teepsaa.com and
+      vendor.teepsaa.com are unaffected.
+      **The password file must be created on the server BEFORE this deploys**,
+      or `admin.teepsaa.com` returns 500 — the one-liner is in the `.htaccess`
+      comment. The server has no `htpasswd` binary, so it uses PHP's
+      `password_hash()`; LiteSpeed accepts the resulting bcrypt hash, as the
+      old gate proved. `.htpasswd*` is now excluded from deploys.
+      Rollback if it misbehaves: edit `public_html/.htaccess` on the server and
+      comment out the six lines. Also tracked in `teepsaa-open-questions.md`.

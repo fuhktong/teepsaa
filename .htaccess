@@ -101,6 +101,34 @@ AddType application/manifest+json .webmanifest
     # so HTML must never be cached — no default rule is set for that reason.
 </IfModule>
 
+# ── Second lock on the admin door ────────────────────────────────────
+# A Basic Auth prompt in front of admin.teepsaa.com ONLY, on top of the
+# normal admin login. teepsaa.com and vendor.teepsaa.com are untouched:
+# they match the first SetEnvIf, which grants them access outright before
+# the password rule is ever reached.
+#
+# The password file lives on the server and is never deployed (rsync
+# excludes .htpasswd*; the FilesMatch rule above also stops it being
+# served). CREATE IT BEFORE DEPLOYING THIS BLOCK — if AuthUserFile points
+# at a file that does not exist, admin.teepsaa.com returns 500:
+#
+#   ssh -t teepsaa 'read -rsp "New admin password: " p; echo; \
+#     /opt/alt/php83/usr/bin/php -r "echo \"admin:\".password_hash(\$argv[1], PASSWORD_BCRYPT).PHP_EOL;" "$p" \
+#     > ~/domains/teepsaa.com/public_html/.htpasswd-admin \
+#     && chmod 600 ~/domains/teepsaa.com/public_html/.htpasswd-admin && echo created'
+#
+# TO TURN IT OFF: comment out the six lines below and redeploy, or on the
+# server edit public_html/.htaccess directly for an instant fix.
+SetEnvIf Host "." NOT_ADMIN_HOST
+SetEnvIf Host "^admin\.teepsaa\.com(:|$)" !NOT_ADMIN_HOST
+AuthType Basic
+AuthName "teepsaa admin"
+AuthUserFile /home/u767733958/domains/teepsaa.com/public_html/.htpasswd-admin
+<RequireAny>
+    Require env NOT_ADMIN_HOST
+    Require valid-user
+</RequireAny>
+
 # ── Pre-launch gate ──────────────────────────────────────────────────
 # Password-protects the whole site until launch. DELETE THIS BLOCK (and
 # the .htpasswd file) TO GO LIVE.
