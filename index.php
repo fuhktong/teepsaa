@@ -212,14 +212,14 @@ $headExtra = schema_graph(schema_organization(), schema_website()) . "\n    ";
             margin-right: calc(50% - 50vw);
         }
 
-        .home-section { margin: 3rem 0; padding: 0 1.5rem; }
+        .home-section { margin: 1.25rem 0; padding: 0 1.5rem; }
         .home-section:first-of-type { margin-top: 2rem; }
 
         .home-section-head {
             display: flex;
             align-items: baseline;
             justify-content: space-between;
-            padding: 0 0.25rem 1rem;
+            padding: 0 0.25rem 0.875rem;
         }
         .home-section-head h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; display: flex; align-items: center; gap: 0.6rem; }
         .home-section-head h2::before { content: ""; flex-shrink: 0; width: 4px; height: 1.05em; background: var(--primary); border-radius: var(--radius-pill); }
