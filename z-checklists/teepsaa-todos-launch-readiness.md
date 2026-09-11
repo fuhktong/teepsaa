@@ -148,9 +148,9 @@ Widths, and what each one is for:
 ## 3e. Worth checking once
 
 - [ ] **Add to Home Screen on Android** — the icon and title look right.
-- [ ] **Share a site link in Telegram** — huge in Cambodia. The preview title,
+- [x] **Share a site link in Telegram** — huge in Cambodia. The preview title,
       description and image come from the OG tags in `config/seo.php`.
-- [ ] **Open a teepsaa email in the Gmail phone app** and check mixed Khmer and
+- [x] **Open a teepsaa email in the Gmail phone app** and check mixed Khmer and
       English blocks render properly.
 
 ---

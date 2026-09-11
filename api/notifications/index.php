@@ -39,19 +39,13 @@ $count = (int)$countStmt->fetchColumn();
 
 $items = [];
 foreach ($rows as $r) {
-    $diff = time() - strtotime($r['created_at']);
-    if ($diff < 60)        $ago = $t['notif_just_now'];
-    elseif ($diff < 3600)  $ago = sprintf($t['notif_min_ago'], floor($diff / 60));
-    elseif ($diff < 86400) $ago = sprintf($t['notif_hour_ago'], floor($diff / 3600));
-    else                   $ago = sprintf($t['notif_day_ago'], floor($diff / 86400));
-
     $items[] = [
         'id'      => (int)$r['id'],
         'type'    => $r['type'],
         'message' => notification_text($r, $t),
         'link'    => $r['link'],
         'read'    => $r['read_at'] !== null,
-        'time'    => $ago,
+        'time'    => notification_ago($r['created_at'], $t),
     ];
 }
 

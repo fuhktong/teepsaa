@@ -30,6 +30,7 @@ Disallow: /orders-buyer/
 Disallow: /settings-buyer/
 Disallow: /wishlist/
 Disallow: /messages-buyer/
+Disallow: /notifications/
 Disallow: /order-status/
 Disallow: /refund-status/
 Disallow: /review/

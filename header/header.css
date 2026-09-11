@@ -481,6 +481,22 @@ header nav a.active {
   margin: 0;
 }
 
+/* The dropdown only ever holds the latest 15 — this is the way to the rest. */
+.bell-see-all {
+  display: block;
+  padding: 0.6rem 1rem;
+  border-top: 1px solid var(--divider);
+  font-size: 0.78rem;
+  color: var(--primary);
+  text-align: center;
+  text-decoration: none;
+}
+
+.bell-see-all:hover {
+  background: #f9fafb;
+  text-decoration: underline;
+}
+
 /* Admin, vendor & buyer: all have top-level nav links + bell now, so collapse
    into the hamburger flyout earlier to prevent overflow at mid-range viewports. */
 @media (max-width: 800px) {

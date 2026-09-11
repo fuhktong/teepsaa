@@ -1,0 +1,107 @@
+/* Full-page notification list. The bell dropdown in the header shows the
+   latest 15 in a 320px box; this is the same rows with room to breathe, and
+   on mobile — where there is no bell — it is the only way to reach them. */
+
+.notif-main {
+    min-height: 60vh;
+}
+
+.notif-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.notif-title {
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.notif-markall {
+    background: none;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    color: var(--text-soft);
+    font: inherit;
+    font-size: 0.82rem;
+    padding: 0.4rem 0.75rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.notif-markall:hover {
+    background: var(--bg-subtle);
+    color: var(--text);
+}
+
+.notif-list {
+    list-style: none;
+    margin: 0 0 1.5rem;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    overflow: hidden;
+}
+
+.notif-list li + li .notif-item {
+    border-top: 1px solid var(--divider);
+}
+
+.notif-item {
+    display: block;
+    padding: 0.85rem 1rem;
+    text-decoration: none;
+    color: var(--text);
+}
+
+a.notif-item:hover {
+    background: var(--bg-subtle);
+}
+
+/* The same blue wash the bell uses, so an unread row reads the same in both
+   places. Unread rows are not moved to the top: the list stays newest-first
+   so an item doesn't jump when it is read. */
+.notif-item--unread {
+    background: #f0f4ff;
+}
+
+a.notif-item--unread:hover {
+    background: #e8eeff;
+}
+
+.notif-item-msg {
+    display: block;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    margin-bottom: 0.2rem;
+}
+
+.notif-item-time {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.notif-empty {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    margin: 0;
+}
+
+@media (max-width: 600px) {
+    .notif-title {
+        font-size: 1.25rem;
+    }
+
+    .notif-item {
+        padding: 0.8rem 0.85rem;
+    }
+}

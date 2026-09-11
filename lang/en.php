@@ -18,6 +18,8 @@ return [
     'nav_content'        => 'Content',
     'nav_notifications'  => 'Notifications',
     'nav_mark_all_read'  => 'Mark all read',
+    'notifications_empty' => 'No notifications yet.',
+    'nav_see_all_notifs' => 'See all notifications',
     'lang_label'         => 'Language',
     'currency_label'     => 'Currency',
 

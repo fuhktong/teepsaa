@@ -18,6 +18,8 @@ return [
     'nav_content'        => 'មាតិកា',
     'nav_notifications'  => 'ការជូនដំណឹង',
     'nav_mark_all_read'  => 'សម្គាល់ថាបានអានទាំងអស់',
+    'notifications_empty' => 'មិនទាន់មានការជូនដំណឹង។',
+    'nav_see_all_notifs' => 'មើលការជូនដំណឹងទាំងអស់',
     'lang_label'         => 'ភាសា',
     'currency_label'     => 'រូបិយប័ណ្ណ',
 

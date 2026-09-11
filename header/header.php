@@ -148,6 +148,7 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                         elseif (strpos($vendorPath, '/products/') === 0)        $vendorSection = 'products';
                         elseif (strpos($vendorPath, '/messages-vendor/') === 0) $vendorSection = 'messages';
                         elseif (strpos($vendorPath, '/analytics/') === 0) $vendorSection = 'analytics';
+                        elseif (strpos($vendorPath, '/notifications/') === 0) $vendorSection = 'notifications';
                         $vNotifStmt = $pdo->prepare('SELECT COUNT(*) FROM notifications WHERE role = ? AND user_id = ? AND read_at IS NULL');
                         $vNotifStmt->execute(['vendor', $_SESSION['user_id']]);
                         $vNotifCount = (int)$vNotifStmt->fetchColumn();
@@ -170,6 +171,7 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                                 <button class="bell-mark-all" id="bell-mark-read" type="button"><?= $t['nav_mark_all_read'] ?></button>
                             </div>
                             <div class="bell-items" id="bell-items"><p class="bell-empty">Loading…</p></div>
+                            <a href="/notifications/" class="bell-see-all"><?= $t['nav_see_all_notifs'] ?></a>
                         </div>
                     </div>
                     <div class="user-menu">
@@ -204,6 +206,7 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                         if (strpos($buyerPath, '/orders-buyer/') === 0)   $buyerSection = 'orders';
                         elseif (strpos($buyerPath, '/wishlist/') === 0)     $buyerSection = 'wishlist';
                         elseif (strpos($buyerPath, '/messages-buyer/') === 0) $buyerSection = 'messages';
+                        elseif (strpos($buyerPath, '/notifications/') === 0)   $buyerSection = 'notifications';
                     ?>
                     <a href="/orders-buyer/" class="<?= $buyerSection === 'orders' ? 'active' : '' ?>"><?= $t['nav_orders'] ?></a>
                     <a href="/wishlist/" class="<?= $buyerSection === 'wishlist' ? 'active' : '' ?>"><?= $t['nav_wishlist'] ?></a>
@@ -219,6 +222,7 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                                 <button class="bell-mark-all" id="bell-mark-read" type="button"><?= $t['nav_mark_all_read'] ?></button>
                             </div>
                             <div class="bell-items" id="bell-items"><p class="bell-empty">Loading…</p></div>
+                            <a href="/notifications/" class="bell-see-all"><?= $t['nav_see_all_notifs'] ?></a>
                         </div>
                     </div>
                     <div class="cart-wrap">
@@ -285,6 +289,8 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                 <a href="/products/" class="mobile-nav-link <?= $vendorSection === 'products' ? 'active' : '' ?>"><?= $t['nav_products'] ?></a>
                 <a href="/messages-vendor/" class="mobile-nav-link <?= $vendorSection === 'messages' ? 'active' : '' ?>"><?= $vendorUnread ? $t['nav_messages'] . ' (' . $vendorUnread . ')' : $t['nav_messages'] ?></a>
                 <a href="/analytics/" class="mobile-nav-link <?= $vendorSection === 'analytics' ? 'active' : '' ?>"><?= $t['nav_vendor'] ?></a>
+                <?php // The bell is hidden at this width, so the mobile menu carries notifications itself. ?>
+                <a href="/notifications/" class="mobile-nav-link <?= $vendorSection === 'notifications' ? 'active' : '' ?>"><?= ($vNotifCount ?? 0) > 0 ? $t['nav_notifications'] . ' (' . ($vNotifCount ?? 0) . ')' : $t['nav_notifications'] ?></a>
                 <a href="/settings-vendor/" class="mobile-nav-link"><?= $t['nav_settings'] ?></a>
                 <a href="/logout/logout.php" class="mobile-nav-link"><?= $t['nav_logout'] ?></a>
             <?php else: ?>
@@ -292,7 +298,8 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                 <a href="/orders-buyer/" class="mobile-nav-link <?= ($buyerSection ?? '') === 'orders' ? 'active' : '' ?>"><?= $t['nav_orders'] ?></a>
                 <a href="/wishlist/" class="mobile-nav-link <?= ($buyerSection ?? '') === 'wishlist' ? 'active' : '' ?>"><?= $t['nav_wishlist'] ?></a>
                 <a href="/messages-buyer/" class="mobile-nav-link <?= ($buyerSection ?? '') === 'messages' ? 'active' : '' ?>"><?= ($buyerUnread ?? 0) > 0 ? $t['nav_messages'] . ' (' . $buyerUnread . ')' : $t['nav_messages'] ?></a>
-                <a href="/settings-buyer/" class="mobile-nav-link"><?= $t['nav_settings'] ?><?= ($bNotifCount ?? 0) > 0 ? ' (' . ($bNotifCount ?? 0) . ')' : '' ?></a>
+                <a href="/notifications/" class="mobile-nav-link <?= ($buyerSection ?? '') === 'notifications' ? 'active' : '' ?>"><?= ($bNotifCount ?? 0) > 0 ? $t['nav_notifications'] . ' (' . ($bNotifCount ?? 0) . ')' : $t['nav_notifications'] ?></a>
+                <a href="/settings-buyer/" class="mobile-nav-link"><?= $t['nav_settings'] ?></a>
                 <a href="/logout/logout.php" class="mobile-nav-link"><?= $t['nav_logout'] ?></a>
             <?php endif; ?>
         <?php else: ?>

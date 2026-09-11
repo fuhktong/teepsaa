@@ -41,6 +41,16 @@ function notification_text(array $row, array $t): string {
     }
 }
 
+// How long ago a notification arrived, worded in the reader's language. Shared
+// by the bell's JSON feed and /notifications/ so the two can't drift apart.
+function notification_ago(string $createdAt, array $t): string {
+    $diff = time() - strtotime($createdAt);
+    if ($diff < 60)    return $t['notif_just_now'];
+    if ($diff < 3600)  return sprintf($t['notif_min_ago'],  floor($diff / 60));
+    if ($diff < 86400) return sprintf($t['notif_hour_ago'], floor($diff / 3600));
+    return sprintf($t['notif_day_ago'], floor($diff / 86400));
+}
+
 function order_display_id(int $id, string $createdAt): string {
     return date('ymd', strtotime($createdAt)) . '-' . str_pad($id, 4, '0', STR_PAD_LEFT);
 }

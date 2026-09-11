@@ -45,6 +45,10 @@ if ($sdActive) {
     $sdNeutralPaths = [
         '/api/', '/lang/', '/currency/', '/logout/', '/cron/',
         '/verify-email/', '/resend-verification/',
+        // Buyers and vendors both have notifications, so the page has to
+        // answer on whichever host the person is already on — sending a
+        // vendor to teepsaa.com for it would drop them out of their portal.
+        '/notifications/',
     ];
 
     $sdIn = function (array $prefixes) use ($sdPath): bool {
