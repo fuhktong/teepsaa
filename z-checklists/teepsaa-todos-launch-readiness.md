@@ -27,6 +27,14 @@ Cambodia is overwhelmingly mobile and mostly Android. Khmer script rendering
 and touch behaviour genuinely differ from the desktop browser's device mode —
 test on real hardware.
 
+The checks themselves are grouped by who they belong to — **site-wide**,
+**buyer**, **vendor**, **admin** — starting at section 3f. The old 3b/3c/3d/3e
+letters survive as tags on each item, because `teepsaa-completed.md` and other
+files still refer to them (3b layout, 3c function, 3d slow connections, 3e
+worth checking once). **3g (buyer) is finished and archived** — only the
+site-wide and vendor sections carry open work, and the letters are not
+renumbered so the archive's references keep pointing at the same things.
+
 ## 3a. Devices to cover
 
 Desktop and tablet are deliberately not listed: the whole site was built and
@@ -38,23 +46,29 @@ would have shown up months ago. What is left is mobile.
       system image, a low-RAM device profile, Android 10 and 13/14. The
       emulator is what makes it worth doing — it carries Android's own Khmer
       font stack (Noto Sans Khmer), which stacks glyphs differently from iOS,
-      and that is the one thing a Mac cannot fake.
-- [ ] **iPhone, Safari** — the iPhone 6s. It tops out at iOS 15, which makes
+      and that is the one thing a Mac cannot fake. Covers 3f and 3h only — the
+      buyer section is closed.
+- [x] **iPhone, Safari** — the iPhone 6s. It tops out at iOS 15, which makes
       it the oldest WebKit and the slowest CPU you will realistically test on,
       so it is the worst case rather than a compromise. Newer WebKit is
       covered by desktop Safari, which runs essentially the same engine.
+      _Done 2026-09-11: buyer side, full flow, order placed._
 - [ ] **A cheap or old Android** if you can borrow one — slow CPU, small
       screen. This is what a lot of your buyers actually have. The emulator's
       low-RAM profile approximates it; ten minutes with a real one is better.
+      Same narrowed scope as the emulator: 3f and 3h.
 
-## 3a-i. Viewport sweep — do this first, on the MacBook
+## 3a-i. Viewport sweep — how to run it, on the MacBook
 
-Cheapest pass available and it finds most layout bugs before you touch a
-device. Only two engines matter: **Blink** (Chrome, Edge, Samsung Internet,
-Opera, Brave, and DuckDuckGo on Android) and **WebKit** (Safari, and _every_
-browser on iOS — Chrome and DuckDuckGo included, because Apple forces the
-engine). Firefox's Gecko is a rounding error here. So the sweep runs twice,
-once in each, and no other browser needs its own pass.
+Do this before touching a device: it is the cheapest pass available and it
+finds most layout bugs. The checks it produces are in **3f** — they cross every
+role, so they live in the site-wide section.
+
+Only two engines matter: **Blink** (Chrome, Edge, Samsung Internet, Opera,
+Brave, and DuckDuckGo on Android) and **WebKit** (Safari, and _every_ browser
+on iOS — Chrome and DuckDuckGo included, because Apple forces the engine).
+Firefox's Gecko is a rounding error here. So the sweep runs twice, once in
+each, and no other browser needs its own pass.
 
 **Chrome:** ⌘⌥I, then the phone icon in the toolbar.
 **Safari:** Settings → Advanced → "Show features for web developers", then
@@ -87,6 +101,17 @@ Widths, and what each one is for:
 | 390px | iPhone 14 / Pixel, the modern typical                  |
 | 430px | Pro Max / large Android                                |
 
+---
+
+**With 3g archived, what is left is site-wide and vendor.** A tick in 3f came
+from the iPhone / Safari buyer pass, so the Android pass in 3a repeats 3f from
+scratch — nothing ticked there counts for it. Nothing in 3h has been run on any
+device yet. Each item left open says in its own text why.
+
+## 3f. Site-wide — every role, and logged-out visitors
+
+**Viewport sweep (3a-i)**
+
 - [ ] **Chrome — all four widths.** Homepage, search, a product page, cart,
       checkout, a vendor product form.
 - [ ] **Safari — all four widths.** Same pages. Same engine as every iOS
@@ -94,68 +119,84 @@ Widths, and what each one is for:
 - [ ] **Drag the width slowly from 320 up to ~500 in each**, rather than only
       stopping at the four numbers. Breakpoints fail _between_ the presets,
       and dragging is what finds them.
-- [ ] **Watch for horizontal scroll at every width** — see the 3b check. If
-      the page slides sideways, something has a fixed width.
+- [ ] **Watch for horizontal scroll at every width.** The buyer pages passed
+      this on the phone (3g); the vendor portal in 3h has not been swept. If the
+      page slides sideways, something has a fixed width.
 
-## 3b. Layout, on each device
+**Layout (3b)**
 
-- [ ] **Homepage** — header, search bar, banner carousel and the product rows
-      all scroll horizontally without breaking out of the page.
-- [ ] **No horizontal page scroll at any width.** Spot-check below 400px. If
-      the page slides sideways, something has a fixed width.
-- [ ] **Product cards** — long names truncate cleanly, including long Khmer
-      names, rather than pushing the card out of shape.
-- [ ] **Product detail** — the gallery swipes and taps, and variant buttons are
-      big enough to hit with a thumb.
-- [ ] **Forms** (register, address, add product) — usable with a phone keyboard,
-      labels stay visible, and validation errors appear where you can see them
-      without hunting.
-- [ ] **Maps** (address pin, business pin) — pan and zoom by touch, the pin
-      drops where you tap, and the map doesn't hijack page scrolling when you
-      try to scroll past it.
-- [ ] **Photo gallery drag-to-reorder works by touch** on the vendor edit
-      product page. Drag-and-drop is the classic thing that works with a mouse
-      and not a finger.
 - [ ] **Header nav and menus are thumb-usable**, and the notification dropdown
-      fits on screen instead of running off the edge.
-- [ ] **Footer stacks correctly** and the tagline font (Pacifico / Metal) loads.
+      fits on screen instead of running off the edge. _Deliberately left open:
+      the dropdown gained a "See all notifications" footer link and the mobile
+      menu gained a Notifications entry on 2026-09-11, after this pass. Recheck
+      both once that deploy is live._
+- [x] **Footer stacks correctly** and the tagline font (Pacifico / Metal) loads.
       A brief fallback flash is fine; a wrong font that never corrects is not.
 - [ ] **Khmer text renders cleanly** — no overlapping or clipped characters.
       Khmer stacks glyphs vertically, so line-height problems show up on phones
-      first. Check dates render in Khmer numerals where they should.
+      first. Check dates render in Khmer numerals where they should. _Not
+      covered by the buyer pass — switching language is not the same as reading
+      a Khmer page end to end. Two Khmer strings on the checkout QR screen are
+      also still waiting on a native-speaker read._
 
-## 3c. Function, on each device
+**Function (3c)**
 
-- [ ] **Run the full buyer flow on a phone** — register, verify, add to cart,
-      set address and pin, check out. Do it as a first-time user would, without
-      shortcuts.
-- [ ] **Upload a photo from the phone camera** (vendor add product, and the ABA
-      QR). Large camera images must either be accepted or rejected with a clear
-      message — never fail silently.
-- [ ] **Upload a resume from a phone** on the careers form.
-- [ ] **Currency and language switchers** are reachable and work on mobile.
+- [x] **Currency and language switchers** are reachable and work on mobile.
+- [ ] **Upload a resume from a phone** on the careers form. Public page — no
+      account needed, so it belongs to nobody's portal.
 
-## 3d. Slow connections
+**Slow connections (3d)**
 
 - [ ] **Throttle to 3G / slow 4G in dev tools** and load the homepage. It should
       be usable in reasonable time, with images lazy-loading rather than
       blocking the page.
 - [ ] **Check total homepage weight** in dev tools → Network. More than a few MB
       means filler product photos need compressing before you add more.
-- [ ] **Confirm checkout on a slow connection.** Tap the confirm button twice
-      while it's waiting — you must not get two orders.
 
-## 3e. Worth checking once
+**Worth checking once (3e)**
 
 - [ ] **Add to Home Screen on Android** — the icon and title look right.
+      _Done on iOS/Safari 2026-09-11; the Android half is what this line is
+      about, so it stays open._
 - [x] **Share a site link in Telegram** — huge in Cambodia. The preview title,
       description and image come from the OG tags in `config/seo.php`.
 - [x] **Open a teepsaa email in the Gmail phone app** and check mixed Khmer and
       English blocks render properly.
 
+## 3h. Vendor
+
+Nothing here has been swept on any device yet — the 2026-09-11 iPhone pass was
+buyer-side only.
+
+**Layout (3b)**
+
+- [ ] **No horizontal page scroll at any width** across the vendor portal.
+      Spot-check below 400px. If the page slides sideways, something has a
+      fixed width.
+- [ ] **Add product form** — usable with a phone keyboard, labels stay visible,
+      and validation errors appear where you can see them without hunting.
+- [ ] **Business pin map** — pan and zoom by touch, the pin drops where you tap,
+      and the map doesn't hijack page scrolling when you try to scroll past it.
+- [ ] **Photo gallery drag-to-reorder works by touch** on the vendor edit
+      product page. Drag-and-drop is the classic thing that works with a mouse
+      and not a finger.
+
+**Function (3c)**
+
+- [ ] **Upload a photo from the phone camera** — vendor add product, and the ABA
+      QR in `business-vendor/`. Large camera images must either be accepted or
+      rejected with a clear message — never fail silently.
+
+## 3i. Admin
+
+Nothing outstanding: no Part 3 item covers the admin portal. Admin work has
+been done on the MacBook throughout, and the portal is not something a vendor
+or buyer can reach. If you decide it needs its own mobile pass, the items go
+here.
+
 ---
 
-# Still to check
+# Still to check — site-wide
 
 - [ ] **Read the error log once, after the Part 3 device testing above.**
       `ssh teepsaa "tail -50 ~/.logs/error_log_teepsaa_com"` — look for

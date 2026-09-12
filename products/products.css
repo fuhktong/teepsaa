@@ -865,3 +865,119 @@ select.coupon-input {
   vertical-align: middle;
   margin-left: 3px;
 }
+
+/* ── Tables on a phone ────────────────────────────────────────────────────
+   A table refuses to shrink below its min-content width, so the seven-column
+   product list stuck out of <main> and dragged the whole document into
+   horizontal scroll on a 360px screen. Two answers, one per kind of table.
+
+   1. The read-only lists (products, archive) become one card per row below
+      600px: <tr> turns into a grid — thumbnail and name side by side on the
+      first line, every other field full width underneath printing its own
+      heading from data-label. The header row is hidden, which is also the one
+      thing lost here: the sort taps live on those <th>s, so sorting stays
+      desktop-only. The sort script itself needed no change — it reads cell
+      textContent, and a ::before label never enters that.
+   2. The coupons table keeps its columns and scrolls inside .table-scroll.
+      See the comment on that markup for why it is not stacked. */
+@media (max-width: 600px) {
+  .product-table--cards,
+  .product-table--cards tbody,
+  .product-table--cards td {
+    display: block;
+  }
+
+  .product-table--cards thead {
+    display: none;
+  }
+
+  .product-table--cards tr {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    column-gap: 0.75rem;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: #fff;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Everything that is not part of the heading line runs the full width. */
+  .product-table--cards td {
+    grid-column: 1 / -1;
+    border-bottom: none;
+    padding: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .product-table--cards .cell-photo {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .product-table--cards .cell-photo .thumb {
+    width: 72px;
+    height: 72px;
+  }
+
+  .product-table--cards .cell-name {
+    grid-column: 2;
+    grid-row: 1;
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.3;
+  }
+
+  /* Label left, value hard right — reads as a spec list, and the hairline on
+     every labelled cell draws the divider under the heading line for free. */
+  .product-table--cards td[data-label] {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    text-align: right;
+    border-top: 1px solid var(--divider);
+    padding: 0.45rem 0;
+  }
+
+  .product-table--cards td[data-label]::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    text-align: left;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #666;
+  }
+
+  /* Buttons get their own line, spaced far enough apart to hit with a thumb. */
+  .product-table--cards .actions {
+    display: flex;
+    gap: 1.5rem;
+    white-space: normal;
+    border-top: 1px solid var(--divider);
+    padding-top: 0.55rem;
+    margin-top: 0.45rem;
+  }
+
+  .product-table--cards .actions form {
+    display: block;
+  }
+
+  .product-table--cards .actions form + form {
+    margin-left: 0;
+  }
+
+  .product-table--cards .actions .btn-link {
+    padding: 0.35rem 0;
+    font-size: 0.95rem;
+  }
+}
+
+/* A table that has to keep its columns scrolls inside its own box instead of
+   widening the page. Momentum scrolling so it feels native on iOS. */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}

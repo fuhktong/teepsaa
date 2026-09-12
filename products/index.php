@@ -850,7 +850,8 @@ require __DIR__ . '/../head/head.php';
         <?php if (empty($archivedProducts)): ?>
             <p class="notice"><?= $t['prod_no_archived'] ?></p>
         <?php else: ?>
-        <table class="product-table">
+        <div class="table-scroll">
+        <table class="product-table product-table--cards">
             <thead>
                 <tr>
                     <th><?= $t['prod_col_photo'] ?></th>
@@ -863,16 +864,16 @@ require __DIR__ . '/../head/head.php';
             <tbody>
             <?php foreach ($archivedProducts as $p): ?>
                 <tr>
-                    <td>
+                    <td class="cell-photo">
                         <?php if ($p['photo']): ?>
                             <img src="<?= htmlspecialchars(image_variant($p['photo'])) ?>" alt="" class="thumb" width="48" height="40" loading="lazy" decoding="async">
                         <?php else: ?>
                             <div class="thumb thumb--empty"></div>
                         <?php endif; ?>
                     </td>
-                    <td><?= htmlspecialchars(lang_field($p, 'name')) ?></td>
-                    <td>$<?= number_format($p['price'], 2) ?></td>
-                    <td><?= (int)$p['stock'] ?></td>
+                    <td class="cell-name"><?= htmlspecialchars(lang_field($p, 'name')) ?></td>
+                    <td data-label="<?= htmlspecialchars($t['vendor_col_price']) ?>">$<?= number_format($p['price'], 2) ?></td>
+                    <td data-label="<?= htmlspecialchars($t['vendor_col_stock']) ?>"><?= (int)$p['stock'] ?></td>
                     <td class="actions">
                         <form method="POST" action="/products/unarchive.php" style="display:inline">
                             <?= csrf_input() ?>
@@ -891,6 +892,7 @@ require __DIR__ . '/../head/head.php';
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
         <?php endif; ?>
 
     <?php elseif ($tab === 'coupons'): ?>
@@ -932,6 +934,11 @@ require __DIR__ . '/../head/head.php';
         <?php if (empty($coupons)): ?>
         <p class="notice"><?= $t['vendor_coupon_none'] ?></p>
         <?php else: ?>
+        <!-- Scrolls sideways inside its own box on a phone rather than widening
+             the page. Not stacked into cards like the other two tables: it is an
+             inline editing grid, and the second button row per coupon
+             (colspan=9) would read as a stray card of its own. -->
+        <div class="table-scroll">
         <table class="product-table">
             <thead>
                 <tr>
@@ -1021,6 +1028,7 @@ require __DIR__ . '/../head/head.php';
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
         <?php endif; ?>
         <?php endif; ?>
 
@@ -1051,7 +1059,8 @@ require __DIR__ . '/../head/head.php';
         <?php elseif (empty($products)): ?>
             <p class="notice"><?= $t['vendor_no_products'] ?> <a href="/products/?action=add"><?= $t['vendor_add_product'] ?></a>.</p>
         <?php else: ?>
-            <table class="product-table">
+            <div class="table-scroll">
+            <table class="product-table product-table--cards">
                 <thead>
                     <tr>
                         <th><?= $t['prod_col_photo'] ?></th>
@@ -1066,23 +1075,24 @@ require __DIR__ . '/../head/head.php';
                 <tbody id="product-tbody">
                 <?php foreach ($products as $p): ?>
                     <tr class="product-row <?= $p['active'] ? '' : 'inactive-row' ?>" onclick="location.href='/products/?action=edit&id=<?= $p['public_id'] ?>'">
-                        <td>
+                        <td class="cell-photo">
                             <?php if ($p['photo']): ?>
                                 <img src="<?= htmlspecialchars(image_variant($p['photo'])) ?>" alt="" class="thumb" width="48" height="40" loading="lazy" decoding="async">
                             <?php else: ?>
                                 <div class="thumb thumb--empty"></div>
                             <?php endif; ?>
                         </td>
-                        <td><?= htmlspecialchars(lang_field($p, 'name')) ?></td>
-                        <td><?= htmlspecialchars($p['category_name'] ?? '—') ?></td>
-                        <td>$<?= number_format($p['price'], 2) ?></td>
-                        <td><?= (int)$p['variant_count'] > 0 ? (int)$p['variant_count'] . ' ' . $t['prod_variants_suffix'] : (int)$p['stock'] ?></td>
-                        <td><span class="status <?= $p['active'] ? 'status-active' : 'status-inactive' ?>"><?= $p['active'] ? $t['vendor_status_active'] : $t['vendor_status_inactive'] ?></span></td>
-                        <td style="color:#f59e0b;font-size:0.85rem;"><?= $p['review_count'] > 0 ? '★ ' . number_format($p['avg_rating'], 1) . ' (' . (int)$p['review_count'] . ')' : '—' ?></td>
+                        <td class="cell-name"><?= htmlspecialchars(lang_field($p, 'name')) ?></td>
+                        <td data-label="<?= htmlspecialchars($t['search_category']) ?>"><?= htmlspecialchars($p['category_name'] ?? '—') ?></td>
+                        <td data-label="<?= htmlspecialchars($t['vendor_col_price']) ?>">$<?= number_format($p['price'], 2) ?></td>
+                        <td data-label="<?= htmlspecialchars($t['vendor_col_stock']) ?>"><?= (int)$p['variant_count'] > 0 ? (int)$p['variant_count'] . ' ' . $t['prod_variants_suffix'] : (int)$p['stock'] ?></td>
+                        <td data-label="<?= htmlspecialchars($t['vendor_col_status']) ?>"><span class="status <?= $p['active'] ? 'status-active' : 'status-inactive' ?>"><?= $p['active'] ? $t['vendor_status_active'] : $t['vendor_status_inactive'] ?></span></td>
+                        <td data-label="<?= htmlspecialchars($t['prod_col_rating']) ?>" style="color:#f59e0b;font-size:0.85rem;"><?= $p['review_count'] > 0 ? '★ ' . number_format($p['avg_rating'], 1) . ' (' . (int)$p['review_count'] . ')' : '—' ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
             <script>
             (function () {
                 var tbody = document.getElementById('product-tbody');

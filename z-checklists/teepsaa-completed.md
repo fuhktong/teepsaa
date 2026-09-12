@@ -1767,3 +1767,58 @@ Three items cut from launch scope on 2026-09-03, all built and deployed
 - The creation one-liner, the 644 warning and the rollback instruction all
   live in the `.htaccess` comment above the block. Rollback is to comment out
   the six lines, either in the repo or directly on the server.
+
+---
+
+## Buyer mobile testing — Part 3g of Launch Readiness, closed out 2026-09-12 (archived from teepsaa-todos-launch-readiness.md)
+
+**One device, deliberately: the iPhone 6s on iOS 15 / Safari.** It is the
+oldest WebKit and the slowest CPU a real buyer will plausibly use, so it is the
+worst case rather than a compromise — newer WebKit is the same engine as
+desktop Safari, which was in use throughout the build. The Android pass still
+outstanding in Part 3a no longer repeats this section; it covers the site-wide
+and vendor checks only.
+
+Layout and the full flow ran 2026-09-11, the slow-connection checkout test
+2026-09-12.
+
+### Layout
+
+- **Homepage** — header, search bar, banner carousel and the product rows all
+  scroll horizontally without breaking out of the page.
+- **No horizontal page scroll at any width** on the buyer pages, spot-checked
+  below 400px. Nothing has a fixed width. (The vendor portal is a separate
+  check and stays open in Part 3h.)
+- **Product cards** — long names truncate cleanly, long Khmer names included,
+  rather than pushing the card out of shape.
+- **Product detail** — the gallery swipes and taps, and the variant buttons are
+  big enough to hit with a thumb.
+- **Forms — register and address** — usable with the phone keyboard, labels stay
+  visible, and validation errors appear where you can see them without hunting.
+- **Address pin map** — pans and zooms by touch, the pin drops where you tap,
+  and the map does not hijack page scrolling when you scroll past it.
+
+### Function
+
+- **The full buyer flow on a phone** — register, verify, add to cart, set
+  address and pin, check out. Run as a first-time user would, no shortcuts.
+  Order placed 2026-09-11.
+- **Checkout on a slow connection** — throttled, then the confirm button tapped
+  twice while it was waiting. One order, not two, so the double-submit guard
+  holds on a real phone and not just on a fast desktop connection. 2026-09-12.
+
+### Still buyer-facing but not archived here
+
+Three checks touch buyer pages and stay open in the launch-readiness file
+because they are not buyer-specific:
+
+- The **3a-i viewport sweep** (Chrome and Safari at 320/360/390/430 on the
+  MacBook) walks the homepage, search, a product page, cart and checkout. It is
+  a devtools pass, not a device pass, and it has not been run.
+- **Khmer text rendering end to end** — switching language during the buyer
+  pass is not the same as reading a Khmer page through, and two Khmer strings on
+  the checkout QR screen still want a native-speaker read.
+- **Header nav, menus and the notification dropdown** — the dropdown gained a
+  "See all notifications" footer link and the mobile menu gained a
+  Notifications entry on 2026-09-11, *after* this pass, so both need a recheck
+  once that deploy is live.
