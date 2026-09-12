@@ -81,13 +81,13 @@ if ($sdActive) {
             if (IS_ADMIN_SUBDOMAIN) {
                 $sdGo($sdPath === '/' ? '/admin/' : BASE_URL_MAIN . $sdPath . $sdQuery);
             } elseif (IS_VENDOR_SUBDOMAIN) {
-                $sdGo($sdPath === '/' ? '/analytics/' : BASE_URL_MAIN . $sdPath . $sdQuery);
+                $sdGo($sdPath === '/' ? '/orders-vendor/' : BASE_URL_MAIN . $sdPath . $sdQuery);
             } elseif ($sdPath === '/' && ($_SESSION['role'] ?? '') === 'vendor') {
                 // Wrong door, right person: vendor on the main homepage goes to
                 // their dashboard. Only the bare homepage — vendors may still
                 // preview their public product/business pages on teepsaa.com.
                 // 302 — this one branches on the session, not the path.
-                $sdGo(BASE_URL_VENDOR . '/analytics/', 302);
+                $sdGo(BASE_URL_VENDOR . '/orders-vendor/', 302);
             }
         }
     }

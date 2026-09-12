@@ -12,7 +12,7 @@ require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/i18n.php';
 
 if (isset($_SESSION['user_id'])) {
-    header('Location: /analytics/');
+    header('Location: /orders-vendor/');
     exit;
 }
 

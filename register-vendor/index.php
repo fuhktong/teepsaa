@@ -14,7 +14,7 @@ require __DIR__ . '/../config/i18n.php';
 $buyerBlocked = false;
 if (isset($_SESSION['user_id'])) {
     $role = $_SESSION['role'] ?? 'buyer';
-    if ($role === 'vendor') { header('Location: /analytics/'); exit; }
+    if ($role === 'vendor') { header('Location: /orders-vendor/'); exit; }
     // A logged-in buyer can't sell — vendor accounts are separate accounts.
     // Show an explainer instead of silently bouncing to the buyer dashboard.
     $buyerBlocked = true;

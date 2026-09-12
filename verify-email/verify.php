@@ -102,6 +102,6 @@ $_SESSION['user_avatar'] = $profile['avatar'] ?? '';
 
 // Vendors land on their dashboard (they have setup to do); a fresh buyer has no
 // orders yet, so send them to the product catalog to start shopping instead.
-$dest = $role === 'vendor' ? '/analytics/' : '/';
+$dest = $role === 'vendor' ? '/orders-vendor/' : '/';
 header('Location: ' . $dest);
 exit;

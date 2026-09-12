@@ -13,7 +13,7 @@ require __DIR__ . '/../config/i18n.php';
 
 if (isset($_SESSION['user_id'])) {
     $role = $_SESSION['role'] ?? 'buyer';
-    header('Location: ' . ($role === 'vendor' ? '/analytics/' : '/orders-buyer/'));
+    header('Location: ' . ($role === 'vendor' ? '/orders-vendor/' : '/orders-buyer/'));
     exit;
 }
 
