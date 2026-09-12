@@ -148,6 +148,7 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                         elseif (strpos($vendorPath, '/products/') === 0)        $vendorSection = 'products';
                         elseif (strpos($vendorPath, '/messages-vendor/') === 0) $vendorSection = 'messages';
                         elseif (strpos($vendorPath, '/analytics/') === 0) $vendorSection = 'analytics';
+                        elseif (strpos($vendorPath, '/business-vendor/') === 0) $vendorSection = 'business';
                         elseif (strpos($vendorPath, '/notifications/') === 0) $vendorSection = 'notifications';
                         $vNotifStmt = $pdo->prepare('SELECT COUNT(*) FROM notifications WHERE role = ? AND user_id = ? AND read_at IS NULL');
                         $vNotifStmt->execute(['vendor', $_SESSION['user_id']]);
