@@ -27,7 +27,7 @@ $amsgRoleTabs = ['buyer' => 'Buyers', 'vendor' => 'Vendors', 'guest' => 'Contact
     <h1>Messages</h1>
 </div>
 
-<div class="amsg-role-tabs">
+<div class="amsg-role-tabs pill-tabs">
     <?php foreach ($amsgRoleTabs as $role => $label): ?>
     <a href="/admin/messages/?role=<?= $role ?>&status=<?= urlencode($amsgStatus) ?>"
        class="amsg-role-tab <?= $amsgTab === $role ? 'active' : '' ?>"><?= $label ?><?php

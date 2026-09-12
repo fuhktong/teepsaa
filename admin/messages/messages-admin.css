@@ -16,35 +16,11 @@
   margin-bottom: 1rem;
 }
 
+/* Shape, colours and hover come from .pill-tabs in style.css — shared with
+   every other tab strip in the three portals. Only the gap to the content
+   below is ours. */
 .amsg-role-tabs {
-  display: flex;
-  gap: 0;
-  border-bottom: 2px solid var(--border);
   margin-bottom: 1.25rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.amsg-role-tabs::-webkit-scrollbar { display: none; }
-
-.amsg-role-tab {
-  padding: 0.6rem 1.4rem;
-  white-space: nowrap;
-  font-size: 1rem;
-  font-weight: 700;
-  color: #666;
-  text-decoration: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-}
-
-.amsg-role-tab:hover {
-  color: #111;
-}
-
-.amsg-role-tab.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
 }
 
 .amsg-issue-type {

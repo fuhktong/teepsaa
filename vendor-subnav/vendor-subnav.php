@@ -36,9 +36,11 @@ $vsnStmt = $pdo->prepare('SELECT public_id FROM businesses WHERE user_id = ? AND
 $vsnStmt->execute([$_SESSION['user_id']]);
 $vsnStorefrontId = $vsnStmt->fetchColumn();
 ?>
-<link rel="stylesheet" href="/vendor-subnav/vendor-subnav.css">
+<link rel="stylesheet" href="<?= function_exists('asset_url')
+    ? asset_url('/vendor-subnav/vendor-subnav.css')
+    : '/vendor-subnav/vendor-subnav.css' ?>">
 <div class="vendor-subnav-wrap">
-    <nav class="vendor-subnav">
+    <nav class="vendor-subnav pill-tabs">
         <a href="/orders-vendor/" class="<?= $vendorSection === 'orders' ? 'active' : '' ?>"><?= $vendorOrdersTodo ? $t['nav_orders'] . '&nbsp;<span class="nav-msg-badge">' . $vendorOrdersTodo . '</span>' : $t['nav_orders'] ?></a>
         <a href="/products/" class="<?= $vendorSection === 'products' ? 'active' : '' ?>"><?= $t['nav_products'] ?></a>
         <a href="/messages-vendor/" class="<?= $vendorSection === 'messages' ? 'active' : '' ?>"><?= $vendorUnread ? $t['nav_messages'] . '&nbsp;<span class="nav-msg-badge">' . $vendorUnread . '</span>' : $t['nav_messages'] ?></a>

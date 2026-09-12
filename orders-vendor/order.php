@@ -124,7 +124,7 @@ require __DIR__ . '/../head/head.php';
 <?php require __DIR__ . '/../vendor-subnav/vendor-subnav.php'; ?>
 
 <main>
-    <nav class="products-subnav">
+    <nav class="products-subnav pill-tabs">
         <a href="/orders-vendor/" class="<?= $navTab === 'orders' ? 'active' : '' ?>"><?= $t['vendor_orders'] ?></a>
         <a href="/orders-vendor/?tab=history" class="<?= $navTab === 'history' ? 'active' : '' ?>"><?= $t['vendor_orders_history'] ?></a>
         <a href="/orders-vendor/?tab=refunds"><?= $t['vendor_refunds'] ?><?php if ($vendorRefundCount > 0): ?> <span class="admin-tab-badge"><?= $vendorRefundCount ?></span><?php endif; ?></a>

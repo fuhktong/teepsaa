@@ -10,32 +10,10 @@ main h1 {
 
 /* Second-level tabs — each main section's pages (admin/admin-tabs.php).
    The main section tabs live in /admin-subnav/. */
+/* Shape, colours and hover come from .pill-tabs in style.css — shared with
+   the admin and vendor subnavs. Only the gap to the content below is ours. */
 .admin-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0;
-  border-bottom: 2px solid #e0e0e0;
   margin-bottom: 1.5rem;
-}
-
-.admin-tab {
-  padding: 0.6rem 1.25rem;
-  font-size: 0.9rem;
-  text-decoration: none;
-  color: #666;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  text-align: center;
-}
-
-.admin-tab:hover {
-  color: #111;
-}
-
-.admin-tab.active {
-  color: var(--primary);
-  font-weight: 600;
-  border-bottom-color: var(--primary);
 }
 
 .admin-success {

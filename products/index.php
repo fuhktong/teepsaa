@@ -247,7 +247,7 @@ require __DIR__ . '/../head/head.php';
     </div>
     <?php endif; ?>
 
-    <nav class="products-subnav">
+    <nav class="products-subnav pill-tabs">
         <a href="/products/" class="<?= $tab === 'products' ? 'active' : '' ?>"><?= $t['vendor_products'] ?></a>
         <a href="/products/?tab=archive" class="<?= $tab === 'archive' ? 'active' : '' ?>"><?= $t['prod_archive'] ?></a>
         <a href="/products/?tab=coupons" class="<?= $tab === 'coupons' ? 'active' : '' ?>"><?= $t['vendor_coupons'] ?></a>

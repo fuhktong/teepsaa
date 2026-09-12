@@ -40,9 +40,11 @@ if     (admin_can('vendor-map')) $asnCanvassing = '/admin/vendor-map.php';
 elseif (admin_can('buyer-map'))  $asnCanvassing = '/admin/buyer-map.php';
 elseif (admin_can('prospects'))  $asnCanvassing = '/admin/prospects/';
 ?>
-<link rel="stylesheet" href="/admin-subnav/admin-subnav.css">
+<link rel="stylesheet" href="<?= function_exists('asset_url')
+    ? asset_url('/admin-subnav/admin-subnav.css')
+    : '/admin-subnav/admin-subnav.css' ?>">
 <div class="admin-subnav-wrap">
-    <nav class="admin-subnav">
+    <nav class="admin-subnav pill-tabs">
         <?php if (admin_can('orders')): ?><a href="/admin/orders.php" class="<?= $adminSection === 'orders' ? 'active' : '' ?>"><?= $adminNavOrders ? $t['nav_orders'] . '&nbsp;<span class="nav-msg-badge">' . $adminNavOrders . '</span>' : $t['nav_orders'] ?></a><?php endif; ?>
         <?php if (admin_can('vendors')): ?><a href="/admin/vendors.php" class="<?= $adminSection === 'vendors' ? 'active' : '' ?>"><?= $adminNavAdmin ? 'Vendors&nbsp;<span class="nav-msg-badge">' . $adminNavAdmin . '</span>' : 'Vendors' ?></a><?php endif; ?>
         <?php if (admin_can('buyers')): ?><a href="/admin/buyers.php" class="<?= $adminSection === 'buyers' ? 'active' : '' ?>">Buyers</a><?php endif; ?>

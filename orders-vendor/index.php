@@ -161,7 +161,7 @@ require __DIR__ . '/../head/head.php';
     </div>
     <?php endif; ?>
 
-    <nav class="products-subnav">
+    <nav class="products-subnav pill-tabs">
         <a href="/orders-vendor/" class="<?= $tab === 'orders' ? 'active' : '' ?>"><?= $t['vendor_orders'] ?></a>
         <a href="/orders-vendor/?tab=history" class="<?= $tab === 'history' ? 'active' : '' ?>"><?= $t['vendor_orders_history'] ?></a>
         <a href="/orders-vendor/?tab=refunds" class="<?= $tab === 'refunds' ? 'active' : '' ?>"><?= $t['vendor_refunds'] ?><?php if ($vendorRefundCount > 0): ?> <span class="admin-tab-badge"><?= $vendorRefundCount ?></span><?php endif; ?></a>

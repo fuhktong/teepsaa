@@ -1,5 +1,9 @@
 /* Vendor portal subnav — same box as .header-inner / main (1200px, 1.5rem
-   gutters) so the tabs line up with the header and page content */
+   gutters) so the tabs line up with the header and page content.
+
+   The tabs themselves are .pill-tabs, in style.css, shared with the admin
+   subnav and both second-level rows. Only the box and the phone gutter live
+   here. */
 .vendor-subnav-wrap {
   max-width: 1200px;
   margin: 0 auto;
@@ -8,66 +12,8 @@
   box-sizing: border-box;
 }
 
-.vendor-subnav {
-  display: flex;
-  gap: 0;
-  border-bottom: 2px solid var(--border);
-  overflow-x: auto;
-}
-
-.vendor-subnav a {
-  padding: 0.55rem 1.1rem;
-  text-decoration: none;
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  white-space: nowrap;
-}
-
-.vendor-subnav a:hover {
-  color: #111;
-}
-
-.vendor-subnav a.active {
-  color: #111;
-  font-weight: 600;
-  border-bottom-color: #111;
-}
-
-/* ── Phone ────────────────────────────────────────────────────────────────
-   Six tabs are about 700px of nowrap text, so on a phone they either slide
-   sideways inside their own overflow-x:auto box — which hides half the portal
-   behind a swipe most people never try — or they wrap. They wrap here.
-
-   Underline tabs cannot wrap: the -2px pull that seats the active underline on
-   the container's border drags it onto the row below, and the container border
-   itself ends up under the last row only. So the wrapped version drops both
-   and marks the active tab with a filled pill instead. */
 @media (max-width: 600px) {
   .vendor-subnav-wrap {
     padding: 1rem 1rem 0;
-  }
-
-  .vendor-subnav {
-    flex-wrap: wrap;
-    overflow-x: visible;
-    gap: 0.4rem;
-    border-bottom: none;
-    padding-bottom: 0.75rem;
-  }
-
-  .vendor-subnav a {
-    margin-bottom: 0;
-    padding: 0.45rem 0.8rem;
-    font-size: 0.85rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-  }
-
-  .vendor-subnav a.active {
-    background: #111;
-    color: #fff;
-    border-color: #111;
   }
 }

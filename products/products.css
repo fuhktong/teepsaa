@@ -624,30 +624,11 @@ select.coupon-input {
 }
 
 /* Products / Orders subnav */
+/* Shape, colours and hover come from .pill-tabs in style.css — shared with
+   the admin and vendor subnavs. Only the gap to the content below is ours.
+   orders-vendor loads this stylesheet for the same row. */
 .products-subnav {
-  display: flex;
-  gap: 0;
-  border-bottom: 2px solid var(--border);
   margin-bottom: 1.5rem;
-}
-
-.products-subnav a {
-  padding: 0.55rem 1.1rem;
-  text-decoration: none;
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-}
-
-.products-subnav a:hover {
-  color: #111;
-}
-
-.products-subnav a.active {
-  color: #111;
-  font-weight: 600;
-  border-bottom-color: #111;
 }
 
 /* Order cards (orders tab) */
