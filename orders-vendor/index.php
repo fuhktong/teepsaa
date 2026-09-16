@@ -189,7 +189,7 @@ require __DIR__ . '/../head/head.php';
                     <span class="order-card-items"><?= htmlspecialchars($o['items']) ?></span>
                     <span class="order-card-meta"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span>
                     <span class="order-card-date"><?= fmt_date('M j, g:ia', strtotime($o['created_at'])) ?></span>
-                    <span class="order-card-total">$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span>
+                    <span class="order-card-total">$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></span>
                 </div>
                 <div class="order-card-status" data-status-bar>
                     <?php $orderStatus = $o['status']; require __DIR__ . '/../order-status/order-status.php'; ?>
@@ -221,7 +221,7 @@ require __DIR__ . '/../head/head.php';
                         <?= htmlspecialchars($o['business_name']) ?><?php if ($o['business_closed']): ?> <span class="order-closed-tag"><?= $t['vendor_closed_business'] ?></span><?php endif; ?>
                     </span>
                     <span class="order-card-date"><?= fmt_date('M j, g:ia', strtotime($o['created_at'])) ?></span>
-                    <span class="order-card-total">$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span>
+                    <span class="order-card-total">$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></span>
                 </div>
                 <div class="order-card-status">
                     <?php $orderStatus = $o['status']; require __DIR__ . '/../order-status/order-status.php'; ?>

@@ -80,7 +80,7 @@ if ($business && $business['approved'] === 1) {
             COALESCE(SUM(CASE WHEN YEAR(o.created_at) = YEAR(NOW()) AND MONTH(o.created_at) = MONTH(NOW()) THEN 1 ELSE 0 END), 0) AS month_orders
         FROM orders o
         JOIN businesses b ON b.id = o.business_id
-        WHERE b.user_id = ? AND b.deleted_at IS NULL AND o.status IN (\'delivered\', \'completed\')
+        WHERE b.user_id = ? AND o.status IN (\'delivered\', \'completed\')
     ');
     $stmtStats->execute([$userId]);
     $stats = $stmtStats->fetch() ?: $stats;
@@ -92,7 +92,7 @@ if ($business && $business['approved'] === 1) {
         FROM order_items oi
         JOIN orders o ON o.id = oi.order_id
         JOIN businesses b ON b.id = o.business_id
-        WHERE b.user_id = ? AND b.deleted_at IS NULL AND o.status IN (\'delivered\', \'completed\')
+        WHERE b.user_id = ? AND o.status IN (\'delivered\', \'completed\')
         GROUP BY oi.product_name
         ORDER BY total_sold DESC
         LIMIT 5

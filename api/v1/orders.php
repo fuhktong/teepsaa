@@ -96,7 +96,7 @@ foreach ($stmt->fetchAll() as $o) {
         'delivery_fee'=> round($delivery, 2),
         // Worked out here, not in the app. Money maths in two places is money
         // maths that will eventually disagree with itself.
-        'total'       => round($subtotal - $discount + $delivery, 2),
+        'total'       => round($subtotal - $discount, 2),
         'created_at'  => $o['created_at'],
     ];
 }

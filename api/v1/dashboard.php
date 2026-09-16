@@ -93,7 +93,7 @@ if ($approved === 1) {
                           THEN 1 ELSE 0 END), 0) AS month_orders
           FROM orders o
           JOIN businesses b ON b.id = o.business_id
-         WHERE b.user_id = ? AND b.deleted_at IS NULL
+         WHERE b.user_id = ?
            AND o.status IN ('delivered', 'completed')
     ");
     $stmtStats->execute([$userId]);
@@ -116,7 +116,7 @@ if ($approved === 1) {
           FROM order_items oi
           JOIN orders o ON o.id = oi.order_id
           JOIN businesses b ON b.id = o.business_id
-         WHERE b.user_id = ? AND b.deleted_at IS NULL
+         WHERE b.user_id = ?
            AND o.status IN ('delivered', 'completed')
          GROUP BY oi.product_name
          ORDER BY total_sold DESC
@@ -179,7 +179,10 @@ foreach ($stmtOrders->fetchAll() as $o) {
         'delivery_fee' => round((float)$o['delivery_fee'], 2),
         // Worked out here, not in the app. Money maths in two places is money
         // maths that will eventually disagree with itself.
-        'total'        => round((float)$o['subtotal'] - (float)$o['discount_amount'] + (float)$o['delivery_fee'], 2),
+        // delivery_fee is NOT part of the total on purpose: it is only an
+        // estimate of what the buyer pays the driver on delivery, so it is
+        // never money the vendor is owed. Sent as its own field instead.
+        'total'        => round((float)$o['subtotal'] - (float)$o['discount_amount'], 2),
         'buyer_name' => $o['buyer_name'],
         'items'      => $o['items'],
         'created_at' => $o['created_at'],
