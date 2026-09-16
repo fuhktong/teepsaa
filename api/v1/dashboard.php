@@ -150,7 +150,7 @@ $openOrdersCount = (int)$countStmt->fetchColumn();
 // Only the newest few. The Orders tab loads the full list; sending all of them
 // here would make the dashboard slower the busier a vendor gets.
 $stmtOrders = $pdo->prepare("
-    SELECT o.id, o.public_id, o.subtotal, o.discount_amount, o.status, o.created_at,
+    SELECT o.id, o.public_id, o.subtotal, o.discount_amount, o.delivery_fee, o.status, o.created_at,
            u.name AS buyer_name,
            GROUP_CONCAT(oi.product_name, ' x', oi.quantity ORDER BY oi.id SEPARATOR ', ') AS items
       FROM orders o
@@ -174,8 +174,12 @@ foreach ($stmtOrders->fetchAll() as $o) {
         // and the website never disagree about what an order is called.
         'ref'        => date('ymd', strtotime($o['created_at'])) . '-' . str_pad((string)$o['id'], 4, '0', STR_PAD_LEFT),
         'status'     => $o['status'],
-        'subtotal'   => round((float)$o['subtotal'], 2),
-        'discount'   => round((float)$o['discount_amount'], 2),
+        'subtotal'     => round((float)$o['subtotal'], 2),
+        'discount'     => round((float)$o['discount_amount'], 2),
+        'delivery_fee' => round((float)$o['delivery_fee'], 2),
+        // Worked out here, not in the app. Money maths in two places is money
+        // maths that will eventually disagree with itself.
+        'total'        => round((float)$o['subtotal'] - (float)$o['discount_amount'] + (float)$o['delivery_fee'], 2),
         'buyer_name' => $o['buyer_name'],
         'items'      => $o['items'],
         'created_at' => $o['created_at'],
