@@ -1809,8 +1809,9 @@ Layout and the full flow ran 2026-09-11, the slow-connection checkout test
 
 ### Still buyer-facing but not archived here
 
-Three checks touch buyer pages and stay open in the launch-readiness file
-because they are not buyer-specific:
+Three checks touch buyer pages but were not buyer-specific, so they stayed in
+the launch-readiness file at the time. That file was retired on 2026-09-12 with
+all three still unrun — see "Closed unrun" in the section below:
 
 - The **3a-i viewport sweep** (Chrome and Safari at 320/360/390/430 on the
   MacBook) walks the homepage, search, a product page, cart and checkout. It is
@@ -1822,3 +1823,107 @@ because they are not buyer-specific:
   "See all notifications" footer link and the mobile menu gained a
   Notifications entry on 2026-09-11, *after* this pass, so both need a recheck
   once that deploy is live.
+
+---
+
+## Part 3 real-device testing — Launch Readiness closed out 2026-09-12, and the file retired
+
+`teepsaa-todos-launch-readiness.md` is gone as of 2026-09-12. Parts 1, 2, 4, 5
+and the 2026-09-08 batch were already archived above; Part 3g (buyer mobile)
+went into the section before this one. What follows is the rest of Part 3 — the
+site-wide, vendor and admin sections — plus the one remaining item from the
+file's "Still to check" tail. Everything the file said is now in this archive,
+so nothing points at a file that no longer exists.
+
+The letter tags (3b layout, 3c function, 3d slow connections, 3e worth checking
+once) are kept because older sections of this archive refer to them.
+
+### Done — site-wide (3f)
+
+- **Footer stacks correctly** and the tagline font (Pacifico / Metal) loads. A
+  brief fallback flash is fine; a wrong font that never corrects is not. (3b)
+- **Currency and language switchers** are reachable and work on mobile. (3c)
+- **Add to Home Screen** — the icon and title look right. Done on iOS / Safari
+  2026-09-11. The Android half was never run; see the unrun list below. (3e)
+- **Share a site link in Telegram** — huge in Cambodia. The preview title,
+  description and image come from the OG tags in `config/seo.php`. (3e)
+- **Open a teepsaa email in the Gmail phone app** — mixed Khmer and English
+  blocks render properly. (3e)
+
+### Done — vendor (3h)
+
+The vendor portal was swept on the iPhone after the buyer pass, and the mobile
+layout work it turned up is in the responsive-tables and pill-tabs changes of
+2026-09-12.
+
+- **No horizontal page scroll at any width** across the vendor portal,
+  spot-checked below 400px. Nothing has a fixed width. (3b)
+- **Add product form** — usable with a phone keyboard, labels stay visible, and
+  validation errors appear where you can see them without hunting. (3b)
+- **Business pin map** — pans and zooms by touch, the pin drops where you tap,
+  and it does not hijack page scrolling when you scroll past it. (3b)
+- **Photo gallery drag-to-reorder works by touch** on the vendor edit product
+  page — the classic thing that works with a mouse and not a finger. (3b)
+- **Upload a photo from the phone camera** — vendor add product, and the ABA QR
+  in `business-vendor/`. Large camera images are accepted or rejected with a
+  clear message, never silently. (3c)
+
+### Admin (3i) — nothing was ever outstanding
+
+No Part 3 item covered the admin portal. Admin work was done on the MacBook
+throughout and the portal is not reachable by a buyer or vendor, so it was
+never given a mobile pass and does not need one to launch.
+
+### Devices that were used (3a)
+
+- **iPhone 6s, iOS 15, Safari** — the oldest WebKit and slowest CPU a real user
+  will plausibly have, so the worst case rather than a compromise. Buyer flow
+  2026-09-11, vendor portal 2026-09-12.
+- Desktop and tablet were never listed: the whole site was built and used on a
+  MacBook and an iPad for months, so anything broken at those widths would have
+  surfaced long before launch.
+
+### Closed unrun — accepted, not done
+
+These were open when the file was retired. They are recorded here rather than
+dropped, because each is a real gap and worth knowing about if something turns
+up in production. Launch went ahead without them.
+
+- **Android phone, Chrome** (3a) — planned as an Android Studio emulator pass
+  (arm64 image, low-RAM profile, Android 10 and 13/14). Its point was Android's
+  own Khmer font stack, Noto Sans Khmer, which stacks glyphs differently from
+  iOS and is the one thing a Mac cannot fake. Never run. The single largest
+  untested surface, given Cambodia is Android-dominant.
+- **A cheap or old Android** (3a) — slow CPU, small screen, what many buyers
+  actually carry. No hardware to borrow.
+- **The 3a-i viewport sweep, both engines** (3f) — Chrome and Safari devtools at
+  320 / 360 / 390 / 430, walking the homepage, search, a product page, cart,
+  checkout and a vendor product form, then dragging the width slowly from 320 to
+  ~500 to catch breakpoints that fail *between* the presets. Not run as a
+  deliberate sweep. Partly covered in practice: the 2026-09-12 responsive work
+  was verified headless at 320/360/390/430/500/601/700/900/1200 for horizontal
+  page scroll, but only on the vendor pages it touched.
+- **Header nav, menus and the notification dropdown on mobile** (3f, 3b) — left
+  open on purpose: the dropdown gained a "See all notifications" footer link and
+  the mobile menu gained a Notifications entry on 2026-09-11, *after* the iPhone
+  pass, and the recheck never happened.
+- **Khmer text rendering end to end** (3f, 3b) — switching language during a
+  pass is not the same as reading a Khmer page through. Khmer stacks glyphs
+  vertically, so line-height problems show on phones first; Khmer numerals in
+  dates were never verified. Two Khmer strings on the checkout QR screen still
+  want a native-speaker read.
+- **Upload a resume from a phone** on the careers form (3f, 3c) — public page,
+  no account needed.
+- **Throttled 3G / slow-4G homepage load** (3f, 3d) — should be usable in
+  reasonable time with images lazy-loading rather than blocking the page. Only
+  the checkout double-tap test was run throttled, in the buyer pass.
+- **Total homepage weight** in devtools → Network (3f, 3d) — more than a few MB
+  means the filler product photos want compressing before more are added.
+- **Read the error log once after the device testing** — from the file's "Still
+  to check" tail: `ssh teepsaa "tail -50 ~/.logs/error_log_teepsaa_com"`, looking
+  for anything newer than the start of testing. `log_errors` is on permanently
+  and normal use of the site is the test, so there is nothing to switch on and
+  nothing to re-run — the check is just reading it. As of 2026-09-09 the log was
+  2033 bytes and its newest entry a pre-fix test, so the site was clean then.
+  `display_errors` stays off; the site is public. **This one costs a single
+  command and is the cheapest thing on the list.**

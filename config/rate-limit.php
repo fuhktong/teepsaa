@@ -51,7 +51,16 @@ function rate_limit_stop(): void {
     http_response_code(429);
     // The window rolls, so the wait is however long ago the oldest failure was —
     // RATE_LIMIT_WINDOW is the worst case and the only honest number to quote.
-    exit('Too many attempts. Please wait ' . RATE_LIMIT_WINDOW . ' minutes and try again.');
+    $message = 'Too many attempts. Please wait ' . RATE_LIMIT_WINDOW . ' minutes and try again.';
+
+    // The mobile API promises JSON on every path, this one included. api_json()
+    // exists only when config/api.php is loaded, so website pages are untouched
+    // and still get the plain-text body they have always got.
+    if (function_exists('api_json')) {
+        api_json(['error' => 'rate_limited', 'message' => $message], 429);
+    }
+
+    exit($message);
 }
 
 function record_failed_attempt(PDO $pdo, string $kind = 'login', string $identifier = ''): void {

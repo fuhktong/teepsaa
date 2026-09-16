@@ -15,8 +15,9 @@ But you still need a **small test dataset from day one**, because most of the
 launch checklist and the whole catalog half of the app API are untestable
 against an empty site. See "The minimum you need earlier" below.
 
-Related: `teepsaa-todos-launch-readiness.md`, `teepsaa-todos-mobile-app.md`,
-`teepsaa-vendor-marketing.md`.
+Related: `teepsaa-todos-mobile-app.md`, `teepsaa-vendor-marketing.md`. The
+launch-readiness checklist closed out 2026-09-12 and is archived in
+`teepsaa-completed.md`.
 
 ---
 

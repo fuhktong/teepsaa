@@ -10,7 +10,9 @@ No Swift, Kotlin or React. Node and npm are used only as packaging tools.
 
 **Do not start until the website has launched.** Route 1's own setup requires
 removing the Basic Auth gate, because the app's WebView can't reliably show a
-password prompt. Finish `teepsaa-todos-launch-readiness.md` first.
+password prompt. Launch readiness closed out 2026-09-12 — that checklist is
+retired and archived in `teepsaa-completed.md`, including the handful of checks
+that were accepted unrun.
 
 | Route | Time | What you get |
 | --- | --- | --- |

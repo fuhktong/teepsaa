@@ -1,9 +1,14 @@
 # SEO for teepsaa — what exists, what's broken, what to add
 
-Written 2026-09-05 from a read of the live codebase. SEO is absent from
+Written 2026-09-05 from a read of the live codebase. SEO was absent from
 `teepsaa-todos-launch-readiness.md`; this is the missing chapter, split the
-way that file splits — **things to do before the gate comes off**, then
-**things that come after launch**.
+way that file split — **things to do before the gate comes off**, then
+**things that come after launch**. That checklist was retired on 2026-09-12
+and archived into `teepsaa-completed.md`; nothing here was done as part of it,
+so the whole document is still open work.
+
+Moved here from `print.md` on 2026-09-12, unchanged apart from this note, so
+that `print.md` could be reused as a scratch buffer.
 
 Nothing here is speculative "best practice" filler. Every item names the file
 and line it applies to.
