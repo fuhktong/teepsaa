@@ -156,7 +156,7 @@ require __DIR__ . '/../head/head.php';
         <?php if ($o['delivery_fee'] > 0): ?>
         <div class="popup-subtotal"><span><?= $t['order_delivery'] ?></span><span>$<?= number_format($o['delivery_fee'], 2) ?></span></div>
         <?php endif; ?>
-        <div class="popup-total"><span><?= $t['checkout_total'] ?></span><span>$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span></div>
+        <div class="popup-total"><span><?= $t['checkout_total'] ?></span><span>$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></span></div>
     </div>
     <?php endif; ?>
 

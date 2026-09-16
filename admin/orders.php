@@ -165,7 +165,7 @@ $adminTab     = 'orders';
                 <span class="order-row-id"><?= $oid ?></span>
                 <span class="order-row-biz"><?= htmlspecialchars($o['business_name']) ?></span>
                 <span class="order-row-customer"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span>
-                <span class="order-row-total">$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span>
+                <span class="order-row-total">$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></span>
             </div>
             <div class="order-row-bar" data-status-bar>
                 <?php $orderStatus = $o['status']; require __DIR__ . '/../order-status/order-status.php'; ?>

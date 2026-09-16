@@ -86,7 +86,7 @@ $royaltyPct   = round(($o['royalty_rate'] ?? 0) * 100, 1);
 // coupon isn't — the platform absorbs that one). Derive the vendor-funded portion from
 // the stored numbers so this recomputed breakdown stays correct either way.
 $vendorCouponDiscount = max(0, round($o['subtotal'] - $royaltyAmt - (float)$o['vendor_payout'], 2));
-$vendorPayout = round($o['subtotal'] - $royaltyAmt - $vendorCouponDiscount + $o['delivery_fee'] + $o['vendor_delivery_bonus'], 2);
+$vendorPayout = round($o['subtotal'] - $royaltyAmt - $vendorCouponDiscount, 2);
 // A refund that was rejected and then confirmed closes the window early — the
 // buyer can no longer file, so there is nothing left to wait for. Mirrors
 // Guard 1 in admin/payouts-action.php.

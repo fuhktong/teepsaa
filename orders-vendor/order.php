@@ -81,7 +81,7 @@ $royaltyPct   = round(($o['royalty_rate'] ?? 0) * 100, 1);
 // coupon isn't — the platform absorbs that one). Derive the vendor-funded portion from
 // the stored numbers so this recomputed breakdown stays correct either way.
 $vendorCouponDiscount = max(0, round($o['subtotal'] - $royaltyAmt - (float)$o['vendor_payout'], 2));
-$vendorPayout = round($o['subtotal'] - $royaltyAmt - $vendorCouponDiscount + $o['delivery_fee'] + $o['vendor_delivery_bonus'], 2);
+$vendorPayout = round($o['subtotal'] - $royaltyAmt - $vendorCouponDiscount, 2);
 
 // Once the business is closed the vendor keeps the sales record but loses the
 // customer's contact and delivery details — they have nothing left to deliver, so
@@ -195,7 +195,7 @@ require __DIR__ . '/../head/head.php';
         <?php if ($o['delivery_fee'] > 0): ?>
         <div class="popup-subtotal"><span><?= $t['order_delivery'] ?></span><span>$<?= number_format($o['delivery_fee'], 2) ?></span></div>
         <?php endif; ?>
-        <div class="popup-total"><span><?= $t['checkout_total'] ?></span><span>$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span></div>
+        <div class="popup-total"><span><?= $t['checkout_total'] ?></span><span>$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></span></div>
 
         <div class="popup-payout-box">
             <?php if ($royaltyPct > 0): ?>

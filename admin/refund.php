@@ -134,7 +134,7 @@ $adminTab     = 'refunds';
 
             <div class="detail-card">
                 <div class="detail-card-title">Refund amount</div>
-                <div class="detail-row"><span class="detail-row-label">Order total</span><span class="detail-row-value">$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span></div>
+                <div class="detail-row"><span class="detail-row-label">Order total</span><span class="detail-row-value">$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></span></div>
                 <?php if ($o['discount_amount'] > 0): ?>
                 <div class="detail-row"><span class="detail-row-label">Coupon (<?= htmlspecialchars($o['coupon_code']) ?>)</span><span class="detail-row-value">−$<?= number_format($o['discount_amount'], 2) ?></span></div>
                 <?php endif; ?>
