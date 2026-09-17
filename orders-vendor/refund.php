@@ -85,6 +85,20 @@ $statusClasses = [
 $refundState = $o['refund_rejected_at'] ? 'refund_rejected' : $o['status'];
 $statusClass = $statusClasses[$refundState] ?? 'badge-grey';
 $statusLabel = $t['order_badge_' . $refundState] ?? ucwords(str_replace('_', ' ', $refundState));
+
+// teepsaa holds the buyer's money until the refund window closes, so a refund
+// is paid out of that, never billed to the vendor. The label says so — and
+// says it in the right tense, because 'refunded' is a lie before it happens
+// and after it is refused.
+$refundTotalLabels = [
+    'refunded'          => $t['vorder_refunded_by'],
+    'return_approved'   => $t['vorder_will_refund'],
+    'return_dispatched' => $t['vorder_will_refund'],
+    'return_received'   => $t['vorder_will_refund'],
+    'refund_requested'  => $t['vorder_may_refund'],
+    'refund_rejected'   => $t['vorder_not_refunded'],
+];
+$refundTotalLabel = $refundTotalLabels[$refundState] ?? $t['vorder_may_refund'];
 ?>
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
@@ -146,7 +160,7 @@ require __DIR__ . '/../head/head.php';
         <?php if ($o['delivery_fee'] > 0): ?>
         <div class="popup-subtotal"><span><?= $t['vorder_delivery_nonrefund'] ?></span><span>$<?= number_format($o['delivery_fee'], 2) ?></span></div>
         <?php endif; ?>
-        <div class="popup-total"><span><?= $t['vorder_refund_to_buyer'] ?></span><span>$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></span></div>
+        <div class="popup-total"><span><?= $refundTotalLabel ?></span><span>$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></span></div>
     </div>
     <?php endif; ?>
 
