@@ -18,11 +18,10 @@
 // Photos are the first images any v1 endpoint has returned, and they are sent
 // as ABSOLUTE urls on purpose — see the note further down.
 
+// image_variant(), active_sale() and sale_price_for() arrive with this:
+// api.php requires db.php, which requires upload.php and currency.php. Adding
+// a require for either here is a redeclare and a 500 before any code runs.
 require __DIR__ . '/../../config/api.php';
-require __DIR__ . '/../../config/upload.php';
-// active_sale() and sale_price_for(). Its format_price() reads $_SESSION, but
-// nothing here calls it — the app formats money itself.
-require __DIR__ . '/../../config/currency.php';
 
 api_require_method('GET');
 

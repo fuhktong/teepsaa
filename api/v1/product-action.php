@@ -28,8 +28,9 @@
 // state, and two taps arriving together would cancel each other out and report
 // success twice. Saying which state is wanted cannot do that.
 
+// image_delete_derivatives() arrives with this: api.php requires db.php, which
+// requires upload.php. Requiring it again here is a redeclare and a 500.
 require __DIR__ . '/../../config/api.php';
-require __DIR__ . '/../../config/upload.php';   // image_delete_derivatives()
 
 api_require_method('POST');
 
