@@ -55,12 +55,15 @@ if ($businessState !== 'ok') {
 
 $business = $businesses[0];
 
+// id as the tiebreaker on the sort: created_at is only accurate to the second,
+// so two coupons made in the same second came back in either order and the rows
+// swapped places between loads. The query on the website has the same problem.
 $stmt = $pdo->prepare('
     SELECT id, code, type, value, min_order, max_uses, used_count,
            starts_at, expires_at, active
       FROM coupons
      WHERE business_id = ?
-     ORDER BY created_at DESC
+     ORDER BY created_at DESC, id DESC
 ');
 $stmt->execute([(int)$business['id']]);
 $rows = $stmt->fetchAll();
