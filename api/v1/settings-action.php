@@ -44,7 +44,7 @@ $userId = (int)$vendor['id'];
 $body   = api_body();
 $action = trim((string)($body['action'] ?? ''));
 
-$allowed = ['profile', 'password', 'avatar_color', 'avatar_remove'];
+$allowed = ['profile', 'password', 'avatar_color', 'avatar_remove', 'lang'];
 if (!in_array($action, $allowed, true)) {
     api_json(['error' => 'bad_action', 'allowed' => $allowed], 400);
 }
@@ -138,6 +138,30 @@ if ($action === 'password') {
     if ($html !== '') send_email($row['email'], $subj, $html);
 
     api_json(['ok' => true, 'signed_out' => $signedOut]);
+}
+
+// ── Language ─────────────────────────────────────────────────────────
+//
+// The app has already switched its own words by the time this is called — they
+// are on the phone, so waiting on the network to change a label would make a
+// tap feel broken. What this column is for is everything the app does not draw
+// itself: the emails teepsaa sends, the notification lines built by
+// notifications.php, and the website when the same vendor signs in there.
+//
+// Nothing is compared against what is already stored. A vendor tapping the
+// language they are already reading is a no-op the app does not send, and an
+// 'unchanged' reply here would only give the app a second case to handle for a
+// write that costs nothing.
+if ($action === 'lang') {
+    $lang = (string)($body['lang'] ?? '');
+
+    if ($lang !== 'en' && $lang !== 'km') {
+        api_json(['error' => 'invalid', 'fields' => ['lang' => 'Pick English or Khmer.']], 422);
+    }
+
+    $pdo->prepare('UPDATE vendors SET lang = ? WHERE id = ?')->execute([$lang, $userId]);
+
+    api_json(['ok' => true, 'lang' => $lang]);
 }
 
 // ── Avatar colour ────────────────────────────────────────────────────

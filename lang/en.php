@@ -1040,4 +1040,10 @@ return [
     'app_bank_name_hint'     => 'Exactly as it appears in your ABA account — teepsaa checks it before sending a payout. Changing it holds your payouts for 24 hours while we make sure it was you.',
     'app_unchanged_name'     => 'That is already the name on file, so nothing changed.',
 
+
+    // Vendor app — the language switch ────────────────────────────────────
+    'app_language'    => 'Language',
+    'app_lang_hint'   => 'The app, teepsaa.com and the emails teepsaa sends you all use this.',
+    'app_lang_failed' => 'Could not fetch the words for that language. Check your internet and try again.',
+
 ];
