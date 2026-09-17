@@ -7,9 +7,11 @@
 //   - The shop. Name, categories, address and bank details moved to their own
 //     page on the website and their own screen in the app; business.php serves
 //     those. This file is the person, not the business.
-//   - Deleting the account. Both app stores require it and it gets its own
-//     endpoint, because a screen that can erase everything should not share a
-//     reply with one that changes a phone number.
+//   - Deleting the account. That is account-delete.php, because a call that can
+//     erase everything should not share a file with one that saves a phone
+//     number. What is here is `deletion.open_orders`, the one thing that can
+//     stop a delete — sent with the screen so a vendor who cannot delete is
+//     told before typing a password rather than after.
 //
 // The avatar comes back two ways on purpose. `avatar` is a photo URL when one
 // was uploaded on the website; when it is null the app draws the same coloured
@@ -45,6 +47,20 @@ if (!$row) api_json(['error' => 'not_found'], 404);
 // on the same one or the avatar would change the moment the app draws it.
 $colorIdx = $row['avatar_color'] !== null ? (int)$row['avatar_color'] : abs($userId) % 5;
 
+// The same count account-delete.php blocks on, and it has to stay the same
+// count: a screen that says deleting is allowed and an endpoint that refuses it
+// would read as a broken button.
+$stmt = $pdo->prepare("
+    SELECT COUNT(*)
+      FROM orders o
+      JOIN businesses b ON b.id = o.business_id
+     WHERE b.user_id = ?
+       AND b.deleted_at IS NULL
+       AND o.status NOT IN ('completed', 'cancelled', 'refunded')
+");
+$stmt->execute([$userId]);
+$openOrders = (int)$stmt->fetchColumn();
+
 api_json([
     'vendor' => [
         'id'           => $userId,
@@ -76,5 +92,9 @@ api_json([
         'name'         => 255,
         'phone'        => 20,
         'password_min' => 8,
+    ],
+
+    'deletion' => [
+        'open_orders' => $openOrders,
     ],
 ]);

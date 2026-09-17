@@ -8,7 +8,8 @@
 //
 // Four deliberate differences from the website:
 //
-//  1. Errors come back keyed by field, so the app can put the message under the
+//  1. Errors come back keyed by field — the same {error:'invalid', fields:{}}
+//     shape business-action.php uses — so the app can put the message under the
 //     box that caused it instead of one line at the top.
 //  2. Changing the password is rate limited. settings-vendor/password-action.php
 //     has no limit on the current-password check, which is survivable behind a
@@ -64,7 +65,7 @@ if ($action === 'profile') {
     // refused here with a sentence instead of arriving as a 500.
     if (mb_strlen($phone) > 20)       $errors['phone'] = 'That phone number is too long.';
 
-    if ($errors) api_json($errors, 422);
+    if ($errors) api_json(['error' => 'invalid', 'fields' => $errors], 422);
 
     $stmt = $pdo->prepare('SELECT name, phone FROM vendors WHERE id = ?');
     $stmt->execute([$userId]);
@@ -112,7 +113,7 @@ if ($action === 'password') {
         $errors['current_password'] = 'That is not the current password.';
     }
 
-    if ($errors) api_json($errors, 422);
+    if ($errors) api_json(['error' => 'invalid', 'fields' => $errors], 422);
 
     $pdo->prepare('UPDATE vendors SET password = ? WHERE id = ?')
         ->execute([password_hash($newPw, PASSWORD_DEFAULT), $userId]);
@@ -147,7 +148,7 @@ if ($action === 'password') {
 if ($action === 'avatar_color') {
     $color = (int)($body['color'] ?? -1);
     if ($color < 0 || $color > 4) {
-        api_json(['color' => 'Pick one of the colours shown.'], 422);
+        api_json(['error' => 'invalid', 'fields' => ['color' => 'Pick one of the colours shown.']], 422);
     }
 
     $pdo->prepare('UPDATE vendors SET avatar_color = ? WHERE id = ?')
