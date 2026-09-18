@@ -874,7 +874,7 @@ return [
     'app_err_no_business'          => 'You need an approved business before adding products.',
     'app_err_expired'              => 'This coupon has already expired, so it cannot be changed.',
     'app_err_in_use'               => 'Somebody has already used this coupon, so it cannot be deleted. Switch it off instead.',
-    'app_err_no_qr'                => 'Add your bank QR code on teepsaa.com first. The account name is saved with it.',
+    'app_err_no_qr'                => 'Add your bank QR code first. The account name is saved with it.',
     'app_err_not_rejected'         => 'This business is not waiting to be sent back. Open this screen again to see where it is.',
     'app_err_no_avatar'            => 'There is no photo to remove.',
     'app_err_open_orders'          => 'There are still orders to finish, so the account cannot be deleted yet.',
@@ -1036,9 +1036,37 @@ return [
     'app_add_address'        => 'Add address',
     'app_no_account_name'    => 'No account name yet.',
     'app_qr_alt'             => 'Your bank QR code',
-    'app_no_qr_hint'         => 'No bank QR uploaded yet. Add one on teepsaa.com.',
+    'app_no_qr_hint'         => 'No bank QR yet. Tap Edit to add one.',
     'app_bank_name_hint'     => 'Exactly as it appears in your ABA account — teepsaa checks it before sending a payout. Changing it holds your payouts for 24 hours while we make sure it was you.',
     'app_unchanged_name'     => 'That is already the name on file, so nothing changed.',
+
+    // Vendor app — photos from the phone ──────────────────────────────────
+    'app_photos'             => 'Photos',
+    'app_photos_hint'        => 'The first photo is the one buyers see on your product in the shop.',
+    'app_photos_used'        => '%s of %s used',
+    'app_photos_none'        => 'No photos yet. Add one so buyers can see what they are buying.',
+    'app_photos_after_save'  => 'Photos can be added once the product is saved.',
+    'app_product_added'      => 'Product added. Now add its photos.',
+    'app_photo_take'         => 'Take photo',
+    'app_photo_choose'       => 'Choose photo',
+    'app_photo_main'         => 'Main',
+    'app_photo_remove'       => 'Remove photo',
+    'app_photo_remove_q'     => 'Remove? Tap × again',
+    'app_photo_adding'       => 'Adding photo…',
+    'app_photo_removing'     => 'Removing…',
+    'app_photo_err_open'     => 'The camera could not open. Try choosing a photo from your phone instead.',
+    'app_photo_err_read'     => 'That photo could not be read. Try taking it again.',
+    'app_err_photo_too_large'   => 'That photo is too big. The limit is 2MB.',
+    'app_err_photo_bad_type'    => 'That is not a photo teepsaa can use. It must be a JPG or a PNG.',
+    'app_err_photo_too_many'    => 'This product already has nine photos. Remove one before adding another.',
+    'app_err_photo_missing_file' => 'No photo arrived. Try again.',
+    'app_err_photo_failed'      => 'The photo could not be saved. Try again.',
+
+    // Vendor app — the bank QR code, uploaded from the phone ──────────────
+    'app_qr_replace'         => 'QR code',
+    'app_qr_new_ready'       => 'New QR code ready. Tap Save to use it.',
+    'app_qr_hold_warn'       => 'Saving a new QR code holds your payouts for 24 hours and emails you. That email is how you would find out if someone else changed it.',
+    'app_qr_saved'           => 'Bank QR code saved. Payouts are held for 24 hours while teepsaa checks the change.',
 
 
     // Vendor app — the language switch ────────────────────────────────────
