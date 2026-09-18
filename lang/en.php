@@ -1046,4 +1046,8 @@ return [
     'app_lang_hint'   => 'The app, teepsaa.com and the emails teepsaa sends you all use this.',
     'app_lang_failed' => 'Could not fetch the words for that language. Check your internet and try again.',
 
+
+    // Vendor app — the bar that shows when the signal drops ───────────────
+    'app_offline_bar' => 'No connection. Showing what is already on this phone.',
+
 ];
