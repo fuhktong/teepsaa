@@ -25,9 +25,9 @@
 //     nothing at all — no email, no audit row, and no 24-hour payout hold. The
 //     website fires all three on every save of that form.
 //
-// Photos are not here. Uploading a banner or a QR image from the phone is a
-// later chapter; both can still be looked at, and the account name beside the
-// QR can still be changed.
+// Photos are not here. The bank QR has its own endpoint, api/v1/business-qr.php,
+// because a picture cannot travel as JSON and everything in this file does.
+// Uploading a storefront banner from the phone is still a later chapter.
 require __DIR__ . '/../../config/api.php';
 require __DIR__ . '/../../config/notify.php';
 // audit.php pulls in admin-auth.php, whose only include-time action is guarded
@@ -247,7 +247,8 @@ if ($action === 'bank_name') {
     $current = $stmt->fetch();
 
     // The name on its own is not a payout destination. Without a QR there is
-    // nowhere for the money to go, and the app cannot upload one yet.
+    // nowhere for the money to go, so the app sends both together through
+    // api/v1/business-qr.php the first time and may use this for the name after.
     if (empty($current['aba_qr'])) {
         api_json(['error' => 'no_qr'], 409);
     }

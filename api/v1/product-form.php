@@ -165,6 +165,23 @@ if ($wantedId > 0) {
         'photo'           => $row['photo'] ? 'https://teepsaa.com' . image_variant($row['photo']) : null,
     ];
 
+    // Every photo, not just the primary one above. The app's edit screen shows
+    // them as a strip with an X on each, so it needs the ids to delete by and
+    // the count to know when the ninth slot is gone. 'photo' is left alone
+    // beside this: an app already on a phone reads that key and nothing else.
+    $pStmt = $pdo->prepare('
+        SELECT id, filename, is_primary
+          FROM product_photos
+         WHERE product_id = ?
+         ORDER BY sort_order ASC, id ASC
+    ');
+    $pStmt->execute([(int)$row['id']]);
+    $product['photos'] = array_map(fn($r) => [
+        'id'         => (int)$r['id'],
+        'url'        => 'https://teepsaa.com' . image_variant($r['filename']),
+        'is_primary' => (bool)$r['is_primary'],
+    ], $pStmt->fetchAll());
+
     $vStmt = $pdo->prepare('
         SELECT id, label, label_km, stock, price_override
           FROM product_variants
