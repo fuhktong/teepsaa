@@ -31,7 +31,12 @@ $userId = (int)$vendor['id'];
 // starts, and PHP hands us an empty $_POST *and* an empty $_FILES with no error
 // of any kind. Without this check the reply would be 'missing_product_id',
 // which sends whoever is debugging it to the wrong end of the problem.
-if (empty($_POST) && empty($_FILES) && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+//
+// The content-type test is what makes it safe: a JSON request also arrives with
+// an empty $_POST and an empty $_FILES, so without it every JSON call here
+// would be answered 'too_large'.
+$isMultipart = str_starts_with((string)($_SERVER['CONTENT_TYPE'] ?? ''), 'multipart/form-data');
+if ($isMultipart && empty($_POST) && empty($_FILES) && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
     api_json(['error' => 'too_large', 'limit_mb' => 2], 413);
 }
 
