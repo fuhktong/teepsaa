@@ -1075,6 +1075,17 @@ return [
     'app_lang_failed' => 'Could not fetch the words for that language. Check your internet and try again.',
 
 
+    // Vendor app — asking to send notifications ───────────────────────────
+    // Shown in the app's own sheet, before Android's permission dialog. Android
+    // only says "Allow teepsaa to send you notifications?" and remembers a no
+    // in a way the app cannot undo, so these words are what the answer is
+    // actually based on.
+    'app_push_title' => 'Get a ding for new orders',
+    'app_push_why'   => 'teepsaa can tell your phone the moment an order comes in, a buyer asks for a refund, or stock runs low. You can turn this off again in your phone settings.',
+    'app_push_allow' => 'Turn on notifications',
+    'app_push_later' => 'Not now',
+
+
     // Vendor app — the bar that shows when the signal drops ───────────────
     'app_offline_bar' => 'No connection. Showing what is already on this phone.',
 
