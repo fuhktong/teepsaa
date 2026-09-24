@@ -8,6 +8,18 @@ require_once __DIR__ . '/unsubscribe.php';
 function notify(PDO $pdo, string $role, int $userId, string $type, string $message, ?string $link = null, ?array $data = null): void {
     $pdo->prepare('INSERT INTO notifications (role, user_id, type, message, data, link) VALUES (?, ?, ?, ?, ?, ?)')
         ->execute([$role, $userId, $type, $message, $data ? json_encode($data, JSON_UNESCAPED_UNICODE) : null, $link]);
+
+    // Ding the phone, if this account has one. Every notification on the site
+    // reaches this function — seventeen call sites at the time of writing — so
+    // this single line is the whole of push delivery. Nothing above it can be
+    // affected by anything below: the row is already committed, and send_push()
+    // swallows its own failures rather than raising them into a checkout.
+    //
+    // Required here rather than at the top of the file because push.php
+    // requires this one back (for notification_text), and because the great
+    // majority of page loads never notify anybody.
+    require_once __DIR__ . '/push.php';
+    send_push($pdo, $role, $userId, $type, $message, $link, $data);
 }
 
 // Render a notification row in the given language. Falls back to the stored

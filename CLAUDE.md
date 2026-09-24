@@ -60,6 +60,11 @@ shorthand wipes the chevron — use `background-color`; and re-declaring
 
 ## Answering
 
+**Shape of the reply is set elsewhere.** Every reply uses the three sections
+— `## Summary`, `## To-do`, `## Next step` — defined under "How to reply" in
+the parent folder's `CLAUDE.md`. What follows here governs the wording inside
+those sections, not the structure around them.
+
 Answer the question asked, then stop. A question gets a one- or two-sentence
 answer — not a table, not adjacent findings, not a bullet recap. Save anything
 extra for when it's asked about or when it actually blocks the work.

@@ -4,12 +4,15 @@
 config/resend.php
 config/db.php
 config/mapbox.php
+# Firebase service account key — lets the holder push to every teepsaa install
+config/fcm-service-account.json
 
 # Uploads (user content — too large for git)
 uploads/
 
 # Mail log (local dev only)
 mail.log
+push.log
 
 # Deploy script (contains FTP password)
 deploycode.txt
