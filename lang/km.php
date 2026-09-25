@@ -1078,6 +1078,11 @@ return [
     'app_push_why'   => 'teepsaa អាចប្រាប់ទូរសព្ទរបស់អ្នកភ្លាមៗ នៅពេលមានការកម្ម៉ង់ចូល អ្នកទិញស្នើសុំសងប្រាក់ ឬទំនិញជិតអស់។ អ្នកអាចបិទវាវិញបាននៅក្នុងការកំណត់ទូរសព្ទរបស់អ្នក។',
     'app_push_allow' => 'បើកការជូនដំណឹង',
     'app_push_later' => 'មិនទាន់ទេ',
+    // The channel's own name, read in Android's settings rather than in the
+    // app: Settings → Apps → teepsaa vendor → Notifications. It is what the
+    // vendor turns off if they ever want the dings to stop.
+    'app_channel_orders'     => 'ការកម្ម៉ង់ និងការសងប្រាក់វិញ',
+    'app_channel_orders_why' => 'ការកម្ម៉ង់ថ្មី ការស្នើសុំសងប្រាក់វិញ និងស្តុកជិតអស់។',
 
 
     // Vendor app — the bar that shows when the signal drops ───────────────

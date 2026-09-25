@@ -1084,6 +1084,11 @@ return [
     'app_push_why'   => 'teepsaa can tell your phone the moment an order comes in, a buyer asks for a refund, or stock runs low. You can turn this off again in your phone settings.',
     'app_push_allow' => 'Turn on notifications',
     'app_push_later' => 'Not now',
+    // The channel's own name, read in Android's settings rather than in the
+    // app: Settings → Apps → teepsaa vendor → Notifications. It is what the
+    // vendor turns off if they ever want the dings to stop.
+    'app_channel_orders'     => 'Orders and refunds',
+    'app_channel_orders_why' => 'New orders, refund requests, and stock running low.',
 
 
     // Vendor app — the bar that shows when the signal drops ───────────────
