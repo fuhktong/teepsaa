@@ -1155,4 +1155,19 @@ return [
     'app_order_checking'       => 'Checking whether your order went through…',
     'app_order_unsure'         => 'We could not reach teepsaa, so your order has not been placed yet. Check your connection and tap the button again.',
 
+    // Buyer app, Part 7 — orders and reviews.
+    'app_bnote_paid'              => 'Payment confirmed. The shop is getting your order ready.',
+    'app_bnote_dispatched'        => 'On its way. Tap Confirm delivery once it arrives.',
+    'app_bnote_refund_requested'  => 'teepsaa is looking at your refund request. Nothing for you to do yet.',
+    'app_bnote_return_approved'   => 'Refund approved. Send the item back to get your money.',
+    'app_bnote_return_dispatched' => 'Your return is on its way to the shop.',
+    'app_bnote_return_received'   => 'The shop has the item back. teepsaa is sending your refund.',
+    'app_bnote_refunded'          => 'Your refund has been sent.',
+    'app_your_reason'             => 'Your reason',
+    'app_return_link'             => 'Your return tracking',
+    'app_review_thanks'           => 'Review submitted. Thank you!',
+    'app_err_missing_reason'      => 'Choose a reason, or describe the problem.',
+    'app_err_not_reviewable'      => 'This item can be reviewed once the order has been delivered.',
+    'app_err_already_reviewed'    => 'You have already reviewed this item.',
+
 ];
