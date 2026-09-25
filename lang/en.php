@@ -1094,4 +1094,7 @@ return [
     // Vendor app — the bar that shows when the signal drops ───────────────
     'app_offline_bar' => 'No connection. Showing what is already on this phone.',
 
+    // Buyer app — the tab bar. The other four tabs reuse the website's words.
+    'app_nav_search' => 'Search',
+
 ];
