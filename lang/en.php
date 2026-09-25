@@ -1171,5 +1171,9 @@ return [
     'app_err_already_reviewed'    => 'You have already reviewed this item.',
 
     'app_messages_sub'            => 'Your questions to the teepsaa team',
+    'app_bpush_title'             => 'Know when your order moves',
+    'app_bpush_why'               => 'teepsaa can tell your phone when your payment is confirmed, your order is on its way, or your refund moves forward. You can turn this off again in your phone settings.',
+    'app_channel_buyer'           => 'Your orders',
+    'app_channel_buyer_why'       => 'Payment, delivery and refund updates.',
 
 ];
