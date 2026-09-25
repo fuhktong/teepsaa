@@ -1170,4 +1170,6 @@ return [
     'app_err_not_reviewable'      => 'This item can be reviewed once the order has been delivered.',
     'app_err_already_reviewed'    => 'You have already reviewed this item.',
 
+    'app_messages_sub'            => 'Your questions to the teepsaa team',
+
 ];
