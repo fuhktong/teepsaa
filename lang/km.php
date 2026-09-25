@@ -1088,7 +1088,10 @@ return [
     // Vendor app — the bar that shows when the signal drops ───────────────
     'app_offline_bar' => 'គ្មានការតភ្ជាប់។ កំពុងបង្ហាញអ្វីដែលមានស្រាប់នៅលើទូរសព្ទនេះ។',
 
-    // Buyer app — the tab bar. The other four tabs reuse the website's words.
+    // Buyer app. Only the words the website does not already have — the other
+    // four tab names, for one, are the website's own.
     'app_nav_search' => 'ស្វែងរក',
+    'app_keep_browsing' => 'បន្តមើលទំនិញ',
+    'app_signin_prompt' => 'ចូលគណនី ដើម្បីមើលរទេះ កម្មង់ និងគណនីរបស់អ្នក។',
 
 ];
