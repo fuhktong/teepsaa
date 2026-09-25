@@ -166,6 +166,60 @@ function api_require_vendor(PDO $pdo): array {
 }
 
 /**
+ * The buyer app's twin of api_require_vendor(): resolve the token to a buyer,
+ * or reply 401 and stop. Same re-checks for the same reason — a token outlives
+ * the moment it was minted — and the same role-as-half-the-key rule, the other
+ * way round: a vendor's token must never resolve to a buyer.
+ */
+function api_require_buyer(PDO $pdo): array {
+    $buyer = api_lookup_buyer($pdo);
+    if (!$buyer) api_json(['error' => 'unauthorized'], 401);
+    return $buyer;
+}
+
+/**
+ * The buyer, or null — never a 401. For the public shop endpoints, which answer
+ * anyone but add a little for a signed-in buyer (is this on their wishlist).
+ *
+ * A token that no longer works is treated as no token rather than refused.
+ * Browsing must not break because a sign-in went stale; the app finds out the
+ * next time it calls something that needs the account, and that 401 is what
+ * clears the token.
+ */
+function api_optional_buyer(PDO $pdo): ?array {
+    return api_bearer_token() === '' ? null : api_lookup_buyer($pdo);
+}
+
+function api_lookup_buyer(PDO $pdo): ?array {
+    $token = api_bearer_token();
+    if ($token === '') return null;
+
+    $stmt = $pdo->prepare('
+        SELECT t.id AS token_id, b.id, b.name, b.lang
+          FROM api_tokens t
+          JOIN buyers b ON b.id = t.user_id
+         WHERE t.token_hash = ?
+           AND t.role = ?
+           AND b.deleted_at IS NULL
+           AND b.suspended = 0
+           AND b.email_verified_at IS NOT NULL
+    ');
+    $stmt->execute([hash('sha256', $token), 'buyer']);
+    $row = $stmt->fetch();
+
+    if (!$row) return null;
+
+    $pdo->prepare('
+        UPDATE api_tokens SET last_used_at = NOW()
+         WHERE id = ?
+           AND (last_used_at IS NULL OR last_used_at < NOW() - INTERVAL 5 MINUTE)
+    ')->execute([$row['token_id']]);
+
+    unset($row['token_id']);
+    return $row;
+}
+
+/**
  * Reject anything that is not the method an endpoint expects. A GET arriving at
  * a write endpoint is a bug worth surfacing, not something to half-run.
  */
