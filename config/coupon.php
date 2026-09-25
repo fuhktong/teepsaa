@@ -9,11 +9,14 @@
 // that vendor's items in the cart, and comes out of that vendor's own
 // payout). $subtotalsByBusiness is [business_id => subtotal] for every
 // vendor group currently in the buyer's cart.
+//
+// A refusal also carries `reason`, a short code the mobile app turns into
+// words in the buyer's language — `message` is English only.
 if (!function_exists('validate_coupon')) {
     function validate_coupon(PDO $pdo, string $code, array $subtotalsByBusiness, int $buyerId): array {
         $code = strtoupper(trim($code));
         if ($code === '') {
-            return ['valid' => false, 'message' => 'Enter a code.'];
+            return ['valid' => false, 'reason' => 'empty', 'message' => 'Enter a code.'];
         }
 
         $stmt = $pdo->prepare('SELECT * FROM coupons WHERE code = ?');
@@ -21,22 +24,22 @@ if (!function_exists('validate_coupon')) {
         $c = $stmt->fetch();
 
         if (!$c || !$c['active']) {
-            return ['valid' => false, 'message' => 'Invalid code.'];
+            return ['valid' => false, 'reason' => 'invalid', 'message' => 'Invalid code.'];
         }
         if ($c['starts_at'] && strtotime($c['starts_at']) > time()) {
-            return ['valid' => false, 'message' => 'This code is not active yet.'];
+            return ['valid' => false, 'reason' => 'not_started', 'message' => 'This code is not active yet.'];
         }
         if ($c['expires_at'] && strtotime($c['expires_at']) < time()) {
-            return ['valid' => false, 'message' => 'This code has expired.'];
+            return ['valid' => false, 'reason' => 'expired', 'message' => 'This code has expired.'];
         }
         if ($c['max_uses'] !== null && (int)$c['used_count'] >= (int)$c['max_uses']) {
-            return ['valid' => false, 'message' => 'This code has reached its usage limit.'];
+            return ['valid' => false, 'reason' => 'used_up', 'message' => 'This code has reached its usage limit.'];
         }
 
         $businessId = $c['business_id'] !== null ? (int)$c['business_id'] : null;
         if ($businessId !== null) {
             if (!isset($subtotalsByBusiness[$businessId])) {
-                return ['valid' => false, 'message' => 'This code only applies to items from a specific shop, which isn\'t in your cart.'];
+                return ['valid' => false, 'reason' => 'wrong_shop', 'message' => 'This code only applies to items from a specific shop, which isn\'t in your cart.'];
             }
             $scopeSubtotal = (float)$subtotalsByBusiness[$businessId];
         } else {
@@ -44,13 +47,13 @@ if (!function_exists('validate_coupon')) {
         }
 
         if ($scopeSubtotal < (float)$c['min_order']) {
-            return ['valid' => false, 'message' => 'Minimum order of $' . number_format((float)$c['min_order'], 2) . ' required.'];
+            return ['valid' => false, 'reason' => 'min_order', 'min_order' => (float)$c['min_order'], 'message' => 'Minimum order of $' . number_format((float)$c['min_order'], 2) . ' required.'];
         }
 
         $usedStmt = $pdo->prepare('SELECT COUNT(*) FROM coupon_uses WHERE coupon_id = ? AND buyer_id = ?');
         $usedStmt->execute([$c['id'], $buyerId]);
         if ((int)$usedStmt->fetchColumn() > 0) {
-            return ['valid' => false, 'message' => 'You have already used this code.'];
+            return ['valid' => false, 'reason' => 'already_used', 'message' => 'You have already used this code.'];
         }
 
         $discount = $c['type'] === 'percent'
