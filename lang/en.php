@@ -1115,6 +1115,18 @@ return [
     'app_address_updated'       => 'Address updated.',
     'app_address_removed'       => 'Address removed.',
     'app_default_updated'       => 'Default address updated.',
-    'app_tap_again_delete'      => 'Tap again to delete',
+
+    // Buyer app — wishlist and cart (Part 5)
+    'app_err_unavailable'         => 'This product is no longer available.',
+    'app_err_variant_unavailable' => 'That option is sold out.',
+    'app_err_variant_required'    => 'Please choose an option first.',
+    'app_err_cart_max'            => 'Your cart already has all that is in stock.',
+    'app_added_capped'            => 'Added. Only %s in stock, so that is how many are in your cart.',
+    'app_view_cart'               => 'View cart',
+    'app_wishlist_save'           => 'Save',
+    'app_wishlist_saved'          => 'Saved',
+    'app_wishlist_sub'            => 'Products you saved for later',
+    'app_cart_fix'                => 'Add them now',
+    'app_checkout_next'           => 'Checkout arrives in the next update.',
 
 ];

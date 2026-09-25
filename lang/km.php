@@ -1109,6 +1109,18 @@ return [
     'app_address_updated'       => 'អាសយដ្ឋានត្រូវបានកែប្រែ។',
     'app_address_removed'       => 'អាសយដ្ឋានត្រូវបានលុប។',
     'app_default_updated'       => 'អាសយដ្ឋានលំនាំដើមត្រូវបានប្ដូរ។',
-    'app_tap_again_delete'      => 'ចុចម្ដងទៀតដើម្បីលុប',
+
+    // Buyer app — wishlist and cart (Part 5)
+    'app_err_unavailable'         => 'ផលិតផលនេះលែងមានទៀតហើយ។',
+    'app_err_variant_unavailable' => 'ជម្រើសនោះអស់ពីស្តុកហើយ។',
+    'app_err_variant_required'    => 'សូមជ្រើសរើសជម្រើសមួយជាមុនសិន។',
+    'app_err_cart_max'            => 'កន្ត្រករបស់អ្នកមានចំនួនទាំងអស់ដែលមានក្នុងស្តុករួចហើយ។',
+    'app_added_capped'            => 'បានបន្ថែម។ មានតែ %s ក្នុងស្តុក ដូច្នេះនោះជាចំនួនក្នុងកន្ត្រករបស់អ្នក។',
+    'app_view_cart'               => 'មើលកន្ត្រក',
+    'app_wishlist_save'           => 'រក្សាទុក',
+    'app_wishlist_saved'          => 'បានរក្សាទុក',
+    'app_wishlist_sub'            => 'ផលិតផលដែលអ្នកបានរក្សាទុកសម្រាប់ពេលក្រោយ',
+    'app_cart_fix'                => 'បន្ថែមឥឡូវនេះ',
+    'app_checkout_next'           => 'ការទូទាត់នឹងមកដល់ក្នុងការអាប់ដេតបន្ទាប់។',
 
 ];

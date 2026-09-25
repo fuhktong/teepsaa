@@ -6,6 +6,7 @@
 // on every call, which is what makes that 401 trustworthy.
 
 require __DIR__ . '/../../../config/api.php';
+require __DIR__ . '/../../../config/buyer-cart.php';
 
 api_require_method('GET');
 
@@ -16,5 +17,7 @@ api_json([
         'id'   => (int)$buyer['id'],
         'name' => $buyer['name'],
         'lang' => $buyer['lang'] ?: 'km',
+        // For the Cart tab's badge from the first screen on.
+        'cart_count' => buyer_cart_count($pdo, (int)$buyer['id']),
     ],
 ]);
