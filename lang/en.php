@@ -1096,7 +1096,7 @@ return [
 
     // Buyer app. Only the words the website does not already have — the other
     // four tab names, for one, are the website's own.
-    'app_nav_search' => 'Search',
+    'app_nav_search' => 'Browse',
     'app_keep_browsing' => 'Keep browsing',
     'app_signin_prompt' => 'Log in to see your cart, your orders and your account.',
 

@@ -1090,7 +1090,7 @@ return [
 
     // Buyer app. Only the words the website does not already have — the other
     // four tab names, for one, are the website's own.
-    'app_nav_search' => 'ស្វែងរក',
+    'app_nav_search' => 'រកមើល',
     'app_keep_browsing' => 'បន្តមើលទំនិញ',
     'app_signin_prompt' => 'ចូលគណនី ដើម្បីមើលរទេះ កម្មង់ និងគណនីរបស់អ្នក។',
 
