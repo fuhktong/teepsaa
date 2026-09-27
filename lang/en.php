@@ -1125,6 +1125,7 @@ return [
     'app_view_cart'               => 'View cart',
     'app_wishlist_save'           => 'Save',
     'app_wishlist_saved'          => 'Saved',
+    'app_share'                   => 'Share',
     'app_wishlist_sub'            => 'Products you saved for later',
     'app_cart_fix'                => 'Add them now',
     'app_checkout_next'           => 'Checkout arrives in the next update.',

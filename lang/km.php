@@ -1119,6 +1119,7 @@ return [
     'app_view_cart'               => 'មើលកន្ត្រក',
     'app_wishlist_save'           => 'រក្សាទុក',
     'app_wishlist_saved'          => 'បានរក្សាទុក',
+    'app_share'                   => 'ចែករំលែក',
     'app_wishlist_sub'            => 'ផលិតផលដែលអ្នកបានរក្សាទុកសម្រាប់ពេលក្រោយ',
     'app_cart_fix'                => 'បន្ថែមឥឡូវនេះ',
     'app_checkout_next'           => 'ការទូទាត់នឹងមកដល់ក្នុងការអាប់ដេតបន្ទាប់។',
