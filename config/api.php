@@ -24,13 +24,14 @@ require_once __DIR__ . '/db.php';
 // ── 1. CORS ──────────────────────────────────────────────────────────
 //
 // A browser (and the phone's WebView) refuses a cross-origin call unless the
-// server names the caller back. Exactly three origins, listed literally — never
+// server names the caller back. Exactly four origins, listed literally — never
 // '*', and never anything derived from the request. The website's own pages are
 // same-origin and never reach this list.
 const API_ALLOWED_ORIGINS = [
     'https://localhost',        // the Android app
     'capacitor://localhost',    // the iPhone app
-    'http://localhost:5173',    // npm run dev, in the Mac browser
+    'http://localhost:5173',    // npm run dev, in the Mac browser — the vendor app
+    'http://localhost:5174',    // npm run dev — the buyer app, so both previews can run at once
 ];
 
 $apiOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
