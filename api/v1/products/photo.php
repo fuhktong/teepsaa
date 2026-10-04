@@ -96,6 +96,9 @@ function photo_list(PDO $pdo, int $productId): array {
             // from https://localhost, so a root-relative address points the
             // phone at itself and the picture silently never loads.
             'url'        => 'https://teepsaa.com' . image_variant($row['filename']),
+            // The original, for the full-screen view where w400 is too soft to
+            // zoom. Added later than 'url', so older apps simply ignore it.
+            'full'       => 'https://teepsaa.com' . image_variant($row['filename'], ''),
             'is_primary' => (bool)$row['is_primary'],
         ];
     }

@@ -179,6 +179,7 @@ if ($wantedId > 0) {
     $product['photos'] = array_map(fn($r) => [
         'id'         => (int)$r['id'],
         'url'        => 'https://teepsaa.com' . image_variant($r['filename']),
+        'full'       => 'https://teepsaa.com' . image_variant($r['filename'], ''),   // for the full-screen view
         'is_primary' => (bool)$r['is_primary'],
     ], $pStmt->fetchAll());
 
