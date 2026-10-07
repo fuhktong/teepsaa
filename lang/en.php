@@ -1177,4 +1177,10 @@ return [
     'app_channel_buyer'           => 'Your orders',
     'app_channel_buyer_why'       => 'Payment, delivery and refund updates.',
 
+    // The "Please update" screen both apps show when they are too old.
+    'app_update_title'             => 'Please update teepsaa',
+    'app_update_body'              => 'This version of the app is too old to keep working. Update it to carry on — your account and everything in it are safe.',
+    'app_update_store'             => 'Open the store on your phone and update teepsaa there.',
+    'app_update_button'            => 'Update',
+
 ];
