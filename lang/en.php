@@ -1183,4 +1183,9 @@ return [
     'app_update_store'             => 'Open the store on your phone and update teepsaa there.',
     'app_update_button'            => 'Update',
 
+    // The list under the app's search box: recent searches and suggestions.
+    'app_search_recent'            => 'Recent searches',
+    'app_search_clear_recent'      => 'Clear',
+    'app_search_forget'            => 'Remove from recent searches',
+
 ];

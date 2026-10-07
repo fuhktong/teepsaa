@@ -1177,4 +1177,9 @@ return [
     'app_update_store'             => 'សូមបើកហាងកម្មវិធីនៅលើទូរស័ព្ទរបស់អ្នក ហើយធ្វើបច្ចុប្បន្នភាព teepsaa នៅទីនោះ។',
     'app_update_button'            => 'ធ្វើបច្ចុប្បន្នភាព',
 
+    // The list under the app's search box: recent searches and suggestions.
+    'app_search_recent'            => 'ការស្វែងរកថ្មីៗ',
+    'app_search_clear_recent'      => 'សម្អាត',
+    'app_search_forget'            => 'លុបចេញពីការស្វែងរកថ្មីៗ',
+
 ];
