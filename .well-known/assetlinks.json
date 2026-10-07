@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.teepsaa.buyer",
+      "sha256_cert_fingerprints": [
+        "65:89:4A:48:79:F9:5A:63:31:B5:10:61:D6:9A:72:0C:13:45:AF:9F:9D:6C:DC:E3:F0:E1:B6:74:5A:31:CC:6B"
+      ]
+    }
+  }
+]
