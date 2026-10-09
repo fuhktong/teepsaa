@@ -1181,5 +1181,10 @@ return [
     'app_search_recent'            => 'ការស្វែងរកថ្មីៗ',
     'app_search_clear_recent'      => 'សម្អាត',
     'app_search_forget'            => 'លុបចេញពីការស្វែងរកថ្មីៗ',
+    'app_buy_again'                => 'ទិញម្តងទៀត',
+    'app_buy_again_info'           => 'ដាក់ទំនិញទាំងអស់ពីការបញ្ជាទិញនេះចូលកន្ត្រកវិញ។',
+    'app_buy_again_skipped'        => 'លែងមានលក់ហើយ៖ %s',
+    'app_buy_again_capped'         => 'ស្តុកនៅសល់តិចជាងលើកមុន៖ %s',
+    'app_buy_again_none'           => 'មិនអាចទិញទំនិញទាំងនេះបានទេនៅពេលនេះ។',
 
 ];

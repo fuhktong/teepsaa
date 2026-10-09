@@ -106,9 +106,10 @@ function shop_search(PDO $pdo, array $f, int $offset, int $limit): array {
     if ($q !== '') {
         // Escaped as the website does it — "%" alone must not return everything.
         $qLike    = '%' . addcslashes($q, '%_\\') . '%';
-        $where   .= ' AND (p.name LIKE ? OR p.description LIKE ?)';
-        $params[] = $qLike;
-        $params[] = $qLike;
+        // Khmer names and descriptions too: a buyer typing in Khmer otherwise
+        // finds nothing, even where the vendor filled in the Khmer name.
+        $where   .= ' AND (p.name LIKE ? OR p.description LIKE ? OR p.name_km LIKE ? OR p.description_km LIKE ?)';
+        array_push($params, $qLike, $qLike, $qLike, $qLike);
     }
     if ($minPrice !== '') { $where .= ' AND p.price >= ?'; $params[] = (float)$minPrice; }
     if ($maxPrice !== '') { $where .= ' AND p.price <= ?'; $params[] = (float)$maxPrice; }

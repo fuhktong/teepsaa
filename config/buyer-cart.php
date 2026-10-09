@@ -161,3 +161,77 @@ function buyer_cart(PDO $pdo, int $userId): array
         'khr_rate' => KHR_RATE,
     ];
 }
+
+/**
+ * Put one line in the cart — the rules of cart/add.php, shared by
+ * api/v1/buyer/cart-add.php and buy-again.php so the two can never drift:
+ *
+ *   - the product must be switched on and not archived, its shop approved and
+ *     not suspended;
+ *   - a product with variants needs one, and it must belong to that product
+ *     and be in stock; a product without variants must itself be in stock;
+ *   - the quantity is clamped to 1…stock, never refused for being too many;
+ *   - a line already in the cart is topped up, never past stock, and a line
+ *     already at stock is refused;
+ *   - the NULL-variant line is found by hand, as the website does, because
+ *     ON DUPLICATE KEY cannot match a NULL.
+ *
+ * `$productId` is the internal id. Returns ['error' => code] (plus `in_cart`
+ * for cart_max), or ['in_cart' => n, 'capped' => bool] — capped when stock ran
+ * out before the asked-for number was reached.
+ */
+function buyer_cart_put(PDO $pdo, int $userId, int $productId, ?int $variantId, int $asked): array
+{
+    $stmt = $pdo->prepare('
+        SELECT p.stock
+          FROM products p
+          JOIN businesses b ON b.id = p.business_id
+         WHERE p.id = ? AND p.active = 1 AND p.archived = 0 AND b.approved = 1 AND b.suspended = 0
+    ');
+    $stmt->execute([$productId]);
+    $product = $stmt->fetch();
+    if (!$product) return ['error' => 'unavailable'];
+
+    if ($variantId !== null) {
+        $stmt = $pdo->prepare('SELECT id, stock FROM product_variants WHERE id = ? AND product_id = ?');
+        $stmt->execute([$variantId, $productId]);
+        $variant = $stmt->fetch();
+        if (!$variant || (int)$variant['stock'] < 1) return ['error' => 'variant_unavailable'];
+        $stockLimit = (int)$variant['stock'];
+    } else {
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM product_variants WHERE product_id = ?');
+        $stmt->execute([$productId]);
+        if ($stmt->fetchColumn() > 0) return ['error' => 'variant_required'];
+        if ((int)$product['stock'] < 1) return ['error' => 'unavailable'];
+        $stockLimit = (int)$product['stock'];
+    }
+
+    $asked = max(1, $asked);
+    $qty   = min($asked, $stockLimit);
+
+    if ($variantId !== null) {
+        $stmt = $pdo->prepare('SELECT id, quantity FROM cart_items WHERE buyer_user_id = ? AND product_id = ? AND variant_id = ?');
+        $stmt->execute([$userId, $productId, $variantId]);
+    } else {
+        $stmt = $pdo->prepare('SELECT id, quantity FROM cart_items WHERE buyer_user_id = ? AND product_id = ? AND variant_id IS NULL');
+        $stmt->execute([$userId, $productId]);
+    }
+    $existing = $stmt->fetch();
+
+    if ($existing) {
+        if ((int)$existing['quantity'] >= $stockLimit) {
+            return ['error' => 'cart_max', 'in_cart' => (int)$existing['quantity']];
+        }
+        $newQty = min((int)$existing['quantity'] + $qty, $stockLimit);
+        $pdo->prepare('UPDATE cart_items SET quantity = ? WHERE id = ?')->execute([$newQty, $existing['id']]);
+    } else {
+        $newQty = $qty;
+        $pdo->prepare('INSERT INTO cart_items (buyer_user_id, product_id, variant_id, quantity) VALUES (?, ?, ?, ?)')
+            ->execute([$userId, $productId, $variantId, $qty]);
+    }
+
+    return [
+        'in_cart' => $newQty,
+        'capped'  => $newQty < ($existing ? (int)$existing['quantity'] : 0) + $asked,
+    ];
+}

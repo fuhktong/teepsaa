@@ -1187,5 +1187,10 @@ return [
     'app_search_recent'            => 'Recent searches',
     'app_search_clear_recent'      => 'Clear',
     'app_search_forget'            => 'Remove from recent searches',
+    'app_buy_again'                => 'Buy again',
+    'app_buy_again_info'           => 'Puts everything from this order back in your cart.',
+    'app_buy_again_skipped'        => 'Not available any more: %s',
+    'app_buy_again_capped'         => 'Fewer left in stock than last time: %s',
+    'app_buy_again_none'           => 'None of these items can be bought right now.',
 
 ];

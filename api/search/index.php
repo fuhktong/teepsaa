@@ -35,9 +35,10 @@ if ($q !== '') {
     // pages 2+ come from here, so an unescaped wildcard would make the two
     // disagree about what is in the result set.
     $qLike    = '%' . addcslashes($q, '%_\\') . '%';
-    $where   .= ' AND (p.name LIKE ? OR p.description LIKE ?)';
-    $params[] = $qLike;
-    $params[] = $qLike;
+    // Khmer names and descriptions too: a buyer typing in Khmer otherwise
+    // finds nothing, even where the vendor filled in the Khmer name.
+    $where   .= ' AND (p.name LIKE ? OR p.description LIKE ? OR p.name_km LIKE ? OR p.description_km LIKE ?)';
+    array_push($params, $qLike, $qLike, $qLike, $qLike);
 }
 if ($minPrice !== '') {
     $where   .= ' AND p.price >= ?';

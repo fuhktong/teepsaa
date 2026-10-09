@@ -195,6 +195,8 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
             'confirm_delivery' => $status === 'dispatched',
             'request_refund'   => $canRefund,
             'send_return'      => $status === 'return_approved',
+            // Put the items back in the cart — buy-again.php checks it again.
+            'buy_again'        => $reviewable,
         ],
     ];
 }
