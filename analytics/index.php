@@ -9,6 +9,7 @@ session_start([
 
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
+require __DIR__ . '/../config/sales-chart.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -99,6 +100,36 @@ if ($business && $business['approved'] === 1) {
     ');
     $stmtBest->execute([$userId]);
     $bestSellers = $stmtBest->fetchAll();
+}
+
+// Sales over time — the same numbers as the vendor app's chart. Each bar
+// carries its own caption, so the script below only switches views and
+// shows the caption of the bar clicked.
+$chartViews = [];
+if ($business && $business['approved'] === 1) {
+    $chart = sales_chart($pdo, (int)$business['id']);
+    $orderCount = fn(int $n) => $n === 1 ? $t['app_chart_order_one'] : sprintf($t['app_chart_orders'], $n);
+    $money      = fn(float $v) => '$' . number_format($v, 2);
+    foreach (['days' => 'date', 'weeks' => 'start'] as $view => $dateKey) {
+        $points = $chart[$view];
+        $max    = max(array_column($points, 'payout')) ?: 0;
+        $total  = array_sum(array_column($points, 'payout'));
+        $orders = array_sum(array_column($points, 'orders'));
+        $label  = fn($p) => $view === 'days'
+            ? fmt_date('j M', $p[$dateKey])
+            : sprintf($t['app_chart_week_of'], fmt_date('j M', $p[$dateKey]));
+        $chartViews[$view] = [
+            'total' => sprintf($t['app_chart_total'], $money($total)) . ' · ' . $orderCount($orders),
+            'max'   => $max > 0 ? $money($max) : '',
+            'first' => $label($points[0]),
+            'last'  => $label($points[count($points) - 1]),
+            'bars'  => array_map(fn($p) => [
+                'height'  => $max > 0 ? max(2, round($p['payout'] / $max * 100)) : 2,
+                'zero'    => $p['payout'] <= 0,
+                'caption' => $label($p) . ': ' . $money($p['payout']) . ' · ' . $orderCount($p['orders']),
+            ], $points),
+        ];
+    }
 }
 
 // Review state and suspension are two separate things, so they get two separate
@@ -206,6 +237,31 @@ require __DIR__ . '/../head/head.php';
                 <div class="analytics-stat-label"><?= $t['vendor_this_month_orders'] ?></div>
             </div>
         </div>
+        <?php if ($chartViews): ?>
+        <div class="sales-chart" data-sales-chart>
+            <div class="sales-chart-head">
+                <h3 class="analytics-sub-heading"><?= $t['app_chart_title'] ?></h3>
+                <div class="sales-chart-pills" role="tablist">
+                    <button type="button" class="sales-chart-pill is-active" data-view="days" aria-selected="true"><?= $t['app_chart_days'] ?></button>
+                    <button type="button" class="sales-chart-pill" data-view="weeks" aria-selected="false"><?= $t['app_chart_weeks'] ?></button>
+                </div>
+            </div>
+            <?php foreach ($chartViews as $view => $cv): ?>
+            <div class="sales-chart-view" data-chart-view="<?= $view ?>" data-total="<?= htmlspecialchars($cv['total']) ?>"<?= $view === 'days' ? '' : ' hidden' ?>>
+                <p class="sales-chart-detail" data-chart-detail><?= htmlspecialchars($cv['total']) ?></p>
+                <div class="sales-chart-max"><?= $cv['max'] ?></div>
+                <div class="sales-chart-bars">
+                    <?php foreach ($cv['bars'] as $bar): ?>
+                    <button type="button" class="sales-chart-bar<?= $bar['zero'] ? ' is-zero' : '' ?>" style="height:<?= $bar['height'] ?>%"
+                            data-caption="<?= htmlspecialchars($bar['caption']) ?>" title="<?= htmlspecialchars($bar['caption']) ?>"></button>
+                    <?php endforeach; ?>
+                </div>
+                <div class="sales-chart-axis"><span><?= $cv['first'] ?></span><span><?= $cv['last'] ?></span></div>
+            </div>
+            <?php endforeach; ?>
+            <p class="sales-chart-hint"><?= $t['vendor_chart_hint'] ?></p>
+        </div>
+        <?php endif; ?>
         <?php if (!empty($bestSellers)): ?>
         <h3 class="analytics-sub-heading"><?= $t['vendor_best_sellers'] ?></h3>
         <table class="business-table analytics-table">
@@ -317,6 +373,38 @@ require __DIR__ . '/../head/head.php';
 <script type="module">
 import { initStatusRefresh } from '/js/status-refresh.js';
 initStatusRefresh({ loginUrl: '/login-vendor/' });
+</script>
+<script>
+// Sales chart: the pills switch between 30 days and 12 weeks; a click on a
+// bar shows its day or week, a second click goes back to the total.
+document.querySelectorAll('[data-sales-chart]').forEach((chart) => {
+    chart.addEventListener('click', (event) => {
+        const pill = event.target.closest('[data-view]');
+        if (pill) {
+            chart.querySelectorAll('[data-view]').forEach((p) => {
+                const on = p === pill;
+                p.classList.toggle('is-active', on);
+                p.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            chart.querySelectorAll('[data-chart-view]').forEach((v) => {
+                v.hidden = v.dataset.chartView !== pill.dataset.view;
+            });
+            return;
+        }
+        const bar = event.target.closest('.sales-chart-bar');
+        if (!bar) return;
+        const view   = bar.closest('[data-chart-view]');
+        const detail = view.querySelector('[data-chart-detail]');
+        const wasPicked = bar.classList.contains('is-picked');
+        view.querySelectorAll('.sales-chart-bar').forEach((b) => b.classList.remove('is-picked'));
+        if (wasPicked) {
+            detail.textContent = view.dataset.total;
+        } else {
+            bar.classList.add('is-picked');
+            detail.textContent = bar.dataset.caption;
+        }
+    });
+});
 </script>
 </body>
 </html>

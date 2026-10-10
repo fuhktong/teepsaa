@@ -907,6 +907,7 @@ return [
     'app_chart_orders'         => '%s orders',
     'app_chart_order_one'      => '1 order',
     'app_chart_week_of'        => 'Week of %s',
+    'vendor_chart_hint'        => 'Paid orders, counted as what you are paid after commission. Click a bar to see it.',
     'app_orders_to_fill'       => 'To fill',
     'app_orders_none_waiting'  => 'No orders waiting. New ones will show up here.',
     'app_refunds_none'         => 'No refunds. Nothing to sort out.',
