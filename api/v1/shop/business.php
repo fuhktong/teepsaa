@@ -75,6 +75,21 @@ $stmt = $pdo->prepare('SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) A
 $stmt->execute([$id]);
 $rating = $stmt->fetch();
 
+// Whether this buyer follows the shop: null for someone just looking, so the
+// app can tell "not following" from "sign in to follow". Read in a try, so a
+// server without the business_follows table yet still shows the shop.
+$following = null;
+$buyer = api_optional_buyer($pdo);
+if ($buyer) {
+    try {
+        $stmt = $pdo->prepare('SELECT 1 FROM business_follows WHERE buyer_user_id = ? AND business_id = ?');
+        $stmt->execute([(int)$buyer['id'], $id]);
+        $following = (bool)$stmt->fetchColumn();
+    } catch (PDOException $e) {
+        $following = null;
+    }
+}
+
 shop_json([
     'business' => [
         'id'           => $business['public_id'],
@@ -88,6 +103,7 @@ shop_json([
         'avg_rating'   => round((float)$rating['avg_rating'], 1),
         'review_count' => (int)$rating['review_count'],
         'url'          => 'https://teepsaa.com' . business_path($business),
+        'following'    => $following,
     ],
     'featured' => $featured,
     'products' => $products,

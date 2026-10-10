@@ -48,9 +48,31 @@ function notification_text(array $row, array $t): string {
             return isset($data['name']) ? sprintf($t[$key], $data['name'], $data['units'] ?? 0) : ($row['message'] ?? '');
         case 'abandoned_cart':
             return $t[$key];
+        // Buyer alerts from cron/buyer-alerts.php. Names are stored in both
+        // languages and picked here, by the dictionary's own notif_lang.
+        case 'back_in_stock':
+        case 'price_drop':
+            if (!isset($data['name'])) return $row['message'] ?? '';
+            $name = notification_pick($data, 'name', $t);
+            return $type === 'back_in_stock'
+                ? sprintf($t[$key], $name)
+                : sprintf($t[$key], $name, '$' . number_format((float)($data['price'] ?? 0), 2), '$' . number_format((float)($data['was'] ?? 0), 2));
+        case 'shop_new_products':
+            if (!isset($data['shop'], $data['count'])) return $row['message'] ?? '';
+            $shop = notification_pick($data, 'shop', $t);
+            return (int)$data['count'] === 1
+                ? sprintf($t['notif_shop_new_one'] ?? $t[$key], $shop, notification_pick($data, 'name', $t))
+                : sprintf($t[$key], $shop, (int)$data['count']);
         default:
             return $row['message'] ?? '';
     }
+}
+
+// `$field` in the reader's language: the `_km` copy for a Khmer reader when
+// there is one, else the English.
+function notification_pick(array $data, string $field, array $t): string {
+    if (($t['notif_lang'] ?? 'en') === 'km' && !empty($data[$field . '_km'])) return (string)$data[$field . '_km'];
+    return (string)($data[$field] ?? '');
 }
 
 // How long ago a notification arrived, worded in the reader's language. Shared

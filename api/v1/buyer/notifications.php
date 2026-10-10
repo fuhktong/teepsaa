@@ -43,8 +43,10 @@ $stmt->execute(['buyer', $userId]);
 /**
  * Which app screen a notification opens. The stored link is a website path;
  * the app cannot follow it, so it is turned into a screen it already has.
- * Every buyer notification today points at an order or the cart. Anything
- * added later comes back with no target, and the row is simply not tappable.
+ * An order, the cart, a message thread, or — for the alerts from
+ * cron/buyer-alerts.php — a product or a shop, by the token in its address.
+ * Anything else comes back with no target, and the row is not tappable. An
+ * app too old to know a screen ignores it the same way.
  */
 function buyer_app_target(array $row): ?array {
     $link = (string)($row['link'] ?? '');
@@ -54,6 +56,10 @@ function buyer_app_target(array $row): ?array {
     if (str_starts_with($link, '/cart')) return ['screen' => 'cart', 'id' => null];
     if (str_starts_with($link, '/messages-buyer/') && preg_match('~[?&]id=(\d+)~', $link, $m)) {
         return ['screen' => 'thread', 'id' => $m[1]];
+    }
+    if (preg_match('~^/(product|business)/([^/?#]+)~', $link, $m)) {
+        $token = token_from_slug($m[2]);
+        if ($token !== '') return ['screen' => $m[1], 'id' => $token];
     }
     return null;
 }
