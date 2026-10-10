@@ -11,6 +11,7 @@ require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/delivery-calc.php';
 require __DIR__ . '/../config/notify.php';
+require __DIR__ . '/../config/low-stock.php';
 require __DIR__ . '/../config/coupon.php';
 require __DIR__ . '/../config/delivery-address.php';
 require __DIR__ . '/../config/self-deal.php';
@@ -395,37 +396,7 @@ try {
     // Low stock alerts
     foreach ($grouped as $group) {
         foreach ($group['items'] as $item) {
-            $lowStmt = $pdo->prepare('
-                SELECT p.id, p.public_id, p.name, p.stock, p.low_stock_threshold,
-                       v.id AS vendor_id, v.email AS vendor_email, v.name AS vendor_name
-                FROM products p
-                JOIN businesses b ON b.id = p.business_id
-                JOIN vendors v ON v.id = b.user_id
-                WHERE p.id = ?
-                  AND p.low_stock_threshold > 0
-                  AND p.stock <= p.low_stock_threshold
-                  AND (p.low_stock_notified_at IS NULL OR p.low_stock_notified_at < DATE_SUB(NOW(), INTERVAL 24 HOUR))
-            ');
-            $lowStmt->execute([$item['product_id']]);
-            $lp = $lowStmt->fetch();
-            if ($lp) {
-                $units = (int)$lp['stock'];
-                $unitWord = $units !== 1 ? 'units' : 'unit';
-                notify($pdo, 'vendor', (int)$lp['vendor_id'], 'low_stock',
-                    'Low stock: "' . $lp['name'] . '" — ' . $units . ' ' . $unitWord . ' remaining.',
-                    '/products/?action=edit&id=' . $lp['public_id'],
-                    ['name' => $lp['name'], 'units' => $units]
-                );
-                [$subj, $html] = render_email_template($pdo, 'low_stock', [
-                    'name'    => htmlspecialchars($lp['vendor_name']),
-                    'product' => htmlspecialchars($lp['name']),
-                    'units'   => $units,
-                    'cta_url' => 'https://teepsaa.com/products/?action=edit&id=' . $lp['public_id'],
-                ]);
-                if ($html !== '') send_email($lp['vendor_email'], $subj, $html);
-                $pdo->prepare('UPDATE products SET low_stock_notified_at = NOW() WHERE id = ?')
-                    ->execute([$lp['id']]);
-            }
+            low_stock_alert($pdo, (int)$item['product_id'], $item['variant_id'] ? (int)$item['variant_id'] : null);
         }
     }
 

@@ -9,6 +9,7 @@ session_start([
 
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/low-stock.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -217,11 +218,12 @@ if ($action === 'add') {
 
     $stmt = $pdo->prepare('UPDATE products SET category_id=?, name=?, name_km=?, description=?, description_km=?, price=?, stock=?, delivery_method=?, active=?, sale_percent=?, sale_ends_at=?, sale_price=NULL WHERE id=?');
     $stmt->execute([$categoryId, $name, $nameKm ?: null, $description, $descriptionKm ?: null, $price, $stock, $deliveryMethod, $active, $salePercent, $saleEndsAt, $productId]);
-    // If stock was replenished above threshold, clear the notification flag so vendor gets alerted again if it drops low again
-    $pdo->prepare('UPDATE products SET low_stock_notified_at = NULL WHERE id = ? AND stock > low_stock_threshold')
-        ->execute([$productId]);
     save_gallery_photos($pdo, $uploadDir, $allowed, $productId);
     save_variants($pdo, $productId);
+    // Restocked past its low-stock number (every option, when it has them):
+    // clear the flag so the vendor is warned again when it next runs low.
+    $pdo->prepare('UPDATE products p SET p.low_stock_notified_at = NULL WHERE p.id = ? AND NOT ' . low_stock_sql('p'))
+        ->execute([$productId]);
     $_SESSION['product_success'] = 'Product updated.';
 }
 

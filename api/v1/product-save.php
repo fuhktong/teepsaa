@@ -12,6 +12,7 @@
 // the stock-sum override. An endpoint is a form with no browser in front of it:
 // every check the page does happens here too.
 require __DIR__ . '/../../config/api.php';
+require __DIR__ . '/../../config/low-stock.php';
 
 api_require_method('POST');
 $vendor = api_require_vendor($pdo);
@@ -199,11 +200,6 @@ try {
             [$productId],
             $bizIds
         ));
-
-        // Restocking has to clear the flag, or the vendor never gets a second
-        // low-stock warning after this one runs down again.
-        $pdo->prepare('UPDATE products SET low_stock_notified_at = NULL WHERE id = ? AND stock > low_stock_threshold')
-            ->execute([$productId]);
     }
 
     // Variant sync, copied from save_variants(): update the ones that came back
@@ -241,6 +237,12 @@ try {
     } else {
         $pdo->prepare('DELETE FROM product_variants WHERE product_id = ?')->execute([$productId]);
     }
+
+    // Restocking has to clear the flag, or the vendor never gets a second
+    // low-stock warning after this one runs down. With options, every option
+    // has to be back above the number.
+    $pdo->prepare('UPDATE products p SET p.low_stock_notified_at = NULL WHERE p.id = ? AND NOT ' . low_stock_sql('p'))
+        ->execute([$productId]);
 
     $pdo->commit();
 } catch (Throwable $e) {
