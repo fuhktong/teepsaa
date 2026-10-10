@@ -22,6 +22,7 @@
 // api.php requires db.php, which requires upload.php and currency.php. Adding
 // a require for either here is a redeclare and a 500 before any code runs.
 require __DIR__ . '/../../config/api.php';
+require __DIR__ . '/../../config/low-stock.php';
 
 api_require_method('GET');
 
@@ -100,6 +101,7 @@ $total = (int)$countStmt->fetchColumn();
 $stmt = $pdo->prepare("
     SELECT p.id, p.public_id, p.name, p.name_km, p.price, p.stock, p.active,
            p.archived, p.sale_percent, p.sale_ends_at, p.low_stock_threshold,
+           " . low_stock_sql('p') . " AS is_low,
            c.name AS category_name,
            pp.filename AS photo,
            (SELECT COUNT(*) FROM product_variants pv WHERE pv.product_id = p.id) AS variant_count,
@@ -155,7 +157,9 @@ foreach ($stmt->fetchAll() as $p) {
         'sale_ends_at'  => $onSale ? $p['sale_ends_at'] : null,
         'stock'         => $stock,
         'variant_count' => $variants,
-        'low_stock'     => $variants === 0 && $stock <= (int)$p['low_stock_threshold'],
+        // config/low-stock.php — for a product with variants, any one option
+        // at or below the threshold.
+        'low_stock'     => (int)$p['is_low'] === 1,
         'active'        => (int)$p['active'] === 1,
         'archived'      => (int)$p['archived'] === 1,
         'avg_rating'    => round((float)$p['avg_rating'], 1),

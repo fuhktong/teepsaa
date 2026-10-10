@@ -7,6 +7,7 @@
 // the website and a different one in the app and trusts neither.
 
 require __DIR__ . '/../../config/api.php';
+require __DIR__ . '/../../config/low-stock.php';
 
 api_require_method('GET');
 
@@ -34,6 +35,8 @@ if (!$business) {
         'best_sellers' => [],
         'open_orders'  => [],
         'open_orders_count' => 0,
+        'low_stock'         => [],
+        'low_stock_count'   => 0,
     ]);
 }
 
@@ -133,6 +136,52 @@ if ($approved === 1) {
     }
 }
 
+// ── Running low ──────────────────────────────────────────────────────
+// Live products at or below their own low-stock number (config/low-stock.php),
+// fewest left first. Only five go to the phone, with the count of all of them;
+// the Products tab marks the rest. A product with variants names the options
+// that are low, since the product's own stock means nothing there.
+$lowStock = [];
+$lowStockCount = 0;
+
+if ($approved === 1 && (int)$business['suspended'] === 0) {
+    $stmtLow = $pdo->prepare("
+        SELECT p.id, p.name, p.name_km, p.stock, p.low_stock_threshold,
+               (SELECT COUNT(*) FROM product_variants v WHERE v.product_id = p.id) AS variant_count,
+               (SELECT MIN(v.stock) FROM product_variants v WHERE v.product_id = p.id) AS variant_min
+          FROM products p
+         WHERE p.business_id = ? AND p.active = 1 AND p.archived = 0
+           AND " . low_stock_sql('p') . "
+         ORDER BY CASE WHEN variant_count > 0 THEN variant_min ELSE p.stock END ASC, p.name ASC
+    ");
+    $stmtLow->execute([$businessId]);
+    $lowRows = $stmtLow->fetchAll();
+    $lowStockCount = count($lowRows);
+
+    $stmtLowVariants = $pdo->prepare('
+        SELECT label, stock FROM product_variants
+         WHERE product_id = ? AND stock <= ?
+         ORDER BY stock ASC, sort_order ASC, id ASC
+    ');
+    foreach (array_slice($lowRows, 0, 5) as $lp) {
+        $variants = [];
+        if ((int)$lp['variant_count'] > 0) {
+            $stmtLowVariants->execute([$lp['id'], $lp['low_stock_threshold']]);
+            foreach ($stmtLowVariants->fetchAll() as $v) {
+                $variants[] = ['label' => $v['label'], 'stock' => (int)$v['stock']];
+            }
+        }
+        $lowStock[] = [
+            // The numeric id, which the edit form takes — as in products.php.
+            'id'       => (int)$lp['id'],
+            'name'     => $lp['name'],
+            'name_km'  => $lp['name_km'] ?: null,
+            'stock'    => (int)$lp['stock'],
+            'variants' => $variants,
+        ];
+    }
+}
+
 // ── Orders needing attention ─────────────────────────────────────────
 // 'pending' and 'paid' are the two states where the vendor still has work to
 // do. Delivered and completed orders belong in the Orders tab's history, not
@@ -203,4 +252,6 @@ api_json([
     'best_sellers'      => $bestSellers,
     'open_orders'       => $openOrders,
     'open_orders_count' => $openOrdersCount,
+    'low_stock'         => $lowStock,
+    'low_stock_count'   => $lowStockCount,
 ]);
