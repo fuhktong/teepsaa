@@ -12,6 +12,7 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/notify.php';
 require __DIR__ . '/../config/audit.php';
+require __DIR__ . '/../config/order-stock.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -108,13 +109,9 @@ if ($action === 'confirm') {
     $pdo->prepare('UPDATE orders SET status = ? WHERE payment_id = ?')
         ->execute(['cancelled', $paymentId]);
     // Restore stock for all items in this payment's orders
-    $pdo->prepare('
-        UPDATE products p
-        JOIN order_items oi ON oi.product_id = p.id
-        JOIN orders o ON o.id = oi.order_id
-        SET p.stock = p.stock + oi.quantity
-        WHERE o.payment_id = ?
-    ')->execute([$paymentId]);
+    $ids = $pdo->prepare('SELECT id FROM orders WHERE payment_id = ?');
+    $ids->execute([$paymentId]);
+    order_restore_stock($pdo, $ids->fetchAll(PDO::FETCH_COLUMN));
     $pdo->commit();
 
     // Email the buyer that their order(s) were cancelled

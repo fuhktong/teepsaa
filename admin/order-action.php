@@ -12,6 +12,7 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/audit.php';
 require __DIR__ . '/../config/notify.php';
+require __DIR__ . '/../config/order-stock.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -62,12 +63,7 @@ if ($action === 'save_note') {
     $pdo->beginTransaction();
     $pdo->prepare("UPDATE orders SET status = 'cancelled', admin_note = CONCAT(COALESCE(admin_note, ''), IF(admin_note IS NOT NULL, '\n', ''), ?) WHERE id = ?")
         ->execute(['[Cancelled by admin: ' . trim($_POST['cancel_reason'] ?? '') . ']', $orderId]);
-    $pdo->prepare('
-        UPDATE products p
-        JOIN order_items oi ON oi.product_id = p.id
-        SET p.stock = p.stock + oi.quantity
-        WHERE oi.order_id = ?
-    ')->execute([$orderId]);
+    order_restore_stock($pdo, [$orderId]);
     $pdo->commit();
 
     $bStmt = $pdo->prepare(
