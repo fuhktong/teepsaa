@@ -357,7 +357,7 @@ return [
     'settings_no_address'     => 'No address saved yet.',
     'settings_unnamed'        => 'Unnamed',
     'settings_password_heading' => 'Password',
-    'settings_delete_warning' => 'Deleting your account signs you out and hides your profile. Your past orders are kept on file for accounting and returns. You can register again with the same email to restore your account and its order history.',
+    'settings_delete_warning' => 'Deleting your account signs you out and permanently erases your name, email, phone, photo, addresses, saved items and messages. Your past orders are kept for accounting, without your details. This cannot be undone. Accounts with orders still in progress cannot be deleted.',
 
     // ── Vendor dashboard ─────────────────────────────────────────────────
     'vendor_orders'       => 'Orders',
@@ -514,7 +514,7 @@ return [
     'vendor_qr_account_name'      => 'Account name',
     'vendor_qr_account_name_hint' => 'Exactly as it appears in your ABA account — we use this to verify payouts go to you.',
     'vendor_upload'        => 'Upload',
-    'vendor_delete_warning' => 'Deleting your account also closes your business. Your products, shop photos, reviews and rating are gone for good, and you are signed out immediately. Your completed order history is kept for accounting. You can register again with the same email to restore your account and that history, but you will need to submit a new business for approval. Accounts with open orders cannot be deleted.',
+    'vendor_delete_warning' => 'Deleting your account also closes your business. Your products, shop photos, reviews and rating are gone for good, and you are signed out immediately. Your name, email, phone, photo, bank QR and shop address are erased. Your completed order history is kept for accounting, without your details. This cannot be undone. Accounts with open orders cannot be deleted.',
     'settings_delete_business'        => 'Delete business',
     'settings_delete_biz_explain'     => 'Before your business can be deleted, you must first delete all of your products — this prevents any new orders — and every existing order must be completed, cancelled, or refunded.',
     'settings_delete_biz_products'    => '%d product(s) still listed. Delete them in My Products, including archived ones.',
@@ -1024,8 +1024,9 @@ return [
     'app_del_open_one'             => 'There is 1 order still to finish.',
     'app_del_open_many'            => 'There are %s orders still to finish.',
     'app_del_open_tail'            => 'An account cannot be deleted while a buyer is waiting on an order. Finish or cancel them, then come back here.',
+    'delete_open_orders_buyer'     => 'You have %d order(s) still in progress. An account cannot be deleted until every order is completed, cancelled or refunded.',
     'app_delete_warn_1'            => 'Deleting your account also closes your business. Your products, shop photos, reviews and rating are gone for good, and every phone signed in to this account is signed out straight away.',
-    'app_delete_warn_2'            => 'Your completed order history is kept for accounting. Registering again with the same email brings your account and that history back, but the business has to be approved again.',
+    'app_delete_warn_2'            => 'Your name, email, phone, photo, bank QR and shop address are erased. Completed orders are kept for accounting, without your details. This cannot be undone.',
     'app_unchanged'                => 'That is already what is on file, so nothing changed.',
     'app_contact_saved'            => 'Contact details saved.',
     'app_pw_changed'               => 'Password changed.',
@@ -1230,7 +1231,7 @@ return [
     'delacct_vendor_app_1'=> 'Open the <strong>Settings</strong> tab.',
     'delacct_vendor_app_2'=> 'Tap <strong>Account</strong>.',
     'delacct_vendor_app_3'=> 'Tap <strong>Delete account</strong>, enter your password and confirm.',
-    'delacct_vendor_note'=> 'Every order must be completed, cancelled or refunded first, so no buyer is left waiting for a parcel.',
+    'delacct_vendor_note'=> 'Every order must be completed, cancelled or refunded first, whether you buy or sell, so no parcel or payout is left halfway.',
     'delacct_web_h'      => 'On the website',
     'delacct_web_buyer'  => 'Buyers: <a href="%s">sign in and open Settings → Delete account</a>.',
     'delacct_web_vendor' => 'Vendors: <a href="%s">sign in and open Settings → Delete account</a>.',
@@ -1239,8 +1240,8 @@ return [
     'delacct_what_h'     => 'What happens when you delete',
     'delacct_what_1'     => 'You are signed out of every phone and browser, and the account can no longer sign in.',
     'delacct_what_2'     => 'Your profile stops being shown. For a vendor, the shop and its products are taken down too.',
-    'delacct_what_3'     => 'Orders, payments, payouts, refunds and reviews are kept, with the name, phone and delivery address on each order, because they are records of money that moved.',
-    'delacct_what_4'     => 'Your account details are kept, so registering again with the same email brings the account back. To have them erased as well, ask us through the contact form.',
+    'delacct_what_3'     => 'Your name, email, phone, photo, addresses, saved items, messages to us and, for a vendor, the bank QR and shop address are erased for good.',
+    'delacct_what_4'     => 'Orders, payments, payouts, refunds and reviews are kept, because they are records of money that moved. They stay without your details, under “Deleted account”. Registering again with the same email starts a new, empty account.',
     'delacct_privacy'    => 'More on what we collect and why is in our <a href="%s">Privacy Policy</a>.',
 
 ];

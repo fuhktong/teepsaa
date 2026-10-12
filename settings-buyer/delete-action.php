@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/notify.php';
+require __DIR__ . '/../config/account-erase.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -36,11 +37,16 @@ if (!password_verify($password, $row['password'])) {
     exit;
 }
 
-// Soft delete: keep the row (and its orders/payments/reviews) for accounting.
-// Login is blocked while deleted_at is set; re-registering with the same email
-// revives this same row.
-$stmt = $pdo->prepare('UPDATE buyers SET deleted_at = NOW() WHERE id = ?');
-$stmt->execute([$userId]);
+// The shop reads the delivery address from this account until the order is
+// settled, so the details cannot go while one is still open.
+if (account_open_orders_buyer($pdo, (int)$userId) > 0) {
+    $_SESSION['settings_error'] = 'Cannot delete account — you have orders still in progress. Wait until they are completed, cancelled or refunded.';
+    header('Location: /settings-buyer/?tab=danger');
+    exit;
+}
+
+// Erases the personal details and keeps the orders. See config/account-erase.php.
+account_erase_buyer($pdo, (int)$userId);
 
 [$subj, $html] = render_email_template($pdo, 'account_deleted', [
     'name' => htmlspecialchars($row['name']),

@@ -5,6 +5,11 @@ if (!defined('SMTP_PASS')) {
 
 if (!function_exists('send_email')) {
     function send_email(string $to, string $subject, string $html): void {
+        // A deleted account's address (config/account-erase.php). Dropped here
+        // once rather than in each of the crons and actions that mail a buyer
+        // or vendor by id.
+        if (str_ends_with(strtolower($to), '@deleted.invalid')) return;
+
         if (!SMTP_PASS) {
             $entry = sprintf("[%s] TO: %s\nSUBJECT: %s\n\n%s\n%s\n",
                 date('Y-m-d H:i:s'), $to, $subject, strip_tags($html), str_repeat('-', 60));

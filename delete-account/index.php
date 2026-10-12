@@ -41,13 +41,13 @@ require __DIR__ . '/../head/head.php';
             <li><?= $t['delacct_vendor_app_2'] ?></li>
             <li><?= $t['delacct_vendor_app_3'] ?></li>
         </ol>
-        <p><?= $t['delacct_vendor_note'] ?></p>
 
         <h2><?= $t['delacct_web_h'] ?></h2>
         <ul>
             <li><?= sprintf($t['delacct_web_buyer'], lang_href('/settings-buyer/?tab=danger')) ?></li>
             <li><?= sprintf($t['delacct_web_vendor'], BASE_URL_VENDOR . lang_href('/settings-vendor/?tab=danger')) ?></li>
         </ul>
+        <p><?= $t['delacct_vendor_note'] ?></p>
 
         <h2><?= $t['delacct_nologin_h'] ?></h2>
         <p><?= sprintf($t['delacct_nologin_p'], lang_href('/contact/')) ?></p>

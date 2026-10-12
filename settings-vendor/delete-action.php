@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/notify.php';
+require __DIR__ . '/../config/account-erase.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -42,27 +43,15 @@ if (!password_verify($password, $row['password'])) {
     exit;
 }
 
-$stmt = $pdo->prepare('
-    SELECT COUNT(*) FROM orders o
-    JOIN businesses b ON b.id = o.business_id
-    WHERE b.user_id = ? AND b.deleted_at IS NULL AND o.status NOT IN (\'completed\', \'cancelled\', \'refunded\')
-');
-$stmt->execute([$userId]);
-if ($stmt->fetchColumn() > 0) {
+if (account_open_orders_vendor($pdo, (int)$userId) > 0) {
     $_SESSION['settings_error'] = 'Cannot delete account — you have open orders. Wait until all orders are completed or cancelled.';
     header('Location: /settings-vendor/?tab=danger');
     exit;
 }
 
-// Soft delete: keep the vendor row (and its businesses, orders, reviews, payouts)
-// for accounting. Login is blocked while deleted_at is set; re-registering with the
-// same email revives this same row. Their businesses are soft-deleted too so their
-// products stop showing (mirrors business-delete-action.php).
-$stmt = $pdo->prepare('UPDATE vendors SET deleted_at = NOW() WHERE id = ?');
-$stmt->execute([$userId]);
-
-$stmt = $pdo->prepare('UPDATE businesses SET deleted_at = NOW(), approved = -1 WHERE user_id = ? AND deleted_at IS NULL');
-$stmt->execute([$userId]);
+// Erases the personal details, closes the shops and keeps the orders, reviews
+// and payouts. See config/account-erase.php.
+account_erase_vendor($pdo, (int)$userId);
 
 [$subj, $html] = render_email_template($pdo, 'account_deleted', [
     'name' => htmlspecialchars($row['name']),

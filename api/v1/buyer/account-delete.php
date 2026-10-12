@@ -2,13 +2,14 @@
 // Deleting the buyer account from the app — settings-buyer/delete-action.php.
 // Both app stores require that an account made in an app can be deleted in it.
 //
-// A soft delete, as on the website: deleted_at is stamped and the row stays,
-// because orders and reviews are records of money that moved. Registering again
-// with the same email brings the account back.
+// The same erase as the website (config/account-erase.php): the personal
+// details go and the orders and reviews stay, because they are records of money
+// that moved.
 //
-// Unlike the vendor version there is no open-orders block, because the website
-// has none for buyers — a buyer leaving does not strand anyone's parcel the way
-// a shop closing does. The same two additions as the vendor version:
+// Refused while an order is still open, as on the website: the shop reads the
+// delivery address from the account until the order is settled. The reply
+// carries a `message` in the buyer's language, which the app shows as it is.
+// The same two additions as the vendor version:
 //
 //  1. The password check is rate limited.
 //  2. It refuses unless the body says confirm: true, so a stray request carrying
@@ -19,6 +20,7 @@
 require __DIR__ . '/../../../config/api.php';
 require __DIR__ . '/../../../config/rate-limit.php';
 require __DIR__ . '/../../../config/notify.php';
+require __DIR__ . '/../../../config/account-erase.php';
 
 api_require_method('POST');
 
@@ -48,11 +50,21 @@ if (!password_verify($password, $row['password'])) {
     api_json(['error' => 'invalid', 'fields' => ['password' => 'That is not your password.']], 422);
 }
 
-$pdo->prepare('UPDATE buyers SET deleted_at = NOW() WHERE id = ?')->execute([$userId]);
+$openOrders = account_open_orders_buyer($pdo, $userId);
+if ($openOrders > 0) {
+    $t = require __DIR__ . '/../../../lang/' . ($buyer['lang'] === 'en' ? 'en' : 'km') . '.php';
+    api_json([
+        'error'   => 'open_orders',
+        'count'   => $openOrders,
+        'message' => sprintf($t['delete_open_orders_buyer'], $openOrders),
+    ], 409);
+}
 
-$stmt = $pdo->prepare('DELETE FROM api_tokens WHERE user_id = ? AND role = ?');
+$stmt = $pdo->prepare('SELECT COUNT(*) FROM api_tokens WHERE user_id = ? AND role = ?');
 $stmt->execute([$userId, 'buyer']);
-$signedOut = $stmt->rowCount();
+$signedOut = (int)$stmt->fetchColumn();
+
+account_erase_buyer($pdo, $userId);
 
 [$subj, $html] = render_email_template($pdo, 'account_deleted', [
     'name' => htmlspecialchars($row['name']),
