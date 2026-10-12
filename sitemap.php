@@ -66,6 +66,7 @@ $pages = [
     ['/careers/',  'monthly', '0.4', null, null],
     ['/privacy/',  'monthly', '0.3', null, null],
     ['/terms/',    'monthly', '0.3', null, null],
+    ['/delete-account/', 'yearly', '0.2', null, null],
 ];
 // Category pages rank for the broad searches products can't, so they sit
 // above individual listings in priority. Only the ones that actually have

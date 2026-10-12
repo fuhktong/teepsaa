@@ -1,0 +1,13 @@
+/* Shares the legal page look from /privacy/privacy.css; only the numbered
+   steps are new here. */
+.delacct ol {
+    margin: 0 0 0.75rem 1.25rem;
+    padding: 0;
+}
+
+.delacct ol li {
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    line-height: 1.7;
+    margin-bottom: 0.3rem;
+}
