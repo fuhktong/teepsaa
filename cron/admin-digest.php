@@ -2,6 +2,7 @@
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/app.php';
 require __DIR__ . '/../config/notify.php';
+require __DIR__ . '/../config/fingerprint.php';
 
 // Daily digest of everything waiting on admin action. Sends one email to
 // ADMIN_EMAIL, and only when at least one queue is non-empty.
@@ -29,6 +30,7 @@ $spotChecksDue   = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE appro
 // and an email of their own — one morning email is easier to actually read.
 // A prospect that signed up or said no is finished, whatever date is on it.
 $followupsDue    = (int)$pdo->query("SELECT COUNT(*) FROM prospects WHERE next_followup_at IS NOT NULL AND next_followup_at <= CURDATE() AND status NOT IN ('signed_up','not_interested','closed_down')")->fetchColumn();
+$flaggedSignups  = fingerprint_unreviewed_count($pdo);
 
 $rows = [
     ['Payments awaiting confirmation', $pendingPayments, $go('payments')],
@@ -39,9 +41,10 @@ $rows = [
     ['Payouts due',                    $payoutsDue,      $go('payouts')],
     ['Vendor spot-checks due',         $spotChecksDue,   $go('spot-checks')],
     ['Canvassing follow-ups due',      $followupsDue,    $go('prospects')],
+    ['Sign-ups matching a suspended account', $flaggedSignups, $go('flagged')],
 ];
 
-$total = $pendingPayments + $refundRequests + $refundsToPay + $pendingBiz + $unreadSupport + $payoutsDue + $spotChecksDue + $followupsDue;
+$total = $pendingPayments + $refundRequests + $refundsToPay + $pendingBiz + $unreadSupport + $payoutsDue + $spotChecksDue + $followupsDue + $flaggedSignups;
 if ($total === 0) {
     exit; // nothing pending — no email today
 }

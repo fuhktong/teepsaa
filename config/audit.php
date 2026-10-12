@@ -38,6 +38,8 @@ const AUDIT_ACTION_LABELS = [
     'vendor.unsuspend'        => 'Vendor account reinstated',
     'buyer.suspend'           => 'Buyer account suspended',
     'buyer.unsuspend'         => 'Buyer account reinstated',
+    'vendor.erase'            => 'Vendor account erased',
+    'buyer.erase'             => 'Buyer account erased',
     'vendor.royalty_waived'   => 'Vendor royalty waiver changed',
     'vendor.royalty_add_on'   => 'Vendor royalty rate changed',
     'admin.create'            => 'Admin account created',
@@ -57,6 +59,8 @@ const AUDIT_HIGH_RISK = [
     'admin.toggle_active',
     'admin.delete',
     'vendor.bank_change',
+    'vendor.erase',
+    'buyer.erase',
 ];
 
 function audit_label(string $action): string {

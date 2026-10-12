@@ -19,6 +19,7 @@
 require __DIR__ . '/../../../config/api.php';
 require __DIR__ . '/../../../config/rate-limit.php';
 require __DIR__ . '/../../../config/notify.php';
+require __DIR__ . '/../../../config/fingerprint.php';
 
 api_require_method('POST');
 
@@ -60,6 +61,7 @@ if ($action === 'profile') {
 
     $pdo->prepare('UPDATE buyers SET name = ?, phone = ? WHERE id = ?')
         ->execute([$name, $phone, $userId]);
+    fingerprint_check($pdo, 'buyer', (int)$userId, null, $phone);
 
     api_json(['ok' => true, 'name' => $name, 'phone' => $phone]);
 }

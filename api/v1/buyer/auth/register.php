@@ -22,6 +22,7 @@
 require __DIR__ . '/../../../../config/api.php';
 require __DIR__ . '/../../../../config/rate-limit.php';
 require __DIR__ . '/../../../../config/notify.php';
+require __DIR__ . '/../../../../config/fingerprint.php';
 
 api_require_method('POST');
 
@@ -78,6 +79,9 @@ if ($existing) {
     )->execute([$email, $name, password_hash($password, PASSWORD_DEFAULT), $code, $expires]);
     $newId = (int)$pdo->lastInsertId();
 }
+
+// Flags the sign-up for an admin if this email belonged to a suspended account.
+fingerprint_check($pdo, 'buyer', (int)$newId, $email, null);
 
 $codeHtml = '<div style="font-size:2rem;font-weight:bold;letter-spacing:0.3em;font-family:monospace;margin:12px 0;color:#111">' . $code . '</div>';
 [$subj, $html] = render_email_template($pdo, 'verify_code', [

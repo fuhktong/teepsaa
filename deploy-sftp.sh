@@ -51,6 +51,7 @@ rsync -rlptvz $DRY \
     --exclude 'config/smtp.php' \
     --exclude 'config/mapbox.php' \
     --exclude 'config/fcm-service-account.json' \
+    --exclude 'config/fingerprint-key.php' \
     --exclude 'mail.log' \
     --exclude 'push.log' \
     -e ssh \

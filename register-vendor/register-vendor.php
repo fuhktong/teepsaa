@@ -58,6 +58,7 @@ if ($existing && $existing['deleted_at'] === null) {
 
 require __DIR__ . '/../config/app.php';
 require __DIR__ . '/../config/notify.php';
+require __DIR__ . '/../config/fingerprint.php';
 
 $code    = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 $expires = date('Y-m-d H:i:s', strtotime('+15 minutes'));
@@ -85,6 +86,9 @@ if ($existing) {
     $stmt->execute([$email, $name, password_hash($password, PASSWORD_DEFAULT), $code, $expires, $validatedPromoCode]);
     $newId = $pdo->lastInsertId();
 }
+
+// Flags the sign-up for an admin if this email belonged to a suspended account.
+fingerprint_check($pdo, 'vendor', (int)$newId, $email, null);
 
 if (DEV_MODE) {
     $_SESSION['dev_otp'] = $code;

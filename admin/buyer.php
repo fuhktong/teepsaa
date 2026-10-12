@@ -10,6 +10,8 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
+require __DIR__ . '/../config/fingerprint.php';
+require __DIR__ . '/../config/account-erase.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -46,6 +48,9 @@ $stmt = $pdo->prepare('
 ');
 $stmt->execute([$id]);
 $orders = $stmt->fetchAll();
+
+$erased    = str_ends_with($b['email'], '@deleted.invalid');
+$openCount = $erased ? 0 : account_open_orders_buyer($pdo, $id);
 
 $success = $_SESSION['admin_success'] ?? '';
 $error   = $_SESSION['admin_error']   ?? '';
@@ -89,6 +94,8 @@ $adminTab     = 'buyers';
         <h1><?= htmlspecialchars($b['name'] ?: $b['email']) ?></h1>
         <span class="order-badge <?= $statusClass ?>"><?= $statusLabel ?></span>
     </div>
+
+    <?php $fpRole = 'buyer'; $fpId = (int)$b['id']; require __DIR__ . '/account-matches.php'; ?>
 
     <div class="detail-columns">
         <div>
@@ -175,6 +182,24 @@ $adminTab     = 'buyers';
                 </form>
                 <?php endif; ?>
             </div>
+
+            <?php if (!$erased): ?>
+            <!-- Erase: for someone who cannot sign in to delete it themselves -->
+            <div class="detail-card">
+                <div class="detail-card-title">Erase account</div>
+                <?php if ($openCount > 0): ?>
+                <p style="font-size:0.85rem;color:#6b7280;">Cannot erase — <?= $openCount ?> open order<?= $openCount === 1 ? '' : 's' ?>. They must be completed, cancelled or refunded first.</p>
+                <?php else: ?>
+                <p style="font-size:0.85rem;color:#6b7280;">For a deletion request by message. Erases name, email, phone, addresses and sign-ins; orders stay under "Deleted account".<?= $b['suspended'] ? ' Because the account is suspended, a fingerprint of its email and phone is kept to flag a return.' : '' ?> This cannot be undone.</p>
+                <form method="POST" action="/admin/buyer-action.php" onsubmit="return confirm('Erase this account permanently? This cannot be undone.');" style="margin-top:0.5rem;">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="action" value="erase">
+                    <input type="hidden" name="buyer_id" value="<?= $b['id'] ?>">
+                    <button type="submit" class="btn-reject" style="width:100%;">Erase account</button>
+                </form>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 

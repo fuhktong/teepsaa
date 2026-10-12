@@ -12,6 +12,8 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/audit.php';
 require __DIR__ . '/../config/notify.php';
+require __DIR__ . '/../config/fingerprint.php';
+require __DIR__ . '/../config/account-erase.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -71,6 +73,7 @@ if ($action === 'suspend') {
     $pdo->prepare('UPDATE buyers SET suspended = 1, suspension_reason = ?, suspended_at = NOW() WHERE id = ?')
         ->execute([$reason, $buyerId]);
     audit_log($pdo, 'buyer.suspend', 'buyer', $buyerId, ['reason' => $reason]);
+    fingerprint_save($pdo, 'buyer', $buyerId, $reason);
 
     if (!empty($_POST['notify_user'])) {
         $sent = $notifyBuyer('buyer_suspended', ['reason' => htmlspecialchars($reason)]);
@@ -85,6 +88,7 @@ if ($action === 'suspend') {
     $pdo->prepare('UPDATE buyers SET suspended = 0, suspension_reason = NULL, suspended_at = NULL WHERE id = ?')
         ->execute([$buyerId]);
     audit_log($pdo, 'buyer.unsuspend', 'buyer', $buyerId);
+    fingerprint_forget($pdo, 'buyer', $buyerId);
 
     if (!empty($_POST['notify_user'])) {
         $sent = $notifyBuyer('buyer_reinstated', ['cta_url' => 'https://teepsaa.com/login-buyer/']);
@@ -100,6 +104,44 @@ if ($action === 'suspend') {
     $pdo->prepare('UPDATE buyers SET admin_note = ? WHERE id = ?')
         ->execute([$note ?: null, $buyerId]);
     $_SESSION['admin_success'] = 'Note saved.';
+} elseif ($action === 'erase') {
+    // For someone who cannot sign in to delete the account themselves — most
+    // often a suspended account asking through the contact form. Same erase as
+    // "delete my account" (config/account-erase.php). A suspended account's
+    // email and phone are fingerprinted first, so a return under a new account
+    // is still flagged; the privacy policy says so. No goodbye email: the
+    // request came by message and is answered there.
+    $stmt = $pdo->prepare('SELECT suspended, suspension_reason, deleted_at, email FROM buyers WHERE id = ?');
+    $stmt->execute([$buyerId]);
+    $acct = $stmt->fetch();
+    if (!$acct || str_ends_with($acct['email'], '@deleted.invalid')) {
+        $_SESSION['admin_error'] = 'This account is already erased.';
+        header('Location: ' . $returnUrl);
+        exit;
+    }
+    $open = account_open_orders_buyer($pdo, $buyerId);
+    if ($open > 0) {
+        $_SESSION['admin_error'] = "Cannot erase — $open order(s) still open. They must be completed, cancelled or refunded first.";
+        header('Location: ' . $returnUrl);
+        exit;
+    }
+
+    if ($acct['suspended']) fingerprint_save($pdo, 'buyer', $buyerId, $acct['suspension_reason']);
+    account_erase_buyer($pdo, $buyerId);
+    audit_log($pdo, 'buyer.erase', 'buyer', $buyerId, ['was_suspended' => (bool)$acct['suspended']]);
+    $_SESSION['admin_success'] = 'Account erased. Orders are kept under "Deleted account".'
+        . ($acct['suspended'] ? ' The email and phone fingerprint is kept.' : '');
+
+} elseif ($action === 'match_reviewed') {
+    $matchId = (int)($_POST['match_id'] ?? 0);
+    try {
+        $pdo->prepare("UPDATE account_matches SET reviewed_at = NOW(), reviewed_by = ?
+                       WHERE id = ? AND role = 'buyer' AND account_id = ? AND reviewed_at IS NULL")
+            ->execute([(int)$_SESSION['admin_id'], $matchId, $buyerId]);
+        $_SESSION['admin_success'] = 'Match marked as reviewed.';
+    } catch (PDOException $e) {
+        $_SESSION['admin_error'] = 'Could not save — has the fingerprint migration been run?';
+    }
 }
 
 header('Location: ' . $returnUrl);

@@ -38,6 +38,7 @@ const GO_TARGETS = [
     'spot-checks' => '/admin/vendors.php?status=spot_check',
     'prospects'   => '/admin/prospects/?sort=followup',
     'audit'       => '/admin/audit.php',
+    'flagged'     => '/admin/flagged.php',
 ];
 
 // An unknown key is a stale email, not an attack — send them to the dashboard.

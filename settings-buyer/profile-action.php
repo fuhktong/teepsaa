@@ -9,6 +9,7 @@ session_start([
 
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
+require __DIR__ . '/../config/fingerprint.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -43,6 +44,7 @@ if (!$phone) {
 
 $stmt = $pdo->prepare('UPDATE buyers SET name = ?, phone = ? WHERE id = ?');
 $stmt->execute([$name, $phone, $userId]);
+fingerprint_check($pdo, 'buyer', (int)$userId, null, $phone);
 
 $_SESSION['user_name']        = $name;
 $_SESSION['settings_success'] = 'Account updated.';

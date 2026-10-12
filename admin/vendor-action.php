@@ -12,6 +12,8 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/audit.php';
 require __DIR__ . '/../config/notify.php';
+require __DIR__ . '/../config/fingerprint.php';
+require __DIR__ . '/../config/account-erase.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -71,6 +73,7 @@ if ($action === 'suspend') {
     $pdo->prepare('UPDATE vendors SET suspended = 1, suspension_reason = ?, suspended_at = NOW() WHERE id = ?')
         ->execute([$reason, $vendorId]);
     audit_log($pdo, 'vendor.suspend', 'vendor', $vendorId, ['reason' => $reason]);
+    fingerprint_save($pdo, 'vendor', $vendorId, $reason);
 
     // Suspending the account takes the storefront down with it — someone who
     // cannot sign in must not still be taking orders. This only cascades one
@@ -94,6 +97,7 @@ if ($action === 'suspend') {
     $pdo->prepare('UPDATE vendors SET suspended = 0, suspension_reason = NULL, suspended_at = NULL WHERE id = ?')
         ->execute([$vendorId]);
     audit_log($pdo, 'vendor.unsuspend', 'vendor', $vendorId);
+    fingerprint_forget($pdo, 'vendor', $vendorId);
 
     // The storefront is left as it is on purpose — see the cascade note above.
     // Say so, otherwise an admin walks away thinking the shop is back.
@@ -287,6 +291,44 @@ if ($action === 'suspend') {
     }
 
     $_SESSION['admin_success'] = 'Business deleted. Order history is kept for accounting; the vendor account is still active.';
+} elseif ($action === 'erase') {
+    // For someone who cannot sign in to delete the account themselves — most
+    // often a suspended account asking through the contact form. Same erase as
+    // "delete my account" (config/account-erase.php). A suspended account's
+    // email and phone are fingerprinted first, so a return under a new account
+    // is still flagged; the privacy policy says so. No goodbye email: the
+    // request came by message and is answered there.
+    $stmt = $pdo->prepare('SELECT suspended, suspension_reason, deleted_at, email FROM vendors WHERE id = ?');
+    $stmt->execute([$vendorId]);
+    $acct = $stmt->fetch();
+    if (!$acct || str_ends_with($acct['email'], '@deleted.invalid')) {
+        $_SESSION['admin_error'] = 'This account is already erased.';
+        header('Location: ' . $returnUrl);
+        exit;
+    }
+    $open = account_open_orders_vendor($pdo, $vendorId);
+    if ($open > 0) {
+        $_SESSION['admin_error'] = "Cannot erase — $open order(s) still open. They must be completed, cancelled or refunded first.";
+        header('Location: ' . $returnUrl);
+        exit;
+    }
+
+    if ($acct['suspended']) fingerprint_save($pdo, 'vendor', $vendorId, $acct['suspension_reason']);
+    account_erase_vendor($pdo, $vendorId);
+    audit_log($pdo, 'vendor.erase', 'vendor', $vendorId, ['was_suspended' => (bool)$acct['suspended']]);
+    $_SESSION['admin_success'] = 'Account erased. Orders are kept under "Deleted account".'
+        . ($acct['suspended'] ? ' The email and phone fingerprint is kept.' : '');
+
+} elseif ($action === 'match_reviewed') {
+    $matchId = (int)($_POST['match_id'] ?? 0);
+    try {
+        $pdo->prepare("UPDATE account_matches SET reviewed_at = NOW(), reviewed_by = ?
+                       WHERE id = ? AND role = 'vendor' AND account_id = ? AND reviewed_at IS NULL")
+            ->execute([(int)$_SESSION['admin_id'], $matchId, $vendorId]);
+        $_SESSION['admin_success'] = 'Match marked as reviewed.';
+    } catch (PDOException $e) {
+        $_SESSION['admin_error'] = 'Could not save — has the fingerprint migration been run?';
+    }
 }
 
 header('Location: ' . $returnUrl);

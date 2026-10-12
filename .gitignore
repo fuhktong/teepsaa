@@ -6,6 +6,7 @@ config/db.php
 config/mapbox.php
 # Firebase service account key — lets the holder push to every teepsaa install
 config/fcm-service-account.json
+config/fingerprint-key.php
 
 # Uploads (user content — too large for git)
 uploads/

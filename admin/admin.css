@@ -1534,3 +1534,11 @@ select.admin-search-input {
     font-size: 0.7rem;
     font-weight: 600;
 }
+
+/* "Matches a suspended account" card — admin/account-matches.php */
+.account-matches { border-left: 4px solid #dc2626; }
+.account-matches-hint { font-size: 0.85rem; color: #6b7280; margin-bottom: 0.75rem; }
+.account-match { padding: 0.6rem 0; border-top: 1px solid #f3f4f6; font-size: 0.9rem; }
+.account-match form { margin-top: 0.4rem; }
+.account-match--reviewed { color: #9ca3af; }
+.account-match-meta { font-size: 0.8rem; color: #6b7280; margin-top: 0.2rem; }

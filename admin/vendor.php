@@ -10,6 +10,8 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
+require __DIR__ . '/../config/fingerprint.php';
+require __DIR__ . '/../config/account-erase.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -97,6 +99,9 @@ $stmt = $pdo->prepare('SELECT COUNT(*) FROM businesses WHERE user_id = ? AND del
 $stmt->execute([$v['id']]);
 $deletedBizCount = (int)$stmt->fetchColumn();
 
+$erased          = str_ends_with($v['email'], '@deleted.invalid');
+$acctOpenCount   = $erased ? 0 : account_open_orders_vendor($pdo, (int)$v['id']);
+
 $success = $_SESSION['admin_success'] ?? '';
 $error   = $_SESSION['admin_error']   ?? '';
 unset($_SESSION['admin_success'], $_SESSION['admin_error']);
@@ -143,6 +148,8 @@ $adminTab     = 'vendors';
         <?php if ($v['biz_suspended']): ?><span class="order-badge badge-red">Storefront suspended</span><?php endif; ?>
         <span class="order-badge <?= $statusClass ?>"><?= $statusLabel ?></span>
     </div>
+
+    <?php $fpRole = 'vendor'; $fpId = (int)$v['id']; require __DIR__ . '/account-matches.php'; ?>
 
     <div class="detail-columns">
         <div>
@@ -486,6 +493,24 @@ $adminTab     = 'vendors';
                     <input type="hidden" name="vendor_id" value="<?= $v['id'] ?>">
                     <input type="hidden" name="business_id" value="<?= $v['business_id'] ?>">
                     <button type="submit" class="btn-reject" style="width:100%;">Delete business</button>
+                </form>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!$erased): ?>
+            <!-- Erase: for someone who cannot sign in to delete it themselves -->
+            <div class="detail-card">
+                <div class="detail-card-title">Erase account</div>
+                <?php if ($acctOpenCount > 0): ?>
+                <p style="font-size:0.85rem;color:#6b7280;">Cannot erase — <?= $acctOpenCount ?> open order<?= $acctOpenCount === 1 ? '' : 's' ?>. They must be completed, cancelled or refunded first.</p>
+                <?php else: ?>
+                <p style="font-size:0.85rem;color:#6b7280;">For a deletion request by message. Erases name, email, phone, bank QR and sign-ins, closes every shop and removes its address and photos; orders stay, under the shop name.<?= $v['suspended'] ? ' Because the account is suspended, a fingerprint of its email and phone is kept to flag a return.' : '' ?> This cannot be undone.</p>
+                <form method="POST" action="/admin/vendor-action.php" onsubmit="return confirm('Erase this vendor account permanently? This cannot be undone.');" style="margin-top:0.5rem;">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="action" value="erase">
+                    <input type="hidden" name="vendor_id" value="<?= $v['id'] ?>">
+                    <button type="submit" class="btn-reject" style="width:100%;">Erase account</button>
                 </form>
                 <?php endif; ?>
             </div>

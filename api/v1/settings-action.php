@@ -35,6 +35,7 @@
 require __DIR__ . '/../../config/api.php';
 require __DIR__ . '/../../config/rate-limit.php';
 require __DIR__ . '/../../config/notify.php';
+require __DIR__ . '/../../config/fingerprint.php';
 
 api_require_method('POST');
 
@@ -80,6 +81,7 @@ if ($action === 'profile') {
     // empty box every time one of them saved.
     $pdo->prepare('UPDATE vendors SET name = ?, phone = ? WHERE id = ?')
         ->execute([$name, $phone !== '' ? $phone : null, $userId]);
+    fingerprint_check($pdo, 'vendor', (int)$userId, null, $phone);
 
     api_json(['ok' => true, 'name' => $name, 'phone' => $phone]);
 }

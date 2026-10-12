@@ -9,6 +9,7 @@ session_start([
 
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
+require __DIR__ . '/../config/fingerprint.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -42,6 +43,7 @@ $lngVal = $lng !== '' ? filter_var($lng, FILTER_VALIDATE_FLOAT) : null;
 
 $stmt = $pdo->prepare('UPDATE buyers SET phone = ?, house_number = ?, address = ?, address_notes = ?, khan = ?, sangkat = ?, city = ?, lat = ?, lng = ? WHERE id = ?');
 $stmt->execute([$phone ?: null, $houseNumber ?: null, $address ?: null, $notes ?: null, $khan ?: null, $sangkat ?: null, $city, $latVal, $lngVal, $userId]);
+fingerprint_check($pdo, 'buyer', (int)$userId, null, $phone);
 
 // Mirror the main address into the address book as the default entry —
 // otherwise it only lives on the buyers table and never shows in the
