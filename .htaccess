@@ -135,7 +135,8 @@ AddType application/manifest+json .webmanifest
 # SetEnvIf lines for LOCAL_DEV and API_OPEN with:
 #   SetEnvIf Host "." NOT_ADMIN_HOST
 #   SetEnvIf Host "^admin\.teepsaa\.com(:|$)" !NOT_ADMIN_HOST
-# and the two "Require env" lines with "Require env NOT_ADMIN_HOST".
+# the two "Require env" lines with "Require env NOT_ADMIN_HOST", and delete
+# the mod_headers block under them.
 SetEnvIf Host "^(localhost|127\.0\.0\.1)(:|$)" LOCAL_DEV
 SetEnvIf Request_URI "^/api/v1/" API_OPEN
 AuthType Basic
@@ -146,3 +147,9 @@ AuthUserFile /home/u767733958/domains/teepsaa.com/public_html/.htpasswd-admin
     Require env API_OPEN
     Require valid-user
 </RequireAny>
+# The server still stamps its Basic challenge onto the API's own JSON 401s
+# (bad or expired token). A WebView can answer that with a password popup
+# instead of letting the app see the 401 and send the user to its login.
+<IfModule mod_headers.c>
+    Header always unset WWW-Authenticate env=API_OPEN
+</IfModule>
