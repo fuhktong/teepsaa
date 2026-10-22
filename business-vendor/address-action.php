@@ -32,9 +32,18 @@ $city        = trim($_POST['city'] ?? '');
 $lat         = $_POST['lat'] ?? '';
 $lng         = $_POST['lng'] ?? '';
 
-// Only accept a city we actually deliver in (Phnom Penh for now).
-$cities = require __DIR__ . '/../config/cities.php';
-$city   = in_array($city, $cities, true) ? $city : ($cities[0] ?? null);
+// Only accept a province we deliver in (config/cities.php), and a district
+// and commune that belong to it. The selects only offer real ones; this is
+// for a stale page or a hand-made post.
+require __DIR__ . '/../config/locations.php';
+$offered = array_keys(locations_offered());
+$city    = in_array($city, $offered, true) ? $city : ($offered[0] ?? null);
+
+if (location_errors($city, $khan, $sangkat)) {
+    $_SESSION['settings_error'] = 'That district or commune isn\'t in the province you picked. Please choose them again.';
+    header('Location: /business-vendor/');
+    exit;
+}
 
 // The pin has to land inside the city we deliver in. The map picker already
 // constrains it; this is the check for a hand-posted form. Bounds are the

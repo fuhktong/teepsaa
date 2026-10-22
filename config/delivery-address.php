@@ -4,7 +4,7 @@
 // buyer whose address predates the rule is sent back to fix it). Keeping the
 // list in one place is what stops the three from disagreeing.
 //
-// Field keys: street, khan, sangkat, pin, phone.
+// Field keys: street, city, khan, sangkat, pin, phone.
 
 // The action scripts don't include the header, so they have no $t of their own
 function delivery_lang(): array
@@ -51,6 +51,7 @@ function missing_fields_list(array $keys, bool $phoneOnOtherTab = false): string
     $t     = delivery_lang();
     $names = [
         'street'  => $t['missing_street'],
+        'city'    => $t['missing_city'],
         'khan'    => $t['missing_khan'],
         'sangkat' => $t['missing_sangkat'],
         'pin'     => $t['missing_pin'],

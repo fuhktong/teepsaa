@@ -10,8 +10,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/mapbox.php';
-$locations = require __DIR__ . '/../config/phnom-penh-locations.php';
-$cities    = require __DIR__ . '/../config/cities.php';
+require __DIR__ . '/../config/locations.php';
 
 $allCatsRaw = $pdo->query('SELECT id, parent_id, name, name_km FROM categories ORDER BY name ASC')->fetchAll();
 function submitBuildCatTree(array $cats, $parentId = null): array {
@@ -118,28 +117,25 @@ require __DIR__ . '/../head/head.php';
             <input type="text" id="address" name="address" placeholder="e.g. Street 240">
         </div>
 
+        <?php $subCity = array_key_first(location_provinces()); ?>
         <div class="field">
             <label for="city"><?= $t['settings_address_city'] ?></label>
-            <select id="city" name="city">
-                <?php foreach ($cities as $c): ?>
-                <option value="<?= htmlspecialchars($c) ?>"><?= htmlspecialchars($c) ?></option>
-                <?php endforeach; ?>
+            <select id="city" name="city" data-loc-city>
+                <?= location_options(location_provinces(), $subCity) ?>
             </select>
         </div>
 
         <div class="field">
             <label for="khan"><?= $t['settings_address_khan'] ?></label>
-            <select id="khan" name="khan" onchange="updateSangkats(this.value)">
+            <select id="khan" name="khan" data-loc-khan>
                 <option value=""><?= $t['settings_select_khan'] ?></option>
-                <?php foreach (array_keys($locations) as $k): ?>
-                <option value="<?= htmlspecialchars($k) ?>"><?= htmlspecialchars($k) ?></option>
-                <?php endforeach; ?>
+                <?= location_options(location_districts($subCity), null) ?>
             </select>
         </div>
 
         <div class="field">
             <label for="sangkat"><?= $t['settings_address_sangkat'] ?></label>
-            <select id="sangkat" name="sangkat">
+            <select id="sangkat" name="sangkat" data-loc-sangkat>
                 <option value=""><?= $t['settings_select_sangkat'] ?></option>
             </select>
         </div>
@@ -172,6 +168,8 @@ require __DIR__ . '/../head/head.php';
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 <script src="/js/boundary.js"></script>
+<?= location_data_script($t['settings_select_khan'], $t['settings_select_sangkat']) ?>
+<script src="/js/locations.js"></script>
 <script>
 // Category cascade
 (function () {
@@ -228,20 +226,6 @@ require __DIR__ . '/../head/head.php';
         }
     });
 })();
-
-const LOCATIONS = <?= json_encode($locations) ?>;
-function updateSangkats(khan) {
-    const sel = document.getElementById('sangkat');
-    sel.innerHTML = '<option value=""><?= $t['settings_select_sangkat'] ?></option>';
-    if (khan && LOCATIONS[khan]) {
-        LOCATIONS[khan].forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s;
-            opt.textContent = s;
-            sel.appendChild(opt);
-        });
-    }
-}
 
 mapboxgl.accessToken = '<?= MAPBOX_TOKEN ?>';
 

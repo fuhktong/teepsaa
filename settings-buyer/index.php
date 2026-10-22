@@ -19,8 +19,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
 $userId    = $_SESSION['user_id'];
 $validTabs = ['account', 'address', 'password', 'danger'];
 $tab       = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'account';
-$locations = ($tab === 'address') ? require __DIR__ . '/../config/phnom-penh-locations.php' : [];
-$cities    = ($tab === 'address') ? require __DIR__ . '/../config/cities.php' : [];
+if ($tab === 'address') require __DIR__ . '/../config/locations.php';
 
 $savedAddresses = [];
 if ($tab === 'address') {
@@ -42,7 +41,7 @@ $fixFields = [];
 if ($tab === 'address' && !empty($_GET['fix'])) {
     $fixFields = array_values(array_intersect(
         explode(',', (string)$_GET['fix']),
-        ['street', 'khan', 'sangkat', 'pin']
+        ['street', 'city', 'khan', 'sangkat', 'pin']
     ));
 }
 
@@ -222,33 +221,25 @@ require __DIR__ . '/../head/head.php';
                                     <label for="edit_address_notes"><?= $t['settings_address_floor'] ?></label>
                                     <input type="text" id="edit_address_notes" name="address_notes" value="<?= htmlspecialchars($a['address_notes'] ?? '') ?>" placeholder="e.g. Apt 4B, blue gate">
                                 </div>
+                                <?php $editCity = $a['city'] ?: 'Phnom Penh'; ?>
                                 <div class="settings-field">
                                     <label for="edit_city"><?= $t['settings_address_city'] ?></label>
-                                    <select id="edit_city" name="city">
-                                        <?php $editSelCity = $a['city'] ?: ($cities[0] ?? ''); ?>
-                                        <?php foreach ($cities as $c): ?>
-                                        <option value="<?= htmlspecialchars($c) ?>" <?= ($editSelCity === $c) ? 'selected' : '' ?>><?= htmlspecialchars($c) ?></option>
-                                        <?php endforeach; ?>
+                                    <select id="edit_city" name="city" data-loc-city>
+                                        <?= location_options(location_provinces(), $editCity) ?>
                                     </select>
                                 </div>
                                 <div class="settings-field">
                                     <label for="edit_khan"><?= $t['settings_address_khan'] ?></label>
-                                    <select id="edit_khan" name="khan" onchange="updateEditSangkats(this.value)" required>
+                                    <select id="edit_khan" name="khan" data-loc-khan required>
                                         <option value=""><?= $t['settings_select_khan'] ?></option>
-                                        <?php foreach (array_keys($locations) as $k): ?>
-                                        <option value="<?= htmlspecialchars($k) ?>" <?= ($a['khan'] === $k) ? 'selected' : '' ?>><?= htmlspecialchars($k) ?></option>
-                                        <?php endforeach; ?>
+                                        <?= location_options(location_districts($editCity), $a['khan']) ?>
                                     </select>
                                 </div>
                                 <div class="settings-field">
                                     <label for="edit_sangkat"><?= $t['settings_address_sangkat'] ?></label>
-                                    <select id="edit_sangkat" name="sangkat" required>
+                                    <select id="edit_sangkat" name="sangkat" data-loc-sangkat required>
                                         <option value=""><?= $t['settings_select_sangkat'] ?></option>
-                                        <?php if ($a['khan'] && isset($locations[$a['khan']])): ?>
-                                            <?php foreach ($locations[$a['khan']] as $s): ?>
-                                            <option value="<?= htmlspecialchars($s) ?>" <?= ($a['sangkat'] === $s) ? 'selected' : '' ?>><?= htmlspecialchars($s) ?></option>
-                                            <?php endforeach; ?>
-                                        <?php endif; ?>
+                                        <?= location_options(location_communes($editCity, $a['khan']), $a['sangkat']) ?>
                                     </select>
                                 </div>
                                 <div class="settings-field settings-field--map">
@@ -294,27 +285,24 @@ require __DIR__ . '/../head/head.php';
                                 <input type="text" id="new_address_notes" name="address_notes" placeholder="e.g. Apt 4B, blue gate">
                             </div>
 
+                            <?php $newCity = array_key_first(location_provinces()); ?>
+                            <div class="settings-field">
+                                <label for="new_city"><?= $t['settings_address_city'] ?></label>
+                                <select id="new_city" name="city" data-loc-city>
+                                    <?= location_options(location_provinces(), $newCity) ?>
+                                </select>
+                            </div>
                             <div class="settings-field">
                                 <label for="new_khan"><?= $t['settings_address_khan'] ?></label>
-                                <select id="new_khan" name="khan" onchange="updateNewSangkats(this.value)" required>
+                                <select id="new_khan" name="khan" data-loc-khan required>
                                     <option value=""><?= $t['settings_select_khan'] ?></option>
-                                    <?php foreach (array_keys($locations) as $k): ?>
-                                    <option value="<?= htmlspecialchars($k) ?>"><?= htmlspecialchars($k) ?></option>
-                                    <?php endforeach; ?>
+                                    <?= location_options(location_districts($newCity), null) ?>
                                 </select>
                             </div>
                             <div class="settings-field">
                                 <label for="new_sangkat"><?= $t['settings_address_sangkat'] ?></label>
-                                <select id="new_sangkat" name="sangkat" required>
+                                <select id="new_sangkat" name="sangkat" data-loc-sangkat required>
                                     <option value=""><?= $t['settings_select_sangkat'] ?></option>
-                                </select>
-                            </div>
-                            <div class="settings-field">
-                                <label for="new_city"><?= $t['settings_address_city'] ?></label>
-                                <select id="new_city" name="city">
-                                    <?php foreach ($cities as $c): ?>
-                                    <option value="<?= htmlspecialchars($c) ?>"><?= htmlspecialchars($c) ?></option>
-                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             <div class="settings-field settings-field--map">
@@ -380,36 +368,12 @@ require __DIR__ . '/../head/head.php';
 <?php if ($tab === 'address'): ?>
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 <script src="/js/boundary.js"></script>
+<?= location_data_script($t['settings_select_khan'], $t['settings_select_sangkat']) ?>
+<script src="/js/locations.js"></script>
 <script>
-const LOCATIONS = <?= json_encode($locations) ?>;
-
-function updateNewSangkats(khan) {
-    const sel = document.getElementById('new_sangkat');
-    sel.innerHTML = '<option value=""><?= $t['settings_select_sangkat'] ?></option>';
-    if (khan && LOCATIONS[khan]) {
-        LOCATIONS[khan].forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s; opt.textContent = s;
-            sel.appendChild(opt);
-        });
-    }
-}
-
 mapboxgl.accessToken = '<?= MAPBOX_TOKEN ?>';
 
 <?php if ($editingAddr): ?>
-function updateEditSangkats(khan) {
-    const sel = document.getElementById('edit_sangkat');
-    sel.innerHTML = '<option value=""><?= $t['settings_select_sangkat'] ?></option>';
-    if (khan && LOCATIONS[khan]) {
-        LOCATIONS[khan].forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s; opt.textContent = s;
-            sel.appendChild(opt);
-        });
-    }
-}
-
 const editLat = <?= $editingAddr['lat'] ? (float)$editingAddr['lat'] : 'null' ?>;
 const editLng = <?= $editingAddr['lng'] ? (float)$editingAddr['lng'] : 'null' ?>;
 
@@ -506,7 +470,7 @@ requirePin('edit_lat', 'edit_lng', 'edit-pin-label');
         if (details) details.open = true;   // fires `toggle`, which builds the map
     }
 
-    const ids = { street: '_address', khan: '_khan', sangkat: '_sangkat' };
+    const ids = { street: '_address', city: '_city', khan: '_khan', sangkat: '_sangkat' };
     const target = fix.find(f => ids[f]) || (fix.includes('pin') ? 'pin' : null);
     if (!target) return;
 

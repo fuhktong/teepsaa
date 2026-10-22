@@ -56,8 +56,7 @@ if ($business) {
     $sfSlots = array_values($sfSlots);
 }
 
-$locations = $business ? require __DIR__ . '/../config/phnom-penh-locations.php' : [];
-$cities    = $business ? require __DIR__ . '/../config/cities.php' : [];
+if ($business) require __DIR__ . '/../config/locations.php';
 
 $success = $_SESSION['settings_success'] ?? '';
 $error   = $_SESSION['settings_error']   ?? '';
@@ -380,39 +379,27 @@ require __DIR__ . '/../head/head.php';
                         <input type="text" id="address_notes" name="address_notes" value="<?= htmlspecialchars($business['address_notes'] ?? '') ?>" placeholder="e.g. Ground floor, blue sign">
                     </div>
 
+                    <?php $bizCity = $business['city'] ?: 'Phnom Penh'; ?>
+                    <div class="settings-field">
+                        <label for="city"><?= $t['settings_address_city'] ?></label>
+                        <select id="city" name="city" data-loc-city>
+                            <?= location_options(location_provinces(), $bizCity) ?>
+                        </select>
+                    </div>
+
                     <div class="settings-field">
                         <label for="khan"><?= $t['settings_address_khan'] ?></label>
-                        <select id="khan" name="khan" onchange="updateSangkats(this.value)">
+                        <select id="khan" name="khan" data-loc-khan>
                             <option value=""><?= $t['settings_select_khan'] ?></option>
-                            <?php foreach (array_keys($locations) as $k): ?>
-                            <option value="<?= htmlspecialchars($k) ?>" <?= ($business['khan'] === $k) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($k) ?>
-                            </option>
-                            <?php endforeach; ?>
+                            <?= location_options(location_districts($bizCity), $business['khan']) ?>
                         </select>
                     </div>
 
                     <div class="settings-field">
                         <label for="sangkat"><?= $t['settings_address_sangkat'] ?></label>
-                        <select id="sangkat" name="sangkat">
+                        <select id="sangkat" name="sangkat" data-loc-sangkat>
                             <option value=""><?= $t['settings_select_sangkat'] ?></option>
-                            <?php if ($business['khan'] && isset($locations[$business['khan']])): ?>
-                                <?php foreach ($locations[$business['khan']] as $s): ?>
-                                <option value="<?= htmlspecialchars($s) ?>" <?= ($business['sangkat'] === $s) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($s) ?>
-                                </option>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </select>
-                    </div>
-
-                    <div class="settings-field">
-                        <label for="city"><?= $t['settings_address_city'] ?></label>
-                        <select id="city" name="city">
-                            <?php $selCity = $business['city'] ?: ($cities[0] ?? ''); ?>
-                            <?php foreach ($cities as $c): ?>
-                            <option value="<?= htmlspecialchars($c) ?>" <?= ($selCity === $c) ? 'selected' : '' ?>><?= htmlspecialchars($c) ?></option>
-                            <?php endforeach; ?>
+                            <?= location_options(location_communes($bizCity, $business['khan']), $business['sangkat']) ?>
                         </select>
                     </div>
 
@@ -540,21 +527,9 @@ syncSlots();
 <?php if ($business): ?>
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 <script src="/js/boundary.js"></script>
+<?= location_data_script($t['settings_select_khan'], $t['settings_select_sangkat']) ?>
+<script src="/js/locations.js"></script>
 <script>
-const LOCATIONS = <?= json_encode($locations) ?>;
-function updateSangkats(khan) {
-    const sel = document.getElementById('sangkat');
-    sel.innerHTML = '<option value=""><?= $t['settings_select_sangkat'] ?></option>';
-    if (khan && LOCATIONS[khan]) {
-        LOCATIONS[khan].forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s;
-            opt.textContent = s;
-            sel.appendChild(opt);
-        });
-    }
-}
-
 mapboxgl.accessToken = '<?= MAPBOX_TOKEN ?>';
 const existingLat = <?= $business['lat'] ? (float)$business['lat'] : 'null' ?>;
 const existingLng = <?= $business['lng'] ? (float)$business['lng'] : 'null' ?>;

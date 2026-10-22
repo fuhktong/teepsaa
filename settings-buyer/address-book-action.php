@@ -25,15 +25,27 @@ csrf_verify();
 $userId = (int)$_SESSION['user_id'];
 $action = $_POST['action'] ?? '';
 
-// Only accept a city we deliver in (Phnom Penh for now); fall back to the first.
-$cities   = require __DIR__ . '/../config/cities.php';
+// Only accept a province we deliver in (config/cities.php); fall back to the first.
+require __DIR__ . '/../config/locations.php';
+$offered  = array_keys(locations_offered());
 $postCity = trim($_POST['city'] ?? '');
-$city     = in_array($postCity, $cities, true) ? $postCity : ($cities[0] ?? null);
+$city     = in_array($postCity, $offered, true) ? $postCity : ($offered[0] ?? null);
 
 // Same completeness rule the cart and checkout enforce, so an address that
 // saves here can never bounce the buyer later
 require __DIR__ . '/../config/delivery-address.php';
 $t = delivery_lang();
+
+// A district must be in the province, and a commune in the district. The
+// selects only offer real pairs; this is for a stale page or a hand-made post.
+function location_reject(string $back, ?string $city, ?string $khan, ?string $sangkat): void
+{
+    $bad = location_errors($city, $khan, $sangkat);
+    if (!$bad) return;
+    $_SESSION['settings_error'] = sprintf(delivery_lang()['location_mismatch'], missing_fields_list($bad));
+    header('Location: /settings-buyer/?tab=address' . $back . '&fix=' . $bad[0]);
+    exit;
+}
 
 if ($action === 'add') {
     $label        = mb_substr(trim($_POST['label'] ?? ''), 0, 100);
@@ -51,6 +63,7 @@ if ($action === 'add') {
         header('Location: /settings-buyer/?tab=address&fix=' . implode(',', $missing));
         exit;
     }
+    location_reject('', $city, $khan, $sangkat);
 
     // Label is optional but the checkout address picker shows it, so never
     // leave it blank
@@ -115,6 +128,7 @@ if ($action === 'add') {
         header('Location: /settings-buyer/?tab=address&edit=' . $addrId . '&fix=' . implode(',', $missing));
         exit;
     }
+    location_reject('&edit=' . $addrId, $city, $khan, $sangkat);
 
     $label = $label ?: $khan;
 

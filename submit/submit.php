@@ -53,9 +53,10 @@ $city         = trim($_POST['city'] ?? '');
 $lat          = $_POST['lat'] ?? '';
 $lng          = $_POST['lng'] ?? '';
 
-// Only accept a city we deliver in (Phnom Penh for now).
-$cities = require __DIR__ . '/../config/cities.php';
-$city   = in_array($city, $cities, true) ? $city : ($cities[0] ?? null);
+// Only accept a province we deliver in (config/cities.php).
+require __DIR__ . '/../config/locations.php';
+$offered = array_keys(locations_offered());
+$city    = in_array($city, $offered, true) ? $city : ($offered[0] ?? null);
 
 if (!$name) {
     $_SESSION['submit_error'] = 'Business name is required.';
@@ -65,6 +66,13 @@ if (!$name) {
 
 if (!$category_id) {
     $_SESSION['submit_error'] = 'Please select a category.';
+    header('Location: /submit/');
+    exit;
+}
+
+// A district must be in the province, and a commune in the district.
+if (location_errors($city, $khan, $sangkat)) {
+    $_SESSION['submit_error'] = 'That district or commune isn\'t in the province you picked. Please choose them again.';
     header('Location: /submit/');
     exit;
 }
