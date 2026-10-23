@@ -11,10 +11,10 @@
 //
 //  1. Errors come back keyed by field, so the app can put the message under the
 //     box that caused it instead of one line at the top.
-//  2. An address saved from the phone leaves the map pin alone. The website's
-//     form always posts lat/lng, so a save there with an empty map wipes the
-//     pin. The app has no map, so if it behaved the same way every address
-//     edit from a phone would quietly delete a pin dropped on the website.
+//  2. The map pin is only changed when the app sends `lat` and `lng`. App
+//     builds from before the map was added send neither, and their saves
+//     leave the pin as it is. A build with the map always sends both, and a
+//     missing or out-of-city pin is refused, as on the website.
 //  3. The district and commune have to belong to the province next to them
 //     (location_errors() in config/locations.php, which the website's form
 //     now uses too). A blank district or commune is still allowed.
@@ -36,6 +36,8 @@ require __DIR__ . '/../../config/notify.php';
 // for an admin id.
 require __DIR__ . '/../../config/audit.php';
 require __DIR__ . '/../../config/locations.php';
+require __DIR__ . '/../../config/delivery-address.php';
+require __DIR__ . '/../../config/buyer-addresses.php';
 
 api_require_method('POST');
 $vendor = api_require_vendor($pdo);
@@ -165,27 +167,40 @@ if ($action === 'address') {
     if (biz_len($house) > 255)   $fields['house_number'] = 'That is too long for one line.';
     if (biz_len($notes) > 255)   $fields['notes'] = 'That is too long for one line.';
 
+    // See note 2 at the top: no lat/lng keys at all means an older build.
+    $pinSent = array_key_exists('lat', $body) || array_key_exists('lng', $body);
+    $lat = $lng = null;
+    if ($pinSent) {
+        $lat = is_numeric($body['lat'] ?? null) ? (float)$body['lat'] : null;
+        $lng = is_numeric($body['lng'] ?? null) ? (float)$body['lng'] : null;
+        if ($lat === null || $lng === null) {
+            $fields['pin'] = 'Drop a pin on the map at your shop\'s location.';
+        } elseif (!point_in_city($lat, $lng)) {
+            $fields['pin'] = 'That map pin is outside Phnom Penh. Drop it on your shop\'s location.';
+        }
+    }
+
     if ($fields) {
         api_json(['error' => 'invalid', 'fields' => $fields], 422);
     }
 
-    // lat and lng are not in this UPDATE on purpose — see note 2 at the top.
-    $stmt = $pdo->prepare('
+    $sql = '
         UPDATE businesses
            SET house_number = ?, address = ?, address_notes = ?,
-               khan = ?, sangkat = ?, city = ?
+               khan = ?, sangkat = ?, city = ?' . ($pinSent ? ', lat = ?, lng = ?' : '') . '
          WHERE id = ? AND user_id = ?
-    ');
-    $stmt->execute([
+    ';
+    $params = [
         $house   ?: null,
         $street  ?: null,
         $notes   ?: null,
         $khan    ?: null,
         $sangkat ?: null,
         $city,
-        $businessId,
-        $userId,
-    ]);
+    ];
+    if ($pinSent) array_push($params, $lat, $lng);
+    array_push($params, $businessId, $userId);
+    $pdo->prepare($sql)->execute($params);
 
     api_json(['ok' => true]);
 }

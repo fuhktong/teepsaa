@@ -49,13 +49,5 @@ api_json([
     ],
 
     // settings-buyer/index.php's map, value for value.
-    'map' => [
-        'token'    => MAPBOX_TOKEN,
-        'style'    => 'mapbox://styles/mapbox/streets-v12',
-        'center'   => [104.9160, 11.5564],
-        'zoom'     => 13,
-        'bounds'   => [[104.654628, 11.324807], [105.055619, 11.737473]],
-        // [[lat, lng], …] from js/boundary.js, the order pointInPolygon() takes.
-        'boundary' => city_boundary(),
-    ],
+    'map' => app_map_settings(),
 ]);

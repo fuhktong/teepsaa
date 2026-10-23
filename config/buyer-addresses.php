@@ -59,6 +59,24 @@ function city_boundary(): array
     return $ring;
 }
 
+/**
+ * What an app needs to draw the pin map: the same token, style, centre and
+ * bounds the website's maps use, plus the city outline. Sent by
+ * api/v1/buyer/addresses.php and api/v1/business.php. Needs config/mapbox.php.
+ */
+function app_map_settings(): array
+{
+    return [
+        'token'    => MAPBOX_TOKEN,
+        'style'    => 'mapbox://styles/mapbox/streets-v12',
+        'center'   => [104.9160, 11.5564],
+        'zoom'     => 13,
+        'bounds'   => [[104.654628, 11.324807], [105.055619, 11.737473]],
+        // [[lat, lng], …] from js/boundary.js, the order pointInPolygon() takes.
+        'boundary' => city_boundary(),
+    ];
+}
+
 /** pointInPolygon() from js/boundary.js, line for line. */
 function point_in_city(float $lat, float $lng): bool
 {

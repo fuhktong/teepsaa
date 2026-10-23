@@ -1054,6 +1054,7 @@ return [
     'app_directions'         => 'Directions (optional)',
     'app_directions_ph'      => 'Beside the blue gate',
     'app_pin_untouched'      => 'Saving here does not move your map pin.',
+    'app_shop_pin_hint'      => 'Tap the map at your shop\'s door, or use Find me. Delivery is priced from here.',
     'app_add_address'        => 'Add address',
     'app_no_account_name'    => 'No account name yet.',
     'app_qr_alt'             => 'Your bank QR code',

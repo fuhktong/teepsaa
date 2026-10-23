@@ -16,6 +16,9 @@
 // runs.
 require __DIR__ . '/../../config/api.php';
 require __DIR__ . '/../../config/locations.php';
+require __DIR__ . '/../../config/delivery-address.php';
+require __DIR__ . '/../../config/buyer-addresses.php';
+require __DIR__ . '/../../config/mapbox.php';
 
 api_require_method('GET');
 $vendor = api_require_vendor($pdo);
@@ -179,7 +182,14 @@ api_json([
         'pin'          => $hasPin
             ? number_format((float)$business['lat'], 5, '.', '') . ', ' . number_format((float)$business['lng'], 5, '.', '')
             : null,
+        // The pin as numbers, for the app's map.
+        'lat'          => $hasPin ? (float)$business['lat'] : null,
+        'lng'          => $hasPin ? (float)$business['lng'] : null,
     ],
+
+    // Token, style, bounds and city outline for the pin map — the same
+    // settings the buyer app's address map gets.
+    'map'        => app_map_settings(),
 
     'categories' => $categories,
     // Phnom Penh only, for app builds older than `provinces`. Never remove.
