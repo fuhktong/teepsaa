@@ -106,11 +106,15 @@ AddType application/manifest+json .webmanifest
 # vendor.teepsaa.com and admin.teepsaa.com — so no one sees the site before
 # launch. On admin it also serves as the second lock on top of the admin login.
 #
-# Two things are let straight through, before the password rule is reached:
+# Three things are let straight through, before the password rule is reached:
 #   - localhost, so MAMP never prompts.
 #   - /api/v1/, which the vendor and buyer apps call. They send their own
 #     "Authorization: Bearer" header, which a Basic Auth prompt would reject,
 #     so gating it would log every app user out with a 401.
+#   - /uploads/, where every photo the apps show lives (products, banners,
+#     avatars). An app's <img> can't answer a password prompt, so gated it
+#     shows no pictures at all. Directory listing stays off, and the names
+#     are random, so nothing there can be browsed.
 #
 # The password file lives on the server and is never deployed (rsync
 # excludes .htpasswd*; the FilesMatch rule above also stops it being
@@ -132,19 +136,21 @@ AddType application/manifest+json .webmanifest
 #
 # AT LAUNCH: the public site must answer without a password, or Google
 # indexes nothing. Put back the admin-only version — replace the two
-# SetEnvIf lines for LOCAL_DEV and API_OPEN with:
+# SetEnvIf lines for LOCAL_DEV, API_OPEN and UPLOADS_OPEN with:
 #   SetEnvIf Host "." NOT_ADMIN_HOST
 #   SetEnvIf Host "^admin\.teepsaa\.com(:|$)" !NOT_ADMIN_HOST
-# the two "Require env" lines with "Require env NOT_ADMIN_HOST", and delete
+# the three "Require env" lines with "Require env NOT_ADMIN_HOST", and delete
 # the mod_headers block under them.
 SetEnvIf Host "^(localhost|127\.0\.0\.1)(:|$)" LOCAL_DEV
 SetEnvIf Request_URI "^/api/v1/" API_OPEN
+SetEnvIf Request_URI "^/uploads/" UPLOADS_OPEN
 AuthType Basic
 AuthName "teepsaa — coming soon"
 AuthUserFile /home/u767733958/domains/teepsaa.com/public_html/.htpasswd-admin
 <RequireAny>
     Require env LOCAL_DEV
     Require env API_OPEN
+    Require env UPLOADS_OPEN
     Require valid-user
 </RequireAny>
 # The server still stamps its Basic challenge onto the API's own JSON 401s
