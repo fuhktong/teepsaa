@@ -15,9 +15,9 @@
 //     form always posts lat/lng, so a save there with an empty map wipes the
 //     pin. The app has no map, so if it behaved the same way every address
 //     edit from a phone would quietly delete a pin dropped on the website.
-//  3. Khan and sangkat are checked against config/phnom-penh-locations.php, and
-//     a sangkat has to belong to the khan next to it. The website saves
-//     whatever string arrives.
+//  3. The district and commune have to belong to the province next to them
+//     (location_errors() in config/locations.php, which the website's form
+//     now uses too). A blank district or commune is still allowed.
 //  4. The joined category list is measured against the 100 characters the
 //     column actually holds, and refused if it is over. The website lets MySQL
 //     truncate it, which loses the last category without saying so.
@@ -35,6 +35,7 @@ require __DIR__ . '/../../config/notify.php';
 // inert — and audit_log() below is handed an explicit actor, so it never looks
 // for an admin id.
 require __DIR__ . '/../../config/audit.php';
+require __DIR__ . '/../../config/locations.php';
 
 api_require_method('POST');
 $vendor = api_require_vendor($pdo);
@@ -137,8 +138,7 @@ if ($action === 'categories') {
 
 // ── Address ──────────────────────────────────────────────────────────
 if ($action === 'address') {
-    $locations = require __DIR__ . '/../../config/phnom-penh-locations.php';
-    $cities    = require __DIR__ . '/../../config/cities.php';
+    $cities = array_keys(locations_offered());
 
     $house   = trim((string)($body['house_number'] ?? ''));
     $street  = trim((string)($body['street'] ?? ''));
@@ -147,18 +147,19 @@ if ($action === 'address') {
     $sangkat = trim((string)($body['sangkat'] ?? ''));
     $city    = trim((string)($body['city'] ?? ''));
 
-    if ($khan !== '' && !isset($locations[$khan])) {
-        $fields['khan'] = 'Pick a khan from the list.';
-    }
-    if ($sangkat !== '') {
-        if ($khan === '') {
-            $fields['sangkat'] = 'Pick the khan first.';
-        } elseif (isset($locations[$khan]) && !in_array($sangkat, $locations[$khan], true)) {
-            // The website would save this pair happily and the delivery
-            // calculator would then be working from an address that does not
-            // exist.
-            $fields['sangkat'] = 'That sangkat is not in ' . $khan . '.';
-        }
+    // Anything but a province teepsaa delivers in becomes the first one —
+    // older app builds always send that one.
+    $city = in_array($city, $cities, true) ? $city : ($cities[0] ?? null);
+
+    if ($sangkat !== '' && $khan === '') {
+        $fields['sangkat'] = 'Pick the district first.';
+    } else {
+        // The website used to save any pair, and the delivery calculator
+        // would then be working from an address that does not exist.
+        $bad = location_errors($city, $khan, $sangkat)[0] ?? null;
+        if ($bad === 'city')    $fields['city']    = 'Pick a province from the list.';
+        if ($bad === 'khan')    $fields['khan']    = 'Pick a district from the list.';
+        if ($bad === 'sangkat') $fields['sangkat'] = 'That commune is not in ' . $khan . '.';
     }
     if (biz_len($street) > 255)  $fields['street'] = 'That is too long for one line.';
     if (biz_len($house) > 255)   $fields['house_number'] = 'That is too long for one line.';
@@ -167,9 +168,6 @@ if ($action === 'address') {
     if ($fields) {
         api_json(['error' => 'invalid', 'fields' => $fields], 422);
     }
-
-    // Anything but a city teepsaa delivers in becomes the one it does.
-    $city = in_array($city, $cities, true) ? $city : ($cities[0] ?? null);
 
     // lat and lng are not in this UPDATE on purpose — see note 2 at the top.
     $stmt = $pdo->prepare('

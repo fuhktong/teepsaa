@@ -15,6 +15,7 @@
 // upload.php. Requiring either here is a redeclare and a 500 before any code
 // runs.
 require __DIR__ . '/../../config/api.php';
+require __DIR__ . '/../../config/locations.php';
 
 api_require_method('GET');
 $vendor = api_require_vendor($pdo);
@@ -43,6 +44,7 @@ if (!$business) {
         'categories' => [],
         'khans'      => new stdClass(),
         'cities'     => [],
+        'provinces'  => new stdClass(),
         'storefront' => null,
         'bank'       => null,
         'limits'     => null,
@@ -180,8 +182,13 @@ api_json([
     ],
 
     'categories' => $categories,
+    // Phnom Penh only, for app builds older than `provinces`. Never remove.
     'khans'      => $locations,
     'cities'     => array_values($cities),
+    // Every province offered, English name as the key, with its districts
+    // and their communes — the shape buyer/addresses.php sends. English is
+    // saved; Khmer is the label.
+    'provinces'  => locations_offered(),
 
     'storefront' => [
         'products' => $sfList,

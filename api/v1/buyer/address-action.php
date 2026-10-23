@@ -15,14 +15,15 @@
 //
 // Two additions. The pin must fall inside the city outline — the website's map
 // refuses a tap outside it, but nothing on the server did, and here there is no
-// map in front of the request. And a khan or sangkat must be one from the list,
-// which the website's dropdowns guarantee and a JSON body does not.
+// map in front of the request. And the district and commune must belong to the
+// province (location_errors(), the same check the website's form makes).
 //
 // Every reply carries the whole list again, so the screen redraws from it.
 
 require __DIR__ . '/../../../config/api.php';
 require __DIR__ . '/../../../config/delivery-address.php';
 require __DIR__ . '/../../../config/buyer-addresses.php';
+require __DIR__ . '/../../../config/locations.php';
 
 api_require_method('POST');
 
@@ -70,7 +71,9 @@ if ($action === 'add' || $action === 'edit') {
 
     $str = fn($k, $max) => mb_substr(trim((string)($body[$k] ?? '')), 0, $max);
 
-    $cities   = require __DIR__ . '/../../../config/cities.php';
+    // Older app builds send no city, or always the first one; both land on
+    // the first province offered, which is what they meant.
+    $cities   = array_keys(locations_offered());
     $postCity = trim((string)($body['city'] ?? ''));
     $city     = in_array($postCity, $cities, true) ? $postCity : ($cities[0] ?? null);
 
@@ -86,11 +89,12 @@ if ($action === 'add' || $action === 'edit') {
     $missing = address_missing_fields($address, $khan, $sangkat, $lat, $lng);
     if ($missing) api_json(['error' => 'incomplete', 'missing' => $missing], 422);
 
-    $locations = require __DIR__ . '/../../../config/phnom-penh-locations.php';
     $fields = [];
-    if (!isset($locations[$khan]))                                $fields['khan']    = 'Pick a khan from the list.';
-    elseif (!in_array($sangkat, $locations[$khan], true))         $fields['sangkat'] = 'Pick a sangkat in that khan.';
-    if (!point_in_city($lat, $lng))                               $fields['pin']     = 'Please select a location inside Phnom Penh.';
+    $bad    = location_errors($city, $khan, $sangkat)[0] ?? null;
+    if ($bad === 'city')                $fields['city']    = 'Pick a province from the list.';
+    elseif ($bad === 'khan')            $fields['khan']    = 'Pick a district from the list.';
+    elseif ($bad === 'sangkat')         $fields['sangkat'] = 'Pick a commune in that district.';
+    if (!point_in_city($lat, $lng))     $fields['pin']     = 'Please select a location inside Phnom Penh.';
     if ($fields) api_json(['error' => 'invalid', 'fields' => $fields], 422);
 
     // Never blank — the checkout picker shows it.
