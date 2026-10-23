@@ -70,6 +70,21 @@ $stockRaw = $body['stock'] ?? 0;
 if (!is_numeric($stockRaw) || (int)$stockRaw < 0) { $fields['stock'] = 'Enter a stock count of 0 or more.'; $stock = 0; }
 else                                              { $stock = (int)$stockRaw; }
 
+// Weight is required, but only from callers that know about it. App builds
+// from before the field existed never send the key: on edit they keep the
+// weight already saved, on add the product starts at 0 (unweighed), as every
+// product did before.
+$weightSent = array_key_exists('weight_g', $body);
+$weightG    = 0;
+if ($weightSent) {
+    $weightRaw = $body['weight_g'];
+    if (!is_numeric($weightRaw) || (int)$weightRaw != $weightRaw || (int)$weightRaw < 1 || (int)$weightRaw > 30000) {
+        $fields['weight_g'] = 'Enter the packed weight in grams, from 1 to 30000.';
+    } else {
+        $weightG = (int)$weightRaw;
+    }
+}
+
 $deliveryMethod = in_array($body['delivery_method'] ?? '', ['bike', 'tuktuk'], true)
     ? $body['delivery_method'] : 'bike';
 
@@ -164,11 +179,11 @@ try {
         $pdo->prepare('
             INSERT INTO products
                 (business_id, category_id, name, name_km, description, description_km,
-                 price, stock, delivery_method, sale_percent, sale_ends_at, public_id)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+                 price, stock, weight_g, delivery_method, sale_percent, sale_ends_at, public_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
         ')->execute([
             $businessId, $categoryId, $name, $nameKm ?: null, $description, $descriptionKm ?: null,
-            $price, $stock, $deliveryMethod, $salePercent, $saleEndsAt, $publicId,
+            $price, $stock, $weightG, $deliveryMethod, $salePercent, $saleEndsAt, $publicId,
         ]);
         $productId = (int)$pdo->lastInsertId();
     } else {
@@ -180,6 +195,8 @@ try {
         // product-action.php's job.
         $activeSql    = '';
         $activeParams = [];
+        $weightSql    = $weightSent ? ', weight_g = ?' : '';
+        $weightParams = $weightSent ? [$weightG] : [];
         if (array_key_exists('active', $body)) {
             $activeSql    = ', active = ?';
             $activeParams = [!empty($body['active']) && (int)$existing['archived'] === 0 ? 1 : 0];
@@ -191,11 +208,12 @@ try {
             UPDATE products
                SET category_id = ?, name = ?, name_km = ?, description = ?, description_km = ?,
                    price = ?, stock = ?, delivery_method = ?, sale_percent = ?, sale_ends_at = ?,
-                   sale_price = NULL$activeSql
+                   sale_price = NULL$weightSql$activeSql
              WHERE id = ? AND business_id IN ($ph)
         ")->execute(array_merge(
             [$categoryId, $name, $nameKm ?: null, $description, $descriptionKm ?: null,
              $price, $stock, $deliveryMethod, $salePercent, $saleEndsAt],
+            $weightParams,
             $activeParams,
             [$productId],
             $bizIds

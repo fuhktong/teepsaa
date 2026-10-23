@@ -482,6 +482,15 @@ require __DIR__ . '/../head/head.php';
 
                 <div class="field-row">
                     <div class="field">
+                        <label for="weight_g"><?= $t['prod_weight'] ?></label>
+                        <input type="number" id="weight_g" name="weight_g" required min="1" max="30000" step="1"
+                               value="<?= !empty($editing['weight_g']) ? (int)$editing['weight_g'] : '' ?>">
+                        <span class="hint"><?= $t['prod_weight_hint'] ?></span>
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
                         <label for="sale_percent"><?= $t['prod_sale_percent'] ?> <span class="hint"><?= $t['prod_optional'] ?></span></label>
                         <input type="number" id="sale_percent" name="sale_percent" min="1" max="90" step="1" placeholder="e.g. 20"
                                value="<?= ($editing && $editing['sale_percent'] !== null) ? (int)$editing['sale_percent'] : '' ?>">

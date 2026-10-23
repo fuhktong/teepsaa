@@ -41,6 +41,10 @@ $description = trim($_POST['description'] ?? '');
 $descriptionKm = trim($_POST['description_km'] ?? '');
 $price       = (float)($_POST['price'] ?? 0);
 $stock       = max(0, (int)($_POST['stock'] ?? 0));
+// Whole grams, packed. Nationwide courier prices are by weight, so a product
+// without one cannot be priced for delivery outside Phnom Penh.
+$weightRaw   = trim($_POST['weight_g'] ?? '');
+$weightG     = ctype_digit($weightRaw) ? (int)$weightRaw : 0;
 $deliveryMethod = in_array($_POST['delivery_method'] ?? '', ['bike','tuktuk']) ? $_POST['delivery_method'] : 'bike';
 $salePercentRaw = trim($_POST['sale_percent'] ?? '');
 $saleDateRaw    = trim($_POST['sale_date']  ?? '');
@@ -58,6 +62,12 @@ $isLeaf = $leafCheck && $leafCheck->fetch();
 
 if (!$name || $price < 0 || !$categoryId || !$isLeaf || !in_array($businessId, array_map('intval', $ownedIds))) {
     $_SESSION['product_error'] = 'Invalid product data.';
+    header('Location: /products/');
+    exit;
+}
+
+if ($weightG < 1 || $weightG > 30000) {
+    $_SESSION['product_error'] = $t['prod_weight_required'] ?? 'Enter the packed weight in grams, from 1 to 30000.';
     header('Location: /products/');
     exit;
 }
@@ -190,8 +200,8 @@ if ($action === 'gallery_upload') {
 
 if ($action === 'add') {
     $newPublicId = uuid_v4();
-    $stmt = $pdo->prepare('INSERT INTO products (business_id, category_id, name, name_km, description, description_km, price, stock, delivery_method, sale_percent, sale_ends_at, public_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-    $stmt->execute([$businessId, $categoryId, $name, $nameKm ?: null, $description, $descriptionKm ?: null, $price, $stock, $deliveryMethod, $salePercent, $saleEndsAt, $newPublicId]);
+    $stmt = $pdo->prepare('INSERT INTO products (business_id, category_id, name, name_km, description, description_km, price, stock, weight_g, delivery_method, sale_percent, sale_ends_at, public_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $stmt->execute([$businessId, $categoryId, $name, $nameKm ?: null, $description, $descriptionKm ?: null, $price, $stock, $weightG, $deliveryMethod, $salePercent, $saleEndsAt, $newPublicId]);
     $newId = (int)$pdo->lastInsertId();
     if ($photo) {
         $pdo->prepare('INSERT INTO product_photos (product_id, filename, sort_order, is_primary) VALUES (?, ?, 0, 1)')
@@ -216,8 +226,8 @@ if ($action === 'add') {
 
     $active = ($_POST['active'] ?? '0') === '1' ? 1 : 0;
 
-    $stmt = $pdo->prepare('UPDATE products SET category_id=?, name=?, name_km=?, description=?, description_km=?, price=?, stock=?, delivery_method=?, active=?, sale_percent=?, sale_ends_at=?, sale_price=NULL WHERE id=?');
-    $stmt->execute([$categoryId, $name, $nameKm ?: null, $description, $descriptionKm ?: null, $price, $stock, $deliveryMethod, $active, $salePercent, $saleEndsAt, $productId]);
+    $stmt = $pdo->prepare('UPDATE products SET category_id=?, name=?, name_km=?, description=?, description_km=?, price=?, stock=?, weight_g=?, delivery_method=?, active=?, sale_percent=?, sale_ends_at=?, sale_price=NULL WHERE id=?');
+    $stmt->execute([$categoryId, $name, $nameKm ?: null, $description, $descriptionKm ?: null, $price, $stock, $weightG, $deliveryMethod, $active, $salePercent, $saleEndsAt, $productId]);
     save_gallery_photos($pdo, $uploadDir, $allowed, $productId);
     save_variants($pdo, $productId);
     // Restocked past its low-stock number (every option, when it has them):

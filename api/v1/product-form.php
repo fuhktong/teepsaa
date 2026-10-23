@@ -128,7 +128,7 @@ $wantedId = (int)($_GET['id'] ?? 0);
 if ($wantedId > 0) {
     $stmt = $pdo->prepare("
         SELECT p.id, p.public_id, p.business_id, p.category_id, p.name, p.name_km,
-               p.description, p.description_km, p.price, p.stock, p.delivery_method,
+               p.description, p.description_km, p.price, p.stock, p.weight_g, p.delivery_method,
                p.active, p.archived, p.sale_percent, p.sale_ends_at, p.royalty_add_on,
                pp.filename AS photo
           FROM products p
@@ -153,6 +153,8 @@ if ($wantedId > 0) {
         // would arrive as 20 where the vendor typed 20.00.
         'price'           => number_format((float)$row['price'], 2, '.', ''),
         'stock'           => (int)$row['stock'],
+        // 0 means never weighed — products made before weight was asked for.
+        'weight_g'        => (int)$row['weight_g'],
         'delivery_method' => $row['delivery_method'],
         'active'          => (bool)$row['active'],
         'archived'        => (bool)$row['archived'],
