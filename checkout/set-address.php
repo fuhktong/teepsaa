@@ -30,8 +30,10 @@ $stmt->execute([$addrId, $userId]);
 $addr = $stmt->fetch();
 
 if ($addr) {
-    $pdo->prepare('UPDATE buyers SET house_number=?, address=?, address_notes=?, khan=?, sangkat=?, lat=?, lng=? WHERE id=?')
-        ->execute([$addr['house_number'], $addr['address'], $addr['address_notes'], $addr['khan'], $addr['sangkat'], $addr['lat'], $addr['lng'], $userId]);
+    // City too: it is the province, and the order's delivery is priced from
+    // this row. Every other place that mirrors an address copies all eight.
+    $pdo->prepare('UPDATE buyers SET house_number=?, address=?, address_notes=?, khan=?, sangkat=?, city=?, lat=?, lng=? WHERE id=?')
+        ->execute([$addr['house_number'], $addr['address'], $addr['address_notes'], $addr['khan'], $addr['sangkat'], $addr['city'], $addr['lat'], $addr['lng'], $userId]);
 
     $pdo->prepare('UPDATE buyer_addresses SET is_default = 0 WHERE buyer_user_id = ?')->execute([$userId]);
     $pdo->prepare('UPDATE buyer_addresses SET is_default = 1 WHERE id = ?')->execute([$addrId]);

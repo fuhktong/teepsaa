@@ -55,7 +55,9 @@ const CITY_LNG_MIN = 104.63, CITY_LNG_MAX = 105.08;
 $latVal = $lat !== '' ? filter_var($lat, FILTER_VALIDATE_FLOAT) : null;
 $lngVal = $lng !== '' ? filter_var($lng, FILTER_VALIDATE_FLOAT) : null;
 
-// An address with no pin stays allowed; a pin that isn't in Phnom Penh doesn't.
+// Every shop needs a pin: delivery is priced by the distance from it, and
+// submit/submit.php already refuses a new shop without one. The page posts
+// the saved pin back, so this only stops a pin being cleared.
 $pinGiven   = $latVal !== null && $latVal !== false && $lngVal !== null && $lngVal !== false;
 $pinInCity  = $pinGiven
     && $latVal >= CITY_LAT_MIN && $latVal <= CITY_LAT_MAX
@@ -67,8 +69,9 @@ if ($pinGiven && !$pinInCity) {
     exit;
 }
 if (!$pinGiven) {
-    $latVal = null;
-    $lngVal = null;
+    $_SESSION['settings_error'] = 'Drop a pin on the map at your shop\'s location, then save again.';
+    header('Location: /business-vendor/');
+    exit;
 }
 
 $stmt = $pdo->prepare('
