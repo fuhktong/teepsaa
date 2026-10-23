@@ -11,17 +11,24 @@
 // The English name is always what is posted and saved; the Khmer one is only
 // the label shown on a Khmer page.
 
-/** cambodia-locations.php, cut down to the provinces in cities.php, in its order. */
+/**
+ * cambodia-locations.php, cut down to the provinces in cities.php, in its
+ * order, each with the `centre` its map opens on (province-centres.php).
+ */
 function locations_offered(): array
 {
     static $out = null;
     if ($out !== null) return $out;
 
-    $all    = require __DIR__ . '/cambodia-locations.php';
-    $cities = require __DIR__ . '/cities.php';
-    $out    = [];
+    $all     = require __DIR__ . '/cambodia-locations.php';
+    $cities  = require __DIR__ . '/cities.php';
+    $centres = require __DIR__ . '/province-centres.php';
+    $out     = [];
     foreach ($cities as $c) {
-        if (isset($all[$c])) $out[$c] = $all[$c];
+        if (!isset($all[$c])) continue;
+        // Where the map opens for this province: [[lng, lat], zoom]. Added
+        // after km and districts, so older readers never see a change.
+        $out[$c] = $all[$c] + ['centre' => $centres[$c] ?? null];
     }
     return $out;
 }

@@ -94,7 +94,7 @@ if ($action === 'add' || $action === 'edit') {
     if ($bad === 'city')                $fields['city']    = 'Pick a province from the list.';
     elseif ($bad === 'khan')            $fields['khan']    = 'Pick a district from the list.';
     elseif ($bad === 'sangkat')         $fields['sangkat'] = 'Pick a commune in that district.';
-    if (!point_in_city($lat, $lng))     $fields['pin']     = 'Please select a location inside Phnom Penh.';
+    if (!point_in_delivery_area($lat, $lng)) $fields['pin'] = 'Please select a location in Cambodia.';
     if ($fields) api_json(['error' => 'invalid', 'fields' => $fields], 422);
 
     // Never blank — the checkout picker shows it.

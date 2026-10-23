@@ -1129,7 +1129,7 @@ return [
     'app_finding_you'           => 'Finding you…',
     'app_location_denied'       => 'teepsaa is not allowed to see your location. Tap the map to drop the pin instead.',
     'app_location_failed'       => 'Your location could not be found. Tap the map to drop the pin instead.',
-    'app_pin_outside'           => 'Please select a location inside Phnom Penh.',
+    'app_pin_outside'           => 'Please select a location in Cambodia.',
     'app_pin_hint'              => 'Tap the map where the driver should come, or use Find me.',
     'app_map_failed'            => 'The map could not load. Check your internet and try again.',
     'app_address_saved'         => 'Address saved.',

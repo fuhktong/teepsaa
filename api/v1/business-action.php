@@ -14,7 +14,7 @@
 //  2. The map pin is only changed when the app sends `lat` and `lng`. App
 //     builds from before the map was added send neither, and their saves
 //     leave the pin as it is. A build with the map always sends both, and a
-//     missing or out-of-city pin is refused, as on the website.
+//     missing pin, or one outside Cambodia, is refused, as on the website.
 //  3. The district and commune have to belong to the province next to them
 //     (location_errors() in config/locations.php, which the website's form
 //     now uses too). A blank district or commune is still allowed.
@@ -36,8 +36,7 @@ require __DIR__ . '/../../config/notify.php';
 // for an admin id.
 require __DIR__ . '/../../config/audit.php';
 require __DIR__ . '/../../config/locations.php';
-require __DIR__ . '/../../config/delivery-address.php';
-require __DIR__ . '/../../config/buyer-addresses.php';
+require __DIR__ . '/../../config/delivery-area.php';
 
 api_require_method('POST');
 $vendor = api_require_vendor($pdo);
@@ -175,8 +174,8 @@ if ($action === 'address') {
         $lng = is_numeric($body['lng'] ?? null) ? (float)$body['lng'] : null;
         if ($lat === null || $lng === null) {
             $fields['pin'] = 'Drop a pin on the map at your shop\'s location.';
-        } elseif (!point_in_city($lat, $lng)) {
-            $fields['pin'] = 'That map pin is outside Phnom Penh. Drop it on your shop\'s location.';
+        } elseif (!point_in_delivery_area($lat, $lng)) {
+            $fields['pin'] = 'That map pin is outside Cambodia. Drop it on your shop\'s location.';
         }
     }
 

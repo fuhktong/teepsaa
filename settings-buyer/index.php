@@ -380,9 +380,9 @@ const editLng = <?= $editingAddr['lng'] ? (float)$editingAddr['lng'] : 'null' ?>
 const editMap = new mapboxgl.Map({
     container: 'edit-addr-map',
     style: 'mapbox://styles/mapbox/streets-v12',
-    center: (editLat && editLng) ? [editLng, editLat] : [104.9160, 11.5564],
-    zoom: (editLat && editLng) ? 15 : 13,
-    maxBounds: [[104.654628, 11.324807], [105.055619, 11.737473]]
+    center: (editLat && editLng) ? [editLng, editLat] : provinceView(document.getElementById('edit_city').value).center,
+    zoom: (editLat && editLng) ? 15 : provinceView(document.getElementById('edit_city').value).zoom,
+    maxBounds: DELIVERY_BOUNDS
 });
 
 editMap.addControl(new mapboxgl.GeolocateControl({
@@ -392,8 +392,9 @@ editMap.addControl(new mapboxgl.GeolocateControl({
 
 let editMarker = null;
 
+followProvince(editMap, document.getElementById('edit_city'));
+
 editMap.on('load', () => {
-    addCityMask(editMap);
     if (editLat && editLng) {
         editMarker = new mapboxgl.Marker().setLngLat([editLng, editLat]).addTo(editMap);
     }
@@ -401,8 +402,8 @@ editMap.on('load', () => {
 
 editMap.on('click', e => {
     const { lng, lat } = e.lngLat;
-    if (!pointInPolygon(lat, lng, CITY_BOUNDARY)) {
-        document.getElementById('edit-pin-label').textContent = 'Please select a location inside Phnom Penh.';
+    if (!inDeliveryArea(lat, lng)) {
+        document.getElementById('edit-pin-label').textContent = 'Please select a location in Cambodia.';
         return;
     }
     if (editMarker) editMarker.remove();
@@ -422,15 +423,15 @@ document.getElementById('new-addr-details').addEventListener('toggle', function 
     newMap = new mapboxgl.Map({
         container: 'new-addr-map',
         style: 'mapbox://styles/mapbox/streets-v12',
-        center: [104.9160, 11.5564],
-        zoom: 13,
-        maxBounds: [[104.654628, 11.324807], [105.055619, 11.737473]]
+        center: provinceView(document.getElementById('new_city').value).center,
+        zoom: provinceView(document.getElementById('new_city').value).zoom,
+        maxBounds: DELIVERY_BOUNDS
     });
-    newMap.on('load', () => addCityMask(newMap));
+    followProvince(newMap, document.getElementById('new_city'));
     newMap.on('click', e => {
         const { lng, lat } = e.lngLat;
-        if (!pointInPolygon(lat, lng, CITY_BOUNDARY)) {
-            document.getElementById('new-pin-label').textContent = 'Please select a location inside Phnom Penh.';
+        if (!inDeliveryArea(lat, lng)) {
+            document.getElementById('new-pin-label').textContent = 'Please select a location in Cambodia.';
             return;
         }
         if (newMarker) newMarker.remove();

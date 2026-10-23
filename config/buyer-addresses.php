@@ -1,6 +1,8 @@
 <?php
-// The buyer's address book, as the mobile API sends it, and the city boundary
-// a pin has to fall inside. Shared by api/v1/buyer/addresses.php (which shows
+require_once __DIR__ . '/delivery-area.php';
+
+// The buyer's address book, as the mobile API sends it. Where a pin may fall
+// is config/delivery-area.php, pulled in here for the files that use both. Shared by api/v1/buyer/addresses.php (which shows
 // them) and api/v1/buyer/address-action.php (which changes them and answers
 // with the new list), so the two can never describe an address differently.
 
@@ -40,57 +42,3 @@ function buyer_address_list(PDO $pdo, int $userId): array
     return $out;
 }
 
-/**
- * The Phnom Penh outline as [[lat, lng], …], read from js/boundary.js — the file
- * the website's maps draw and test against. Read rather than copied so there
- * is one outline: move a corner there and the app and this check both follow.
- */
-function city_boundary(): array
-{
-    static $ring = null;
-    if ($ring !== null) return $ring;
-
-    $ring = [];
-    $js   = @file_get_contents(__DIR__ . '/../js/boundary.js');
-    if ($js !== false && preg_match('/CITY_BOUNDARY\s*=\s*\[(.*?)\];/s', $js, $m)) {
-        preg_match_all('/\[\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\]/', $m[1], $pairs, PREG_SET_ORDER);
-        foreach ($pairs as $p) $ring[] = [(float)$p[1], (float)$p[2]];
-    }
-    return $ring;
-}
-
-/**
- * What an app needs to draw the pin map: the same token, style, centre and
- * bounds the website's maps use, plus the city outline. Sent by
- * api/v1/buyer/addresses.php and api/v1/business.php. Needs config/mapbox.php.
- */
-function app_map_settings(): array
-{
-    return [
-        'token'    => MAPBOX_TOKEN,
-        'style'    => 'mapbox://styles/mapbox/streets-v12',
-        'center'   => [104.9160, 11.5564],
-        'zoom'     => 13,
-        'bounds'   => [[104.654628, 11.324807], [105.055619, 11.737473]],
-        // [[lat, lng], …] from js/boundary.js, the order pointInPolygon() takes.
-        'boundary' => city_boundary(),
-    ];
-}
-
-/** pointInPolygon() from js/boundary.js, line for line. */
-function point_in_city(float $lat, float $lng): bool
-{
-    $poly = city_boundary();
-    // No outline to test against is a server fault, not the buyer's pin.
-    if (count($poly) < 3) return true;
-
-    $inside = false;
-    for ($i = 0, $j = count($poly) - 1; $i < count($poly); $j = $i++) {
-        [$latI, $lngI] = $poly[$i];
-        [$latJ, $lngJ] = $poly[$j];
-        $intersect = (($lngI > $lng) !== ($lngJ > $lng))
-            && ($lat < ($latJ - $latI) * ($lng - $lngI) / ($lngJ - $lngI) + $latI);
-        if ($intersect) $inside = !$inside;
-    }
-    return $inside;
-}

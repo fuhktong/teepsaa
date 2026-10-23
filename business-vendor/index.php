@@ -537,9 +537,9 @@ const existingLng = <?= $business['lng'] ? (float)$business['lng'] : 'null' ?>;
 const map = new mapboxgl.Map({
     container: 'addr-map',
     style: 'mapbox://styles/mapbox/streets-v12',
-    center: (existingLat && existingLng) ? [existingLng, existingLat] : [104.9160, 11.5564],
-    zoom: (existingLat && existingLng) ? 15 : 13,
-    maxBounds: [[104.654628, 11.324807], [105.055619, 11.737473]]
+    center: (existingLat && existingLng) ? [existingLng, existingLat] : provinceView(document.getElementById('city').value).center,
+    zoom: (existingLat && existingLng) ? 15 : provinceView(document.getElementById('city').value).zoom,
+    maxBounds: DELIVERY_BOUNDS
 });
 
 map.addControl(new mapboxgl.GeolocateControl({
@@ -547,9 +547,10 @@ map.addControl(new mapboxgl.GeolocateControl({
     trackUserLocation: false
 }));
 
+followProvince(map, document.getElementById('city'));
+
 let marker = null;
 map.on('load', () => {
-    addCityMask(map);
     if (existingLat && existingLng) {
         marker = new mapboxgl.Marker().setLngLat([existingLng, existingLat]).addTo(map);
     }
@@ -557,8 +558,8 @@ map.on('load', () => {
 
 map.on('click', e => {
     const { lng, lat } = e.lngLat;
-    if (!pointInPolygon(lat, lng, CITY_BOUNDARY)) {
-        document.getElementById('pin-label').textContent = 'Please select a location inside Phnom Penh.';
+    if (!inDeliveryArea(lat, lng)) {
+        document.getElementById('pin-label').textContent = 'Please select a location in Cambodia.';
         return;
     }
     if (marker) marker.remove();

@@ -16,8 +16,7 @@
 // runs.
 require __DIR__ . '/../../config/api.php';
 require __DIR__ . '/../../config/locations.php';
-require __DIR__ . '/../../config/delivery-address.php';
-require __DIR__ . '/../../config/buyer-addresses.php';
+require __DIR__ . '/../../config/delivery-area.php';
 require __DIR__ . '/../../config/mapbox.php';
 
 api_require_method('GET');

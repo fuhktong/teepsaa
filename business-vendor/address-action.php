@@ -45,12 +45,9 @@ if (location_errors($city, $khan, $sangkat)) {
     exit;
 }
 
-// The pin has to land inside the city we deliver in. The map picker already
-// constrains it; this is the check for a hand-posted form. Bounds are the
-// bounding box of CITY_BOUNDARY in js/boundary.js, with a small margin — keep
-// the two in step if the boundary polygon moves.
-const CITY_LAT_MIN = 11.30, CITY_LAT_MAX = 11.76;
-const CITY_LNG_MIN = 104.63, CITY_LNG_MAX = 105.08;
+// The pin has to land in Cambodia (config/delivery-area.php). The map
+// already keeps it there; this is the check for a hand-posted form.
+require __DIR__ . '/../config/delivery-area.php';
 
 $latVal = $lat !== '' ? filter_var($lat, FILTER_VALIDATE_FLOAT) : null;
 $lngVal = $lng !== '' ? filter_var($lng, FILTER_VALIDATE_FLOAT) : null;
@@ -59,12 +56,11 @@ $lngVal = $lng !== '' ? filter_var($lng, FILTER_VALIDATE_FLOAT) : null;
 // submit/submit.php already refuses a new shop without one. The page posts
 // the saved pin back, so this only stops a pin being cleared.
 $pinGiven   = $latVal !== null && $latVal !== false && $lngVal !== null && $lngVal !== false;
-$pinInCity  = $pinGiven
-    && $latVal >= CITY_LAT_MIN && $latVal <= CITY_LAT_MAX
-    && $lngVal >= CITY_LNG_MIN && $lngVal <= CITY_LNG_MAX;
+$pinInArea  = $pinGiven
+    && point_in_delivery_area((float)$latVal, (float)$lngVal);
 
-if ($pinGiven && !$pinInCity) {
-    $_SESSION['settings_error'] = 'That map pin is outside Phnom Penh. Drop it on your shop\'s location and try again.';
+if ($pinGiven && !$pinInArea) {
+    $_SESSION['settings_error'] = 'That map pin is outside Cambodia. Drop it on your shop\'s location and try again.';
     header('Location: /business-vendor/');
     exit;
 }

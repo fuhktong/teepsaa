@@ -232,9 +232,9 @@ mapboxgl.accessToken = '<?= MAPBOX_TOKEN ?>';
 const map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/streets-v12',
-    center: [104.9160, 11.5564],
-    zoom: 13,
-    maxBounds: [[104.654628, 11.324807], [105.055619, 11.737473]]
+    center: provinceView(document.getElementById('city').value).center,
+    zoom: provinceView(document.getElementById('city').value).zoom,
+    maxBounds: DELIVERY_BOUNDS
 });
 
 map.addControl(new mapboxgl.GeolocateControl({
@@ -242,17 +242,15 @@ map.addControl(new mapboxgl.GeolocateControl({
     trackUserLocation: false
 }));
 
-let marker = null;
+followProvince(map, document.getElementById('city'));
 
-map.on('load', () => {
-    addCityMask(map);
-});
+let marker = null;
 
 map.on('click', (e) => {
     const { lng, lat } = e.lngLat;
 
-    if (!pointInPolygon(lat, lng, CITY_BOUNDARY)) {
-        document.getElementById('pin-label').textContent = 'Please select a location inside Phnom Penh.';
+    if (!inDeliveryArea(lat, lng)) {
+        document.getElementById('pin-label').textContent = 'Please select a location in Cambodia.';
         return;
     }
 

@@ -1,69 +1,19 @@
-// Phnom Penh boundary polygon — [lat, lng] order (used by pointInPolygon)
-const CITY_BOUNDARY = [
-    [11.666378297891825, 104.7466262130589],
-    [11.717071915564418, 104.82421092309426],
-    [11.73747349406851,  104.91835613138448],
-    [11.709329407412099, 104.97153804964967],
-    [11.607273809829039, 104.9435121415662],
-    [11.556582809353316, 104.9478201199492],
-    [11.543207604750776, 104.99524058105595],
-    [11.541092236502678, 105.03909041474913],
-    [11.530530127596279, 105.05561961304522],
-    [11.479823570147545, 105.05131325337925],
-    [11.461511268396663, 105.02759663173464],
-    [11.327626129291545, 104.97225284859883],
-    [11.324807338711722, 104.91691338824705],
-    [11.336809274016957, 104.75377888942012],
-    [11.351602719598802, 104.7322243710205],
-    [11.435417403474787, 104.65462848642892],
-    [11.555823203600255, 104.67762538597441],
-    [11.666319472508249, 104.74659901426247]
+// Where a map pin may be dropped — a box round the whole of Cambodia, islands
+// included. [lat, lng] order (used by pointInPolygon). It replaced the Phnom
+// Penh outline when delivery went nationwide.
+//
+// config/delivery-area.php reads DELIVERY_AREA out of this file for the
+// server's check and for the apps, so this is the only copy. Keep the name
+// and the [lat, lng] pairs as they are or that read finds nothing.
+const DELIVERY_AREA = [
+    [9.85, 102.30],
+    [9.85, 107.65],
+    [14.70, 107.65],
+    [14.70, 102.30]
 ];
 
-function addCityMask(map) {
-    const ring = CITY_BOUNDARY.map(([lat, lng]) => [lng, lat]);
-    ring.push(ring[0]);
-
-    map.addSource('city-mask', {
-        type: 'geojson',
-        data: {
-            type: 'Feature',
-            geometry: {
-                type: 'Polygon',
-                coordinates: [
-                    [[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]],
-                    ring
-                ]
-            }
-        }
-    });
-
-    map.addLayer({
-        id: 'city-mask-fill',
-        type: 'fill',
-        source: 'city-mask',
-        paint: { 'fill-color': '#000', 'fill-opacity': 0.3 }
-    });
-
-    map.addSource('city-outline', {
-        type: 'geojson',
-        data: {
-            type: 'Feature',
-            geometry: { type: 'Polygon', coordinates: [ring] }
-        }
-    });
-
-    map.addLayer({
-        id: 'city-outline-line',
-        type: 'line',
-        source: 'city-outline',
-        paint: {
-            'line-color': '#111',
-            'line-width': 2,
-            'line-dasharray': [2, 1.5]
-        }
-    });
-}
+// How far the maps can scroll: the country with a margin, [lng, lat] pairs.
+const DELIVERY_BOUNDS = [[101.8, 9.5], [108.2, 15.0]];
 
 function pointInPolygon(lat, lng, polygon) {
     let inside = false;
@@ -75,4 +25,29 @@ function pointInPolygon(lat, lng, polygon) {
         if (intersect) inside = !inside;
     }
     return inside;
+}
+
+function inDeliveryArea(lat, lng) {
+    return pointInPolygon(lat, lng, DELIVERY_AREA);
+}
+
+// The province's town, from the page's locations data — [lng, lat] and a
+// zoom — or Phnom Penh when the page has none.
+function provinceView(name) {
+    const el = document.getElementById('locations-data');
+    try {
+        const p = JSON.parse(el.textContent).provinces[name];
+        if (p && p.centre) return { center: p.centre[0], zoom: p.centre[1] };
+    } catch (e) { /* fall through */ }
+    return { center: [104.9160, 11.5564], zoom: 13 };
+}
+
+// Picking a province moves the map to it, so the vendor or buyer is not left
+// looking at Phnom Penh while they set an address in Kampot.
+function followProvince(map, select) {
+    if (!select) return;
+    select.addEventListener('change', () => {
+        const v = provinceView(select.value);
+        map.flyTo({ center: v.center, zoom: v.zoom });
+    });
 }
