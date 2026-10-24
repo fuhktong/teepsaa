@@ -125,9 +125,21 @@ function refund_request_status(string $reason): string {
  * and so approved at once — tell the buyer to send it back, exactly as an
  * admin's approval would (admin/refund-action.php).
  */
+/**
+ * Who pays to send a return back, for the "return approved" email's
+ * {return_en} / {return_km}. A change of mind is the buyer's cost; anything
+ * else is a dispute, sent cash on delivery so the shop pays on arrival.
+ */
+function refund_return_tokens(?string $reason): array {
+    $key = $reason === REFUND_REASON_CHANGED_MIND ? 'email_return_mind' : 'email_return_cod';
+    $en  = require __DIR__ . '/../lang/en.php';
+    $km  = require __DIR__ . '/../lang/km.php';
+    return ['return_en' => $en[$key], 'return_km' => $km[$key]];
+}
+
 function refund_request_notify(PDO $pdo, int $orderId): void {
     $stmt = $pdo->prepare('
-        SELECT o.public_id, o.created_at, o.status,
+        SELECT o.public_id, o.created_at, o.status, o.refund_reason,
                v.id AS vendor_id, v.name AS vendor_name, v.email AS vendor_email,
                bu.id AS buyer_id, bu.name AS buyer_name, bu.email AS buyer_email
           FROM orders o
@@ -167,7 +179,7 @@ function refund_request_notify(PDO $pdo, int $orderId): void {
         'name'    => htmlspecialchars((string)$o['buyer_name']),
         'order'   => $oid,
         'cta_url' => 'https://teepsaa.com' . $buyerLink,
-    ]);
+    ] + refund_return_tokens($o['refund_reason']));
     if ($html !== '') send_email($o['buyer_email'], $subj, $html);
     notify($pdo, 'buyer', (int)$o['buyer_id'], 'refund_approved',
         'Your refund was approved for order #' . $oid . ' — please send the item back.', $buyerLink, ['ref' => $oid]);

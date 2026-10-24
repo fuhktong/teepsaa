@@ -38,7 +38,7 @@ $stmt = $pdo->prepare('
            DATE_ADD(o.delivered_at, INTERVAL ' . PAYOUT_WINDOW_SECONDS . ' SECOND) AS refund_deadline,
            b.name AS business_name,
            b.house_number AS biz_house_number, b.address AS biz_address,
-           b.address_notes AS biz_address_notes, b.khan AS biz_khan, b.sangkat AS biz_sangkat,
+           b.address_notes AS biz_address_notes, b.khan AS biz_khan, b.sangkat AS biz_sangkat, b.city AS biz_city,
            v.name AS vendor_name, v.email AS vendor_email
     FROM orders o
     JOIN businesses b ON b.id = o.business_id
@@ -290,14 +290,14 @@ require __DIR__ . '/../head/head.php';
         trim(($o['biz_house_number'] ?? '') . ' ' . ($o['biz_address'] ?? '')),
         $o['biz_sangkat'] ?? '',
         $o['biz_khan'] ?? '',
-        'Phnom Penh',
     ]);
-    $retAddress = implode(', ', $retParts);
+    // The province only completes an address; on its own it is not one.
+    $retAddress = $retParts ? implode(', ', [...$retParts, $o['biz_city'] ?: 'Phnom Penh']) : '';
     ?>
-    <?php if ($retAddress && $retAddress !== 'Phnom Penh'): ?>
+    <?php if ($retAddress): ?>
     <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.25rem;"><?= $t['order_send_to'] ?> <strong><?= htmlspecialchars($retAddress) ?></strong><?php if ($o['biz_address_notes']): ?> — <?= htmlspecialchars($o['biz_address_notes']) ?><?php endif; ?></p>
     <?php endif; ?>
-    <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.75rem;"><?= $t['order_return_instructions'] ?></p>
+    <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.75rem;"><?= $t[$o['refund_reason'] === REFUND_REASON_CHANGED_MIND ? 'order_return_instructions_mind' : 'order_return_instructions_cod'] ?></p>
     <form method="POST" action="/orders-buyer/return-dispatch.php" class="refund-request-form">
         <?= csrf_input() ?>
         <input type="hidden" name="order_id" value="<?= $o['id'] ?>">

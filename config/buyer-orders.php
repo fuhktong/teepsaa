@@ -84,7 +84,7 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
                DATE_ADD(o.delivered_at, INTERVAL ' . PAYOUT_WINDOW_SECONDS . ' SECOND) AS refund_deadline,
                b.name AS business_name,
                b.house_number AS biz_house_number, b.address AS biz_address,
-               b.address_notes AS biz_address_notes, b.khan AS biz_khan, b.sangkat AS biz_sangkat,
+               b.address_notes AS biz_address_notes, b.khan AS biz_khan, b.sangkat AS biz_sangkat, b.city AS biz_city,
                v.name AS vendor_name, v.email AS vendor_email
           FROM orders o
           JOIN businesses b ON b.id = o.business_id
@@ -139,10 +139,10 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
             trim(($o['biz_house_number'] ?? '') . ' ' . ($o['biz_address'] ?? '')),
             $o['biz_sangkat'] ?? '',
             $o['biz_khan'] ?? '',
-            'Phnom Penh',
         ]);
-        $addr = implode(', ', $parts);
-        if ($addr !== '' && $addr !== 'Phnom Penh') {
+        // The province only completes an address; on its own it is not one.
+        if ($parts) {
+            $addr = implode(', ', [...$parts, $o['biz_city'] ?: 'Phnom Penh']);
             $returnAddress = ['address' => $addr, 'notes' => $o['biz_address_notes'] ?: null];
         }
     }
@@ -206,6 +206,9 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
             'part'        => $o['refund_paid'] !== null && round((float)$o['refund_paid'], 2) < round($subtotal - $discount, 2),
         ],
         'return_address'      => $returnAddress,
+        // Who pays to send the return: 'buyer' after a change of mind, 'shop'
+        // (sent cash on delivery) for every other reason.
+        'return_postage'      => $o['refund_reason'] === REFUND_REASON_CHANGED_MIND ? 'buyer' : 'shop',
         'return_tracking_url' => safe_external_url($o['return_tracking_url']),
 
         'actions' => [

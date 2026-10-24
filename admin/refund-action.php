@@ -12,7 +12,7 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/audit.php';
 require __DIR__ . '/../config/notify.php';
-require __DIR__ . '/../config/refund-action.php';
+require __DIR__ . '/../config/refund-evidence.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -179,7 +179,7 @@ if ($emailKey) {
     ];
     $notifType = $notifType ?? $emailKey;
     $bStmt = $pdo->prepare(
-        'SELECT o.public_id, o.created_at, bu.id AS buyer_id, bu.name, bu.email
+        'SELECT o.public_id, o.created_at, o.refund_reason, bu.id AS buyer_id, bu.name, bu.email
          FROM orders o JOIN buyers bu ON bu.id = o.buyer_user_id
          WHERE o.id = ?'
     );
@@ -190,7 +190,7 @@ if ($emailKey) {
             'name'    => htmlspecialchars($buyer['name']),
             'order'   => $oid,
             'cta_url' => 'https://teepsaa.com/orders-buyer/order.php?id=' . $buyer['public_id'],
-        ]);
+        ] + ($emailKey === 'refund_approved' ? refund_return_tokens($buyer['refund_reason']) : []));
         if ($html !== '') send_email($buyer['email'], $subj, $html);
         notify($pdo, 'buyer', (int)$buyer['buyer_id'], $notifType,
             sprintf($notifMsgs[$notifType] ?? 'Update on order #%s.', $oid, $notifData['amount'] ?? ''),

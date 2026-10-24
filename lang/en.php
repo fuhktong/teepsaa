@@ -301,9 +301,11 @@ return [
     'order_refund_denied'  => 'Your refund request for this order was declined.',
     'order_send_back'      => 'Send item back',
     'order_send_to'        => 'Send to:',
-    'order_return_instructions' => 'Pack the item and send it back via Grab at your cost. Paste the Grab tracking link below once dispatched.',
-    'order_return_url_placeholder' => 'https://… (paste the full Grab tracking link)',
-    'order_return_url_invalid' => 'That did not look like a link. Paste the whole Grab tracking URL, starting with https://',
+    'order_return_instructions' => 'Pack the item and send it back to the shop with any delivery service. If you changed your mind, you pay the postage. For any other reason, send it cash on delivery and the shop pays when it arrives. Paste the tracking link below once it is sent.',
+    'order_return_instructions_mind' => 'You changed your mind, so you pay the postage. Pack the item and send it to the shop with any delivery service, then paste the tracking link below.',
+    'order_return_instructions_cod' => 'Send it cash on delivery: pack the item and send it to the shop with any delivery service that collects the postage on arrival. The shop pays when it arrives. Then paste the tracking link below.',
+    'order_return_url_placeholder' => 'https://… (paste the full tracking link)',
+    'order_return_url_invalid' => 'That did not look like a link. Paste the whole tracking link, starting with https://',
     'order_mark_dispatched' => 'Mark return dispatched',
 
     // ── Wishlist ─────────────────────────────────────────────────────────
@@ -855,6 +857,9 @@ return [
     'notif_order_dispatched_via' => 'Your order #%s is on its way by %s.',
     'email_dispatch_via' => ' It is coming by <strong>%s</strong>.',
     'email_dispatch_tracking' => ' Tracking number: <strong>%s</strong>.',
+    // Slotted into the "return approved" email as {return_en} / {return_km}.
+    'email_return_mind' => ' You changed your mind, so you pay the return postage.',
+    'email_return_cod' => ' Send it <strong>cash on delivery</strong> with any delivery service — the shop pays the postage when it arrives.',
     'notif_delivery_confirmed' => 'Delivery confirmed for order #%s — payout incoming.',
     'notif_review_reminder'    => 'How was order %s? Leave a review.',
     'notif_low_stock'          => 'Low stock: "%1$s" — %2$s remaining.',
