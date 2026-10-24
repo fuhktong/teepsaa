@@ -56,6 +56,10 @@ function notification_text(array $row, array $t): string {
         case 'return_bounce_refunded':
         case 'return_bounce_dismissed':
             return isset($data['ref']) ? sprintf($t[$key], $data['ref']) : ($row['message'] ?? '');
+        case 'strike':
+            // One line per step, since each step means something different.
+            $lvl = (int)($data['level'] ?? 0);
+            return isset($t[$key . '_' . $lvl]) ? $t[$key . '_' . $lvl] : ($row['message'] ?? '');
         case 'refund_dispute':
             return isset($data['ref'], $data['hours']) ? sprintf($t[$key], $data['ref'], (int)$data['hours']) : ($row['message'] ?? '');
         case 'refund_part_sent':

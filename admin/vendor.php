@@ -12,6 +12,7 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/fingerprint.php';
 require __DIR__ . '/../config/account-erase.php';
+require __DIR__ . '/../config/strikes.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -30,7 +31,7 @@ $stmt = $pdo->prepare('
            b.address, b.house_number, b.khan, b.sangkat,
            b.approved, b.rejection_reason, b.created_at AS submitted_at,
            b.suspended AS biz_suspended, b.suspension_reason AS biz_suspension_reason,
-           b.suspended_at AS biz_suspended_at,
+           b.suspended_at AS biz_suspended_at, b.suspended_until AS biz_suspended_until,
            b.approved_at, b.spot_checked_at,
            b.royalty_add_on AS company_royalty_add_on, b.royalty_waived
     FROM vendors v
@@ -53,6 +54,23 @@ if ($v['business_id']) {
     $stmt = $pdo->prepare('SELECT id, business_id, rate_increase, admin_note, start_date, end_date FROM vendor_penalties WHERE business_id = ? AND cleared_at IS NULL ORDER BY start_date DESC');
     $stmt->execute([$v['business_id']]);
     $penalties = $stmt->fetchAll();
+}
+
+// Every strike, newest first: the ones still counting, then the expired and
+// removed ones as history.
+$strikes = [];
+$strikesActive = 0;
+$strikeNext = 1;
+if ($v['business_id']) {
+    $stmt = $pdo->prepare('
+        SELECT s.id, s.level, s.reason, s.created_at, s.expires_at, s.revoked_at, a.name AS admin_name
+          FROM vendor_strikes s LEFT JOIN admins a ON a.id = s.created_by
+         WHERE s.business_id = ? ORDER BY s.created_at DESC, s.id DESC
+    ');
+    $stmt->execute([$v['business_id']]);
+    $strikes = $stmt->fetchAll();
+    $strikesActive = strikes_active_count($pdo, (int)$v['business_id']);
+    $strikeNext = strike_next_level($pdo, (int)$v['business_id']);
 }
 
 $orders = [];
@@ -146,6 +164,7 @@ $adminTab     = 'vendors';
         <h1><?= htmlspecialchars($v['business_name'] ?: '—') ?></h1>
         <?php if ($v['suspended']): ?><span class="order-badge badge-red">Account suspended</span><?php endif; ?>
         <?php if ($v['biz_suspended']): ?><span class="order-badge badge-red">Storefront suspended</span><?php endif; ?>
+        <?php if ($strikesActive): ?><span class="order-badge badge-yellow"><?= $strikesActive ?> strike<?= $strikesActive > 1 ? 's' : '' ?></span><?php endif; ?>
         <span class="order-badge <?= $statusClass ?>"><?= $statusLabel ?></span>
     </div>
 
@@ -308,6 +327,65 @@ $adminTab     = 'vendors';
             </div>
             <?php endif; ?>
 
+            <!-- Strikes — one button gives the next one and its penalty (config/strikes.php) -->
+            <?php if ($v['business_id']): ?>
+            <div class="detail-card" id="strikes">
+                <div class="detail-card-title">Strikes</div>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem"><strong><?= $strikesActive ?> of <?= STRIKE_MAX ?></strong> counting. Each counts for <?= STRIKE_EXPIRY_MONTHS ?> months. Strike 1: +5% for 30 days · 2: +10% for 60 days · 3: shop suspended 30 days · 4: account suspended for good. A new strike replaces any royalty penalty already running.</p>
+                <?php if ($strikes): ?>
+                <div class="penalty-list">
+                    <?php foreach ($strikes as $s):
+                        if ($s['revoked_at'])                          { $sLabel = 'Removed'; $sClass = 'badge-grey'; }
+                        elseif (strtotime($s['expires_at']) <= time()) { $sLabel = 'Expired'; $sClass = 'badge-grey'; }
+                        else                                           { $sLabel = 'Counting'; $sClass = 'badge-red'; }
+                    ?>
+                    <div class="penalty-item">
+                        <div class="penalty-item-info">
+                            <div class="penalty-item-top">
+                                <span class="order-badge <?= $sClass ?>"><?= $sLabel ?></span>
+                                <span class="penalty-item-rate">Strike <?= (int)$s['level'] ?></span>
+                                <span class="penalty-item-dates">
+                                    <?= date('M j, Y', strtotime($s['created_at'])) ?> → <?= date('M j, Y', strtotime($s['expires_at'])) ?>
+                                    <?php if ($s['admin_name']): ?> · <?= htmlspecialchars($s['admin_name']) ?><?php endif; ?>
+                                </span>
+                            </div>
+                            <div class="penalty-item-note"><?= htmlspecialchars($s['reason']) ?></div>
+                        </div>
+                        <?php if ($sLabel === 'Counting'): ?>
+                        <form method="POST" action="/admin/penalty-action.php" onsubmit="return confirm('Remove this strike? It stops counting, but any penalty or suspension it caused stays until you lift it.');">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="action" value="strike_remove">
+                            <input type="hidden" name="strike_id" value="<?= $s['id'] ?>">
+                            <input type="hidden" name="business_id" value="<?= $v['business_id'] ?>">
+                            <input type="hidden" name="vendor_id" value="<?= $v['id'] ?>">
+                            <button type="submit" class="btn-penalty-remove">Remove</button>
+                        </form>
+                        <?php endif; ?>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php else: ?>
+                <p class="penalty-none">No strikes.</p>
+                <?php endif; ?>
+
+                <div class="penalty-add-form" style="margin-top:1rem">
+                    <p class="penalty-add-label">Give strike <?= $strikeNext ?>: <?= htmlspecialchars(strike_penalty_text($strikeNext, 'en')) ?></p>
+                    <form method="POST" action="/admin/penalty-action.php" onsubmit="return confirm('Give strike <?= $strikeNext ?>? The vendor is emailed, and the penalty starts now.');">
+                        <?= csrf_input() ?>
+                        <input type="hidden" name="action" value="strike">
+                        <input type="hidden" name="business_id" value="<?= $v['business_id'] ?>">
+                        <input type="hidden" name="vendor_id" value="<?= $v['id'] ?>">
+                        <input type="hidden" name="expect_level" value="<?= $strikeNext ?>">
+                        <div class="penalty-form-field">
+                            <label>Reason <span class="penalty-label-hint">(shown to the vendor)</span></label>
+                            <textarea name="reason" rows="2" maxlength="255" required placeholder="e.g. Refused the return for order #…" class="penalty-textarea"></textarea>
+                        </div>
+                        <button type="submit" class="btn-reject" style="margin-top:0.65rem;width:100%;">Give strike <?= $strikeNext ?></button>
+                    </form>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <!-- Payout account — scan once here to verify the ABA name matches -->
             <div class="detail-card">
                 <div class="detail-card-title">Payout account</div>
@@ -406,6 +484,9 @@ $adminTab     = 'vendors';
                 <?php endif; ?>
                 <?php if ($v['biz_suspended_at']): ?>
                 <div class="detail-row"><span class="detail-row-label">Since</span><span class="detail-row-value"><?= date('M j, Y', strtotime($v['biz_suspended_at'])) ?></span></div>
+                <?php endif; ?>
+                <?php if ($v['biz_suspended_until']): ?>
+                <div class="detail-row"><span class="detail-row-label">Until</span><span class="detail-row-value"><?= date('M j, Y g:ia', strtotime($v['biz_suspended_until'])) ?> (goes back up on its own)</span></div>
                 <?php endif; ?>
                 <?php if ($v['suspended']): ?>
                 <p class="notify-check-hint" style="margin-top:0.75rem;">The account is suspended too, which is what took this storefront down. Lift the account suspension first.</p>

@@ -83,6 +83,9 @@ if ($action === 'suspend') {
     $pdo->prepare('UPDATE businesses SET suspended = 1, suspension_reason = ?, suspended_at = NOW()
                    WHERE user_id = ? AND deleted_at IS NULL AND suspended = 0')
         ->execute([$reason, $vendorId]);
+    // A shop on a timed suspension (3rd strike) stays down with the account.
+    $pdo->prepare('UPDATE businesses SET suspended_until = NULL WHERE user_id = ? AND deleted_at IS NULL')
+        ->execute([$vendorId]);
 
     if (!empty($_POST['notify_user'])) {
         $sent = $notifyVendor('vendor_suspended', ['reason' => htmlspecialchars($reason)]);
@@ -144,7 +147,7 @@ if ($action === 'suspend') {
         exit;
     }
 
-    $pdo->prepare('UPDATE businesses SET suspended = 1, suspension_reason = ?, suspended_at = NOW() WHERE id = ?')
+    $pdo->prepare('UPDATE businesses SET suspended = 1, suspension_reason = ?, suspended_at = NOW(), suspended_until = NULL WHERE id = ?')
         ->execute([$reason, $businessId]);
     audit_log($pdo, 'business.suspend', 'business', $businessId, ['reason' => $reason, 'vendor_id' => $vendorId]);
 
@@ -177,7 +180,7 @@ if ($action === 'suspend') {
         exit;
     }
 
-    $pdo->prepare('UPDATE businesses SET suspended = 0, suspension_reason = NULL, suspended_at = NULL WHERE id = ?')
+    $pdo->prepare('UPDATE businesses SET suspended = 0, suspension_reason = NULL, suspended_at = NULL, suspended_until = NULL WHERE id = ?')
         ->execute([$businessId]);
     audit_log($pdo, 'business.unsuspend', 'business', $businessId, ['vendor_id' => $vendorId]);
 

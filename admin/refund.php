@@ -37,7 +37,7 @@ $stmt = $pdo->prepare("
            o.return_dispatched_at, o.return_bounced_at, o.return_overdue_at,
            b.name AS business_name,
            bu.name AS buyer_name, bu.email AS buyer_email,
-           v.name AS vendor_name, v.aba_qr AS vendor_aba_qr
+           v.id AS vendor_id, v.name AS vendor_name, v.aba_qr AS vendor_aba_qr
     FROM orders o
     JOIN businesses b ON b.id = o.business_id
     JOIN buyers bu ON bu.id = o.buyer_user_id
@@ -253,6 +253,7 @@ $adminTab     = 'refunds';
                         <button type="submit" name="action" value="keep_waiting" class="btn-reject">Keep waiting</button>
                     </form>
                 </div>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0.75rem 0 0;">If the shop refused it or ignored it, give the shop a strike: <a href="/admin/vendor.php?id=<?= (int)$o['vendor_id'] ?>#strikes">Strikes for <?= htmlspecialchars($o['business_name']) ?> →</a></p>
 
                 <?php elseif ($refundState === 'return_disputed'): ?>
                 <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">The vendor says the returned item is <strong>used, empty or different</strong> and sent photos of what came back (see Photos). Compare them with the parcel as sent and the buyer's photos, then decide. For a refund, send the amount to the buyer via ABA first, then press the button. With no refund, the vendor posts the item back to the buyer, and the buyer pays the postage.</p>

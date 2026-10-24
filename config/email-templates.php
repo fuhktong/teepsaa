@@ -337,6 +337,18 @@ return [
         'cta_km' => 'ទាក់ទងផ្នែកជំនួយ',
         'cta_en' => 'Contact support',
     ],
+    'vendor_strike' => [
+        'label'   => 'Strike given (vendor)',
+        'tokens'  => '{name}, {business}, {strike}, {reason}, {penalty_km}, {penalty_en}',
+        'subject_km' => 'ហាងរបស់អ្នកទទួលបានការព្រមាន {strike} ក្នុងចំណោម 4',
+        'subject_en' => 'Your shop has received strike {strike} of 4',
+        'heading_km' => 'ការព្រមាន {strike} ក្នុងចំណោម 4',
+        'heading_en' => 'Strike {strike} of 4',
+        'body_km' => 'ជម្រាបសួរ {name}, ហាង <strong>{business}</strong> ទទួលបានការព្រមានលើកទី {strike} ក្នុងចំណោម 4។<br><br><strong>មូលហេតុ៖</strong> {reason}<br><br><strong>អ្វីដែលកើតឡើងឥឡូវនេះ៖</strong> {penalty_km}<br><br>ការព្រមាននីមួយៗមានសុពលភាព 12 ខែ។ ការព្រមានលើកទី 3 ផ្អាកហាងរយៈពេល 30 ថ្ងៃ ហើយលើកទី 4 ផ្អាកគណនីជាអចិន្ត្រៃយ៍។ ប្រសិនបើអ្នកគិតថានេះជាកំហុស សូមទាក់ទងផ្នែកជំនួយ។',
+        'body_en' => 'Hi {name}, <strong>{business}</strong> has received strike {strike} of 4.<br><br><strong>Reason:</strong> {reason}<br><br><strong>What happens now:</strong> {penalty_en}<br><br>Each strike counts for 12 months. A 3rd strike suspends the shop for 30 days, and a 4th suspends the account for good. If you believe this is a mistake, contact support.',
+        'cta_km' => 'ទាក់ទងផ្នែកជំនួយ',
+        'cta_en' => 'Contact support',
+    ],
     'business_suspended' => [
         'label'   => 'Shop suspended (vendor)',
         'tokens'  => '{name}, {business}, {reason}',

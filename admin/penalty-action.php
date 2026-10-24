@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
+require __DIR__ . '/../config/strikes.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -68,6 +69,42 @@ if ($action === 'add') {
     $pdo->prepare('UPDATE vendor_penalties SET cleared_at = NOW() WHERE id = ? AND cleared_at IS NULL')
         ->execute([$penaltyId]);
     $_SESSION['admin_success'] = 'Penalty removed.';
+
+} elseif ($action === 'strike') {
+    // The next strike and its penalty, worked out from the strikes still
+    // counting (config/strikes.php). `expect_level` is the step the button
+    // showed: if another admin gave one in between, nothing happens and the
+    // page says so, rather than giving a harsher step than the one pressed.
+    $businessId = (int)($_POST['business_id'] ?? 0);
+    $reason     = trim($_POST['reason'] ?? '');
+    $expect     = (int)($_POST['expect_level'] ?? 0);
+    if (!$businessId || $reason === '') {
+        $_SESSION['admin_error'] = 'A reason is required to give a strike.';
+        header('Location: ' . $defaultRedirect);
+        exit;
+    }
+    if ($expect && strike_next_level($pdo, $businessId) !== $expect) {
+        $_SESSION['admin_error'] = 'The strikes changed since this page loaded. Check the log and press again.';
+        header('Location: ' . $defaultRedirect);
+        exit;
+    }
+    [$level, $err] = strike_give($pdo, $businessId, $vendorId, $reason, (int)$_SESSION['admin_id']);
+    if ($err) {
+        $_SESSION['admin_error'] = $err === 'not_found' ? 'Business not found.' : 'A reason is required to give a strike.';
+    } else {
+        $_SESSION['admin_success'] = 'Strike ' . $level . ' given: ' . strike_penalty_text($level, 'en') . ' The vendor has been emailed.';
+    }
+
+} elseif ($action === 'strike_remove') {
+    // Stops the strike counting. Its penalty or suspension is left alone.
+    $strikeId   = (int)($_POST['strike_id'] ?? 0);
+    $businessId = (int)($_POST['business_id'] ?? 0);
+    $upd = $pdo->prepare('UPDATE vendor_strikes SET revoked_at = NOW(), revoked_by = ? WHERE id = ? AND business_id = ? AND revoked_at IS NULL');
+    $upd->execute([(int)$_SESSION['admin_id'], $strikeId, $businessId]);
+    if ($upd->rowCount()) {
+        audit_log($pdo, 'business.strike_remove', 'business', $businessId, ['strike_id' => $strikeId]);
+        $_SESSION['admin_success'] = 'Strike removed. Any penalty or suspension it caused is still on — lift it on its own card.';
+    }
 }
 
 header('Location: ' . $defaultRedirect);

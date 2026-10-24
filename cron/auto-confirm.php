@@ -3,6 +3,7 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/app.php';
 require __DIR__ . '/../config/notify.php';
 require __DIR__ . '/../config/refund-evidence.php';
+require __DIR__ . '/../config/strikes.php';
 
 $ship = require __DIR__ . '/../config/shipping.php';
 
@@ -98,3 +99,7 @@ if ($late) {
         );
     }
 }
+
+// Shops whose 30-day suspension from a 3rd strike has run out go back up,
+// and the vendor is emailed (config/strikes.php).
+strike_lift_suspensions($pdo);
