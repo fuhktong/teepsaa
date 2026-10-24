@@ -28,4 +28,17 @@ return [
     // Past the last band: its fee plus this for each kilo or part of one over.
     'courier_per_extra_kg' => 0.50,
     'courier_markup'       => 0.20,
+
+    // How long cron/auto-confirm.php waits after dispatch before marking a
+    // courier parcel delivered for a buyer who never pressed "received". By
+    // the straight-line distance from the shop, which is shorter than the road,
+    // so the edges leave slack. Too short is the costly mistake: the 24-hour
+    // refund window would close before the parcel arrived. Grab orders keep
+    // 24 hours.
+    'courier_confirm_days' => [
+        ['max_km' => 50,  'days' => 2],
+        ['max_km' => 200, 'days' => 4],
+    ],
+    // Further than the last tier, or a courier order with no recorded distance.
+    'courier_confirm_days_far' => 7,
 ];
