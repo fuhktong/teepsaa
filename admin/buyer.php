@@ -27,7 +27,7 @@ $stmt = $pdo->prepare('
     SELECT b.id, b.name, b.email, b.phone, b.house_number, b.address, b.khan, b.sangkat,
            b.created_at, b.suspended, b.suspension_reason, b.suspended_at, b.admin_note,
            COUNT(DISTINCT o.id) AS order_count,
-           COALESCE(SUM(CASE WHEN o.status NOT IN (\'cancelled\') THEN o.subtotal - o.discount_amount END), 0) AS total_spent,
+           COALESCE(SUM(CASE WHEN o.status NOT IN (\'cancelled\') THEN o.subtotal - o.discount_amount + o.delivery_fee END), 0) AS total_spent,
            SUM(CASE WHEN o.status = \'refund_requested\' OR o.status LIKE \'refund%\' OR o.status LIKE \'return%\' THEN 1 ELSE 0 END) AS refund_count
     FROM buyers b
     LEFT JOIN orders o ON o.buyer_user_id = b.id
@@ -39,7 +39,7 @@ $b = $stmt->fetch();
 if (!$b) { header('Location: /admin/buyers.php'); exit; }
 
 $stmt = $pdo->prepare('
-    SELECT o.id, o.buyer_user_id, o.subtotal, o.discount_amount, o.status, o.created_at,
+    SELECT o.id, o.buyer_user_id, o.subtotal, o.discount_amount, o.delivery_fee, o.status, o.created_at,
            bus.name AS business_name
     FROM orders o
     JOIN businesses bus ON bus.id = o.business_id
@@ -223,7 +223,7 @@ $adminTab     = 'buyers';
             <tr>
                 <td><a href="/admin/order.php?id=<?= $o['id'] ?>"><?= $oref ?></a></td>
                 <td><?= htmlspecialchars($o['business_name']) ?></td>
-                <td>$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></td>
+                <td>$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></td>
                 <td><?= htmlspecialchars($o['status']) ?></td>
                 <td><?= date('M j, Y', strtotime($o['created_at'])) ?></td>
             </tr>

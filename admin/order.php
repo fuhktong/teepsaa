@@ -85,8 +85,8 @@ $royaltyPct   = round(($o['royalty_rate'] ?? 0) * 100, 1);
 // A vendor-owned coupon is deducted from vendor_payout at checkout (a sitewide/admin
 // coupon isn't — the platform absorbs that one). Derive the vendor-funded portion from
 // the stored numbers so this recomputed breakdown stays correct either way.
-$vendorCouponDiscount = max(0, round($o['subtotal'] - $royaltyAmt - (float)$o['vendor_payout'], 2));
-$vendorPayout = round($o['subtotal'] - $royaltyAmt - $vendorCouponDiscount, 2);
+$vendorCouponDiscount = max(0, round($o['subtotal'] - $royaltyAmt + $o['delivery_fee'] - (float)$o['vendor_payout'], 2));
+$vendorPayout = round($o['subtotal'] - $royaltyAmt - $vendorCouponDiscount + $o['delivery_fee'], 2);
 // A refund that was rejected and then confirmed closes the window early — the
 // buyer can no longer file, so there is nothing left to wait for. Mirrors
 // Guard 1 in admin/payouts-action.php.
@@ -222,7 +222,7 @@ $adminTab     = 'orders';
                     <?php endif; ?>
                     <div class="od-total-row od-total-row--bold">
                         <span>Total charged</span>
-                        <span>$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></span>
+                        <span>$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span>
                     </div>
                 </div>
             </div>
@@ -231,6 +231,9 @@ $adminTab     = 'orders';
                 <div class="od-card-title">Payout</div>
                 <div class="od-row"><span>Subtotal</span><span>$<?= number_format($o['subtotal'], 2) ?></span></div>
                 <div class="od-row"><span>Royalty (<?= $royaltyPct ?>%)</span><span>−$<?= number_format($royaltyAmt, 2) ?></span></div>
+                <?php if ($o['delivery_fee'] > 0): ?>
+                <div class="od-row"><span>Delivery</span><span>+$<?= number_format($o['delivery_fee'], 2) ?></span></div>
+                <?php endif; ?>
                 <div class="od-row od-row--bold"><span>Vendor payout</span><span>$<?= number_format($o['vendor_payout'], 2) ?></span></div>
             </div>
 

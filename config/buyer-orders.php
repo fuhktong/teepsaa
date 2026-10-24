@@ -39,7 +39,7 @@ function buyer_order_list(PDO $pdo, int $userId, int $limit, int $offset): array
 
     // Integers by the caller's casts, so inlining LIMIT is safe (see api/v1/orders.php).
     $stmt = $pdo->prepare("
-        SELECT o.id, o.public_id, o.subtotal, o.discount_amount, o.status, o.created_at,
+        SELECT o.id, o.public_id, o.subtotal, o.discount_amount, o.delivery_fee, o.status, o.created_at,
                b.name AS business_name,
                GROUP_CONCAT(CONCAT(oi.product_name, IFNULL(CONCAT(' (', oi.variant_label, ')'), ''), ' x', oi.quantity)
                             ORDER BY oi.id SEPARATOR ', ') AS items,
@@ -65,7 +65,7 @@ function buyer_order_list(PDO $pdo, int $userId, int $limit, int $offset): array
             'is_refund'     => in_array($o['status'], BUYER_REFUND_STATUSES, true),
             'items'         => $o['items'],
             'business_name' => $o['business_name'],
-            'total'         => round((float)$o['subtotal'] - (float)$o['discount_amount'], 2),
+            'total'         => round((float)$o['subtotal'] - (float)$o['discount_amount'] + (float)$o['delivery_fee'], 2),
             'created_at'    => $o['created_at'],
             // Only counted where a review can be left, so the app can say
             // "leave a review" off this number alone.
@@ -177,7 +177,10 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
         'discount'     => round($discount, 2),
         'coupon_code'  => $o['coupon_code'],
         'delivery_fee' => round((float)$o['delivery_fee'], 2),
-        'total'        => round($subtotal - $discount, 2),
+        // What the buyer paid, delivery included. A refund never returns
+        // delivery, so the refund figure is its own field.
+        'total'        => round($subtotal - $discount + (float)$o['delivery_fee'], 2),
+        'refund_amount'=> round($subtotal - $discount, 2),
 
         'reviewable'   => $reviewable,
 

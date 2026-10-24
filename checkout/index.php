@@ -64,7 +64,7 @@ if (!$success && $missing) {
 
 $stmt = $pdo->prepare('
     SELECT ci.id AS cart_item_id, ci.quantity, ci.variant_id,
-           p.id AS product_id, p.name AS product_name, p.name_km AS product_name_km, p.price, p.stock, p.delivery_method,
+           p.id AS product_id, p.name AS product_name, p.name_km AS product_name_km, p.price, p.stock, p.weight_g, p.delivery_method,
            ROUND(COALESCE(pv.price_override, p.price)
                  * (100 - IF(p.sale_ends_at IS NOT NULL AND p.sale_ends_at > NOW() AND p.sale_percent IS NOT NULL, p.sale_percent, 0)) / 100, 2) AS effective_price,
            pv.label AS variant_label, pv.label_km AS variant_label_km,
@@ -79,7 +79,6 @@ $stmt = $pdo->prepare('
 $stmt->execute([$userId]);
 $items = $stmt->fetchAll();
 
-$cfg      = require __DIR__ . '/../config/delivery.php';
 $grouped  = [];
 $subtotal = 0.0;
 
@@ -102,20 +101,14 @@ foreach ($items as $item) {
     $subtotal += $item['effective_price'] * $item['quantity'];
 }
 
-$outOfRange = [];
+// Delivery is charged with the goods — the same price_delivery() confirm.php
+// charges, so the QR amount below is what the order will be.
+$outOfRange    = [];
+$deliveryTotal = 0.0;
 foreach ($grouped as $bid => &$group) {
-    if ($group['biz_lat'] === null || $group['biz_lng'] === null || $buyerLat === null || $buyerLng === null) {
-        $group['delivery'] = ['state' => 'no_pin'];
-    } else {
-        $dist = haversine_km($buyerLat, $buyerLng, $group['biz_lat'], $group['biz_lng']);
-        if ($dist > $cfg['max_distance']) {
-            $group['delivery'] = ['state' => 'out_of_range', 'distance_km' => round($dist, 1)];
-            $outOfRange[] = $group['name'];
-        } else {
-            $d = calculate_delivery($dist, $group['vehicle_type']);
-            $group['delivery'] = array_merge($d, ['state' => 'ok']);
-        }
-    }
+    $group['delivery'] = price_delivery($buyerLat, $buyerLng, $group['biz_lat'], $group['biz_lng'], $group['items'], $group['vehicle_type']);
+    if ($group['delivery']['state'] === 'out_of_range') $outOfRange[] = $group['name'];
+    if ($group['delivery']['state'] === 'ok') $deliveryTotal += $group['delivery']['fee'];
 }
 unset($group);
 
@@ -155,7 +148,7 @@ if (!empty($grouped)) {
     $couponAvailable = (int)$cavStmt->fetchColumn() > 0;
 }
 
-$grandTotal  = max(0, $subtotal - $discount);
+$grandTotal  = max(0, $subtotal - $discount) + $deliveryTotal;
 $canCheckout = empty($outOfRange) && !empty($grouped);
 $abaQr = file_exists(__DIR__ . '/../uploads/aba-qr.png');
 ?>
@@ -223,12 +216,13 @@ require __DIR__ . '/../head/head.php';
                 <?php $d = $group['delivery']; ?>
                 <?php if ($d['state'] === 'ok'): ?>
                 <div class="checkout-line checkout-line--delivery">
-                    <span><?= $t['checkout_est'] ?> <?= $d['vehicle_type'] === 'tuktuk' ? 'Grab Tuk-Tuk' : 'Grab Bike' ?></span>
-                    <span class="checkout-delivery-est">~<?= format_price($d['fee']) ?> <span class="checkout-delivery-note"><?= $t['checkout_delivery_cod'] ?></span></span>
+                    <?php /* No method named: the vendor chooses how it goes. */ ?>
+                    <span><?= $t['checkout_delivery'] ?></span>
+                    <span class="checkout-delivery-est"><?= format_price($d['fee']) ?></span>
                 </div>
                 <?php elseif ($d['state'] === 'out_of_range'): ?>
                 <div class="checkout-line checkout-line--error">
-                    <span><?= $t['checkout_delivery_range'] ?> (<?= $d['distance_km'] ?>km)</span>
+                    <span><?= sprintf($t['cart_delivery_weight'], $d['max_km']) ?></span>
                     <span>—</span>
                 </div>
                 <?php elseif ($d['state'] === 'no_pin'): ?>
@@ -264,10 +258,16 @@ require __DIR__ . '/../head/head.php';
             <?php endif; ?>
 
             <div class="checkout-total-block">
-                <?php if ($discount > 0): ?>
+                <?php if ($discount > 0 || $deliveryTotal > 0): ?>
                 <div class="checkout-line checkout-line--sub">
                     <span><?= $t['checkout_subtotal'] ?></span>
                     <span><?= format_price($subtotal) ?></span>
+                </div>
+                <?php endif; ?>
+                <?php if ($deliveryTotal > 0): ?>
+                <div class="checkout-line checkout-line--sub">
+                    <span><?= $t['checkout_delivery'] ?></span>
+                    <span><?= format_price($deliveryTotal) ?></span>
                 </div>
                 <?php endif; ?>
                 <div class="checkout-total">

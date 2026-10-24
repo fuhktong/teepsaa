@@ -234,10 +234,9 @@ foreach ($stmtOrders->fetchAll() as $o) {
         'delivery_fee' => round((float)$o['delivery_fee'], 2),
         // Worked out here, not in the app. Money maths in two places is money
         // maths that will eventually disagree with itself.
-        // delivery_fee is NOT part of the total on purpose: it is only an
-        // estimate of what the buyer pays the driver on delivery, so it is
-        // never money the vendor is owed. Sent as its own field instead.
-        'total'        => round((float)$o['subtotal'] - (float)$o['discount_amount'], 2),
+        // What the buyer paid, delivery included — delivery is charged with
+        // the order and passed on to the vendor in the payout.
+        'total'        => round((float)$o['subtotal'] - (float)$o['discount_amount'] + (float)$o['delivery_fee'], 2),
         'buyer_name' => $o['buyer_name'],
         'items'      => $o['items'],
         'created_at' => $o['created_at'],

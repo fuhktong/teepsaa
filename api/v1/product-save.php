@@ -13,7 +13,7 @@
 // every check the page does happens here too.
 require __DIR__ . '/../../config/api.php';
 require __DIR__ . '/../../config/low-stock.php';
-require __DIR__ . '/../../config/weights.php';
+require_once __DIR__ . '/../../config/weights.php';
 
 api_require_method('POST');
 $vendor = api_require_vendor($pdo);

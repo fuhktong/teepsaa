@@ -11,7 +11,7 @@
 // upload.php and currency.php. Adding a require for either here is a redeclare
 // and a 500 before any code runs.
 require __DIR__ . '/../../config/api.php';
-require __DIR__ . '/../../config/weights.php';
+require_once __DIR__ . '/../../config/weights.php';
 
 api_require_method('GET');
 $vendor = api_require_vendor($pdo);

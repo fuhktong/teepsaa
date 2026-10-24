@@ -66,7 +66,6 @@ $stmt = $pdo->prepare('
 $stmt->execute([$userId]);
 $items = $stmt->fetchAll();
 
-$cfg      = require __DIR__ . '/../config/delivery.php';
 $grouped  = [];
 $subtotal = 0.0;
 
@@ -79,41 +78,28 @@ foreach ($items as $item) {
             'biz_lng'  => ($item['biz_lng'] !== null) ? (float)$item['biz_lng'] : null,
             'items'        => [],
             'subtotal'     => 0.0,
-            'weight_g'     => 0,
             'vehicle_type' => 'bike',
             'delivery'     => null,
         ];
     }
     $grouped[$bid]['items'][]   = $item;
     $grouped[$bid]['subtotal'] += $item['effective_price'] * $item['quantity'];
-    $grouped[$bid]['weight_g'] += ($item['weight_g'] ?: 100) * $item['quantity'];
     // One tuk-tuk item makes the whole shop's delivery a tuk-tuk run
     if ($item['delivery_method'] === 'tuktuk') $grouped[$bid]['vehicle_type'] = 'tuktuk';
     $subtotal += $item['effective_price'] * $item['quantity'];
 }
 
+// Delivery is charged with the goods, so the total includes it.
+$deliveryTotal = 0.0;
 foreach ($grouped as $bid => &$group) {
-    if (!$hasAddress) {
-        $group['delivery'] = ['state' => 'no_address'];
-    } elseif ($group['biz_lat'] === null || $group['biz_lng'] === null) {
-        $group['delivery'] = ['state' => 'no_pin'];
-    } else {
-        $dist = haversine_km($buyerLat, $buyerLng, $group['biz_lat'], $group['biz_lng']);
-        if ($dist > $cfg['max_distance']) {
-            $group['delivery'] = ['state' => 'out_of_range', 'distance_km' => round($dist, 1)];
-        } else {
-            // Second argument is the vehicle type — passing weight here made
-            // $cfg[$vehicle_type] miss and silently fall back to bike rates, so
-            // the cart under-quoted every tuk-tuk delivery that checkout then
-            // priced correctly.
-            $d = calculate_delivery($dist, $group['vehicle_type']);
-            $group['delivery'] = array_merge($d, ['state' => 'ok']);
-        }
-    }
+    $group['delivery'] = $hasAddress
+        ? price_delivery($buyerLat, $buyerLng, $group['biz_lat'], $group['biz_lng'], $group['items'], $group['vehicle_type'])
+        : ['state' => 'no_address'];
+    if ($group['delivery']['state'] === 'ok') $deliveryTotal += $group['delivery']['fee'];
 }
 unset($group);
 
-$grandTotal = $subtotal;
+$grandTotal = $subtotal + $deliveryTotal;
 
 $success = $_SESSION['cart_success'] ?? '';
 $error   = $_SESSION['cart_error']   ?? '';
@@ -190,12 +176,12 @@ require __DIR__ . '/../head/head.php';
                     </div>
                 <?php elseif ($d['state'] === 'out_of_range'): ?>
                     <div class="cart-delivery cart-delivery--error">
-                        <?= $t['cart_delivery_unavailable'] ?> — <?= $d['distance_km'] ?><?= $t['cart_km_away'] ?> <?= $cfg['max_distance'] ?>km)
+                        <?= sprintf($t['cart_delivery_weight'], $d['max_km']) ?>
                     </div>
                 <?php else: ?>
                     <div class="cart-delivery cart-delivery--muted">
                         <span><?= $t['cart_delivery_est'] ?></span>
-                        <span>~<?= format_price($d['fee']) ?> <span class="cart-cod-note"><?= $t['cart_delivery_cod'] ?></span></span>
+                        <span><?= format_price($d['fee']) ?></span>
                     </div>
                 <?php endif; ?>
             </div>

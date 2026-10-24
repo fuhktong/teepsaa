@@ -74,10 +74,10 @@ foreach ($itemStmt->fetchAll() as $it) {
 $subtotal = (float)$o['subtotal'];
 $discount = (float)$o['discount_amount'];
 
-// Money maths lives here, not in the app. delivery_fee is excluded on purpose:
-// delivery is cash on delivery, so the buyer pays the driver directly and that
-// figure is an estimate for their benefit, never money teepsaa moves.
-$total = round($subtotal - $discount, 2);
+// Money maths lives here, not in the app. Delivery is charged with the order
+// and goes to the vendor in full with the payout, outside royalty and coupons.
+$delivery = round((float)$o['delivery_fee'], 2);
+$total    = round($subtotal - $discount + $delivery, 2);
 
 $royaltyAmt = round((float)($o['royalty_amount'] ?? ($subtotal * (float)($o['royalty_rate'] ?? 0))), 2);
 $royaltyPct = round((float)($o['royalty_rate'] ?? 0) * 100, 1);
@@ -85,8 +85,8 @@ $royaltyPct = round((float)($o['royalty_rate'] ?? 0) * 100, 1);
 // A vendor's own coupon comes out of their payout; a sitewide one is absorbed by
 // the platform. Rather than guess which kind this was, derive the vendor-funded
 // part from what checkout actually stored — that stays right either way.
-$vendorCouponDiscount = max(0, round($subtotal - $royaltyAmt - (float)$o['vendor_payout'], 2));
-$payout = round($subtotal - $royaltyAmt - $vendorCouponDiscount, 2);
+$vendorCouponDiscount = max(0, round($subtotal - $royaltyAmt + $delivery - (float)$o['vendor_payout'], 2));
+$payout = round($subtotal - $royaltyAmt - $vendorCouponDiscount + $delivery, 2);
 
 // Typed in by the vendor, shown as a link. Stored rows are re-checked on the
 // way out because some predate the validation (config/url.php).
@@ -117,6 +117,7 @@ $reply = [
         'royalty_amount'  => $royaltyAmt,
         'coupon_discount' => $vendorCouponDiscount,
         'delivery_bonus'  => round((float)$o['vendor_delivery_bonus'], 2),
+        'delivery'        => $delivery,
         'amount'          => $payout,
     ],
 

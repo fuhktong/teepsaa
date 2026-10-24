@@ -52,7 +52,7 @@ if ($business) {
 }
 
 $stmt = $pdo->prepare('
-    SELECT o.id, o.public_id, o.subtotal, o.discount_amount, o.status, o.created_at, o.tracking_url,
+    SELECT o.id, o.public_id, o.subtotal, o.discount_amount, o.delivery_fee, o.status, o.created_at, o.tracking_url,
            b.name AS business_name,
            u.name AS buyer_name, u.email AS buyer_email, u.phone AS buyer_phone,
            u.house_number AS buyer_house_number, u.address AS buyer_address,
@@ -309,7 +309,7 @@ require __DIR__ . '/../head/head.php';
                     <span class="order-card-items"><?= htmlspecialchars($o['items']) ?></span>
                     <span class="order-card-meta"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span>
                     <span class="order-card-date"><?= fmt_date('M j, g:ia', strtotime($o['created_at'])) ?></span>
-                    <span class="order-card-total">$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></span>
+                    <span class="order-card-total">$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span>
                 </div>
                 <div class="order-card-status" data-status-bar>
                     <?php $orderStatus = $o['status']; require __DIR__ . '/../order-status/order-status.php'; ?>

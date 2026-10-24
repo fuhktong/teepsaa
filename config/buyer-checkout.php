@@ -169,7 +169,9 @@ function buyer_checkout(PDO $pdo, int $userId, string $couponCode = ''): array
         'groups'           => $cart['groups'],
         'subtotal'         => $cart['subtotal'],
         'discount'         => round($discount, 2),
-        'total'            => round(max(0, $cart['subtotal'] - $discount), 2),
+        'delivery_total'   => $cart['delivery_total'],
+        // The coupon comes off the goods; delivery is added after.
+        'total'            => round(max(0, $cart['subtotal'] - $discount) + $cart['delivery_total'], 2),
         'count'            => $cart['count'],
         'coupon'           => $coupon,
         'coupon_available' => $couponAvailable,

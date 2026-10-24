@@ -76,7 +76,7 @@ $adminTab     = 'payouts';
     <div class="order-list">
         <?php foreach ($payouts as $p): ?>
         <?php
-        $payout       = $p['subtotal'] - $p['vendor_coupon_discount'] + $p['vendor_delivery_bonus'];
+        $payout       = $p['subtotal'] - $p['vendor_coupon_discount'] + $p['delivery_fee'] + $p['vendor_delivery_bonus'];
         $oid          = date('ymd', strtotime($p['created_at'])) . '-' . str_pad($p['id'], 4, '0', STR_PAD_LEFT);
         $windowPassed = !empty($p['refund_closed_at'])
             || ($p['delivered_at'] && (time() - strtotime($p['delivered_at'])) >= PAYOUT_WINDOW_SECONDS);

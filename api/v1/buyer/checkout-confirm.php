@@ -73,7 +73,7 @@ if (buyer_missing_fields($buyer)) $refuse('missing');
 
 $stmt = $pdo->prepare('
     SELECT ci.id AS cart_item_id, ci.quantity, ci.variant_id,
-           p.id AS product_id, p.name AS product_name, p.name_km AS product_name_km, p.price, p.stock, p.delivery_method,
+           p.id AS product_id, p.name AS product_name, p.name_km AS product_name_km, p.price, p.stock, p.weight_g, p.delivery_method,
            ROUND(COALESCE(pv.price_override, p.price)
                  * (100 - IF(p.sale_ends_at IS NOT NULL AND p.sale_ends_at > NOW() AND p.sale_percent IS NOT NULL, p.sale_percent, 0)) / 100, 2) AS effective_price,
            COALESCE(pv.stock, p.stock) AS effective_stock,
@@ -104,7 +104,6 @@ foreach ($items as $item) {
     if ($item['quantity'] > $item['effective_stock']) $refuse('not_enough_stock');
 }
 
-$cfg      = require __DIR__ . '/../../../config/delivery.php';
 $grouped  = [];
 $subtotal = 0.0;
 
@@ -148,18 +147,18 @@ foreach ($items as $item) {
     $subtotal += $lineTotal;
 }
 
-// Distance for the record; delivery is COD (buyer pays the Grab driver directly)
+// Delivery is charged with the goods, priced as config/buyer-cart.php showed
+// it, and goes to the vendor in full with the payout — outside royalty and
+// coupons. A shop with no pin has nothing to price from: no fee, as before.
+$deliveryTotal = 0.0;
 foreach ($grouped as $bid => &$group) {
-    $group['delivery_fee']          = 0.0;
+    $d = price_delivery($buyerLat, $buyerLng, $group['biz_lat'], $group['biz_lng'], $group['items'], $group['vehicle_type']);
+    if ($d['state'] === 'out_of_range') $refuse('out_of_range');
+    $group['delivery_fee']          = $d['state'] === 'ok' ? $d['fee'] : 0.0;
     $group['vendor_delivery_bonus'] = 0.0;
-    $group['delivery_distance_km']  = null;
-
-    if ($group['biz_lat'] !== null && $group['biz_lng'] !== null && $buyerLat !== null && $buyerLng !== null) {
-        $dist = haversine_km($buyerLat, $buyerLng, $group['biz_lat'], $group['biz_lng']);
-        if ($dist > $cfg['max_distance']) $refuse('out_of_range');
-        $group['delivery_distance_km'] = round($dist, 2);
-    }
-    $group['delivery_weight_g'] = null;
+    $group['delivery_distance_km']  = $d['distance_km'] ?? null;
+    $group['delivery_weight_g']     = $d['weight_g'] ?? null;
+    $deliveryTotal += $group['delivery_fee'];
 
     // Vendor promo trial — zero out royalty if the trial is still running
     $trialStmt = $pdo->prepare('
@@ -215,8 +214,8 @@ if ($couponCode !== '') {
     }
 }
 
-if ($expectedTotal !== null && abs(round(max(0, $subtotal - $discount), 2) - $expectedTotal) >= 0.005) {
-    $refuse('total_changed', ['total' => round(max(0, $subtotal - $discount), 2)]);
+if ($expectedTotal !== null && abs(round(max(0, $subtotal - $discount) + $deliveryTotal, 2) - $expectedTotal) >= 0.005) {
+    $refuse('total_changed', ['total' => round(max(0, $subtotal - $discount) + $deliveryTotal, 2)]);
 }
 
 // Self-dealing check — advisory flags that ride along on the order. See
@@ -263,7 +262,8 @@ try {
         }
     }
 
-    $grandTotal = max(0, $subtotal - $discount);
+    // Coupons come off the goods only; delivery is added after.
+    $grandTotal = max(0, $subtotal - $discount) + $deliveryTotal;
 
     // The coupon's last use went to someone else a moment ago. Same answer as
     // above: the buyer paid the old total, so ask before charging a new one.
@@ -299,6 +299,9 @@ try {
         $vendorPayout = ($couponBusinessId !== null && $businessId === $couponBusinessId)
             ? max(0.0, round($group['vendor_payout'] - $groupDiscount, 2))
             : $group['vendor_payout'];
+        // Delivery on top, untouched by royalty or coupon: the vendor pays
+        // the courier or Grab from it.
+        $vendorPayout = round($vendorPayout + $group['delivery_fee'], 2);
 
         $stmt = $pdo->prepare('
             INSERT INTO orders

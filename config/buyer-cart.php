@@ -13,8 +13,8 @@
 //   - the same price: the variant's override or the product's price, less a
 //     sale that is still running, worked out in SQL exactly as the cart page
 //     and checkout do;
-//   - the same delivery estimate per shop: no address, no pin on the shop, too
-//     far, or a fee — tuk-tuk for the whole shop when any item needs one.
+//   - the same delivery price per shop (price_delivery()): no address, no pin,
+//     out of range, or a fee — tuk-tuk for the whole shop when any item needs one.
 //
 // One difference: `count` counts only what is shown. The website's header
 // counts every row, hidden ones too, so its badge can say 3 over a cart of 2.
@@ -83,7 +83,6 @@ function buyer_cart(PDO $pdo, int $userId): array
     $hasAddress = $buyerLat !== null && $buyerLng !== null;
 
     $missing = $buyer ? buyer_missing_fields($buyer) : [];
-    $cfg     = require __DIR__ . '/delivery.php';
 
     $groups   = [];
     $subtotal = 0.0;
@@ -102,6 +101,7 @@ function buyer_cart(PDO $pdo, int $userId): array
                 '_lat'     => $row['biz_lat'] !== null ? (float)$row['biz_lat'] : null,
                 '_lng'     => $row['biz_lng'] !== null ? (float)$row['biz_lng'] : null,
                 '_vehicle' => 'bike',
+                '_lines'   => [],
             ];
         }
 
@@ -124,37 +124,33 @@ function buyer_cart(PDO $pdo, int $userId): array
             'line_total'     => round($price * $qty, 2),
         ];
         $groups[$bid]['subtotal'] += $price * $qty;
+        $groups[$bid]['_lines'][]  = ['weight_g' => (int)$row['weight_g'], 'quantity' => $qty];
         // One tuk-tuk item makes the whole shop's delivery a tuk-tuk run.
         if ($row['delivery_method'] === 'tuktuk') $groups[$bid]['_vehicle'] = 'tuktuk';
         $subtotal += $price * $qty;
         $count    += $qty;
     }
 
+    // price_delivery(): Grab within config/shipping.php's grab_max_km, a
+    // courier by weight beyond it. out_of_range now means a shop whose items
+    // can't go by courier (unweighed, or over 10 kg) — `reason: weight`.
+    $deliveryTotal = 0.0;
     foreach ($groups as &$g) {
-        if (!$hasAddress) {
-            $g['delivery'] = ['state' => 'no_address'];
-        } elseif ($g['_lat'] === null || $g['_lng'] === null) {
-            $g['delivery'] = ['state' => 'no_pin'];
-        } else {
-            $dist = haversine_km($buyerLat, $buyerLng, $g['_lat'], $g['_lng']);
-            if ($dist > $cfg['max_distance']) {
-                $g['delivery'] = ['state' => 'out_of_range', 'distance_km' => round($dist, 1), 'max_km' => $cfg['max_distance']];
-            } else {
-                $d = calculate_delivery($dist, $g['_vehicle']);
-                $g['delivery'] = ['state' => 'ok', 'fee' => $d['fee'], 'distance_km' => $d['distance_km'], 'vehicle_type' => $d['vehicle_type']];
-            }
-        }
+        $g['delivery'] = $hasAddress
+            ? price_delivery($buyerLat, $buyerLng, $g['_lat'], $g['_lng'], $g['_lines'], $g['_vehicle'])
+            : ['state' => 'no_address'];
+        if ($g['delivery']['state'] === 'ok') $deliveryTotal += $g['delivery']['fee'];
         $g['subtotal'] = round($g['subtotal'], 2);
-        unset($g['_lat'], $g['_lng'], $g['_vehicle']);
+        unset($g['_lat'], $g['_lng'], $g['_vehicle'], $g['_lines']);
     }
     unset($g);
 
     return [
         'groups'   => array_values($groups),
         'subtotal' => round($subtotal, 2),
-        // The website's cart total is the goods only; delivery is paid to the
-        // driver on arrival, so it is an estimate beside each shop.
-        'total'    => round($subtotal, 2),
+        // Goods plus every shop's delivery: it is paid with the order now.
+        'delivery_total' => round($deliveryTotal, 2),
+        'total'    => round($subtotal + $deliveryTotal, 2),
         'count'    => $count,
         'missing'  => $missing,
         'fix'      => $missing ? ($missing === ['phone'] ? 'account' : 'addresses') : null,

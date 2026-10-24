@@ -11,6 +11,8 @@ return [
         'per_km'    => 0.30,   // 1,200 KHR/km
         'min_fare'  => 1.00,   // 4,000 KHR
     ],
-    'markup'       => 0.05,  // 5% buffer on top of estimate
-    'max_distance' => 25,    // km — refuse delivery beyond this
+    // 20% on top of Grab's published fare. The buyer pays this at checkout
+    // and the vendor gets it with the payout, so rush hour or rain costs the
+    // vendor nothing up to that much. How far Grab goes is config/shipping.php.
+    'markup'       => 0.20,
 ];

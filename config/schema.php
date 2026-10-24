@@ -186,20 +186,22 @@ function schema_website(): array {
 
 // Delivery is Grab, priced by distance — there is no flat rate to state.
 // What is true is the band: the calculator in config/delivery-calc.php
-// clamps every fee up to the vehicle's minimum fare and refuses anything
-// past max_distance, so the cheapest fee any order can produce is the
-// lowest min_fare and the dearest is the priciest vehicle at the cap.
-// Both ends carry the same 5% markup checkout applies.
+// clamps every fee up to the vehicle's minimum fare, and Grab goes no
+// further than grab_max_km (config/shipping.php), so the cheapest fee any
+// Grab order can produce is the lowest min_fare and the dearest is the
+// priciest vehicle at the cap. Both ends carry the markup checkout applies.
+// Courier prices beyond that are left out until Part 5 of the nationwide
+// shipping work changes this block for the whole country.
 function schema_shipping_details(): array {
     static $cfg = null;
     if ($cfg === null) $cfg = require __DIR__ . '/delivery.php';
 
     $markup = 1 + (float)($cfg['markup'] ?? 0);
-    $maxKm  = (float)($cfg['max_distance'] ?? 0);
+    $maxKm  = (float)((require __DIR__ . '/shipping.php')['grab_max_km'] ?? 0);
 
     $fares = [];
     foreach ($cfg as $rates) {
-        // 'markup' and 'max_distance' are scalars, not vehicles.
+        // 'markup' is a scalar, not a vehicle.
         if (!is_array($rates) || !isset($rates['min_fare'])) continue;
         $fares[] = round($rates['min_fare'] * $markup, 2);
         $fares[] = round(($rates['base_fare'] + $rates['per_km'] * $maxKm) * $markup, 2);
