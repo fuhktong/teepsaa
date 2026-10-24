@@ -38,6 +38,10 @@ if (!$orderId) {
 $redirectUrl = '/admin/refund.php?id=' . $orderId;
 
 $emailKey = null;
+// The bell notification normally shares the email's key; a decision after a
+// disputed return words it its own way.
+$notifType = null;
+$notifData = [];
 
 if ($action === 'approve') {
     $stmt = $pdo->prepare("UPDATE orders SET status = 'return_approved' WHERE id = ? AND status = 'refund_requested'");
@@ -88,7 +92,8 @@ if ($action === 'approve') {
     $_SESSION['admin_success'] = 'Rejection confirmed — the refund window is closed and the payout can be released.';
 
 } elseif ($action === 'complete') {
-    $stmt = $pdo->prepare("UPDATE orders SET status = 'refunded', refunded_at = NOW() WHERE id = ? AND status = 'return_received'");
+    // A disputed return is decided below, never just marked refunded.
+    $stmt = $pdo->prepare("UPDATE orders SET status = 'refunded', refunded_at = NOW(), refund_paid = subtotal - discount_amount WHERE id = ? AND status = 'return_received' AND return_disputed_at IS NULL");
     $stmt->execute([$orderId]);
     if ($stmt->rowCount()) {
         $emailKey = 'refund_sent';
@@ -100,15 +105,68 @@ if ($action === 'approve') {
         ]);
     }
     $_SESSION['admin_success'] = 'Order marked as refunded. Remember to send the buyer their subtotal via ABA.';
+
+} elseif ($action === 'decide_full' || $action === 'decide_part') {
+    // The vendor said the return is used, empty or different; the admin has
+    // looked and is refunding all or part of the product price. Delivery is
+    // never refunded, so the most is subtotal − discount.
+    $full = $pdo->prepare("SELECT ROUND(subtotal - discount_amount, 2) FROM orders WHERE id = ? AND status = 'return_received' AND return_disputed_at IS NOT NULL");
+    $full->execute([$orderId]);
+    $max = $full->fetchColumn();
+    $amount = $action === 'decide_full' ? (float)$max : round((float)($_POST['amount'] ?? 0), 2);
+    if ($max === false) {
+        $_SESSION['admin_error'] = 'This refund has already been decided.';
+    } elseif ($action === 'decide_part' && ($amount <= 0 || $amount >= (float)$max)) {
+        $_SESSION['admin_error'] = 'A part refund must be more than $0 and less than $' . number_format((float)$max, 2) . '.';
+    } else {
+        $stmt = $pdo->prepare("UPDATE orders SET status = 'refunded', refunded_at = NOW(), refund_paid = ? WHERE id = ? AND status = 'return_received' AND return_disputed_at IS NOT NULL");
+        $stmt->execute([$amount, $orderId]);
+        if ($stmt->rowCount()) {
+            $emailKey = 'refund_sent';
+            if ($action === 'decide_part') {
+                $notifType = 'refund_part_sent';
+                $notifData = ['amount' => '$' . number_format($amount, 2)];
+            }
+            audit_log($pdo, 'refund.' . $action, 'order', $orderId, ['amount' => $amount]);
+        }
+        $_SESSION['admin_success'] = 'Refund of $' . number_format($amount, 2) . ' recorded. Make sure it has gone to the buyer via ABA.';
+    }
+
+} elseif ($action === 'decide_none') {
+    // No refund after a disputed return. The order goes back to 'delivered'
+    // with the rejection recorded and the window closed, like a confirmed
+    // rejection, so the vendor can be paid out. The item is still the buyer's:
+    // the vendor posts it back, and the buyer pays the postage.
+    $stmt = $pdo->prepare("UPDATE orders SET status = 'delivered', refund_rejected_at = NOW(), refund_closed_at = NOW() WHERE id = ? AND status = 'return_received' AND return_disputed_at IS NOT NULL");
+    $stmt->execute([$orderId]);
+    if ($stmt->rowCount()) {
+        $emailKey  = 'refund_rejected';
+        $notifType = 'refund_refused';
+        audit_log($pdo, 'refund.decide_none', 'order', $orderId);
+        $v = $pdo->prepare('SELECT o.public_id, o.created_at, b.user_id FROM orders o JOIN businesses b ON b.id = o.business_id WHERE o.id = ?');
+        $v->execute([$orderId]);
+        if ($vr = $v->fetch()) {
+            $void = order_display_id($orderId, $vr['created_at']);
+            notify($pdo, 'vendor', (int)$vr['user_id'], 'return_post_back',
+                'No refund for order #' . $void . ' — post the item back to the buyer. The buyer pays the postage.',
+                '/orders-vendor/refund.php?id=' . $vr['public_id'], ['ref' => $void]);
+        }
+        $_SESSION['admin_success'] = 'No refund. The buyer and the vendor have been told the item goes back to the buyer.';
+    } else {
+        $_SESSION['admin_error'] = 'This refund has already been decided.';
+    }
 }
 
 if ($emailKey) {
     // The bell notification type matches the email template key one-to-one.
     $notifMsgs = [
-        'refund_approved' => 'Your refund was approved for order #%s — please send the item back.',
-        'refund_rejected' => 'Your refund request for order #%s was declined.',
-        'refund_sent'     => 'Your refund for order #%s has been sent.',
+        'refund_approved'  => 'Your refund was approved for order #%s — please send the item back.',
+        'refund_rejected'  => 'Your refund request for order #%s was declined.',
+        'refund_sent'      => 'Your refund for order #%s has been sent.',
+        'refund_part_sent' => 'A part refund of %2$s for order #%1$s has been sent.',
+        'refund_refused'   => 'No refund for order #%s after the return was checked. The shop will post the item back to you; you pay the postage.',
     ];
+    $notifType = $notifType ?? $emailKey;
     $bStmt = $pdo->prepare(
         'SELECT o.public_id, o.created_at, bu.id AS buyer_id, bu.name, bu.email
          FROM orders o JOIN buyers bu ON bu.id = o.buyer_user_id
@@ -123,9 +181,9 @@ if ($emailKey) {
             'cta_url' => 'https://teepsaa.com/orders-buyer/order.php?id=' . $buyer['public_id'],
         ]);
         if ($html !== '') send_email($buyer['email'], $subj, $html);
-        notify($pdo, 'buyer', (int)$buyer['buyer_id'], $emailKey,
-            sprintf($notifMsgs[$emailKey] ?? 'Update on order #%s.', $oid),
-            '/orders-buyer/order.php?id=' . $buyer['public_id'], ['ref' => $oid]);
+        notify($pdo, 'buyer', (int)$buyer['buyer_id'], $notifType,
+            sprintf($notifMsgs[$notifType] ?? 'Update on order #%s.', $oid, $notifData['amount'] ?? ''),
+            '/orders-buyer/order.php?id=' . $buyer['public_id'], ['ref' => $oid] + $notifData);
     }
 }
 

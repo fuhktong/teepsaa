@@ -15,7 +15,8 @@ $_rsteps = [
     'refunded'          => $t['rstatus_refunded'],
 ];
 $_rkeys       = array_keys($_rsteps);
-$_rcurrentIdx = array_search($refundStatus, $_rkeys);
+// A disputed return is back with the vendor, held at that step until teepsaa decides.
+$_rcurrentIdx = array_search($refundStatus === 'return_disputed' ? 'return_received' : $refundStatus, $_rkeys);
 ?>
 <?php if ($_rrejected): ?>
 <div class="ostatus-bar ostatus-cancelled"><?= $t['rstatus_rejected'] ?></div>

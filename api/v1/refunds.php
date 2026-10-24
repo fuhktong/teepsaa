@@ -13,6 +13,7 @@
 // vendor cannot act on one, which is what needs_action and can_confirm are for.
 
 require __DIR__ . '/../../config/api.php';
+require __DIR__ . '/../../config/refund-evidence.php';
 
 api_require_method('GET');
 
@@ -53,7 +54,7 @@ $needsAction = (int)$actionStmt->fetchColumn();
 // an emulated prepare. The casts above leave nothing in them to inject.
 $stmt = $pdo->prepare("
     SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.discount_amount,
-           o.status, o.created_at, o.refund_rejected_at,
+           o.status, o.created_at, o.refund_rejected_at, o.return_disputed_at, o.refund_paid,
            b.name AS business_name,
            b.deleted_at AS business_closed,
            u.name AS buyer_name, u.email AS buyer_email,
@@ -85,9 +86,10 @@ foreach ($stmt->fetchAll() as $o) {
         'ref'         => date('ymd', strtotime($o['created_at'])) . '-' . str_pad((string)$o['id'], 4, '0', STR_PAD_LEFT),
         'status'      => $o['status'],
         // What the screen shows. A rejection is recorded in its own column
-        // rather than in status, so the two can disagree and this is the one
-        // to trust for anything the vendor reads.
-        'refund_state'    => $o['refund_rejected_at'] ? 'refund_rejected' : $o['status'],
+        // rather than in status, and a disputed return ('return_disputed') is
+        // held at 'return_received', so this is the one to trust for anything
+        // the vendor reads.
+        'refund_state'    => refund_state($o),
         'items'           => $o['items'],
         'buyer_name'      => $o['buyer_name'] ?: $o['buyer_email'],
         'business_name'   => $o['business_name'],
@@ -97,7 +99,7 @@ foreach ($stmt->fetchAll() as $o) {
         // Always 0 — delivery is paid to the Grab driver, never to teepsaa, so
         // there is nothing of it to refund. Sent for completeness only.
         'delivery_fee'    => round((float)$o['delivery_fee'], 2),
-        'refund_amount'   => round($subtotal - $discount, 2),
+        'refund_amount'   => refund_figure($o),
         'needs_action'    => $o['status'] === 'return_dispatched' && !$closed,
         'created_at'      => $o['created_at'],
     ];

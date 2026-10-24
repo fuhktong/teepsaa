@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
+require __DIR__ . '/../config/refund-evidence.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -41,6 +42,7 @@ if ($filter === 'refund_rejected') {
 $sql = "
     SELECT o.id, o.subtotal, o.delivery_fee, o.discount_amount, o.status, o.created_at,
            o.refund_reason, o.refund_requested_at, o.refund_rejected_at, o.return_tracking_url,
+           o.return_disputed_at, o.refund_paid,
            b.name AS business_name,
            bu.name AS buyer_name, bu.email AS buyer_email,
            v.name AS vendor_name, v.aba_qr AS vendor_aba_qr,
@@ -78,6 +80,7 @@ $statusClasses = [
     'return_approved'   => 'badge-yellow',
     'return_dispatched' => 'badge-yellow',
     'return_received'   => 'badge-blue',
+    'return_disputed'   => 'badge-red',
     'refunded'          => 'badge-green',
     'refund_rejected'   => 'badge-grey',
 ];
@@ -86,6 +89,7 @@ $statusLabels = [
     'return_approved'   => 'Return Approved',
     'return_dispatched' => 'Return Sent',
     'return_received'   => 'Item Received',
+    'return_disputed'   => 'Return Disputed',
     'refunded'          => 'Refunded',
     'refund_rejected'   => 'Rejected',
 ];
@@ -145,8 +149,8 @@ $adminTab     = 'refunds';
                 <span class="order-row-id"><?= $oid ?></span>
                 <span class="order-row-biz"><?= htmlspecialchars($o['business_name']) ?></span>
                 <span class="order-row-customer"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span>
-                <span class="order-row-total">$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?> refund</span>
-                <?php $rState = $o['refund_rejected_at'] ? 'refund_rejected' : $o['status']; ?>
+                <span class="order-row-total">$<?= number_format(refund_figure($o), 2) ?> refund</span>
+                <?php $rState = refund_state($o); ?>
                 <span class="order-badge <?= $statusClasses[$rState] ?>"><?= $statusLabels[$rState] ?></span>
             </div>
             <?php if ($o['items']): ?>

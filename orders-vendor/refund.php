@@ -34,6 +34,7 @@ $statusIn = implode(',', array_map([$pdo, 'quote'], $refundStatuses));
 $stmt = $pdo->prepare("
     SELECT o.id, o.subtotal, o.delivery_fee, o.status, o.created_at,
            o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.coupon_code, o.discount_amount,
+           o.return_disputed_at, o.refund_paid,
            b.name AS business_name,
            u.name AS buyer_name, u.email AS buyer_email
     FROM orders o
@@ -78,12 +79,13 @@ $statusClasses = [
     'return_approved'   => 'badge-yellow',
     'return_dispatched' => 'badge-yellow',
     'return_received'   => 'badge-blue',
+    'return_disputed'   => 'badge-yellow',
     'refunded'          => 'badge-green',
     'refund_rejected'   => 'badge-grey',
 ];
-// A denied refund puts the order back to 'delivered', so the refund state
-// shown here comes from the column, not from status.
-$refundState = $o['refund_rejected_at'] ? 'refund_rejected' : $o['status'];
+// A denied refund puts the order back to 'delivered' and a disputed return is
+// held at 'return_received', so the refund state comes from refund_state().
+$refundState = refund_state($o);
 $statusClass = $statusClasses[$refundState] ?? 'badge-grey';
 $statusLabel = $t['order_badge_' . $refundState] ?? ucwords(str_replace('_', ' ', $refundState));
 
@@ -96,6 +98,7 @@ $refundTotalLabels = [
     'return_approved'   => $t['vorder_will_refund'],
     'return_dispatched' => $t['vorder_will_refund'],
     'return_received'   => $t['vorder_will_refund'],
+    'return_disputed'   => $t['vorder_may_refund'],
     'refund_requested'  => $t['vorder_may_refund'],
     'refund_rejected'   => $t['vorder_not_refunded'],
 ];
@@ -125,6 +128,11 @@ require __DIR__ . '/../head/head.php';
         <h1 style="margin-bottom:0;"><?= $oid ?> — <?= $t['vorder_refund_word'] ?></h1>
         <span class="order-badge <?= $statusClass ?>"><?= $statusLabel ?></span>
     </div>
+
+    <?php if (!empty($_SESSION['flash_error'])): ?>
+    <p class="form-error" style="margin-bottom:1rem;"><?= htmlspecialchars($_SESSION['flash_error']) ?></p>
+    <?php unset($_SESSION['flash_error']); ?>
+    <?php endif; ?>
 
     <div class="popup-section">
         <div class="popup-section-label"><?= $t['order_info'] ?></div>
@@ -161,7 +169,7 @@ require __DIR__ . '/../head/head.php';
         <?php if ($o['delivery_fee'] > 0): ?>
         <div class="popup-subtotal"><span><?= $t['vorder_delivery_nonrefund'] ?></span><span>$<?= number_format($o['delivery_fee'], 2) ?></span></div>
         <?php endif; ?>
-        <div class="popup-total"><span><?= $refundTotalLabel ?></span><span>$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></span></div>
+        <div class="popup-total"><span><?= $refundTotalLabel ?></span><span>$<?= number_format(refund_figure($o), 2) ?></span></div>
     </div>
     <?php endif; ?>
 
@@ -198,6 +206,46 @@ require __DIR__ . '/../head/head.php';
         <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
         <button type="submit" class="btn-confirm"><?= $t['vorder_confirm_received'] ?></button>
     </form>
+
+    <button type="button" class="btn-secondary return-problem-open" style="margin-top:0.75rem;"><?= $t['vorder_return_problem'] ?></button>
+    <form method="POST" action="/products/return-disputed.php" enctype="multipart/form-data" class="return-problem-form" hidden style="margin-top:0.75rem;">
+        <?= csrf_input() ?>
+        <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
+        <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.5rem;"><?= sprintf($t['vorder_return_problem_hint'], REFUND_PHOTOS_MAX) ?></p>
+        <input type="file" name="photos[]" accept="image/jpeg,image/png" multiple required data-max="<?= REFUND_PHOTOS_MAX ?>">
+        <button type="submit" class="btn-confirm" style="margin-top:0.75rem;"><?= $t['vorder_return_problem_send'] ?></button>
+    </form>
+    <script>
+    (function () {
+        var open = document.querySelector('.return-problem-open');
+        var form = document.querySelector('.return-problem-form');
+        var input = form.querySelector('input[type=file]');
+        open.addEventListener('click', function () { form.hidden = false; open.hidden = true; });
+        input.addEventListener('change', function () {
+            var max = +input.dataset.max;
+            input.setCustomValidity(input.files.length > max ? <?= json_encode(sprintf($t['order_refund_err_too_many_photos'], REFUND_PHOTOS_MAX)) ?> : '');
+        });
+    })();
+    </script>
+    <?php endif; ?>
+
+    <?php $vendorPhotos = refund_photos_of($pdo, $orderId)['vendor_return'] ?? []; ?>
+    <?php if ($o['return_disputed_at']): ?>
+    <hr class="popup-divider">
+    <div class="popup-section-label" style="margin-bottom:0.5rem;"><?= $t['vorder_return_problem'] ?></div>
+    <?php if ($refundState === 'return_disputed'): ?>
+    <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;"><?= $t['vorder_return_disputed'] ?></p>
+    <?php elseif ($refundState === 'refund_rejected'): ?>
+    <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;"><?= $t['vorder_return_post_back'] ?></p>
+    <?php endif; ?>
+    <?php if ($vendorPhotos): ?>
+    <div class="popup-section-label" style="margin-top:0.75rem;"><?= $t['order_your_photos'] ?></div>
+    <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+        <?php foreach ($vendorPhotos as $f): $ph = htmlspecialchars(order_photo_url($f)); ?>
+        <a href="<?= $ph ?>" target="_blank" rel="noopener"><img class="dispatch-photo" src="<?= $ph ?>" alt="<?= htmlspecialchars($t['order_your_photos']) ?>" style="max-width:120px;"></a>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
     <?php endif; ?>
 </main>
 

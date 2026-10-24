@@ -1,8 +1,9 @@
 <?php
 // One refund in full, matching orders-vendor/refund.php.
 //
-// Read-only. The single thing a vendor can do from here — confirm the returned
-// item arrived — is its own endpoint, refund-received.php, because it writes.
+// Read-only. The two things a vendor can do from here — confirm the returned
+// item arrived, or say it is used, empty or different — are their own
+// endpoints, refund-received.php and refund-disputed.php, because they write.
 
 require __DIR__ . '/../../config/api.php';
 require __DIR__ . '/../../config/url.php';
@@ -21,6 +22,7 @@ if ($publicId === '') api_json(['error' => 'missing_id'], 400);
 $stmt = $pdo->prepare("
     SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.discount_amount, o.coupon_code,
            o.status, o.created_at, o.refund_reason, o.refund_rejected_at, o.return_tracking_url,
+           o.return_disputed_at, o.refund_paid,
            b.name AS business_name,
            b.deleted_at AS business_closed,
            u.name AS buyer_name, u.email AS buyer_email
@@ -78,7 +80,9 @@ api_json([
     'public_id'       => $o['public_id'],
     'ref'             => date('ymd', strtotime($o['created_at'])) . '-' . str_pad((string)$orderId, 4, '0', STR_PAD_LEFT),
     'status'          => $o['status'],
-    'refund_state'    => $o['refund_rejected_at'] ? 'refund_rejected' : $o['status'],
+    // 'return_disputed' is a return the vendor reported as used, empty or
+    // different, held at 'return_received' until teepsaa decides.
+    'refund_state'    => refund_state($o),
     'created_at'      => $o['created_at'],
     'business_name'   => $o['business_name'],
     'business_closed' => $closed,
@@ -91,11 +95,16 @@ api_json([
     // of what goes back to the buyer. Always 0 today; sent so the app never has
     // to work out a refund figure of its own.
     'delivery_fee'    => round((float)$o['delivery_fee'], 2),
-    'refund_amount'   => round($subtotal - $discount, 2),
+    // What the buyer gets back: the product price, or what teepsaa decided
+    // after a disputed return (part of it, or 0).
+    'refund_amount'   => refund_figure($o),
     'refund_reason'   => $o['refund_reason'] ?: null,
     // The buyer's photos of the problem, sent with the request. Empty for a
     // change of mind and for requests made before photos were asked for.
     'buyer_photos'    => array_map(fn($f) => order_photo_url($f, true), refund_photos_of($pdo, $orderId)['buyer_request'] ?? []),
+    // The vendor's photos of what came back, sent with "used, empty or different".
+    'vendor_photos'   => array_map(fn($f) => order_photo_url($f, true), refund_photos_of($pdo, $orderId)['vendor_return'] ?? []),
+    'photos_max'      => REFUND_PHOTOS_MAX,
     'return_tracking_url' => $inTransit ? $returnUrl : null,
     // Confirming receipt is the vendor's only move here, it only exists while
     // the return is in transit, and a closed shop cannot make it — teepsaa

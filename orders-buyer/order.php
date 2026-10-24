@@ -33,6 +33,7 @@ $stmt = $pdo->prepare('
     SELECT o.id, o.subtotal, o.delivery_fee, o.status, o.created_at, o.tracking_url,
            o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo,
            o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.coupon_code, o.discount_amount,
+           o.return_disputed_at, o.refund_paid,
            CASE WHEN o.delivered_at IS NULL OR TIMESTAMPDIFF(SECOND, o.delivered_at, NOW()) < ' . PAYOUT_WINDOW_SECONDS . ' THEN 1 ELSE 0 END AS refund_window_open,
            DATE_ADD(o.delivered_at, INTERVAL ' . PAYOUT_WINDOW_SECONDS . ' SECOND) AS refund_deadline,
            b.name AS business_name,
@@ -93,6 +94,11 @@ $statusClasses = [
 ];
 $statusClass = $statusClasses[$o['status']] ?? 'badge-grey';
 $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' ', $o['status']));
+// A return the shop disputed is held at 'return_received' until teepsaa decides.
+$disputed = !empty($o['return_disputed_at']);
+if ($o['status'] === 'return_received' && $disputed) $statusLabel = $t['order_badge_return_disputed'];
+$partRefund = $o['status'] === 'refunded' && $o['refund_paid'] !== null
+    && round((float)$o['refund_paid'], 2) < round($o['subtotal'] - $o['discount_amount'], 2);
 ?>
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
@@ -212,7 +218,16 @@ require __DIR__ . '/../head/head.php';
             <?php endforeach; ?>
         </div>
         <?php endif; ?>
+        <?php if ($o['status'] === 'return_received' && $disputed): ?>
+        <p class="order-refund-window" style="margin-top:0.75rem;"><?= $t['order_return_disputed'] ?></p>
+        <?php elseif ($partRefund): ?>
+        <p class="order-refund-window" style="margin-top:0.75rem;"><?= sprintf($t['order_refund_part'], '$' . number_format($o['refund_paid'], 2)) ?></p>
+        <?php endif; ?>
     </div>
+    <?php endif; ?>
+
+    <?php if ($disputed && $o['refund_rejected_at']): ?>
+    <p class="order-refund-window order-refund-window--closed"><?= $t['order_return_refused'] ?></p>
     <?php endif; ?>
 
     <?php if ($o['status'] === 'pending'): ?>
@@ -238,7 +253,7 @@ require __DIR__ . '/../head/head.php';
         <div class="order-options-body">
             <div class="popup-section-label"><?= $t['order_issue'] ?></div>
             <?php if ($o['refund_rejected_at']): ?>
-            <p class="order-refund-window order-refund-window--closed" style="margin-top:0.5rem;"><?= $t['order_refund_denied'] ?></p>
+            <p class="order-refund-window order-refund-window--closed" style="margin-top:0.5rem;"><?= $disputed ? $t['order_return_refused'] : $t['order_refund_denied'] ?></p>
             <?php elseif ($windowOpen): ?>
             <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.75rem;"><?= sprintf($t['order_refund_info'], '<strong>$' . number_format($o['subtotal'] - $o['discount_amount'], 2) . '</strong>') ?><?php if ($deadline): ?> <strong><?= sprintf($t['order_available_until'], htmlspecialchars($deadline)) ?></strong><?php endif; ?></p>
             <form method="POST" action="/orders-buyer/refund-request.php" class="refund-request-form" enctype="multipart/form-data">

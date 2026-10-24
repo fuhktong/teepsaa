@@ -33,6 +33,7 @@ $stmt = $pdo->prepare("
     SELECT o.id, o.subtotal, o.delivery_fee, o.coupon_code, o.discount_amount, o.status, o.created_at,
            o.refund_reason, o.refund_requested_at, o.refund_rejected_at, o.refund_closed_at,
            o.return_tracking_url, o.return_photo, o.dispatch_photo, o.delivered_at, o.paid_out_at,
+           o.return_disputed_at, o.refund_paid,
            b.name AS business_name,
            bu.name AS buyer_name, bu.email AS buyer_email,
            v.name AS vendor_name, v.aba_qr AS vendor_aba_qr
@@ -69,6 +70,7 @@ $statusClasses = [
     'return_approved'   => 'badge-yellow',
     'return_dispatched' => 'badge-yellow',
     'return_received'   => 'badge-blue',
+    'return_disputed'   => 'badge-red',
     'refunded'          => 'badge-green',
     'refund_rejected'   => 'badge-grey',
 ];
@@ -77,12 +79,14 @@ $statusLabels = [
     'return_approved'   => 'Return Approved',
     'return_dispatched' => 'Return Sent',
     'return_received'   => 'Item Received',
+    'return_disputed'   => 'Return Disputed',
     'refunded'          => 'Refunded',
     'refund_rejected'   => 'Rejected',
 ];
-// A rejected refund leaves the order back at 'delivered', so the refund state
-// shown here comes from the column, not from status.
-$refundState = $o['refund_rejected_at'] ? 'refund_rejected' : $o['status'];
+// A rejected refund leaves the order back at 'delivered' and a disputed return
+// is held at 'return_received', so the refund state comes from refund_state().
+$refundState = refund_state($o);
+$fullRefund  = round($o['subtotal'] - $o['discount_amount'], 2);
 $statusClass = $statusClasses[$refundState] ?? 'badge-grey';
 $statusLabel = $statusLabels[$refundState] ?? ucwords(str_replace('_', ' ', $refundState));
 $adminSection = 'orders';
@@ -140,7 +144,7 @@ $adminTab     = 'refunds';
                 <div class="detail-row"><span class="detail-row-label">Coupon (<?= htmlspecialchars($o['coupon_code']) ?>)</span><span class="detail-row-value">−$<?= number_format($o['discount_amount'], 2) ?></span></div>
                 <?php endif; ?>
                 <div class="detail-row"><span class="detail-row-label">Delivery (non-refundable)</span><span class="detail-row-value">−$<?= number_format($o['delivery_fee'], 2) ?></span></div>
-                <div class="detail-row"><span class="detail-row-label" style="font-weight:700;">Refund to buyer</span><span class="detail-row-value" style="font-weight:700;">$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></span></div>
+                <div class="detail-row"><span class="detail-row-label" style="font-weight:700;"><?= $o['refund_paid'] !== null && (float)$o['refund_paid'] < $fullRefund ? 'Part refund to buyer' : 'Refund to buyer' ?></span><span class="detail-row-value" style="font-weight:700;">$<?= number_format(refund_figure($o), 2) ?></span></div>
             </div>
         </div>
 
@@ -157,8 +161,10 @@ $adminTab     = 'refunds';
             // Every picture this refund has, in the order they were taken.
             $photoList = [];
             if ($o['dispatch_photo']) $photoList[] = ['Parcel as sent (vendor)', $o['dispatch_photo']];
-            foreach (refund_photos_of($pdo, $orderId)['buyer_request'] ?? [] as $f) $photoList[] = ['The problem (buyer)', $f];
+            $refundPhotos = refund_photos_of($pdo, $orderId);
+            foreach ($refundPhotos['buyer_request'] ?? [] as $f) $photoList[] = ['The problem (buyer)', $f];
             if ($o['return_photo']) $photoList[] = ['Return as sent (buyer)', $o['return_photo']];
+            foreach ($refundPhotos['vendor_return'] ?? [] as $f) $photoList[] = ['What came back (vendor)', $f];
             ?>
             <?php if ($photoList): ?>
             <div class="detail-card">
@@ -200,6 +206,28 @@ $adminTab     = 'refunds';
                 <?php endif; ?>
                 <p style="font-size:0.875rem;color:#6b7280;margin:0;">Buyer has dispatched the return. Waiting for vendor to confirm receipt.</p>
 
+                <?php elseif ($refundState === 'return_disputed'): ?>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">The vendor says the returned item is <strong>used, empty or different</strong> and sent photos of what came back (see Photos). Compare them with the parcel as sent and the buyer's photos, then decide. For a refund, send the amount to the buyer via ABA first, then press the button. With no refund, the vendor posts the item back to the buyer, and the buyer pays the postage.</p>
+                <div class="detail-row" style="margin-bottom:0.75rem;"><span class="detail-row-label">Buyer email</span><span class="detail-row-value"><?= htmlspecialchars($o['buyer_email']) ?></span></div>
+                <div class="popup-actions" style="flex-wrap:wrap;">
+                    <form method="POST" action="/admin/refund-action.php" onsubmit="return confirm('Sent the buyer $<?= number_format($fullRefund, 2) ?>? This marks the refund done.');">
+                        <?= csrf_input() ?>
+                        <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
+                        <button type="submit" name="action" value="decide_full" class="btn-approve">Full refund ($<?= number_format($fullRefund, 2) ?>) — sent</button>
+                    </form>
+                    <form method="POST" action="/admin/refund-action.php" onsubmit="return confirm('Sent the buyer $' + this.amount.value + '? This marks the refund done.');" style="display:flex;gap:0.5rem;align-items:center;">
+                        <?= csrf_input() ?>
+                        <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
+                        <label style="font-size:0.875rem;">$ <input type="number" name="amount" required min="0.01" max="<?= number_format($fullRefund - 0.01, 2, '.', '') ?>" step="0.01" style="width:6rem;"></label>
+                        <button type="submit" name="action" value="decide_part" class="btn-approve">Part refund — sent</button>
+                    </form>
+                    <form method="POST" action="/admin/refund-action.php" onsubmit="return confirm('No refund? The buyer is told the item will be posted back at their cost, and the vendor can be paid out.');">
+                        <?= csrf_input() ?>
+                        <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
+                        <button type="submit" name="action" value="decide_none" class="btn-reject">No refund — post item back</button>
+                    </form>
+                </div>
+
                 <?php elseif ($refundState === 'return_received'): ?>
                 <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Vendor confirmed receipt. Send <strong>$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?></strong> to the buyer via ABA, then mark as refunded.</p>
                 <div class="detail-row" style="margin-bottom:0.75rem;"><span class="detail-row-label">Buyer email</span><span class="detail-row-value"><?= htmlspecialchars($o['buyer_email']) ?></span></div>
@@ -233,7 +261,9 @@ $adminTab     = 'refunds';
                     Refund request was rejected<?= $o['refund_rejected_at'] ? ' on ' . date('M j, g:ia', strtotime($o['refund_rejected_at'])) : '' ?>.
                     The order is back to delivered and the vendor is due their payout.
                 </p>
-                <?php if ($o['paid_out_at']): ?>
+                <?php if ($o['return_disputed_at']): ?>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0;">Decided after the vendor disputed the return: no refund. The vendor posts the item back to the buyer, at the buyer's cost.</p>
+                <?php elseif ($o['paid_out_at']): ?>
                 <p style="font-size:0.875rem;color:#1e7e34;margin:0;">Payout was released on <?= date('M j, g:ia', strtotime($o['paid_out_at'])) ?> — this rejection can no longer be overturned.</p>
                 <?php else: ?>
                 <?php if ($o['refund_closed_at']): ?>

@@ -10,9 +10,15 @@
 // The photos are kept like dispatch photos (config/order-photo.php), outside
 // the web root, one row each in refund_photos.
 //
-// Used by orders-buyer/refund-request.php (website) and
-// api/v1/buyer/order-action.php (app), so the two cannot drift apart. Needs
-// config/notify.php loaded.
+// When the return arrives, the vendor either confirms it ("Received") or says
+// the item is used, empty or different. That second answer needs photos of
+// what arrived and holds the refund: the order is 'return_received' with
+// return_disputed_at set, and an admin decides — the full product price, part
+// of it, or nothing, in which case the item is posted back at the buyer's cost.
+//
+// Used by orders-buyer/refund-request.php and products/return-disputed.php
+// (website) and api/v1/buyer/order-action.php and api/v1/refund-disputed.php
+// (apps), so the two cannot drift apart. Needs config/notify.php loaded.
 
 require_once __DIR__ . '/order-photo.php';
 
@@ -148,4 +154,67 @@ function refund_request_notify(PDO $pdo, int $orderId): void {
     if ($html !== '') send_email($o['buyer_email'], $subj, $html);
     notify($pdo, 'buyer', (int)$o['buyer_id'], 'refund_approved',
         'Your refund was approved for order #' . $oid . ' — please send the item back.', $buyerLink, ['ref' => $oid]);
+}
+
+/**
+ * The refund state shown everywhere: status, except that a rejection lives in
+ * its own column and a disputed return is held at 'return_received'.
+ */
+function refund_state(array $o): string {
+    if (!empty($o['refund_rejected_at'])) return 'refund_rejected';
+    if ($o['status'] === 'return_received' && !empty($o['return_disputed_at'])) return 'return_disputed';
+    return $o['status'];
+}
+
+/** What the buyer gets back, or got: refund_paid once decided, else the product price. */
+function refund_figure(array $o): float {
+    if (isset($o['refund_paid'])) return round((float)$o['refund_paid'], 2);
+    return round((float)$o['subtotal'] - (float)$o['discount_amount'], 2);
+}
+
+/**
+ * The vendor's "Item is used, empty or different". Returns null when done, or
+ * an error code: not_found, shop_closed, wrong_status, or a photo error.
+ */
+function return_dispute(PDO $pdo, int $orderId, int $vendorId, array $files): ?string {
+    $stmt = $pdo->prepare('
+        SELECT o.status, b.deleted_at AS business_closed
+          FROM orders o JOIN businesses b ON b.id = o.business_id
+         WHERE o.id = ? AND b.user_id = ?
+    ');
+    $stmt->execute([$orderId, $vendorId]);
+    $o = $stmt->fetch();
+    if (!$o) return 'not_found';
+    if ($o['business_closed'] !== null) return 'shop_closed';
+    if ($o['status'] !== 'return_dispatched') return 'wrong_status';
+
+    [$photos, $err] = refund_photos_store($files, true);
+    if ($err) return $err;
+
+    $upd = $pdo->prepare("
+        UPDATE orders o JOIN businesses b ON b.id = o.business_id
+           SET o.status = 'return_received', o.return_disputed_at = NOW()
+         WHERE o.id = ? AND b.user_id = ? AND b.deleted_at IS NULL AND o.status = 'return_dispatched'
+    ");
+    $upd->execute([$orderId, $vendorId]);
+    if ($upd->rowCount() === 0) {
+        refund_photos_discard($photos);
+        return 'wrong_status';
+    }
+    refund_photos_record($pdo, $orderId, 'vendor', 'return', $photos);
+
+    // Held, not lost. A failure past here must not read as a failed report.
+    try {
+        $b = $pdo->prepare('SELECT public_id, created_at, buyer_user_id FROM orders WHERE id = ?');
+        $b->execute([$orderId]);
+        if ($row = $b->fetch()) {
+            $oid = order_display_id($orderId, $row['created_at']);
+            notify($pdo, 'buyer', (int)$row['buyer_user_id'], 'return_disputed',
+                'The shop says the item returned for order #' . $oid . ' is used, empty or different. teepsaa is checking the photos before deciding your refund.',
+                '/orders-buyer/order.php?id=' . $row['public_id'], ['ref' => $oid]);
+        }
+    } catch (Throwable $e) {
+        error_log('return_dispute: notify failed for order ' . $orderId . ': ' . $e->getMessage());
+    }
+    return null;
 }

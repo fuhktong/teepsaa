@@ -9,6 +9,7 @@ session_start([
 
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
+require __DIR__ . '/../config/refund-evidence.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -101,7 +102,7 @@ if ($tab === 'refunds' && !empty($bizIds)) {
     $ph2  = implode(',', array_fill(0, count($bizIds), '?'));
     $stmt = $pdo->prepare("
         SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.discount_amount,
-               o.status, o.created_at, o.refund_reason, o.refund_rejected_at,
+               o.status, o.created_at, o.refund_reason, o.refund_rejected_at, o.return_disputed_at, o.refund_paid,
                b.name AS business_name,
                u.name AS buyer_name, u.email AS buyer_email,
                GROUP_CONCAT(CONCAT(oi.product_name, IFNULL(CONCAT(' (', oi.variant_label, ')'), ''), ' x', oi.quantity) ORDER BY oi.id SEPARATOR ', ') AS items
@@ -251,10 +252,10 @@ require __DIR__ . '/../head/head.php';
                     <span class="order-card-items"><?= htmlspecialchars($o['items']) ?></span>
                     <span class="order-card-meta"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span>
                     <span class="order-card-date"><?= fmt_date('M j, g:ia', strtotime($o['created_at'])) ?></span>
-                    <span class="order-card-total">$<?= number_format($o['subtotal'] - $o['discount_amount'], 2) ?> refund</span>
+                    <span class="order-card-total">$<?= number_format(refund_figure($o), 2) ?> refund</span>
                 </div>
                 <div class="order-card-status">
-                    <?php $refundStatus = $o['refund_rejected_at'] ? 'refund_rejected' : $o['status']; require __DIR__ . '/../refund-status/refund-status.php'; ?>
+                    <?php $refundStatus = refund_state($o); require __DIR__ . '/../refund-status/refund-status.php'; ?>
                 </div>
             </div>
             </a>

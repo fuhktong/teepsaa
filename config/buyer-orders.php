@@ -79,7 +79,7 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
         SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.status, o.created_at, o.tracking_url,
                o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo,
                o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.coupon_code, o.discount_amount,
-               o.delivered_at,
+               o.delivered_at, o.return_disputed_at, o.refund_paid,
                CASE WHEN o.delivered_at IS NULL OR TIMESTAMPDIFF(SECOND, o.delivered_at, NOW()) < ' . PAYOUT_WINDOW_SECONDS . ' THEN 1 ELSE 0 END AS refund_window_open,
                DATE_ADD(o.delivered_at, INTERVAL ' . PAYOUT_WINDOW_SECONDS . ' SECOND) AS refund_deadline,
                b.name AS business_name,
@@ -181,7 +181,8 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
         // What the buyer paid, delivery included. A refund never returns
         // delivery, so the refund figure is its own field.
         'total'        => round($subtotal - $discount + (float)$o['delivery_fee'], 2),
-        'refund_amount'=> round($subtotal - $discount, 2),
+        // After a disputed return, what teepsaa decided to send back.
+        'refund_amount'=> refund_figure($o),
 
         'reviewable'   => $reviewable,
 
@@ -195,6 +196,14 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
             // to photos_max; 'other' always needs one.
             'photos_max'  => REFUND_PHOTOS_MAX,
             'photos'      => array_map(fn($f) => order_photo_url($f, true), refund_photos_of($pdo, $orderId)['buyer_request'] ?? []),
+            // The shop said the return came back used, empty or different. While
+            // the status is 'return_received' the refund is held for teepsaa to
+            // decide; with `denied` it was refused and the item is posted back.
+            'disputed'    => !empty($o['return_disputed_at']),
+            // What was actually sent back, once refunded. Below refund_amount's
+            // full figure only for a part refund. Null before that.
+            'paid'        => $o['refund_paid'] !== null ? round((float)$o['refund_paid'], 2) : null,
+            'part'        => $o['refund_paid'] !== null && round((float)$o['refund_paid'], 2) < round($subtotal - $discount, 2),
         ],
         'return_address'      => $returnAddress,
         'return_tracking_url' => safe_external_url($o['return_tracking_url']),
