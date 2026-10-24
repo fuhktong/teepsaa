@@ -61,26 +61,7 @@ $stmt = $pdo->prepare('
 $stmt->execute(['dispatched', $fields['tracking_url'], $fields['shipping_method'], $fields['courier'],
     $fields['tracking_number'], $photo, $orderId, $userId, 'paid']);
 
-if ($stmt->rowCount() > 0) {
-    $buyerStmt = $pdo->prepare(
-        'SELECT bu.id AS buyer_id, bu.email, bu.name, o.id AS order_id, o.public_id AS order_public_id, o.created_at
-         FROM orders o JOIN buyers bu ON bu.id = o.buyer_user_id
-         WHERE o.id = ?'
-    );
-    $buyerStmt->execute([$orderId]);
-    $buyer = $buyerStmt->fetch();
-    if ($buyer) {
-        $oid = order_display_id((int)$buyer['order_id'], $buyer['created_at']);
-        $msg = 'Your order #' . $oid . ' has been dispatched and is on its way.';
-        notify($pdo, 'buyer', (int)$buyer['buyer_id'], 'order_dispatched', $msg, '/orders-buyer/order.php?id=' . $buyer['order_public_id'], ['ref' => $oid]);
-        [$subj, $html] = render_email_template($pdo, 'order_dispatched', [
-            'name'    => htmlspecialchars($buyer['name']),
-            'order'   => $oid,
-            'cta_url' => 'https://teepsaa.com/orders-buyer/order.php?id=' . $buyer['order_public_id'],
-        ]);
-        if ($html !== '') send_email($buyer['email'], $subj, $html);
-    }
-}
+if ($stmt->rowCount() > 0) dispatch_notify_buyer($pdo, $orderId);
 
 if ($photo && $stmt->rowCount() === 0) @unlink(ORDER_PHOTO_DIR . '/' . $photo);
 

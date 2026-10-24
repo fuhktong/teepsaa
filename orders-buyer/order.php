@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/url.php';
+require __DIR__ . '/../config/order-photo.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -29,6 +30,7 @@ if ($publicId === '') {
 
 $stmt = $pdo->prepare('
     SELECT o.id, o.subtotal, o.delivery_fee, o.status, o.created_at, o.tracking_url,
+           o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo,
            o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.coupon_code, o.discount_amount,
            CASE WHEN o.delivered_at IS NULL OR TIMESTAMPDIFF(SECOND, o.delivered_at, NOW()) < ' . PAYOUT_WINDOW_SECONDS . ' THEN 1 ELSE 0 END AS refund_window_open,
            DATE_ADD(o.delivered_at, INTERVAL ' . PAYOUT_WINDOW_SECONDS . ' SECOND) AS refund_deadline,
@@ -123,8 +125,17 @@ require __DIR__ . '/../head/head.php';
         <div class="popup-row"><span class="popup-row-label"><?= $t['order_date'] ?></span><span class="popup-row-value"><?= fmt_date('M j, Y g:ia', strtotime($o['created_at'])) ?></span></div>
         <div class="popup-row"><span class="popup-row-label"><?= $t['order_business'] ?></span><span class="popup-row-value"><?= htmlspecialchars($o['business_name']) ?></span></div>
         <div class="popup-row"><span class="popup-row-label"><?= $t['order_vendor'] ?></span><span class="popup-row-value"><?= htmlspecialchars($o['vendor_name'] ?: $o['vendor_email']) ?></span></div>
+        <?php if ($o['shipping_method']): ?>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['ship_method_label'] ?></span><span class="popup-row-value"><?= $t['ship_method_' . $o['shipping_method']] ?><?= $o['courier'] ? ' — ' . htmlspecialchars($o['courier']) : '' ?></span></div>
+        <?php endif; ?>
+        <?php if ($o['tracking_number']): ?>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['ship_tracking_number'] ?></span><span class="popup-row-value"><?= htmlspecialchars($o['tracking_number']) ?></span></div>
+        <?php endif; ?>
         <?php if ($o['tracking_url'] && $o['status'] === 'dispatched'): ?>
         <div class="popup-row"><span class="popup-row-label"><?= $t['order_tracking'] ?></span><span class="popup-row-value"><a href="<?= htmlspecialchars($o['tracking_url']) ?>" target="_blank" rel="noopener"><?= $t['order_track_delivery'] ?></a></span></div>
+        <?php endif; ?>
+        <?php if ($o['dispatch_photo']): $ph = htmlspecialchars(order_photo_url($o['dispatch_photo'])); ?>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['ship_parcel_photo'] ?></span><span class="popup-row-value"><a href="<?= $ph ?>" target="_blank" rel="noopener"><img class="dispatch-photo" src="<?= $ph ?>" alt="<?= htmlspecialchars($t['ship_parcel_photo']) ?>"></a></span></div>
         <?php endif; ?>
     </div>
 

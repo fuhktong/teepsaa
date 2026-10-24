@@ -90,3 +90,57 @@ function dispatch_fields(array $in): array {
         'tracking_number' => $number,
     ], null];
 }
+
+/** How the parcel is coming, in the words of $t: the courier's name, "Grab", "tuk-tuk", or '' when nothing useful can be said. */
+function dispatch_via(?string $method, ?string $courier, array $t): string {
+    if ($method === 'courier' && $courier) return $courier;
+    if ($method === 'grab' || $method === 'tuktuk') return $t['ship_via_' . $method] ?? '';
+    return '';
+}
+
+/**
+ * Tell the buyer their order is on its way: the bell and push, and the
+ * "dispatched" email, both naming how it is coming. Called by
+ * analytics/dispatch.php and api/v1/order-dispatch.php once the UPDATE has
+ * gone through; needs config/notify.php loaded.
+ */
+function dispatch_notify_buyer(PDO $pdo, int $orderId): void {
+    $stmt = $pdo->prepare('
+        SELECT bu.id AS buyer_id, bu.email, bu.name,
+               o.public_id, o.created_at, o.shipping_method, o.courier, o.tracking_number
+          FROM orders o JOIN buyers bu ON bu.id = o.buyer_user_id
+         WHERE o.id = ?
+    ');
+    $stmt->execute([$orderId]);
+    $o = $stmt->fetch();
+    if (!$o) return;
+
+    $en = require __DIR__ . '/../lang/en.php';
+    $km = require __DIR__ . '/../lang/km.php';
+    $viaEn = dispatch_via($o['shipping_method'], $o['courier'], $en);
+    $viaKm = dispatch_via($o['shipping_method'], $o['courier'], $km);
+
+    $oid  = order_display_id($orderId, $o['created_at']);
+    $link = '/orders-buyer/order.php?id=' . $o['public_id'];
+    $data = ['ref' => $oid] + ($viaEn !== '' ? ['via' => $viaEn, 'via_km' => $viaKm] : []);
+    notify($pdo, 'buyer', (int)$o['buyer_id'], 'order_dispatched',
+        $viaEn !== '' ? sprintf($en['notif_order_dispatched_via'], $oid, $viaEn)
+                      : 'Your order #' . $oid . ' has been dispatched and is on its way.',
+        $link, $data);
+
+    // Both halves of the bilingual email. Blank when there is nothing to say,
+    // so an older copy of the template without these tokens reads the same.
+    $shipping = function (array $t, string $via) use ($o): string {
+        $s = $via !== '' ? sprintf($t['email_dispatch_via'], htmlspecialchars($via)) : '';
+        if ($o['tracking_number']) $s .= sprintf($t['email_dispatch_tracking'], htmlspecialchars($o['tracking_number']));
+        return $s;
+    };
+    [$subj, $html] = render_email_template($pdo, 'order_dispatched', [
+        'name'        => htmlspecialchars($o['name']),
+        'order'       => $oid,
+        'shipping_en' => $shipping($en, $viaEn),
+        'shipping_km' => $shipping($km, $viaKm),
+        'cta_url'     => SITE_URL . $link,
+    ]);
+    if ($html !== '') send_email($o['email'], $subj, $html);
+}

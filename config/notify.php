@@ -31,10 +31,15 @@ function notification_text(array $row, array $t): string {
     $data = !empty($row['data']) ? (json_decode($row['data'], true) ?: []) : [];
 
     switch ($type) {
+        case 'order_dispatched':
+            // Named how it is coming since nationwide shipping; older rows have no `via`.
+            if (isset($data['ref'], $data['via'], $t['notif_order_dispatched_via'])) {
+                return sprintf($t['notif_order_dispatched_via'], $data['ref'], notification_pick($data, 'via', $t));
+            }
+            return isset($data['ref']) ? sprintf($t[$key], $data['ref']) : ($row['message'] ?? '');
         case 'new_order':
         case 'payout_sent':
         case 'payment_confirmed':
-        case 'order_dispatched':
         case 'delivery_confirmed':
         case 'review_reminder':
         case 'refund_requested':

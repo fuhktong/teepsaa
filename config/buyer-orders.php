@@ -12,6 +12,7 @@
 // of them again before it writes anything.
 
 require_once __DIR__ . '/url.php';
+require_once __DIR__ . '/order-photo.php';
 
 const BUYER_REFUND_STATUSES = ['refund_requested', 'return_approved', 'return_dispatched', 'return_received', 'refunded', 'refund_rejected'];
 
@@ -85,6 +86,7 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
 {
     $stmt = $pdo->prepare('
         SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.status, o.created_at, o.tracking_url,
+               o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo,
                o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.coupon_code, o.discount_amount,
                o.delivered_at,
                CASE WHEN o.delivered_at IS NULL OR TIMESTAMPDIFF(SECOND, o.delivered_at, NOW()) < ' . PAYOUT_WINDOW_SECONDS . ' THEN 1 ELSE 0 END AS refund_window_open,
@@ -171,6 +173,12 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
         'business_name' => $o['business_name'],
         'vendor_name'   => $o['vendor_name'] ?: $o['vendor_email'],
         'tracking_url'  => $status === 'dispatched' ? $tracking : null,
+
+        // How it was sent, from dispatch on. All null on older orders.
+        'shipping_method' => $o['shipping_method'],
+        'courier'         => $o['courier'],
+        'tracking_number' => $o['tracking_number'],
+        'dispatch_photo'  => order_photo_url($o['dispatch_photo'], true),
 
         'items'        => $items,
         'subtotal'     => round($subtotal, 2),
