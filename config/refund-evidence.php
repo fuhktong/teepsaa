@@ -16,14 +16,22 @@
 // return_disputed_at set, and an admin decides — the full product price, part
 // of it, or nothing, in which case the item is posted back at the buyer's cost.
 //
-// Used by orders-buyer/refund-request.php and products/return-disputed.php
-// (website) and api/v1/buyer/order-action.php and api/v1/refund-disputed.php
-// (apps), so the two cannot drift apart. Needs config/notify.php loaded.
+// A disputed request also gives the vendor one reply: their own words and up
+// to REFUND_PHOTOS_MAX photos, within REFUND_REPLY_HOURS of the request. The
+// admin decides once the vendor has replied or the time is up, so a vendor
+// who says nothing cannot hold a refund past it.
+//
+// Used by orders-buyer/refund-request.php, products/return-disputed.php and
+// products/refund-reply.php (website) and api/v1/buyer/order-action.php,
+// api/v1/refund-disputed.php and api/v1/refund-reply.php (apps), so the two
+// cannot drift apart. Needs config/notify.php loaded.
 
 require_once __DIR__ . '/order-photo.php';
+require_once __DIR__ . '/refund-action.php';
 
 const REFUND_REASON_CHANGED_MIND = 'Changed my mind';
 const REFUND_PHOTOS_MAX = 3;
+const REFUND_REPLY_MAX_LENGTH = 1000;
 
 // The values the forms post, which is what lands in refund_reason and what the
 // vendor and admin read. The labels are the buyer's language. 'other' (the
@@ -133,7 +141,9 @@ function refund_request_notify(PDO $pdo, int $orderId): void {
     if (!$o) return;
 
     $oid        = order_display_id($orderId, $o['created_at']);
-    $vendorLink = '/orders-vendor/order.php?id=' . $o['public_id'];
+    $vendorLink = $o['status'] === 'refund_requested'
+        ? '/orders-vendor/refund.php?id=' . $o['public_id']
+        : '/orders-vendor/order.php?id=' . $o['public_id'];
     $buyerLink  = '/orders-buyer/order.php?id=' . $o['public_id'];
 
     [$subj, $html] = render_email_template($pdo, 'refund_requested', [
@@ -142,8 +152,15 @@ function refund_request_notify(PDO $pdo, int $orderId): void {
         'cta_url' => 'https://teepsaa.com' . $vendorLink,
     ]);
     if ($html !== '') send_email($o['vendor_email'], $subj, $html);
-    notify($pdo, 'vendor', (int)$o['vendor_id'], 'refund_requested',
-        'A refund was requested for order #' . $oid . '.', $vendorLink, ['ref' => $oid]);
+    // A dispute is the vendor's cue to reply; a change of mind needs nothing.
+    if ($o['status'] === 'refund_requested') {
+        notify($pdo, 'vendor', (int)$o['vendor_id'], 'refund_dispute',
+            'A refund was requested for order #' . $oid . '. You have ' . REFUND_REPLY_HOURS . ' hours to reply with your side.',
+            $vendorLink, ['ref' => $oid, 'hours' => REFUND_REPLY_HOURS]);
+    } else {
+        notify($pdo, 'vendor', (int)$o['vendor_id'], 'refund_requested',
+            'A refund was requested for order #' . $oid . '.', $vendorLink, ['ref' => $oid]);
+    }
 
     if ($o['status'] !== 'return_approved') return;
     [$subj, $html] = render_email_template($pdo, 'refund_approved', [
@@ -216,5 +233,64 @@ function return_dispute(PDO $pdo, int $orderId, int $vendorId, array $files): ?s
     } catch (Throwable $e) {
         error_log('return_dispute: notify failed for order ' . $orderId . ': ' . $e->getMessage());
     }
+    return null;
+}
+
+/**
+ * When the vendor's reply window closes, as a timestamp, or null when this
+ * request has none: only a dispute still waiting for the admin has one.
+ * Needs refund_requested_at, status and vendor_reply_at.
+ */
+function refund_reply_until(array $o): ?int {
+    if ($o['status'] !== 'refund_requested' || empty($o['refund_requested_at'])) return null;
+    return strtotime($o['refund_requested_at']) + REFUND_REPLY_HOURS * 3600;
+}
+
+/** The vendor may still reply — and so the admin waits. */
+function refund_reply_open(array $o): bool {
+    $until = refund_reply_until($o);
+    return $until !== null && empty($o['vendor_reply_at']) && time() < $until;
+}
+
+/**
+ * The vendor's reply to a dispute. Returns null when done, or an error code:
+ * not_found, shop_closed, wrong_status, reply_closed, missing_reply, too_long,
+ * or a photo error.
+ */
+function refund_reply(PDO $pdo, int $orderId, int $vendorId, string $text, array $files): ?string {
+    $stmt = $pdo->prepare('
+        SELECT o.status, o.refund_requested_at, o.vendor_reply_at, b.deleted_at AS business_closed
+          FROM orders o JOIN businesses b ON b.id = o.business_id
+         WHERE o.id = ? AND b.user_id = ?
+    ');
+    $stmt->execute([$orderId, $vendorId]);
+    $o = $stmt->fetch();
+    if (!$o) return 'not_found';
+    if ($o['business_closed'] !== null) return 'shop_closed';
+    if ($o['status'] !== 'refund_requested') return 'wrong_status';
+    if (!refund_reply_open($o)) return 'reply_closed';
+
+    $text = trim($text);
+    if ($text === '') return 'missing_reply';
+    if (mb_strlen($text) > REFUND_REPLY_MAX_LENGTH) return 'too_long';
+
+    [$photos, $err] = refund_photos_store($files, false);
+    if ($err) return $err;
+
+    // The same window again in SQL, so a reply racing the admin's decision or
+    // a second reply matches nothing.
+    $upd = $pdo->prepare("
+        UPDATE orders o JOIN businesses b ON b.id = o.business_id
+           SET o.vendor_reply = ?, o.vendor_reply_at = NOW()
+         WHERE o.id = ? AND b.user_id = ? AND b.deleted_at IS NULL
+           AND o.status = 'refund_requested' AND o.vendor_reply_at IS NULL
+           AND o.refund_requested_at > NOW() - INTERVAL " . REFUND_REPLY_HOURS . " HOUR
+    ");
+    $upd->execute([$text, $orderId, $vendorId]);
+    if ($upd->rowCount() === 0) {
+        refund_photos_discard($photos);
+        return 'reply_closed';
+    }
+    refund_photos_record($pdo, $orderId, 'vendor', 'reply', $photos);
     return null;
 }

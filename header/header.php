@@ -154,8 +154,9 @@ $isBuyerHeader  = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === '
                         $vNotifStmt->execute(['vendor', $_SESSION['user_id']]);
                         $vNotifCount = (int)$vNotifStmt->fetchColumn();
                         // Orders waiting on the vendor: paid = pack & dispatch,
-                        // return_dispatched = buyer shipped a return, mark it received
-                        $vOrdStmt = $pdo->prepare("SELECT COUNT(*) FROM orders o JOIN businesses b ON b.id = o.business_id WHERE b.user_id = ? AND o.status IN ('paid','return_dispatched')");
+                        // plus refunds waiting on them (config/refund-action.php)
+                        require_once __DIR__ . '/../config/refund-action.php';
+                        $vOrdStmt = $pdo->prepare("SELECT COUNT(*) FROM orders o JOIN businesses b ON b.id = o.business_id WHERE b.user_id = ? AND (o.status = 'paid' OR " . VENDOR_REFUND_ACTION_SQL . ")");
                         $vOrdStmt->execute([$_SESSION['user_id']]);
                         $vendorOrdersTodo = (int)$vOrdStmt->fetchColumn();
                     ?>

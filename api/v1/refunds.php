@@ -39,13 +39,14 @@ $countStmt->execute([$userId]);
 $total = (int)$countStmt->fetchColumn();
 
 // What the vendor still has to do something about, for the badge on the pill.
-// Only 'return_dispatched' waits on the vendor — every other state waits on the
-// buyer or on teepsaa — and only at a shop that is still open.
+// A return in transit and a dispute still open for the vendor's reply wait on
+// the vendor (config/refund-action.php) — every other state waits on the buyer
+// or on teepsaa — and only at a shop that is still open.
 $actionStmt = $pdo->prepare("
     SELECT COUNT(*)
       FROM orders o
       JOIN businesses b ON b.id = o.business_id
-     WHERE b.user_id = ? AND b.deleted_at IS NULL AND o.status = 'return_dispatched'
+     WHERE b.user_id = ? AND b.deleted_at IS NULL AND " . VENDOR_REFUND_ACTION_SQL . "
 ");
 $actionStmt->execute([$userId]);
 $needsAction = (int)$actionStmt->fetchColumn();
@@ -55,6 +56,7 @@ $needsAction = (int)$actionStmt->fetchColumn();
 $stmt = $pdo->prepare("
     SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.discount_amount,
            o.status, o.created_at, o.refund_rejected_at, o.return_disputed_at, o.refund_paid,
+           o.refund_requested_at, o.vendor_reply_at,
            b.name AS business_name,
            b.deleted_at AS business_closed,
            u.name AS buyer_name, u.email AS buyer_email,
@@ -100,7 +102,7 @@ foreach ($stmt->fetchAll() as $o) {
         // there is nothing of it to refund. Sent for completeness only.
         'delivery_fee'    => round((float)$o['delivery_fee'], 2),
         'refund_amount'   => refund_figure($o),
-        'needs_action'    => $o['status'] === 'return_dispatched' && !$closed,
+        'needs_action'    => ($o['status'] === 'return_dispatched' || refund_reply_open($o)) && !$closed,
         'created_at'      => $o['created_at'],
     ];
 }

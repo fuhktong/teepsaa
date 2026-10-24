@@ -52,6 +52,8 @@ function notification_text(array $row, array $t): string {
         case 'refund_refused':
         case 'return_post_back':
             return isset($data['ref']) ? sprintf($t[$key], $data['ref']) : ($row['message'] ?? '');
+        case 'refund_dispute':
+            return isset($data['ref'], $data['hours']) ? sprintf($t[$key], $data['ref'], (int)$data['hours']) : ($row['message'] ?? '');
         case 'refund_part_sent':
             return isset($data['ref'], $data['amount']) ? sprintf($t[$key], $data['ref'], $data['amount']) : ($row['message'] ?? '');
         case 'low_stock':

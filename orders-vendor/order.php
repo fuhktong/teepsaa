@@ -11,6 +11,7 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/url.php';
 require __DIR__ . '/../config/order-photo.php';
+require __DIR__ . '/../config/refund-evidence.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -70,7 +71,7 @@ $bizIds = array_column($bizStmt->fetchAll(), 'id');
 $vendorRefundCount = 0;
 if (!empty($bizIds)) {
     $ph = implode(',', array_fill(0, count($bizIds), '?'));
-    $cntStmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE business_id IN ($ph) AND status IN ('return_dispatched')");
+    $cntStmt = $pdo->prepare("SELECT COUNT(*) FROM orders o WHERE o.business_id IN ($ph) AND " . VENDOR_REFUND_ACTION_SQL);
     $cntStmt->execute(array_values($bizIds));
     $vendorRefundCount = (int)$cntStmt->fetchColumn();
 }

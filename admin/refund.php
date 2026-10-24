@@ -33,7 +33,7 @@ $stmt = $pdo->prepare("
     SELECT o.id, o.subtotal, o.delivery_fee, o.coupon_code, o.discount_amount, o.status, o.created_at,
            o.refund_reason, o.refund_requested_at, o.refund_rejected_at, o.refund_closed_at,
            o.return_tracking_url, o.return_photo, o.dispatch_photo, o.delivered_at, o.paid_out_at,
-           o.return_disputed_at, o.refund_paid,
+           o.return_disputed_at, o.refund_paid, o.vendor_reply, o.vendor_reply_at,
            b.name AS business_name,
            bu.name AS buyer_name, bu.email AS buyer_email,
            v.name AS vendor_name, v.aba_qr AS vendor_aba_qr
@@ -157,12 +157,21 @@ $adminTab     = 'refunds';
             </div>
             <?php endif; ?>
 
+            <?php if ($o['vendor_reply_at']): ?>
+            <div class="detail-card">
+                <div class="detail-card-title">Vendor's reply</div>
+                <p style="font-size:0.875rem;color:#374151;white-space:pre-line;margin:0 0 0.5rem;"><?= htmlspecialchars($o['vendor_reply']) ?></p>
+                <p style="font-size:0.8rem;color:#6b7280;margin:0;">Sent <?= date('M j, g:ia', strtotime($o['vendor_reply_at'])) ?></p>
+            </div>
+            <?php endif; ?>
+
             <?php
             // Every picture this refund has, in the order they were taken.
             $photoList = [];
             if ($o['dispatch_photo']) $photoList[] = ['Parcel as sent (vendor)', $o['dispatch_photo']];
             $refundPhotos = refund_photos_of($pdo, $orderId);
             foreach ($refundPhotos['buyer_request'] ?? [] as $f) $photoList[] = ['The problem (buyer)', $f];
+            foreach ($refundPhotos['vendor_reply'] ?? [] as $f) $photoList[] = ['Reply (vendor)', $f];
             if ($o['return_photo']) $photoList[] = ['Return as sent (buyer)', $o['return_photo']];
             foreach ($refundPhotos['vendor_return'] ?? [] as $f) $photoList[] = ['What came back (vendor)', $f];
             ?>
@@ -182,7 +191,13 @@ $adminTab     = 'refunds';
 
             <div class="detail-card">
                 <div class="detail-card-title">Actions</div>
-                <?php if ($refundState === 'refund_requested'): ?>
+                <?php if ($refundState === 'refund_requested' && refund_reply_open($o)): ?>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0;">Waiting for the vendor's reply, until <strong><?= date('M j, g:ia', refund_reply_until($o)) ?></strong>. You can approve or reject once they reply or the <?= REFUND_REPLY_HOURS ?> hours are up.</p>
+
+                <?php elseif ($refundState === 'refund_requested'): ?>
+                <?php if (!$o['vendor_reply_at'] && refund_reply_until($o) !== null): ?>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.5rem;">The vendor did not reply within <?= REFUND_REPLY_HOURS ?> hours.</p>
+                <?php endif; ?>
                 <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Buyer will return item via Grab at their own cost. Approve to proceed, or reject if request is invalid.</p>
                 <div class="popup-actions">
                     <form method="POST" action="/admin/refund-action.php">

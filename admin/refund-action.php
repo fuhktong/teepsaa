@@ -12,6 +12,7 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/audit.php';
 require __DIR__ . '/../config/notify.php';
+require __DIR__ . '/../config/refund-action.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -43,27 +44,37 @@ $emailKey = null;
 $notifType = null;
 $notifData = [];
 
+// A dispute waits for the vendor's reply, or for the reply window to close
+// (config/refund-evidence.php). Orders put back by an overturn are long past it.
+$replyDone = "(vendor_reply_at IS NOT NULL OR refund_requested_at IS NULL
+               OR refund_requested_at <= NOW() - INTERVAL " . REFUND_REPLY_HOURS . " HOUR)";
+$replyWait = 'The vendor still has time to reply — approve or reject once they do or the ' . REFUND_REPLY_HOURS . ' hours are up.';
+
 if ($action === 'approve') {
-    $stmt = $pdo->prepare("UPDATE orders SET status = 'return_approved' WHERE id = ? AND status = 'refund_requested'");
+    $stmt = $pdo->prepare("UPDATE orders SET status = 'return_approved' WHERE id = ? AND status = 'refund_requested' AND $replyDone");
     $stmt->execute([$orderId]);
     if ($stmt->rowCount()) {
         $emailKey = 'refund_approved';
         audit_log($pdo, 'refund.approve', 'order', $orderId);
+        $_SESSION['admin_success'] = 'Return approved — buyer has been notified to send item back.';
+    } else {
+        $_SESSION['admin_error'] = $replyWait;
     }
-    $_SESSION['admin_success'] = 'Return approved — buyer has been notified to send item back.';
 
 } elseif ($action === 'reject') {
     // The request came from a delivered order, so denying it puts the order
     // back exactly where it was — otherwise it can never reach 'completed'
     // and falls out of the payout queue, and the vendor is never paid.
     // The rejection is recorded in its own column instead of in status.
-    $stmt = $pdo->prepare("UPDATE orders SET status = 'delivered', refund_rejected_at = NOW() WHERE id = ? AND status = 'refund_requested'");
+    $stmt = $pdo->prepare("UPDATE orders SET status = 'delivered', refund_rejected_at = NOW() WHERE id = ? AND status = 'refund_requested' AND $replyDone");
     $stmt->execute([$orderId]);
     if ($stmt->rowCount()) {
         $emailKey = 'refund_rejected';
         audit_log($pdo, 'refund.reject', 'order', $orderId);
+        $_SESSION['admin_success'] = 'Refund request rejected.';
+    } else {
+        $_SESSION['admin_error'] = $replyWait;
     }
-    $_SESSION['admin_success'] = 'Refund request rejected.';
 
 } elseif ($action === 'overturn') {
     // Second look went the buyer's way. Put the request back where it was so it

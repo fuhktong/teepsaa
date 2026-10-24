@@ -34,7 +34,7 @@ $statusIn = implode(',', array_map([$pdo, 'quote'], $refundStatuses));
 $stmt = $pdo->prepare("
     SELECT o.id, o.subtotal, o.delivery_fee, o.status, o.created_at,
            o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.coupon_code, o.discount_amount,
-           o.return_disputed_at, o.refund_paid,
+           o.return_disputed_at, o.refund_paid, o.refund_requested_at, o.vendor_reply, o.vendor_reply_at,
            b.name AS business_name,
            u.name AS buyer_name, u.email AS buyer_email
     FROM orders o
@@ -67,7 +67,7 @@ $bizIds = array_column($bizStmt->fetchAll(), 'id');
 $vendorRefundCount = 0;
 if (!empty($bizIds)) {
     $ph = implode(',', array_fill(0, count($bizIds), '?'));
-    $cntStmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE business_id IN ($ph) AND status IN ('return_dispatched')");
+    $cntStmt = $pdo->prepare("SELECT COUNT(*) FROM orders o WHERE o.business_id IN ($ph) AND " . VENDOR_REFUND_ACTION_SQL);
     $cntStmt->execute(array_values($bizIds));
     $vendorRefundCount = (int)$cntStmt->fetchColumn();
 }
@@ -186,6 +186,55 @@ require __DIR__ . '/../head/head.php';
             <?php endforeach; ?>
         </div>
         <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <?php
+    // The vendor's one reply to a dispute (config/refund-evidence.php).
+    $replyUntil  = refund_reply_until($o);
+    $replyPhotos = refund_photos_of($pdo, $orderId)['vendor_reply'] ?? [];
+    $replyDraft  = $_SESSION['vendor_reply_draft'] ?? '';
+    unset($_SESSION['vendor_reply_draft']);
+    ?>
+    <?php if ($o['vendor_reply_at']): ?>
+    <div class="popup-section">
+        <div class="popup-section-label"><?= $t['vorder_reply_title'] ?></div>
+        <p style="font-size:0.875rem;color:#374151;white-space:pre-line;margin:0 0 0.5rem;"><?= htmlspecialchars($o['vendor_reply']) ?></p>
+        <?php if ($replyPhotos): ?>
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
+            <?php foreach ($replyPhotos as $f): $ph = htmlspecialchars(order_photo_url($f)); ?>
+            <a href="<?= $ph ?>" target="_blank" rel="noopener"><img class="dispatch-photo" src="<?= $ph ?>" alt="<?= htmlspecialchars($t['order_your_photos']) ?>" style="max-width:120px;"></a>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+        <?php if ($o['status'] === 'refund_requested'): ?>
+        <p style="font-size:0.875rem;color:#6b7280;margin:0;"><?= sprintf($t['vorder_reply_sent'], fmt_date('M j, g:ia', strtotime($o['vendor_reply_at']))) ?></p>
+        <?php endif; ?>
+    </div>
+    <?php elseif (refund_reply_open($o)): ?>
+    <div class="popup-section">
+        <div class="popup-section-label"><?= $t['vorder_reply_title'] ?></div>
+        <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.5rem;"><?= sprintf($t['vorder_reply_hint'], fmt_date('M j, g:ia', $replyUntil), REFUND_PHOTOS_MAX) ?></p>
+        <form method="POST" action="/products/refund-reply.php" enctype="multipart/form-data">
+            <?= csrf_input() ?>
+            <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
+            <textarea name="reply" rows="4" required maxlength="<?= REFUND_REPLY_MAX_LENGTH ?>" placeholder="<?= htmlspecialchars($t['vorder_reply_placeholder']) ?>" style="width:100%;"><?= htmlspecialchars($replyDraft) ?></textarea>
+            <input type="file" name="photos[]" accept="image/jpeg,image/png" multiple data-max="<?= REFUND_PHOTOS_MAX ?>" class="reply-photos" style="margin-top:0.5rem;">
+            <button type="submit" class="btn-confirm" style="margin-top:0.75rem;"><?= $t['vorder_reply_send'] ?></button>
+        </form>
+        <script>
+        (function () {
+            var input = document.querySelector('.reply-photos');
+            input.addEventListener('change', function () {
+                input.setCustomValidity(input.files.length > +input.dataset.max ? <?= json_encode(sprintf($t['order_refund_err_too_many_photos'], REFUND_PHOTOS_MAX)) ?> : '');
+            });
+        })();
+        </script>
+    </div>
+    <?php elseif ($replyUntil !== null): ?>
+    <div class="popup-section">
+        <div class="popup-section-label"><?= $t['vorder_reply_title'] ?></div>
+        <p style="font-size:0.875rem;color:#6b7280;margin:0;"><?= $t['vorder_reply_closed'] ?></p>
     </div>
     <?php endif; ?>
 

@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 require_once __DIR__ . '/../config/weights.php';
+require_once __DIR__ . '/../config/refund-evidence.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -135,7 +136,7 @@ if (!empty($bizIds)) {
     $stmt->execute([$userId]);
     $unreadNotifs = $stmt->fetchAll();
 
-    $cntStmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE business_id IN ($ph) AND status IN ('return_dispatched')");
+    $cntStmt = $pdo->prepare("SELECT COUNT(*) FROM orders o WHERE o.business_id IN ($ph) AND " . VENDOR_REFUND_ACTION_SQL);
     $cntStmt->execute(array_values($bizIds));
     $vendorRefundCount = (int)$cntStmt->fetchColumn();
 }

@@ -47,7 +47,7 @@ if (!empty($bizIds)) {
     $stmt->execute([$userId]);
     $unreadNotifs = $stmt->fetchAll();
 
-    $cntStmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE business_id IN ($ph) AND status IN ('return_dispatched')");
+    $cntStmt = $pdo->prepare("SELECT COUNT(*) FROM orders o WHERE o.business_id IN ($ph) AND " . VENDOR_REFUND_ACTION_SQL);
     $cntStmt->execute(array_values($bizIds));
     $vendorRefundCount = (int)$cntStmt->fetchColumn();
 }

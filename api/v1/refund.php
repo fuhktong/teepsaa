@@ -1,9 +1,10 @@
 <?php
 // One refund in full, matching orders-vendor/refund.php.
 //
-// Read-only. The two things a vendor can do from here — confirm the returned
-// item arrived, or say it is used, empty or different — are their own
-// endpoints, refund-received.php and refund-disputed.php, because they write.
+// Read-only. The things a vendor can do from here — reply to a dispute,
+// confirm the returned item arrived, or say it is used, empty or different —
+// are their own endpoints, refund-reply.php, refund-received.php and
+// refund-disputed.php, because they write.
 
 require __DIR__ . '/../../config/api.php';
 require __DIR__ . '/../../config/url.php';
@@ -23,6 +24,7 @@ $stmt = $pdo->prepare("
     SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.discount_amount, o.coupon_code,
            o.status, o.created_at, o.refund_reason, o.refund_rejected_at, o.return_tracking_url,
            o.return_disputed_at, o.refund_paid,
+           o.refund_requested_at, o.vendor_reply, o.vendor_reply_at,
            b.name AS business_name,
            b.deleted_at AS business_closed,
            u.name AS buyer_name, u.email AS buyer_email
@@ -105,6 +107,18 @@ api_json([
     // The vendor's photos of what came back, sent with "used, empty or different".
     'vendor_photos'   => array_map(fn($f) => order_photo_url($f, true), refund_photos_of($pdo, $orderId)['vendor_return'] ?? []),
     'photos_max'      => REFUND_PHOTOS_MAX,
+    // The vendor's one reply to a dispute. can_reply while it is open, with
+    // reply_until its deadline; vendor_reply once sent. reply_until stays set
+    // after the deadline while teepsaa has not decided, so the screen can say
+    // the time is up.
+    'can_reply'       => refund_reply_open($o) && !$closed,
+    'reply_until'     => ($u = refund_reply_until($o)) !== null ? date('Y-m-d H:i:s', $u) : null,
+    'reply_max'       => REFUND_REPLY_MAX_LENGTH,
+    'vendor_reply'    => $o['vendor_reply_at'] ? [
+        'text'   => $o['vendor_reply'],
+        'at'     => $o['vendor_reply_at'],
+        'photos' => array_map(fn($f) => order_photo_url($f, true), refund_photos_of($pdo, $orderId)['vendor_reply'] ?? []),
+    ] : null,
     'return_tracking_url' => $inTransit ? $returnUrl : null,
     // Confirming receipt is the vendor's only move here, it only exists while
     // the return is in transit, and a closed shop cannot make it — teepsaa

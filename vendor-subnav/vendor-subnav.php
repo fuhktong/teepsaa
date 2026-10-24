@@ -21,7 +21,8 @@ if (!isset($vendorSection)) {
 }
 
 if (!isset($vendorOrdersTodo)) {
-    $vsnStmt = $pdo->prepare("SELECT COUNT(*) FROM orders o JOIN businesses b ON b.id = o.business_id WHERE b.user_id = ? AND o.status IN ('paid','return_dispatched')");
+    require_once __DIR__ . '/../config/refund-action.php';
+    $vsnStmt = $pdo->prepare("SELECT COUNT(*) FROM orders o JOIN businesses b ON b.id = o.business_id WHERE b.user_id = ? AND (o.status = 'paid' OR " . VENDOR_REFUND_ACTION_SQL . ")");
     $vsnStmt->execute([$_SESSION['user_id']]);
     $vendorOrdersTodo = (int)$vsnStmt->fetchColumn();
 }
