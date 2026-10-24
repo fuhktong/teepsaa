@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/url.php';
+require __DIR__ . '/../config/order-photo.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -33,6 +34,7 @@ $stmt = $pdo->prepare('
            o.royalty_rate, o.royalty_amount, o.vendor_payout,
            o.coupon_code, o.discount_amount,
            o.status, o.created_at, o.tracking_url, o.buyer_notes,
+           o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo, o.dispatched_at,
            b.name AS business_name, b.deleted_at AS business_closed,
            u.name AS buyer_name, u.email AS buyer_email, u.phone AS buyer_phone,
            u.house_number AS buyer_house_number, u.address AS buyer_address,
@@ -215,10 +217,21 @@ require __DIR__ . '/../head/head.php';
     </div>
     <?php endif; ?>
 
-    <?php if ($o['tracking_url'] && in_array($o['status'], ['dispatched', 'delivered', 'completed'])): ?>
+    <?php if (($o['tracking_url'] || $o['shipping_method']) && $o['dispatched_at']): ?>
     <div class="popup-section">
-        <div class="popup-section-label"><?= $t['vorder_tracking_link'] ?></div>
-        <div class="popup-row"><span class="popup-row-label">Grab</span><span class="popup-row-value"><a href="<?= htmlspecialchars($o['tracking_url']) ?>" target="_blank" rel="noopener"><?= $t['vorder_view_tracking'] ?></a></span></div>
+        <div class="popup-section-label"><?= $t['vorder_sent_by'] ?></div>
+        <?php if ($o['shipping_method']): ?>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['ship_method_label'] ?></span><span class="popup-row-value"><?= $t['ship_method_' . $o['shipping_method']] ?><?= $o['courier'] ? ' — ' . htmlspecialchars($o['courier']) : '' ?></span></div>
+        <?php endif; ?>
+        <?php if ($o['tracking_number']): ?>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['ship_tracking_number'] ?></span><span class="popup-row-value"><?= htmlspecialchars($o['tracking_number']) ?></span></div>
+        <?php endif; ?>
+        <?php if ($o['tracking_url']): ?>
+        <div class="popup-row"><span class="popup-row-label"><?= $t['vorder_tracking_link'] ?></span><span class="popup-row-value"><a href="<?= htmlspecialchars($o['tracking_url']) ?>" target="_blank" rel="noopener"><?= $t['vorder_view_tracking'] ?></a></span></div>
+        <?php endif; ?>
+        <?php if ($o['dispatch_photo']): $ph = htmlspecialchars(order_photo_url($o['dispatch_photo'])); ?>
+        <a href="<?= $ph ?>" target="_blank" rel="noopener"><img class="dispatch-photo" src="<?= $ph ?>" alt="<?= htmlspecialchars($t['ship_parcel_photo']) ?>"></a>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
 
@@ -234,13 +247,46 @@ require __DIR__ . '/../head/head.php';
         <?= $t['vorder_cod_warning'] ?>
     </div>
     <p style="font-size:0.85rem;color:#6b7280;margin:0 0 0.75rem;"><?= $t['vorder_dispatch_hint'] ?></p>
-    <form method="POST" action="/analytics/dispatch.php" class="dispatch-form">
+    <?php if (!empty($_SESSION['dispatch_error'])): ?>
+    <p class="dispatch-error"><?= htmlspecialchars($_SESSION['dispatch_error']) ?></p>
+    <?php unset($_SESSION['dispatch_error']); endif; ?>
+    <form method="POST" action="/analytics/dispatch.php" class="dispatch-form" enctype="multipart/form-data" id="dispatch-form">
         <?= csrf_input() ?>
         <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
-        <input type="url" name="tracking_url" required placeholder="<?= htmlspecialchars($t['vorder_tracking_placeholder']) ?>"
-               oninput="this.closest('form').querySelector('[type=submit]').disabled=!this.value.trim()">
+        <label><?= $t['ship_method_label'] ?>
+            <select name="shipping_method" required>
+                <option value=""><?= $t['ship_method_choose'] ?></option>
+                <?php foreach (SHIPPING_METHODS as $sm): ?>
+                <option value="<?= $sm ?>"><?= $t['ship_method_' . $sm] ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <label data-courier hidden><?= $t['ship_courier_name'] ?>
+            <input type="text" name="courier" maxlength="60" placeholder="<?= htmlspecialchars($t['ship_courier_placeholder']) ?>">
+        </label>
+        <label><?= $t['ship_tracking_optional'] ?>
+            <input type="text" name="tracking" maxlength="500" placeholder="<?= htmlspecialchars($t['vorder_tracking_placeholder']) ?>">
+        </label>
+        <label><?= $t['ship_parcel_photo'] ?>
+            <input type="file" name="photo" accept="image/jpeg,image/png" capture="environment" required>
+            <span class="dispatch-photo-hint"><?= $t['ship_parcel_photo_hint'] ?></span>
+        </label>
         <button type="submit" class="btn-dispatch" disabled><?= $t['vorder_mark_dispatched'] ?></button>
     </form>
+    <script>
+    (function () {
+        var f = document.getElementById('dispatch-form');
+        var courier = f.querySelector('[data-courier]');
+        function check() {
+            var m = f.shipping_method.value;
+            courier.hidden = m !== 'courier';
+            f.querySelector('[type=submit]').disabled =
+                !m || (m === 'courier' && !f.courier.value.trim()) || !f.photo.files.length;
+        }
+        f.addEventListener('input', check);
+        f.addEventListener('change', check);
+    })();
+    </script>
     <?php endif; ?>
 </main>
 

@@ -1,5 +1,10 @@
 <?php
-// Mark one order dispatched, with its Grab tracking link.
+// Mark one order dispatched: how it was sent, an optional tracking link or
+// number, and a required photo of the packed parcel.
+//
+// Sent as multipart/form-data — id, shipping_method, courier, tracking and the
+// file as `photo`. The rules are dispatch_fields() and order_photo_save() in
+// config/order-photo.php, shared with the website's form.
 //
 // The app's first write. Everything analytics/dispatch.php checks is repeated
 // here, because there is no browser and no form in front of this:
@@ -13,6 +18,10 @@
 //   tracking URL run through safe_external_url(), which rejects javascript:
 //                and data: links. This value is later rendered as a clickable
 //                href to the buyer and to admins, so a bad one is stored XSS.
+//   photo        required. The first app build sent JSON with only a Grab
+//                link; it never reached a store, so it now gets missing_photo.
+//                The photo is saved only once the order is known to be this
+//                vendor's and still paid, so a refused call leaves no file.
 //
 // CSRF has no equivalent here on purpose — there is no cookie to ride on. The
 // bearer token is not sent by the browser automatically, which is the whole
@@ -21,18 +30,27 @@
 require __DIR__ . '/../../config/api.php';
 require __DIR__ . '/../../config/url.php';
 require __DIR__ . '/../../config/notify.php';
+require __DIR__ . '/../../config/order-photo.php';
 
 api_require_method('POST');
 
 $vendor = api_require_vendor($pdo);
 $userId = (int)$vendor['id'];
 
-$body        = api_body();
-$publicId    = trim((string)($body['id'] ?? ''));
-$trackingUrl = safe_external_url((string)($body['tracking_url'] ?? ''));
+// A file larger than post_max_size is dropped before this script starts and
+// PHP hands over an empty $_POST and $_FILES — see api/v1/products/photo.php.
+$isMultipart = str_starts_with((string)($_SERVER['CONTENT_TYPE'] ?? ''), 'multipart/form-data');
+if ($isMultipart && empty($_POST) && empty($_FILES) && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+    api_json(['error' => 'too_large', 'limit_mb' => 2], 413);
+}
 
-if ($publicId === '')      api_json(['error' => 'missing_id'], 400);
-if ($trackingUrl === null) api_json(['error' => 'invalid_tracking_url'], 400);
+$body     = $_POST ?: api_body();
+$publicId = trim((string)($body['id'] ?? ''));
+
+if ($publicId === '') api_json(['error' => 'missing_id'], 400);
+
+[$fields, $err] = dispatch_fields($body);
+if ($err) api_json(['error' => $err], 400);
 
 // Resolve the public id to a row this vendor owns, and find out what state it
 // is in. Separating "no such order" from "already dispatched" matters: the
@@ -57,18 +75,26 @@ if ($order['status'] !== 'paid') {
 
 $orderId = (int)$order['id'];
 
+[$photo, $err] = order_photo_save($_FILES['photo'] ?? null);
+if ($err) {
+    api_json(['error' => $err] + ($err === 'too_large' ? ['limit_mb' => 2] : []), $err === 'too_large' ? 413 : ($err === 'save_failed' ? 500 : 400));
+}
+
 $upd = $pdo->prepare("
     UPDATE orders o
       JOIN businesses b ON b.id = o.business_id
-       SET o.status = 'dispatched', o.dispatched_at = NOW(), o.tracking_url = ?
+       SET o.status = 'dispatched', o.dispatched_at = NOW(), o.tracking_url = ?,
+           o.shipping_method = ?, o.courier = ?, o.tracking_number = ?, o.dispatch_photo = ?
      WHERE o.id = ? AND b.user_id = ? AND o.status = 'paid'
 ");
-$upd->execute([$trackingUrl, $orderId, $userId]);
+$upd->execute([$fields['tracking_url'], $fields['shipping_method'], $fields['courier'],
+    $fields['tracking_number'], $photo, $orderId, $userId]);
 
 // Zero rows means something else got there first between the read above and
 // this write. Nothing was changed and nothing was sent, so say so plainly
 // rather than reporting a dispatch that did not happen.
 if ($upd->rowCount() === 0) {
+    @unlink(ORDER_PHOTO_DIR . '/' . $photo);
     $now = $pdo->prepare('SELECT status FROM orders WHERE id = ?');
     $now->execute([$orderId]);
     api_json([
@@ -112,5 +138,9 @@ try {
 api_json([
     'ok'           => true,
     'status'       => 'dispatched',
-    'tracking_url' => $trackingUrl,
+    'tracking_url'    => $fields['tracking_url'],
+    'shipping_method' => $fields['shipping_method'],
+    'courier'         => $fields['courier'],
+    'tracking_number' => $fields['tracking_number'],
+    'dispatch_photo'  => order_photo_url($photo, true),
 ]);

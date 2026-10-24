@@ -16,6 +16,7 @@
 
 require __DIR__ . '/../../config/api.php';
 require __DIR__ . '/../../config/url.php';
+require __DIR__ . '/../../config/order-photo.php';
 
 api_require_method('GET');
 
@@ -33,6 +34,7 @@ $stmt = $pdo->prepare("
            o.royalty_rate, o.royalty_amount, o.vendor_payout,
            o.coupon_code, o.discount_amount,
            o.status, o.created_at, o.tracking_url, o.buyer_notes,
+           o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo,
            b.name AS business_name, b.deleted_at AS business_closed,
            u.name AS buyer_name, u.email AS buyer_email, u.phone AS buyer_phone,
            u.house_number AS buyer_house_number, u.address AS buyer_address,
@@ -122,6 +124,13 @@ $reply = [
     ],
 
     'tracking_url' => $showTracking ? $trackingUrl : null,
+
+    // How it was sent. All null on orders dispatched before these existed.
+    'shipping_method' => $o['shipping_method'],
+    'courier'         => $o['courier'],
+    'tracking_number' => $o['tracking_number'],
+    'dispatch_photo'  => order_photo_url($o['dispatch_photo'], true),
+    'shipping_methods' => SHIPPING_METHODS,
 
     // The app should not re-derive this from the status: the rule for who may
     // dispatch lives on the server, and order-dispatch.php enforces it again.

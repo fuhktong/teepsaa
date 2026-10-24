@@ -504,3 +504,41 @@
   color: var(--text-muted);
   margin: 0.5rem 0 0;
 }
+
+/* Dispatch form: method, courier, tracking, parcel photo */
+.dispatch-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.dispatch-form label[hidden] { display: none; }
+.dispatch-form select { width: 100%; }
+.dispatch-form input[type="text"] {
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-family: inherit;
+  font-weight: 400;
+  width: 100%;
+  box-sizing: border-box;
+}
+.dispatch-photo-hint {
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+.dispatch-error {
+  color: #b91c1c;
+  font-size: 0.875rem;
+  margin: 0 0 0.75rem;
+}
+.dispatch-photo {
+  display: block;
+  max-width: 220px;
+  margin-top: 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+}
