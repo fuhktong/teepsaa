@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/low-stock.php';
+require __DIR__ . '/../config/weights.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -41,10 +42,11 @@ $description = trim($_POST['description'] ?? '');
 $descriptionKm = trim($_POST['description_km'] ?? '');
 $price       = (float)($_POST['price'] ?? 0);
 $stock       = max(0, (int)($_POST['stock'] ?? 0));
-// Whole grams, packed. Nationwide courier prices are by weight, so a product
-// without one cannot be priced for delivery outside Phnom Penh.
+// One of the dropdown's values (config/weights.php), in grams. Nationwide
+// courier prices are by weight, so a product without one cannot be priced for
+// delivery outside Phnom Penh.
 $weightRaw   = trim($_POST['weight_g'] ?? '');
-$weightG     = ctype_digit($weightRaw) ? (int)$weightRaw : 0;
+$weightG     = ctype_digit($weightRaw) && in_array((int)$weightRaw, weight_options(), true) ? (int)$weightRaw : 0;
 $deliveryMethod = in_array($_POST['delivery_method'] ?? '', ['bike','tuktuk']) ? $_POST['delivery_method'] : 'bike';
 $salePercentRaw = trim($_POST['sale_percent'] ?? '');
 $saleDateRaw    = trim($_POST['sale_date']  ?? '');
@@ -66,8 +68,8 @@ if (!$name || $price < 0 || !$categoryId || !$isLeaf || !in_array($businessId, a
     exit;
 }
 
-if ($weightG < 1 || $weightG > 30000) {
-    $_SESSION['product_error'] = $t['prod_weight_required'] ?? 'Enter the packed weight in grams, from 1 to 30000.';
+if ($weightG === 0) {
+    $_SESSION['product_error'] = 'Choose the packed weight.';
     header('Location: /products/');
     exit;
 }

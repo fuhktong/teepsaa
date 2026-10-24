@@ -9,6 +9,7 @@ session_start([
 
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
+require __DIR__ . '/../config/weights.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -483,8 +484,13 @@ require __DIR__ . '/../head/head.php';
                 <div class="field-row">
                     <div class="field">
                         <label for="weight_g"><?= $t['prod_weight'] ?></label>
-                        <input type="number" id="weight_g" name="weight_g" required min="1" max="30000" step="1"
-                               value="<?= !empty($editing['weight_g']) ? (int)$editing['weight_g'] : '' ?>">
+                        <?php $weightPick = weight_option_for((int)($editing['weight_g'] ?? 0)); ?>
+                        <select id="weight_g" name="weight_g" required>
+                            <option value=""><?= $t['prod_weight_choose'] ?></option>
+                            <?php foreach (weight_options() as $g): ?>
+                            <option value="<?= $g ?>" <?= $g === $weightPick ? 'selected' : '' ?>><?= htmlspecialchars(weight_label($g, $t)) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                         <span class="hint"><?= $t['prod_weight_hint'] ?></span>
                     </div>
                 </div>

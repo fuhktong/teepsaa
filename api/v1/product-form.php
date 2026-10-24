@@ -11,6 +11,7 @@
 // upload.php and currency.php. Adding a require for either here is a redeclare
 // and a 500 before any code runs.
 require __DIR__ . '/../../config/api.php';
+require __DIR__ . '/../../config/weights.php';
 
 api_require_method('GET');
 $vendor = api_require_vendor($pdo);
@@ -155,6 +156,8 @@ if ($wantedId > 0) {
         'stock'           => (int)$row['stock'],
         // 0 means never weighed — products made before weight was asked for.
         'weight_g'        => (int)$row['weight_g'],
+        // The dropdown choice that weight falls under (config/weights.php).
+        'weight_option'   => weight_option_for((int)$row['weight_g']),
         'delivery_method' => $row['delivery_method'],
         'active'          => (bool)$row['active'],
         'archived'        => (bool)$row['archived'],
@@ -217,4 +220,7 @@ api_json([
     'penalty_indefinite' => $penaltyIndefinite,
     'product'            => $product,
     'variants'           => $variants,
+    // Grams, smallest first. The first is "less than", the last is "more than"
+    // the one before it; the app words them from prod_weight_under/_kg/_over.
+    'weight_options'     => weight_options(),
 ]);

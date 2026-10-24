@@ -13,6 +13,7 @@
 // every check the page does happens here too.
 require __DIR__ . '/../../config/api.php';
 require __DIR__ . '/../../config/low-stock.php';
+require __DIR__ . '/../../config/weights.php';
 
 api_require_method('POST');
 $vendor = api_require_vendor($pdo);
@@ -77,9 +78,10 @@ else                                              { $stock = (int)$stockRaw; }
 $weightSent = array_key_exists('weight_g', $body);
 $weightG    = 0;
 if ($weightSent) {
+    // One of the dropdown's values only (config/weights.php).
     $weightRaw = $body['weight_g'];
-    if (!is_numeric($weightRaw) || (int)$weightRaw != $weightRaw || (int)$weightRaw < 1 || (int)$weightRaw > 30000) {
-        $fields['weight_g'] = 'Enter the packed weight in grams, from 1 to 30000.';
+    if (!is_numeric($weightRaw) || !in_array((int)$weightRaw, weight_options(), true) || (int)$weightRaw != $weightRaw) {
+        $fields['weight_g'] = 'Choose the packed weight.';
     } else {
         $weightG = (int)$weightRaw;
     }
