@@ -59,7 +59,8 @@ function notification_text(array $row, array $t): string {
         case 'strike':
             // One line per step, since each step means something different.
             $lvl = (int)($data['level'] ?? 0);
-            return isset($t[$key . '_' . $lvl]) ? $t[$key . '_' . $lvl] : ($row['message'] ?? '');
+            if (!isset($t[$key . '_' . $lvl])) return $row['message'] ?? '';
+            return $t[$key . '_' . $lvl] . (!empty($data['ended_trial']) ? ' ' . $t['notif_strike_trial'] : '');
         case 'refund_dispute':
             return isset($data['ref'], $data['hours']) ? sprintf($t[$key], $data['ref'], (int)$data['hours']) : ($row['message'] ?? '');
         case 'refund_part_sent':

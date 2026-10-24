@@ -902,6 +902,7 @@ return [
     'notif_strike_2' => 'Your shop received strike 2 of 4: +10% royalty for 60 days, in place of any penalty already running. Check your email for the reason.',
     'notif_strike_3' => 'Your shop received strike 3 of 4 and is suspended for 30 days. It goes back up on its own. Check your email for the reason.',
     'notif_strike_4' => 'Your shop received strike 4 of 4 and the account is suspended.',
+    'notif_strike_trial' => 'Your free trial has ended.',
     'notif_refund_part_sent' => 'A part refund of %2$s for order #%1$s has been sent.',
     'notif_refund_refused' => 'No refund for order #%s after the return was checked. The shop will post the item back to you; you pay the postage.',
     'notif_return_post_back' => 'No refund for order #%s — post the item back to the buyer. The buyer pays the postage.',

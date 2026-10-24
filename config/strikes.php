@@ -19,10 +19,14 @@
 //
 // Removing a strike (an admin's mistake) only stops it counting. The penalty
 // or suspension it caused is lifted on its own card, deliberately by hand.
+//
+// A strike also ends the promo-code trial for good (config/trial.php), and the
+// vendor is told so with that strike.
 
 require_once __DIR__ . '/notify.php';
 require_once __DIR__ . '/audit.php';
 require_once __DIR__ . '/fingerprint.php';
+require_once __DIR__ . '/trial.php';
 
 const STRIKE_EXPIRY_MONTHS = 12;
 const STRIKE_MAX           = 4;
@@ -76,6 +80,10 @@ function strike_give(PDO $pdo, int $businessId, int $vendorId, string $reason, i
     $stmt->execute([$businessId, $vendorId]);
     $biz = $stmt->fetch();
     if (!$biz) return [null, 'not_found'];
+
+    // Read before the strike exists: after it, the trial is over by definition.
+    $trial = vendor_trial($pdo, $businessId);
+    $endsTrial = $trial !== null && $trial['active'];
 
     $pdo->beginTransaction();
     try {
@@ -133,12 +141,19 @@ function strike_give(PDO $pdo, int $businessId, int $vendorId, string $reason, i
     }
 
     if ($level === STRIKE_MAX) fingerprint_save($pdo, 'vendor', $vendorId, $note);
-    audit_log($pdo, 'business.strike', 'business', $businessId, ['level' => $level, 'reason' => $reason, 'vendor_id' => $vendorId]);
+    audit_log($pdo, 'business.strike', 'business', $businessId, ['level' => $level, 'reason' => $reason, 'vendor_id' => $vendorId, 'ended_trial' => $endsTrial]);
+
+    $penaltyEn = strike_penalty_text($level, 'en');
+    $penaltyKm = strike_penalty_text($level, 'km');
+    if ($endsTrial) {
+        $penaltyEn .= ' Your free trial has also ended: from now on you pay the normal royalty, plus any penalty.';
+        $penaltyKm .= ' ការសាកល្បងឥតគិតថ្លៃរបស់អ្នកក៏បានបញ្ចប់ដែរ៖ ចាប់ពីពេលនេះតទៅ អ្នកបង់កម្រៃជើងសារធម្មតា បូកនឹងការពិន័យណាមួយ។';
+    }
 
     try {
         notify($pdo, 'vendor', $vendorId, 'strike',
-            'Your shop received strike ' . $level . ' of ' . STRIKE_MAX . '. ' . strike_penalty_text($level, 'en'),
-            $level <= 2 ? '/products/' : null, ['level' => $level]);
+            'Your shop received strike ' . $level . ' of ' . STRIKE_MAX . '. ' . $penaltyEn,
+            $level <= 2 ? '/products/' : null, ['level' => $level, 'ended_trial' => $endsTrial]);
     } catch (Throwable $e) {
         error_log('strike_give: notify failed for business ' . $businessId . ': ' . $e->getMessage());
     }
@@ -149,8 +164,8 @@ function strike_give(PDO $pdo, int $businessId, int $vendorId, string $reason, i
             'business'   => htmlspecialchars($biz['name']),
             'strike'     => $level,
             'reason'     => htmlspecialchars($reason),
-            'penalty_km' => strike_penalty_text($level, 'km'),
-            'penalty_en' => strike_penalty_text($level, 'en'),
+            'penalty_km' => $penaltyKm,
+            'penalty_en' => $penaltyEn,
             'cta_url'    => 'https://teepsaa.com/contact/',
         ]);
         if ($html !== '') {

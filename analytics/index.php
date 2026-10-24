@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/sales-chart.php';
+require __DIR__ . '/../config/trial.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -27,20 +28,14 @@ $stmt->execute([$userId]);
 $business = $stmt->fetch();
 
 $trial = null;
-if ($business && $business['trial_starts_at']) {
-    $salesStmt = $pdo->prepare('SELECT COALESCE(SUM(subtotal), 0) FROM orders WHERE business_id = ? AND status IN (\'delivered\', \'completed\')');
-    $salesStmt->execute([$business['id']]);
-    $completedSales = (float)$salesStmt->fetchColumn();
-    $withinTime     = strtotime($business['trial_ends_at']) > time();
-    $belowThreshold = $completedSales < (float)$business['royalty_free_threshold'];
-    if ($withinTime || $belowThreshold) {
-        $trial = [
-            'ends_at'    => $business['trial_ends_at'],
-            'sales'      => $completedSales,
-            'threshold'  => (float)$business['royalty_free_threshold'],
-            'within_time'=> $withinTime,
-        ];
-    }
+$vt = $business ? vendor_trial($pdo, (int)$business['id']) : null;
+if ($vt && $vt['active']) {
+    $trial = [
+        'ends_at'    => $vt['ends_at'],
+        'sales'      => $vt['sales'],
+        'threshold'  => $vt['threshold'],
+        'within_time'=> $vt['within_time'],
+    ];
 }
 
 $bizIds   = $business ? [$business['id']] : [];

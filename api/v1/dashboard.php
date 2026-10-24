@@ -9,6 +9,7 @@
 require __DIR__ . '/../../config/api.php';
 require __DIR__ . '/../../config/low-stock.php';
 require __DIR__ . '/../../config/sales-chart.php';
+require __DIR__ . '/../../config/trial.php';
 
 api_require_method('GET');
 
@@ -51,30 +52,17 @@ $approved   = (int)$business['approved'];
 $status = $approved === 1 ? 'approved' : ($approved === -1 ? 'rejected' : 'pending');
 
 // ── The royalty-free trial ───────────────────────────────────────────
-// It runs until EITHER the end date passes OR total sales cross the threshold,
-// so a vendor who is past the date but under the threshold is still on it.
+// It runs until BOTH the end date passes AND total sales cross the threshold,
+// or until a strike ends it (config/trial.php). Null once it is over.
 $trial = null;
-if ($business['trial_starts_at']) {
-    $salesStmt = $pdo->prepare("
-        SELECT COALESCE(SUM(subtotal), 0)
-          FROM orders
-         WHERE business_id = ? AND status IN ('delivered', 'completed')
-    ");
-    $salesStmt->execute([$businessId]);
-    $completedSales = (float)$salesStmt->fetchColumn();
-
-    $threshold      = (float)$business['royalty_free_threshold'];
-    $withinTime     = strtotime($business['trial_ends_at']) > time();
-    $belowThreshold = $completedSales < $threshold;
-
-    if ($withinTime || $belowThreshold) {
-        $trial = [
-            'ends_at'     => $business['trial_ends_at'],
-            'sales'       => round($completedSales, 2),
-            'threshold'   => round($threshold, 2),
-            'within_time' => $withinTime,
-        ];
-    }
+$vt = vendor_trial($pdo, $businessId);
+if ($vt && $vt['active']) {
+    $trial = [
+        'ends_at'     => $vt['ends_at'],
+        'sales'       => $vt['sales'],
+        'threshold'   => $vt['threshold'],
+        'within_time' => $vt['within_time'],
+    ];
 }
 
 // ── Sales numbers ────────────────────────────────────────────────────

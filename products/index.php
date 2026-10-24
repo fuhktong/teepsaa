@@ -236,7 +236,7 @@ require __DIR__ . '/../head/head.php';
 
     <?php if ($royaltyWaived): ?>
     <div class="vendor-royalty-waived-notice">
-        Your royalty has been waived — you keep 100% of every sale.
+        <?= empty($activePenalties) ? 'Your royalty has been waived — you keep 100% of every sale.' : 'Your royalty has been waived, but the penalty below is still charged.' ?>
     </div>
     <?php endif; ?>
 
@@ -691,7 +691,7 @@ require __DIR__ . '/../head/head.php';
                 var id    = parseInt(hidden.value);
                 var cat   = id ? byId[id] : null;
                 var catRate = cat ? parseFloat(cat.royalty_rate) : 0;
-                var total = ROYALTY_WAIVED ? 0 : (catRate + COMPANY_ADDN + PRODUCT_ADDN + PENALTY_RATE);
+                var total = ROYALTY_WAIVED ? PENALTY_RATE : (catRate + COMPANY_ADDN + PRODUCT_ADDN + PENALTY_RATE);
                 var price = parseFloat(priceIn.value) || 0;
                 if (!price) { preview.textContent = ''; return; }
                 if (!total) { preview.textContent = '<?= $t['prod_payout_at'] ?> 0<?= $t['prod_payout_mid'] ?>' + price.toFixed(2); return; }

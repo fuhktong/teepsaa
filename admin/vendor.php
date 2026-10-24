@@ -73,6 +73,8 @@ if ($v['business_id']) {
     $strikeNext = strike_next_level($pdo, (int)$v['business_id']);
 }
 
+$trial = $v['business_id'] ? vendor_trial($pdo, (int)$v['business_id']) : null;
+
 $orders = [];
 if ($v['business_id']) {
     $stmt = $pdo->prepare('
@@ -224,7 +226,7 @@ $adminTab     = 'vendors';
             <!-- Royalty waiver -->
             <div class="detail-card">
                 <div class="detail-card-title">Royalty waiver</div>
-                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem">When on, this vendor pays 0% royalty on every order — overrides the category rate, company add-on, and any penalties.</p>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem">When on, this vendor pays 0% royalty on every order — overrides the category rate and company add-on. A penalty is still charged on top of 0%.</p>
                 <form method="POST" action="/admin/vendor-action.php" style="display:flex;align-items:center;gap:0.6rem">
                     <?= csrf_input() ?>
                     <input type="hidden" name="action" value="set_royalty_waived">
@@ -237,6 +239,30 @@ $adminTab     = 'vendors';
                     <span><?= $v['royalty_waived'] ? 'Waived — vendor pays no royalty' : 'Not waived' ?></span>
                 </form>
             </div>
+
+            <?php if ($trial): ?>
+            <!-- Promo-code trial -->
+            <div class="detail-card">
+                <div class="detail-card-title">Promo trial</div>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem">0% royalty from approval until both the end date has passed and completed sales reach the threshold. A strike ends it for good; a penalty is still charged during it.</p>
+                <div class="detail-row">
+                    <span class="detail-row-label">Status</span>
+                    <span class="detail-row-value"><?php if ($trial['ended_by_strike']): ?>Ended by a strike, <?= date('M j, Y', strtotime($trial['ended_by_strike'])) ?><?php elseif ($trial['active']): ?>On the trial — pays 0%<?php else: ?>Ended<?php endif; ?></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-row-label">Started</span>
+                    <span class="detail-row-value"><?= date('M j, Y', strtotime($trial['starts_at'])) ?></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-row-label">End date</span>
+                    <span class="detail-row-value"><?= date('M j, Y', strtotime($trial['ends_at'])) ?><?= $trial['within_time'] ? '' : ' (passed)' ?></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-row-label">Sales so far</span>
+                    <span class="detail-row-value">$<?= number_format($trial['sales'], 2) ?> of $<?= number_format($trial['threshold'], 2) ?></span>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Company royalty add-on -->
             <div class="detail-card">

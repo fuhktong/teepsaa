@@ -15,6 +15,7 @@ require __DIR__ . '/../config/low-stock.php';
 require __DIR__ . '/../config/coupon.php';
 require __DIR__ . '/../config/delivery-address.php';
 require __DIR__ . '/../config/self-deal.php';
+require __DIR__ . '/../config/trial.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -167,32 +168,9 @@ foreach ($grouped as $bid => &$group) {
     $group['delivery_weight_g']     = $d['weight_g'] ?? null;
     $deliveryTotal += $group['delivery_fee'];
 
-    // Check vendor promo trial — zero out royalty if trial still active
-    $trialStmt = $pdo->prepare('
-        SELECT b.trial_starts_at, b.trial_ends_at, b.royalty_free_threshold, b.royalty_waived,
-               COALESCE(SUM(o2.subtotal), 0) AS completed_sales
-        FROM businesses b
-        LEFT JOIN orders o2 ON o2.business_id = b.id AND o2.status IN (\'delivered\', \'completed\')
-        WHERE b.id = ?
-        GROUP BY b.id
-    ');
-    $trialStmt->execute([$bid]);
-    $trial = $trialStmt->fetch();
-    if ($trial && $trial['royalty_waived']) {
-        $group['royalty_amount'] = 0.0;
-        $group['royalty_rate']   = 0.0;
-        $group['vendor_payout']  = round($group['subtotal'], 2);
-        continue;
-    }
-    if ($trial && $trial['trial_starts_at']) {
-        $withinTime     = strtotime($trial['trial_ends_at']) > time();
-        $belowThreshold = (float)$trial['completed_sales'] < (float)$trial['royalty_free_threshold'];
-        if ($withinTime || $belowThreshold) {
-            $group['royalty_amount'] = 0.0;
-            $group['royalty_rate']   = 0.0;
-            $group['vendor_payout']  = round($group['subtotal'], 2);
-            continue;
-        }
+    // A shop on 0% (the trial or the waiver) still pays any penalty, on top of 0%.
+    if (royalty_is_free($pdo, (int)$bid)) {
+        $group['royalty_amount'] = $group['subtotal'] * ($penaltyByBiz[$bid] ?? 0.0);
     }
 
     $royaltyAmount = round($group['royalty_amount'], 2);
