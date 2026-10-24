@@ -33,7 +33,7 @@ $statusIn = implode(',', array_map([$pdo, 'quote'], $refundStatuses));
 
 $stmt = $pdo->prepare("
     SELECT o.id, o.subtotal, o.delivery_fee, o.status, o.created_at,
-           o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.coupon_code, o.discount_amount,
+           o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.return_photo, o.coupon_code, o.discount_amount,
            o.return_disputed_at, o.refund_paid, o.refund_requested_at, o.vendor_reply, o.vendor_reply_at,
            o.return_bounced_at,
            b.name AS business_name,
@@ -254,6 +254,10 @@ require __DIR__ . '/../head/head.php';
     <div class="popup-section-label" style="margin-bottom:0.5rem;"><?= $t['vorder_return_delivery'] ?></div>
     <?php if ($o['return_tracking_url']): ?>
     <div class="popup-row" style="margin-bottom:0.75rem;"><span class="popup-row-label"><?= $t['vorder_grab_link'] ?></span><span class="popup-row-value"><a href="<?= htmlspecialchars($o['return_tracking_url']) ?>" target="_blank" rel="noopener"><?= $t['vorder_track_return'] ?></a></span></div>
+    <?php endif; ?>
+    <?php if ($o['return_photo']): $ph = htmlspecialchars(order_photo_url($o['return_photo'])); ?>
+    <div class="popup-section-label"><?= $t['vorder_return_photo'] ?></div>
+    <a href="<?= $ph ?>" target="_blank" rel="noopener"><img class="dispatch-photo" src="<?= $ph ?>" alt="<?= htmlspecialchars($t['vorder_return_photo']) ?>" style="max-width:160px;margin-bottom:0.75rem;"></a>
     <?php endif; ?>
     <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;"><?= $t['vorder_received_hint'] ?></p>
     <form method="POST" action="/products/return-received.php">

@@ -22,7 +22,7 @@ if ($publicId === '') api_json(['error' => 'missing_id'], 400);
 // has already put status back to 'delivered'.
 $stmt = $pdo->prepare("
     SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.discount_amount, o.coupon_code,
-           o.status, o.created_at, o.refund_reason, o.refund_rejected_at, o.return_tracking_url,
+           o.status, o.created_at, o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.return_photo,
            o.return_disputed_at, o.refund_paid, o.return_bounced_at,
            o.refund_requested_at, o.vendor_reply, o.vendor_reply_at,
            b.name AS business_name,
@@ -125,6 +125,8 @@ api_json([
         'photos' => array_map(fn($f) => order_photo_url($f, true), refund_photos_of($pdo, $orderId)['vendor_reply'] ?? []),
     ] : null,
     'return_tracking_url' => $inTransit ? $returnUrl : null,
+    // The buyer's photo of the return parcel and its label, from when it was sent.
+    'return_photo'    => order_photo_url($o['return_photo'] ?? null, true),
     // Confirming receipt is the vendor's only move here, it only exists while
     // the return is in transit, and a closed shop cannot make it — teepsaa
     // finishes those by hand.

@@ -78,7 +78,7 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
     $stmt = $pdo->prepare('
         SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.status, o.created_at, o.tracking_url,
                o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo,
-               o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.coupon_code, o.discount_amount,
+               o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.return_photo, o.coupon_code, o.discount_amount,
                o.delivered_at, o.return_disputed_at, o.refund_paid, o.return_bounced_at,
                CASE WHEN o.delivered_at IS NULL OR TIMESTAMPDIFF(SECOND, o.delivered_at, NOW()) < ' . PAYOUT_WINDOW_SECONDS . ' THEN 1 ELSE 0 END AS refund_window_open,
                DATE_ADD(o.delivered_at, INTERVAL ' . PAYOUT_WINDOW_SECONDS . ' SECOND) AS refund_deadline,
@@ -214,6 +214,8 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
         // (sent cash on delivery) for every other reason.
         'return_postage'      => $o['refund_reason'] === REFUND_REASON_CHANGED_MIND ? 'buyer' : 'shop',
         'return_tracking_url' => safe_external_url($o['return_tracking_url']),
+        // The buyer's photo of the return parcel and its label, once sent.
+        'return_photo'        => order_photo_url($o['return_photo'], true),
 
         'actions' => [
             'confirm_delivery' => $status === 'dispatched',

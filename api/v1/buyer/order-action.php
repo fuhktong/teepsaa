@@ -3,7 +3,7 @@
 //
 //   { order_id, action: 'confirm_delivery' }                      confirm-delivery.php
 //   { order_id, action: 'refund_request', reason_preset, reason_other, photos[] }  refund-request.php
-//   { order_id, action: 'return_dispatch', return_tracking_url }  return-dispatch.php
+//   { order_id, action: 'return_dispatch', photo, return_tracking_url? }  return-dispatch.php
 //   { order_id, action: 'return_bounced', photos[] }              return-bounced.php
 //
 // 'return_bounced' is "the shop refused it / it came back to me": 1 to
@@ -26,7 +26,10 @@
 // stored only once every other check has passed, and removed again if the
 // UPDATE finds the order already moved on.
 //
-// The return link goes through safe_external_url(): it is shown to the vendor
+// 'return_dispatch' is multipart too: one photo of the parcel and its label,
+// required, as `photo` (or the first of `photos[]`). The return link is
+// optional — some couriers give only a waybill, which the photo covers — but
+// when sent it goes through safe_external_url(): it is shown to the vendor
 // and to admins as a clickable link, so javascript: and data: are refused.
 //
 // Replies with the order as order.php would draw it now.
@@ -137,15 +140,27 @@ if ($action === 'refund_request') {
 if ($action === 'return_dispatch') {
     // The whole link, scheme included — a missing https:// is not guessed at,
     // because guessing wrong sends the vendor somewhere the buyer never meant.
-    $url = safe_external_url((string)($body['return_tracking_url'] ?? ''));
-    if ($url === null) api_json(['error' => 'invalid_return_url'], 400);
+    $raw = trim((string)($body['return_tracking_url'] ?? ''));
+    $url = null;
+    if ($raw !== '') {
+        $url = safe_external_url($raw);
+        if ($url === null) api_json(['error' => 'invalid_return_url'], 400);
+    }
+    if ($order['status'] !== 'return_approved') $wrongStatus();
+
+    $file = $_FILES['photo'] ?? (refund_uploaded_files()[0] ?? null);
+    [$photo, $err] = order_photo_save($file);
+    if ($err) api_json(['error' => $err], $err === 'save_failed' ? 500 : 400);
 
     $upd = $pdo->prepare("
-        UPDATE orders SET status = 'return_dispatched', return_tracking_url = ?, return_dispatched_at = NOW()
+        UPDATE orders SET status = 'return_dispatched', return_tracking_url = ?, return_photo = ?, return_dispatched_at = NOW()
          WHERE id = ? AND buyer_user_id = ? AND status = 'return_approved'
     ");
-    $upd->execute([$url, $orderId, $userId]);
-    if ($upd->rowCount() === 0) $wrongStatus();
+    $upd->execute([$url, $photo, $orderId, $userId]);
+    if ($upd->rowCount() === 0) {
+        @unlink(ORDER_PHOTO_DIR . '/' . $photo);
+        $wrongStatus();
+    }
 
     try {
         notify($pdo, 'vendor', (int)$order['vendor_id'], 'return_dispatched',

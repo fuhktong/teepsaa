@@ -11,6 +11,7 @@ require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/notify.php';
 require __DIR__ . '/../config/url.php';
+require __DIR__ . '/../config/order-photo.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -32,30 +33,49 @@ $pidStmt = $pdo->prepare('SELECT public_id FROM orders WHERE id = ? AND buyer_us
 $pidStmt->execute([$orderId, $userId]);
 $orderPublicId = $pidStmt->fetchColumn() ?: '';
 
-// Shown to the vendor and to admins as a clickable link, so it has to be a
-// real http(s) URL and not a javascript: payload.
-$trackingUrl = safe_external_url($trackingUrl);
+$rdLang = current_lang();
+$rdT = require __DIR__ . '/../lang/' . (in_array($rdLang, ['en', 'km'], true) ? $rdLang : 'en') . '.php';
+$back = $orderId ? 'Location: /orders-buyer/order.php?id=' . $orderPublicId : 'Location: /orders-buyer/';
 
-if (!$orderId || $trackingUrl === null) {
-    // The buyer has to paste the whole URL including the scheme — we do not
-    // guess a missing "https://", because guessing wrong sends the vendor
-    // somewhere the buyer never intended. So say what was wrong instead of
-    // bouncing them back to an unchanged page with no explanation.
-    if ($orderId) {
-        $rdLang = current_lang();
-        $rdT = require __DIR__ . '/../lang/' . (in_array($rdLang, ['en', 'km'], true) ? $rdLang : 'en') . '.php';
-        $_SESSION['flash_error'] = $rdT['order_return_url_invalid'];
+// The link is optional — a courier may hand over only a waybill, which the
+// photo of the label covers. When one is given it is shown to the vendor and
+// to admins as a clickable link, so it has to be a real http(s) URL and not a
+// javascript: payload. The whole URL including the scheme: we do not guess a
+// missing "https://", because guessing wrong sends the vendor somewhere the
+// buyer never intended.
+if ($trackingUrl !== '') {
+    $trackingUrl = safe_external_url($trackingUrl);
+    if ($trackingUrl === null) {
+        if ($orderId) $_SESSION['flash_error'] = $rdT['order_return_url_invalid'];
+        header($back);
+        exit;
     }
-    header($orderId ? 'Location: /orders-buyer/order.php?id=' . $orderPublicId : 'Location: /orders-buyer/');
+} else {
+    $trackingUrl = null;
+}
+
+if (!$orderPublicId) {
+    header($back);
+    exit;
+}
+
+// The photo of the parcel and its label is the proof it was sent — what an
+// admin looks at if the shop later says nothing arrived.
+[$photo, $photoErr] = order_photo_save($_FILES['photo'] ?? null);
+if ($photoErr) {
+    $_SESSION['flash_error'] = $rdT['order_return_err_' . $photoErr] ?? $rdT['order_return_err_upload_failed'];
+    header($back);
     exit;
 }
 
 $stmt = $pdo->prepare("
     UPDATE orders
-    SET status = 'return_dispatched', return_tracking_url = ?, return_dispatched_at = NOW()
+    SET status = 'return_dispatched', return_tracking_url = ?, return_photo = ?, return_dispatched_at = NOW()
     WHERE id = ? AND buyer_user_id = ? AND status = 'return_approved'
 ");
-$stmt->execute([$trackingUrl, $orderId, $userId]);
+$stmt->execute([$trackingUrl, $photo, $orderId, $userId]);
+
+if (!$stmt->rowCount()) @unlink(ORDER_PHOTO_DIR . '/' . $photo);
 
 if ($stmt->rowCount()) {
     // Tell the vendor a return is on its way so they can mark it received

@@ -32,7 +32,7 @@ if ($publicId === '') {
 $stmt = $pdo->prepare('
     SELECT o.id, o.subtotal, o.delivery_fee, o.status, o.created_at, o.tracking_url,
            o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo,
-           o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.coupon_code, o.discount_amount,
+           o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.return_photo, o.coupon_code, o.discount_amount,
            o.return_disputed_at, o.refund_paid, o.return_bounced_at,
            CASE WHEN o.delivered_at IS NULL OR TIMESTAMPDIFF(SECOND, o.delivered_at, NOW()) < ' . PAYOUT_WINDOW_SECONDS . ' THEN 1 ELSE 0 END AS refund_window_open,
            DATE_ADD(o.delivered_at, INTERVAL ' . PAYOUT_WINDOW_SECONDS . ' SECOND) AS refund_deadline,
@@ -223,6 +223,12 @@ require __DIR__ . '/../head/head.php';
             <?php endforeach; ?>
         </div>
         <?php endif; ?>
+        <?php if ($o['return_photo']): $ph = htmlspecialchars(order_photo_url($o['return_photo'])); ?>
+        <div class="popup-section-label" style="margin-top:0.75rem;"><?= $t['order_return_your_photo'] ?></div>
+        <div class="refund-photo-row">
+            <a href="<?= $ph ?>" target="_blank" rel="noopener"><img class="dispatch-photo" src="<?= $ph ?>" alt="<?= htmlspecialchars($t['order_return_your_photo']) ?>"></a>
+        </div>
+        <?php endif; ?>
         <?php if ($bouncePhotos): ?>
         <div class="popup-section-label" style="margin-top:0.75rem;"><?= $t['order_bounce_your_photos'] ?></div>
         <div class="refund-photo-row">
@@ -313,10 +319,13 @@ require __DIR__ . '/../head/head.php';
     <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.25rem;"><?= $t['order_send_to'] ?> <strong><?= htmlspecialchars($retAddress) ?></strong><?php if ($o['biz_address_notes']): ?> — <?= htmlspecialchars($o['biz_address_notes']) ?><?php endif; ?></p>
     <?php endif; ?>
     <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.75rem;"><?= $t[$o['refund_reason'] === REFUND_REASON_CHANGED_MIND ? 'order_return_instructions_mind' : 'order_return_instructions_cod'] ?></p>
-    <form method="POST" action="/orders-buyer/return-dispatch.php" class="refund-request-form">
+    <form method="POST" action="/orders-buyer/return-dispatch.php" class="refund-request-form" enctype="multipart/form-data">
         <?= csrf_input() ?>
         <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
-        <input type="url" name="return_tracking_url" required placeholder="<?= htmlspecialchars($t['order_return_url_placeholder']) ?>" class="refund-reason-input" style="resize:none;height:auto;padding:0.5rem 0.65rem;">
+        <label class="refund-photos-label"><?= $t['order_return_photo'] ?>
+            <input type="file" name="photo" accept="image/jpeg,image/png" required>
+        </label>
+        <input type="url" name="return_tracking_url" placeholder="<?= htmlspecialchars($t['order_return_url_placeholder']) ?>" class="refund-reason-input" style="resize:none;height:auto;padding:0.5rem 0.65rem;">
         <button type="submit" class="btn-confirm"><?= $t['order_mark_dispatched'] ?></button>
     </form>
 
