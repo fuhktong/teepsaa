@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/notify.php';
+require __DIR__ . '/../config/refund-evidence.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -25,67 +26,56 @@ csrf_verify();
 
 $userId  = $_SESSION['user_id'];
 $orderId = (int)($_POST['order_id'] ?? 0);
-$preset  = trim($_POST['reason_preset'] ?? '');
-$reason  = $preset === 'other' ? trim($_POST['reason_other'] ?? '') : $preset;
 
 $pidStmt = $pdo->prepare("SELECT public_id, delivered_at, refund_rejected_at FROM orders WHERE id = ? AND buyer_user_id = ? AND status = 'delivered'");
 $pidStmt->execute([$orderId, $userId]);
 $existing = $pidStmt->fetch();
 $orderPublicId = $existing['public_id'] ?? '';
 
-if (!$orderId || !$reason) {
-    header($orderId ? 'Location: /orders-buyer/order.php?id=' . $orderPublicId : 'Location: /orders-buyer/');
-    exit;
-}
-
 if (!$existing) {
-    header('Location: /orders-buyer/order.php?id=' . $orderPublicId);
+    header('Location: /orders-buyer/');
     exit;
 }
+$back = 'Location: /orders-buyer/order.php?id=' . $orderPublicId;
 
 // A denied request is final — the order is back at 'delivered', so without
 // this it could be requested again and again inside the same window.
 if ($existing['refund_rejected_at']) {
-    header('Location: /orders-buyer/order.php?id=' . $orderPublicId);
+    header($back);
     exit;
 }
 
 // 24-hour refund window — only enforced when delivered_at is set
 if ($existing['delivered_at'] && (time() - strtotime($existing['delivered_at'])) >= PAYOUT_WINDOW_SECONDS) {
-    header('Location: /orders-buyer/order.php?id=' . $orderPublicId);
+    header($back);
+    exit;
+}
+
+$lang = current_lang();
+$t = require __DIR__ . '/../lang/' . (in_array($lang, ['en', 'km']) ? $lang : 'en') . '.php';
+
+[$reason, $err] = refund_reason_from(trim($_POST['reason_preset'] ?? ''), $_POST['reason_other'] ?? '');
+$photos = [];
+if (!$err) [$photos, $err] = refund_photos_store(refund_uploaded_files(), refund_needs_photo($reason));
+if ($err) {
+    $_SESSION['flash_error'] = sprintf($t['order_refund_err_' . $err] ?? $t['order_refund_err_upload_failed'], REFUND_PHOTOS_MAX);
+    header($back);
     exit;
 }
 
 $stmt = $pdo->prepare("
     UPDATE orders
-    SET status = 'refund_requested', refund_reason = ?, refund_requested_at = NOW()
+    SET status = ?, refund_reason = ?, refund_requested_at = NOW()
     WHERE id = ? AND buyer_user_id = ? AND status = 'delivered' AND refund_rejected_at IS NULL
 ");
-$stmt->execute([$reason, $orderId, $userId]);
+$stmt->execute([refund_request_status($reason), $reason, $orderId, $userId]);
 
 if ($stmt->rowCount()) {
-    // Email the vendor that a refund was requested
-    $vStmt = $pdo->prepare(
-        'SELECT o.created_at, v.id AS vendor_id, v.name AS vendor_name, v.email
-         FROM orders o
-         JOIN businesses b ON b.id = o.business_id
-         JOIN vendors v ON v.id = b.user_id
-         WHERE o.id = ?'
-    );
-    $vStmt->execute([$orderId]);
-    if ($vendor = $vStmt->fetch()) {
-        $oid = order_display_id($orderId, $vendor['created_at']);
-        [$subj, $html] = render_email_template($pdo, 'refund_requested', [
-            'name'    => htmlspecialchars($vendor['vendor_name']),
-            'order'   => $oid,
-            'cta_url' => 'https://teepsaa.com/orders-vendor/order.php?id=' . $orderPublicId,
-        ]);
-        if ($html !== '') send_email($vendor['email'], $subj, $html);
-        notify($pdo, 'vendor', (int)$vendor['vendor_id'], 'refund_requested',
-            'A refund was requested for order #' . $oid . '.',
-            '/orders-vendor/order.php?id=' . $orderPublicId, ['ref' => $oid]);
-    }
+    refund_photos_record($pdo, $orderId, 'buyer', 'request', $photos);
+    refund_request_notify($pdo, $orderId);
+} else {
+    refund_photos_discard($photos);
 }
 
-header('Location: /orders-buyer/order.php?id=' . $orderPublicId);
+header($back);
 exit;

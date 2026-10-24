@@ -10,6 +10,7 @@ session_start([
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/url.php';
+require __DIR__ . '/../config/refund-evidence.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -168,6 +169,15 @@ require __DIR__ . '/../head/head.php';
     <div class="popup-section">
         <div class="popup-section-label"><?= $t['vorder_buyer_reason'] ?></div>
         <p style="font-size:0.875rem;color:#374151;font-style:italic;margin:0;">"<?= htmlspecialchars($o['refund_reason']) ?>"</p>
+        <?php $buyerPhotos = refund_photos_of($pdo, $orderId)['buyer_request'] ?? []; ?>
+        <?php if ($buyerPhotos): ?>
+        <div class="popup-section-label" style="margin-top:0.75rem;"><?= $t['vorder_buyer_photos'] ?></div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+            <?php foreach ($buyerPhotos as $f): $ph = htmlspecialchars(order_photo_url($f)); ?>
+            <a href="<?= $ph ?>" target="_blank" rel="noopener"><img class="dispatch-photo" src="<?= $ph ?>" alt="<?= htmlspecialchars($t['vorder_buyer_photos']) ?>" style="max-width:120px;"></a>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
 

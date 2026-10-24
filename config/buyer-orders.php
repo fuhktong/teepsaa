@@ -13,18 +13,9 @@
 
 require_once __DIR__ . '/url.php';
 require_once __DIR__ . '/order-photo.php';
+require_once __DIR__ . '/refund-evidence.php';
 
 const BUYER_REFUND_STATUSES = ['refund_requested', 'return_approved', 'return_dispatched', 'return_received', 'refunded', 'refund_rejected'];
-
-// The values the website's select posts, which is what lands in refund_reason
-// and what the vendor and admin read. The labels are the buyer's language.
-const BUYER_REFUND_REASONS = [
-    'Item not as described'        => 'order_reason_1',
-    'Wrong item received'          => 'order_reason_2',
-    'Item arrived damaged'         => 'order_reason_3',
-    'Missing parts or accessories' => 'order_reason_4',
-    'Quality not as expected'      => 'order_reason_5',
-];
 
 function buyer_order_ref(int $id, string $createdAt): string
 {
@@ -161,7 +152,9 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
     $reasons = [];
     if ($canRefund) {
         $t = buyer_order_words();
-        foreach (BUYER_REFUND_REASONS as $value => $key) $reasons[] = ['value' => $value, 'label' => $t[$key]];
+        foreach (BUYER_REFUND_REASONS as $value => $key) {
+            $reasons[] = ['value' => $value, 'label' => $t[$key], 'needs_photo' => refund_needs_photo($value)];
+        }
     }
 
     return [
@@ -198,6 +191,10 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
             'denied'      => $denied,
             'reason'      => $o['refund_reason'],
             'reasons'     => $reasons,
+            // Every reason but a change of mind needs at least one photo, up
+            // to photos_max; 'other' always needs one.
+            'photos_max'  => REFUND_PHOTOS_MAX,
+            'photos'      => array_map(fn($f) => order_photo_url($f, true), refund_photos_of($pdo, $orderId)['buyer_request'] ?? []),
         ],
         'return_address'      => $returnAddress,
         'return_tracking_url' => safe_external_url($o['return_tracking_url']),

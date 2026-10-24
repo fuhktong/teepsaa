@@ -2,7 +2,7 @@
 // The three things a buyer can do to an order, one endpoint:
 //
 //   { order_id, action: 'confirm_delivery' }                      confirm-delivery.php
-//   { order_id, action: 'refund_request', reason_preset, reason_other }  refund-request.php
+//   { order_id, action: 'refund_request', reason_preset, reason_other, photos[] }  refund-request.php
 //   { order_id, action: 'return_dispatch', return_tracking_url }  return-dispatch.php
 //
 // `order_id` is the public id. Every check those pages make is made again here,
@@ -13,6 +13,13 @@
 // Refunds: only from 'delivered', never after a refusal (a denied request is
 // final), and only inside PAYOUT_WINDOW_SECONDS of delivered_at when that is
 // set — the window the payout waits on.
+//
+// A refund request is sent as multipart/form-data when it carries photos
+// (`photos[]`, up to REFUND_PHOTOS_MAX); the other actions may stay JSON.
+// Every reason but a change of mind needs at least one photo, and a change of
+// mind is approved on the spot (config/refund-evidence.php). The photos are
+// stored only once every other check has passed, and removed again if the
+// UPDATE finds the order already moved on.
 //
 // The return link goes through safe_external_url(): it is shown to the vendor
 // and to admins as a clickable link, so javascript: and data: are refused.
@@ -28,7 +35,13 @@ api_require_method('POST');
 $buyer  = api_require_buyer($pdo);
 $userId = (int)$buyer['id'];
 
-$body     = api_body();
+// A body larger than post_max_size arrives as nothing at all.
+$isMultipart = str_starts_with((string)($_SERVER['CONTENT_TYPE'] ?? ''), 'multipart/form-data');
+if ($isMultipart && empty($_POST) && empty($_FILES) && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+    api_json(['error' => 'too_large', 'limit_mb' => 2], 413);
+}
+
+$body     = $_POST ?: api_body();
 $publicId = trim((string)($body['order_id'] ?? ''));
 $action   = (string)($body['action'] ?? '');
 if ($publicId === '') api_json(['error' => 'missing_id'], 400);
@@ -84,39 +97,33 @@ if ($action === 'confirm_delivery') {
 }
 
 if ($action === 'refund_request') {
-    $preset = trim((string)($body['reason_preset'] ?? ''));
-    $reason = $preset === 'other' ? trim((string)($body['reason_other'] ?? '')) : $preset;
-
-    // The website's select only ever posts one of its presets or 'other'.
-    if ($preset !== 'other' && !array_key_exists($preset, BUYER_REFUND_REASONS)) {
-        api_json(['error' => 'missing_reason'], 400);
-    }
-    if ($reason === '') api_json(['error' => 'missing_reason'], 400);
-    // refund_reason is shown to the vendor and admin; a textarea has no limit
-    // of its own, so this is the one.
-    if (mb_strlen($reason) > 1000) api_json(['error' => 'too_long'], 400);
+    [$reason, $err] = refund_reason_from((string)($body['reason_preset'] ?? ''), (string)($body['reason_other'] ?? ''));
+    if ($err) api_json(['error' => $err], 400);
+    $files = refund_uploaded_files();
+    if (refund_needs_photo($reason) && !$files) api_json(['error' => 'missing_photo'], 400);
+    if (count($files) > REFUND_PHOTOS_MAX)       api_json(['error' => 'too_many_photos', 'max' => REFUND_PHOTOS_MAX], 400);
 
     if ($order['status'] !== 'delivered') $wrongStatus();
     if ($order['refund_rejected_at'])     api_json(['error' => 'refund_denied'], 409);
     if (!$order['refund_window_open'])    api_json(['error' => 'refund_closed'], 409);
 
+    [$photos, $err] = refund_photos_store($files, refund_needs_photo($reason));
+    if ($err) api_json(['error' => $err], $err === 'save_failed' ? 500 : 400);
+
     $upd = $pdo->prepare("
         UPDATE orders
-           SET status = 'refund_requested', refund_reason = ?, refund_requested_at = NOW()
+           SET status = ?, refund_reason = ?, refund_requested_at = NOW()
          WHERE id = ? AND buyer_user_id = ? AND status = 'delivered' AND refund_rejected_at IS NULL
     ");
-    $upd->execute([$reason, $orderId, $userId]);
-    if ($upd->rowCount() === 0) $wrongStatus();
+    $upd->execute([refund_request_status($reason), $reason, $orderId, $userId]);
+    if ($upd->rowCount() === 0) {
+        refund_photos_discard($photos);
+        $wrongStatus();
+    }
+    refund_photos_record($pdo, $orderId, 'buyer', 'request', $photos);
 
     try {
-        [$subj, $html] = render_email_template($pdo, 'refund_requested', [
-            'name'    => htmlspecialchars((string)$order['vendor_name']),
-            'order'   => $oid,
-            'cta_url' => 'https://teepsaa.com' . $link,
-        ]);
-        if ($html !== '') send_email($order['vendor_email'], $subj, $html);
-        notify($pdo, 'vendor', (int)$order['vendor_id'], 'refund_requested',
-            'A refund was requested for order #' . $oid . '.', $link, ['ref' => $oid]);
+        refund_request_notify($pdo, $orderId);
     } catch (Throwable $e) {
         error_log('buyer order-action: refund notify failed for order ' . $orderId . ': ' . $e->getMessage());
     }

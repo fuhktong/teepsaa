@@ -11,6 +11,7 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/url.php';
 require __DIR__ . '/../config/order-photo.php';
+require __DIR__ . '/../config/refund-evidence.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'buyer') {
     header('Location: /login-buyer/');
@@ -60,6 +61,8 @@ $orderId = (int)$o['id'];
 $stmt = $pdo->prepare('SELECT id, product_name, product_name_km, variant_label, variant_label_km, quantity, price_at_purchase FROM order_items WHERE order_id = ? ORDER BY id');
 $stmt->execute([$orderId]);
 $items = $stmt->fetchAll();
+
+$refundPhotos = refund_photos_of($pdo, $orderId)['buyer_request'] ?? [];
 
 $reviewedItemIds = [];
 if (in_array($o['status'], ['delivered', 'completed']) && !empty($items)) {
@@ -197,6 +200,21 @@ require __DIR__ . '/../head/head.php';
         <?php $orderStatus = $o['status']; require __DIR__ . '/../order-status/order-status.php'; ?>
     </div>
 
+    <?php if ($isRefund && $o['refund_reason']): ?>
+    <div class="popup-section">
+        <div class="popup-section-label"><?= $t['app_your_reason'] ?></div>
+        <p class="refund-reason-quote">"<?= htmlspecialchars($o['refund_reason']) ?>"</p>
+        <?php if ($refundPhotos): ?>
+        <div class="popup-section-label" style="margin-top:0.75rem;"><?= $t['order_your_photos'] ?></div>
+        <div class="refund-photo-row">
+            <?php foreach ($refundPhotos as $f): $ph = htmlspecialchars(order_photo_url($f)); ?>
+            <a href="<?= $ph ?>" target="_blank" rel="noopener"><img class="dispatch-photo" src="<?= $ph ?>" alt="<?= htmlspecialchars($t['order_your_photos']) ?>"></a>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
     <?php if ($o['status'] === 'pending'): ?>
     <p class="order-pending-note"><?= $t['orders_awaiting_payment'] ?></p>
 
@@ -223,19 +241,24 @@ require __DIR__ . '/../head/head.php';
             <p class="order-refund-window order-refund-window--closed" style="margin-top:0.5rem;"><?= $t['order_refund_denied'] ?></p>
             <?php elseif ($windowOpen): ?>
             <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.75rem;"><?= sprintf($t['order_refund_info'], '<strong>$' . number_format($o['subtotal'] - $o['discount_amount'], 2) . '</strong>') ?><?php if ($deadline): ?> <strong><?= sprintf($t['order_available_until'], htmlspecialchars($deadline)) ?></strong><?php endif; ?></p>
-            <form method="POST" action="/orders-buyer/refund-request.php" class="refund-request-form">
+            <form method="POST" action="/orders-buyer/refund-request.php" class="refund-request-form" enctype="multipart/form-data">
                 <?= csrf_input() ?>
                 <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
                 <select name="reason_preset" class="refund-reason-input refund-reason-select" required>
                     <option value=""><?= $t['order_select_reason'] ?></option>
-                    <option value="Item not as described"><?= $t['order_reason_1'] ?></option>
-                    <option value="Wrong item received"><?= $t['order_reason_2'] ?></option>
-                    <option value="Item arrived damaged"><?= $t['order_reason_3'] ?></option>
-                    <option value="Missing parts or accessories"><?= $t['order_reason_4'] ?></option>
-                    <option value="Quality not as expected"><?= $t['order_reason_5'] ?></option>
-                    <option value="other"><?= $t['order_reason_other'] ?></option>
+                    <?php foreach (BUYER_REFUND_REASONS as $value => $key): ?>
+                    <option value="<?= htmlspecialchars($value) ?>" data-needs-photo="<?= refund_needs_photo($value) ? '1' : '0' ?>"><?= $t[$key] ?></option>
+                    <?php endforeach; ?>
+                    <option value="other" data-needs-photo="1"><?= $t['order_reason_other'] ?></option>
                 </select>
-                <textarea name="reason_other" rows="2" class="refund-reason-input refund-reason-other" placeholder="<?= htmlspecialchars($t['order_describe_issue']) ?>" style="display:none;margin-top:0.4rem;"></textarea>
+                <textarea name="reason_other" rows="2" maxlength="1000" class="refund-reason-input refund-reason-other" placeholder="<?= htmlspecialchars($t['order_describe_issue']) ?>" style="display:none;margin-top:0.4rem;"></textarea>
+                <div class="refund-photos" style="display:none;">
+                    <label class="refund-photos-label"><?= $t['order_refund_photos'] ?>
+                        <input type="file" name="photos[]" accept="image/jpeg,image/png" multiple data-max="<?= REFUND_PHOTOS_MAX ?>">
+                    </label>
+                    <p class="refund-photos-hint"><?= sprintf($t['order_refund_photos_hint'], REFUND_PHOTOS_MAX) ?></p>
+                    <p class="refund-photos-error" hidden><?= sprintf($t['order_refund_err_too_many_photos'], REFUND_PHOTOS_MAX) ?></p>
+                </div>
                 <button type="submit" class="btn-refund-request"><?= $t['order_request_refund'] ?></button>
             </form>
             <?php else: ?>
@@ -273,13 +296,25 @@ require __DIR__ . '/../head/head.php';
 
 <script>
 document.addEventListener('change', function(e) {
-    if (!e.target.classList.contains('refund-reason-select')) return;
-    var form  = e.target.closest('form');
-    var other = form && form.querySelector('.refund-reason-other');
-    if (!other) return;
-    var isOther = e.target.value === 'other';
-    other.style.display = isOther ? '' : 'none';
-    other.required      = isOther;
+    var form = e.target.closest('.refund-request-form');
+    if (!form) return;
+    if (e.target.classList.contains('refund-reason-select')) {
+        var other  = form.querySelector('.refund-reason-other');
+        var photos = form.querySelector('.refund-photos');
+        var opt    = e.target.selectedOptions[0];
+        var isOther = e.target.value === 'other';
+        other.style.display = isOther ? '' : 'none';
+        other.required      = isOther;
+        // A change of mind needs no photo, so the field goes away for it.
+        var needs = !!e.target.value && opt.dataset.needsPhoto === '1';
+        photos.style.display = needs ? '' : 'none';
+        photos.querySelector('input').required = needs;
+    }
+    if (e.target.type === 'file') {
+        var tooMany = e.target.files.length > Number(e.target.dataset.max);
+        form.querySelector('.refund-photos-error').hidden = !tooMany;
+        e.target.setCustomValidity(tooMany ? form.querySelector('.refund-photos-error').textContent : '');
+    }
 });
 </script>
 </body>

@@ -6,6 +6,7 @@
 
 require __DIR__ . '/../../config/api.php';
 require __DIR__ . '/../../config/url.php';
+require __DIR__ . '/../../config/refund-evidence.php';
 
 api_require_method('GET');
 
@@ -92,6 +93,9 @@ api_json([
     'delivery_fee'    => round((float)$o['delivery_fee'], 2),
     'refund_amount'   => round($subtotal - $discount, 2),
     'refund_reason'   => $o['refund_reason'] ?: null,
+    // The buyer's photos of the problem, sent with the request. Empty for a
+    // change of mind and for requests made before photos were asked for.
+    'buyer_photos'    => array_map(fn($f) => order_photo_url($f, true), refund_photos_of($pdo, $orderId)['buyer_request'] ?? []),
     'return_tracking_url' => $inTransit ? $returnUrl : null,
     // Confirming receipt is the vendor's only move here, it only exists while
     // the return is in transit, and a closed shop cannot make it — teepsaa

@@ -304,3 +304,45 @@ select.refund-reason-input {
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
 }
+
+/* Refund evidence — the photo field on the request, and the photos sent */
+.refund-photos-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.refund-photos-label input {
+  font-weight: 400;
+}
+
+.refund-photos-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0.25rem 0 0;
+}
+
+.refund-photos-error {
+  font-size: 0.8rem;
+  color: var(--error-fg);
+  margin: 0.25rem 0 0;
+}
+
+.refund-reason-quote {
+  font-size: 0.875rem;
+  font-style: italic;
+  margin: 0;
+}
+
+.refund-photo-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.refund-photo-row .dispatch-photo {
+  max-width: 120px;
+  margin-left: 0;
+}

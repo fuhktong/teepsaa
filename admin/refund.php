@@ -11,7 +11,7 @@ require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/url.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
-require __DIR__ . '/../config/order-photo.php';
+require __DIR__ . '/../config/refund-evidence.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -153,12 +153,19 @@ $adminTab     = 'refunds';
             </div>
             <?php endif; ?>
 
-            <?php if ($o['dispatch_photo'] || $o['return_photo']): ?>
+            <?php
+            // Every picture this refund has, in the order they were taken.
+            $photoList = [];
+            if ($o['dispatch_photo']) $photoList[] = ['Parcel as sent (vendor)', $o['dispatch_photo']];
+            foreach (refund_photos_of($pdo, $orderId)['buyer_request'] ?? [] as $f) $photoList[] = ['The problem (buyer)', $f];
+            if ($o['return_photo']) $photoList[] = ['Return as sent (buyer)', $o['return_photo']];
+            ?>
+            <?php if ($photoList): ?>
             <div class="detail-card">
                 <div class="detail-card-title">Photos</div>
-                <?php foreach (['dispatch_photo' => 'Parcel as sent (vendor)', 'return_photo' => 'Return as sent (buyer)'] as $col => $label): if ($o[$col]): $ph = htmlspecialchars(order_photo_url($o[$col])); ?>
+                <?php foreach ($photoList as [$label, $f]): $ph = htmlspecialchars(order_photo_url($f)); ?>
                 <div class="detail-row" style="margin-bottom:0.5rem;"><span class="detail-row-label"><?= $label ?></span><span class="detail-row-value"><a href="<?= $ph ?>" target="_blank" rel="noopener"><img src="<?= $ph ?>" alt="<?= $label ?>" style="display:block;max-width:220px;border-radius:6px;border:1px solid #d1d5db;"></a></span></div>
-                <?php endif; endforeach; ?>
+                <?php endforeach; ?>
             </div>
             <?php endif; ?>
 
