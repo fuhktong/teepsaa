@@ -11,6 +11,7 @@ require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/url.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
+require __DIR__ . '/../config/order-photo.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -31,7 +32,7 @@ $statusIn = implode(',', array_map([$pdo, 'quote'], $refundStatuses));
 $stmt = $pdo->prepare("
     SELECT o.id, o.subtotal, o.delivery_fee, o.coupon_code, o.discount_amount, o.status, o.created_at,
            o.refund_reason, o.refund_requested_at, o.refund_rejected_at, o.refund_closed_at,
-           o.return_tracking_url, o.delivered_at, o.paid_out_at,
+           o.return_tracking_url, o.return_photo, o.dispatch_photo, o.delivered_at, o.paid_out_at,
            b.name AS business_name,
            bu.name AS buyer_name, bu.email AS buyer_email,
            v.name AS vendor_name, v.aba_qr AS vendor_aba_qr
@@ -149,6 +150,15 @@ $adminTab     = 'refunds';
             <div class="detail-card">
                 <div class="detail-card-title">Buyer's reason</div>
                 <p style="font-size:0.875rem;color:#374151;font-style:italic;margin:0;">"<?= htmlspecialchars($o['refund_reason']) ?>"</p>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($o['dispatch_photo'] || $o['return_photo']): ?>
+            <div class="detail-card">
+                <div class="detail-card-title">Photos</div>
+                <?php foreach (['dispatch_photo' => 'Parcel as sent (vendor)', 'return_photo' => 'Return as sent (buyer)'] as $col => $label): if ($o[$col]): $ph = htmlspecialchars(order_photo_url($o[$col])); ?>
+                <div class="detail-row" style="margin-bottom:0.5rem;"><span class="detail-row-label"><?= $label ?></span><span class="detail-row-value"><a href="<?= $ph ?>" target="_blank" rel="noopener"><img src="<?= $ph ?>" alt="<?= $label ?>" style="display:block;max-width:220px;border-radius:6px;border:1px solid #d1d5db;"></a></span></div>
+                <?php endif; endforeach; ?>
             </div>
             <?php endif; ?>
 

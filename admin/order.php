@@ -13,6 +13,7 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/audit.php';
 require __DIR__ . '/../config/self-deal.php';
+require __DIR__ . '/../config/order-photo.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -35,8 +36,9 @@ $stmt = $pdo->prepare('
     SELECT o.id, o.subtotal, o.delivery_fee, o.vendor_delivery_bonus,
            o.royalty_rate, o.royalty_amount, o.vendor_payout,
            o.coupon_code, o.discount_amount,
-           o.delivery_distance_km,
-           o.status, o.created_at, o.delivered_at, o.tracking_url,
+           o.delivery_distance_km, o.delivery_weight_g,
+           o.status, o.created_at, o.delivered_at, o.dispatched_at, o.tracking_url,
+           o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo,
            o.refund_reason, o.refund_rejected_at, o.refund_closed_at,
            o.return_tracking_url, o.admin_note, o.buyer_notes,
            o.self_deal_flags,
@@ -287,12 +289,29 @@ $adminTab     = 'orders';
                 <div class="od-row"><span>Status</span><span><?= htmlspecialchars(ucwords(str_replace('_', ' ', $o['payment_status']))) ?></span></div>
             </div>
 
-            <?php if ($o['tracking_url']): ?>
+            <?php if ($o['dispatched_at'] || $o['tracking_url']): ?>
             <div class="od-card">
                 <div class="od-card-title">Dispatch</div>
-                <div class="od-row"><span>Grab tracking</span><span><a href="<?= htmlspecialchars($o['tracking_url']) ?>" target="_blank" rel="noopener">View tracking</a></span></div>
+                <?php if ($o['shipping_method']): ?>
+                <div class="od-row"><span>Sent by</span><span><?= htmlspecialchars(['grab' => 'Grab', 'courier' => 'Courier', 'tuktuk' => 'Tuk-tuk', 'other' => 'Other'][$o['shipping_method']] ?? $o['shipping_method']) ?><?= $o['courier'] ? ' — ' . htmlspecialchars($o['courier']) : '' ?></span></div>
+                <?php endif; ?>
+                <div class="od-row"><span>Delivery fee</span><span>$<?= number_format($o['delivery_fee'], 2) ?><?= $o['delivery_distance_km'] !== null ? ' · ' . rtrim(rtrim(number_format($o['delivery_distance_km'], 1), '0'), '.') . ' km' : '' ?><?= $o['delivery_weight_g'] ? ' · ' . rtrim(rtrim(number_format($o['delivery_weight_g'] / 1000, 1), '0'), '.') . ' kg' : '' ?></span></div>
+                <?php if ($o['dispatched_at']): ?>
+                <div class="od-row"><span>Dispatched at</span><span><?= date('M j, Y g:ia', strtotime($o['dispatched_at'])) ?></span></div>
+                <?php endif; ?>
+                <?php if ($o['tracking_number']): ?>
+                <div class="od-row"><span>Tracking number</span><span><?= htmlspecialchars($o['tracking_number']) ?></span></div>
+                <?php endif; ?>
+                <?php if ($o['tracking_url']): ?>
+                <div class="od-row"><span>Tracking link</span><span><a href="<?= htmlspecialchars($o['tracking_url']) ?>" target="_blank" rel="noopener">View tracking</a></span></div>
+                <?php endif; ?>
                 <?php if ($o['delivered_at']): ?>
                 <div class="od-row"><span>Delivered at</span><span><?= date('M j, Y g:ia', strtotime($o['delivered_at'])) ?></span></div>
+                <?php endif; ?>
+                <?php if ($o['dispatch_photo']): $ph = htmlspecialchars(order_photo_url($o['dispatch_photo'])); ?>
+                <a href="<?= $ph ?>" target="_blank" rel="noopener"><img class="od-photo" src="<?= $ph ?>" alt="Parcel photo"></a>
+                <?php else: ?>
+                <div class="od-row"><span>Parcel photo</span><span>None</span></div>
                 <?php endif; ?>
             </div>
             <?php endif; ?>
