@@ -55,7 +55,7 @@ $needsAction = (int)$actionStmt->fetchColumn();
 // an emulated prepare. The casts above leave nothing in them to inject.
 $stmt = $pdo->prepare("
     SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.discount_amount,
-           o.status, o.created_at, o.refund_rejected_at, o.return_disputed_at, o.refund_paid,
+           o.status, o.created_at, o.refund_rejected_at, o.return_disputed_at, o.refund_paid, o.return_bounced_at,
            o.refund_requested_at, o.vendor_reply_at,
            b.name AS business_name,
            b.deleted_at AS business_closed,

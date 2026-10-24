@@ -79,7 +79,7 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
         SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.status, o.created_at, o.tracking_url,
                o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo,
                o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.coupon_code, o.discount_amount,
-               o.delivered_at, o.return_disputed_at, o.refund_paid,
+               o.delivered_at, o.return_disputed_at, o.refund_paid, o.return_bounced_at,
                CASE WHEN o.delivered_at IS NULL OR TIMESTAMPDIFF(SECOND, o.delivered_at, NOW()) < ' . PAYOUT_WINDOW_SECONDS . ' THEN 1 ELSE 0 END AS refund_window_open,
                DATE_ADD(o.delivered_at, INTERVAL ' . PAYOUT_WINDOW_SECONDS . ' SECOND) AS refund_deadline,
                b.name AS business_name,
@@ -204,6 +204,10 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
             // full figure only for a part refund. Null before that.
             'paid'        => $o['refund_paid'] !== null ? round((float)$o['refund_paid'], 2) : null,
             'part'        => $o['refund_paid'] !== null && round((float)$o['refund_paid'], 2) < round($subtotal - $discount, 2),
+            // The buyer said the shop refused the return or it came back to
+            // them. Held at 'return_dispatched' for teepsaa to decide.
+            'bounced'       => !empty($o['return_bounced_at']),
+            'bounce_photos' => array_map(fn($f) => order_photo_url($f, true), refund_photos_of($pdo, $orderId)['buyer_bounced'] ?? []),
         ],
         'return_address'      => $returnAddress,
         // Who pays to send the return: 'buyer' after a change of mind, 'shop'
@@ -215,6 +219,8 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
             'confirm_delivery' => $status === 'dispatched',
             'request_refund'   => $canRefund,
             'send_return'      => $status === 'return_approved',
+            // "The shop refused it / it came back to me", with photos.
+            'report_bounce'    => $status === 'return_dispatched' && empty($o['return_bounced_at']),
             // Put the items back in the cart — buy-again.php checks it again.
             'buy_again'        => $reviewable,
         ],

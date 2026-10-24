@@ -33,7 +33,7 @@ $stmt = $pdo->prepare('
     SELECT o.id, o.subtotal, o.delivery_fee, o.status, o.created_at, o.tracking_url,
            o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo,
            o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.coupon_code, o.discount_amount,
-           o.return_disputed_at, o.refund_paid,
+           o.return_disputed_at, o.refund_paid, o.return_bounced_at,
            CASE WHEN o.delivered_at IS NULL OR TIMESTAMPDIFF(SECOND, o.delivered_at, NOW()) < ' . PAYOUT_WINDOW_SECONDS . ' THEN 1 ELSE 0 END AS refund_window_open,
            DATE_ADD(o.delivered_at, INTERVAL ' . PAYOUT_WINDOW_SECONDS . ' SECOND) AS refund_deadline,
            b.name AS business_name,
@@ -63,7 +63,9 @@ $stmt = $pdo->prepare('SELECT id, product_name, product_name_km, variant_label, 
 $stmt->execute([$orderId]);
 $items = $stmt->fetchAll();
 
-$refundPhotos = refund_photos_of($pdo, $orderId)['buyer_request'] ?? [];
+$allPhotos    = refund_photos_of($pdo, $orderId);
+$refundPhotos = $allPhotos['buyer_request'] ?? [];
+$bouncePhotos = $allPhotos['buyer_bounced'] ?? [];
 
 $reviewedItemIds = [];
 if (in_array($o['status'], ['delivered', 'completed']) && !empty($items)) {
@@ -97,6 +99,9 @@ $statusLabel = $t['order_badge_' . $o['status']] ?? ucwords(str_replace('_', ' '
 // A return the shop disputed is held at 'return_received' until teepsaa decides.
 $disputed = !empty($o['return_disputed_at']);
 if ($o['status'] === 'return_received' && $disputed) $statusLabel = $t['order_badge_return_disputed'];
+// The buyer said the shop refused the return; held for teepsaa likewise.
+$bounced = $o['status'] === 'return_dispatched' && !empty($o['return_bounced_at']);
+if ($bounced) $statusLabel = $t['order_badge_return_bounced'];
 $partRefund = $o['status'] === 'refunded' && $o['refund_paid'] !== null
     && round((float)$o['refund_paid'], 2) < round($o['subtotal'] - $o['discount_amount'], 2);
 ?>
@@ -218,8 +223,18 @@ require __DIR__ . '/../head/head.php';
             <?php endforeach; ?>
         </div>
         <?php endif; ?>
+        <?php if ($bouncePhotos): ?>
+        <div class="popup-section-label" style="margin-top:0.75rem;"><?= $t['order_bounce_your_photos'] ?></div>
+        <div class="refund-photo-row">
+            <?php foreach ($bouncePhotos as $f): $ph = htmlspecialchars(order_photo_url($f)); ?>
+            <a href="<?= $ph ?>" target="_blank" rel="noopener"><img class="dispatch-photo" src="<?= $ph ?>" alt="<?= htmlspecialchars($t['order_bounce_your_photos']) ?>"></a>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
         <?php if ($o['status'] === 'return_received' && $disputed): ?>
         <p class="order-refund-window" style="margin-top:0.75rem;"><?= $t['order_return_disputed'] ?></p>
+        <?php elseif ($bounced): ?>
+        <p class="order-refund-window" style="margin-top:0.75rem;"><?= $t['order_return_bounced'] ?></p>
         <?php elseif ($partRefund): ?>
         <p class="order-refund-window" style="margin-top:0.75rem;"><?= sprintf($t['order_refund_part'], '$' . number_format($o['refund_paid'], 2)) ?></p>
         <?php endif; ?>
@@ -304,6 +319,24 @@ require __DIR__ . '/../head/head.php';
         <input type="url" name="return_tracking_url" required placeholder="<?= htmlspecialchars($t['order_return_url_placeholder']) ?>" class="refund-reason-input" style="resize:none;height:auto;padding:0.5rem 0.65rem;">
         <button type="submit" class="btn-confirm"><?= $t['order_mark_dispatched'] ?></button>
     </form>
+
+    <?php elseif ($o['status'] === 'return_dispatched' && !$bounced): ?>
+    <hr class="popup-divider">
+    <details class="order-options">
+        <summary class="order-options-toggle"><?= $t['order_bounce_heading'] ?></summary>
+        <div class="order-options-body">
+            <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.75rem;"><?= sprintf($t['order_bounce_info'], REFUND_PHOTOS_MAX) ?></p>
+            <form method="POST" action="/orders-buyer/return-bounced.php" class="refund-request-form" enctype="multipart/form-data">
+                <?= csrf_input() ?>
+                <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
+                <label class="refund-photos-label"><?= $t['order_bounce_photos'] ?>
+                    <input type="file" name="photos[]" accept="image/jpeg,image/png" multiple required data-max="<?= REFUND_PHOTOS_MAX ?>">
+                </label>
+                <p class="refund-photos-error" hidden><?= sprintf($t['order_refund_err_too_many_photos'], REFUND_PHOTOS_MAX) ?></p>
+                <button type="submit" class="btn-refund-request"><?= $t['order_bounce_submit'] ?></button>
+            </form>
+        </div>
+    </details>
     <?php endif; ?>
 </main>
 

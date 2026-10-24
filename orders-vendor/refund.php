@@ -35,6 +35,7 @@ $stmt = $pdo->prepare("
     SELECT o.id, o.subtotal, o.delivery_fee, o.status, o.created_at,
            o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.coupon_code, o.discount_amount,
            o.return_disputed_at, o.refund_paid, o.refund_requested_at, o.vendor_reply, o.vendor_reply_at,
+           o.return_bounced_at,
            b.name AS business_name,
            u.name AS buyer_name, u.email AS buyer_email
     FROM orders o
@@ -80,6 +81,7 @@ $statusClasses = [
     'return_dispatched' => 'badge-yellow',
     'return_received'   => 'badge-blue',
     'return_disputed'   => 'badge-yellow',
+    'return_bounced'    => 'badge-red',
     'refunded'          => 'badge-green',
     'refund_rejected'   => 'badge-grey',
 ];
@@ -99,6 +101,7 @@ $refundTotalLabels = [
     'return_dispatched' => $t['vorder_will_refund'],
     'return_received'   => $t['vorder_will_refund'],
     'return_disputed'   => $t['vorder_may_refund'],
+    'return_bounced'    => $t['vorder_may_refund'],
     'refund_requested'  => $t['vorder_may_refund'],
     'refund_rejected'   => $t['vorder_not_refunded'],
 ];
@@ -243,7 +246,10 @@ require __DIR__ . '/../head/head.php';
         <?php $refundStatus = $refundState; require __DIR__ . '/../refund-status/refund-status.php'; ?>
     </div>
 
-    <?php if ($o['status'] === 'return_dispatched'): ?>
+    <?php if ($refundState === 'return_bounced'): ?>
+    <hr class="popup-divider">
+    <p style="font-size:0.875rem;color:#6b7280;margin:0;"><?= $t['vorder_return_bounced'] ?></p>
+    <?php elseif ($o['status'] === 'return_dispatched'): ?>
     <hr class="popup-divider">
     <div class="popup-section-label" style="margin-bottom:0.5rem;"><?= $t['vorder_return_delivery'] ?></div>
     <?php if ($o['return_tracking_url']): ?>

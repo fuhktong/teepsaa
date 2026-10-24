@@ -34,6 +34,7 @@ $stmt = $pdo->prepare("
            o.refund_reason, o.refund_requested_at, o.refund_rejected_at, o.refund_closed_at,
            o.return_tracking_url, o.return_photo, o.dispatch_photo, o.delivered_at, o.paid_out_at,
            o.return_disputed_at, o.refund_paid, o.vendor_reply, o.vendor_reply_at,
+           o.return_dispatched_at, o.return_bounced_at, o.return_overdue_at,
            b.name AS business_name,
            bu.name AS buyer_name, bu.email AS buyer_email,
            v.name AS vendor_name, v.aba_qr AS vendor_aba_qr
@@ -71,6 +72,8 @@ $statusClasses = [
     'return_dispatched' => 'badge-yellow',
     'return_received'   => 'badge-blue',
     'return_disputed'   => 'badge-red',
+    'return_bounced'    => 'badge-red',
+    'return_overdue'    => 'badge-red',
     'refunded'          => 'badge-green',
     'refund_rejected'   => 'badge-grey',
 ];
@@ -80,12 +83,15 @@ $statusLabels = [
     'return_dispatched' => 'Return Sent',
     'return_received'   => 'Item Received',
     'return_disputed'   => 'Return Disputed',
+    'return_bounced'    => 'Refused / Came Back',
+    'return_overdue'    => 'Return Overdue',
     'refunded'          => 'Refunded',
     'refund_rejected'   => 'Rejected',
 ];
 // A rejected refund leaves the order back at 'delivered' and a disputed return
-// is held at 'return_received', so the refund state comes from refund_state().
-$refundState = refund_state($o);
+// is held at 'return_received', so the refund state comes from refund_state();
+// refund_admin_state() adds a return the shop never confirmed in time.
+$refundState = refund_admin_state($o);
 $fullRefund  = round($o['subtotal'] - $o['discount_amount'], 2);
 $statusClass = $statusClasses[$refundState] ?? 'badge-grey';
 $statusLabel = $statusLabels[$refundState] ?? ucwords(str_replace('_', ' ', $refundState));
@@ -174,6 +180,7 @@ $adminTab     = 'refunds';
             foreach ($refundPhotos['vendor_reply'] ?? [] as $f) $photoList[] = ['Reply (vendor)', $f];
             if ($o['return_photo']) $photoList[] = ['Return as sent (buyer)', $o['return_photo']];
             foreach ($refundPhotos['vendor_return'] ?? [] as $f) $photoList[] = ['What came back (vendor)', $f];
+            foreach ($refundPhotos['buyer_bounced'] ?? [] as $f) $photoList[] = ['Refused / came back (buyer)', $f];
             ?>
             <?php if ($photoList): ?>
             <div class="detail-card">
@@ -198,7 +205,7 @@ $adminTab     = 'refunds';
                 <?php if (!$o['vendor_reply_at'] && refund_reply_until($o) !== null): ?>
                 <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.5rem;">The vendor did not reply within <?= REFUND_REPLY_HOURS ?> hours.</p>
                 <?php endif; ?>
-                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Buyer will return item via Grab at their own cost. Approve to proceed, or reject if request is invalid.</p>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Approve to proceed, or reject if the request is invalid. The buyer pays the return postage after a change of mind; for any other reason the shop does (sent cash on delivery).</p>
                 <div class="popup-actions">
                     <form method="POST" action="/admin/refund-action.php">
                         <?= csrf_input() ?>
@@ -213,13 +220,39 @@ $adminTab     = 'refunds';
                 </div>
 
                 <?php elseif ($refundState === 'return_approved'): ?>
-                <p style="font-size:0.875rem;color:#6b7280;margin:0;">Waiting for buyer to pack and dispatch the return via Grab.</p>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0;">Waiting for the buyer to pack and send the return.</p>
 
                 <?php elseif ($refundState === 'return_dispatched'): ?>
                 <?php if ($o['return_tracking_url']): ?>
-                <div class="detail-row" style="margin-bottom:0.5rem;"><span class="detail-row-label">Return tracking</span><span class="detail-row-value"><a href="<?= htmlspecialchars($o['return_tracking_url']) ?>" target="_blank" rel="noopener">Track via Grab</a></span></div>
+                <div class="detail-row" style="margin-bottom:0.5rem;"><span class="detail-row-label">Return tracking</span><span class="detail-row-value"><a href="<?= htmlspecialchars($o['return_tracking_url']) ?>" target="_blank" rel="noopener">Track the return</a></span></div>
                 <?php endif; ?>
                 <p style="font-size:0.875rem;color:#6b7280;margin:0;">Buyer has dispatched the return. Waiting for vendor to confirm receipt.</p>
+
+                <?php elseif ($refundState === 'return_bounced' || $refundState === 'return_overdue'): ?>
+                <?php if ($o['return_tracking_url']): ?>
+                <div class="detail-row" style="margin-bottom:0.5rem;"><span class="detail-row-label">Return tracking</span><span class="detail-row-value"><a href="<?= htmlspecialchars($o['return_tracking_url']) ?>" target="_blank" rel="noopener">Track the return</a></span></div>
+                <?php endif; ?>
+                <?php if ($o['return_dispatched_at']): ?>
+                <div class="detail-row" style="margin-bottom:0.5rem;"><span class="detail-row-label">Return sent</span><span class="detail-row-value"><?= date('M j, Y g:ia', strtotime($o['return_dispatched_at'])) ?></span></div>
+                <?php endif; ?>
+                <?php if ($refundState === 'return_bounced'): ?>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">The buyer says the shop <strong>refused the return or it came back to them</strong>, and sent photos (see Photos). The shop can no longer mark it received. Check the photos and the tracking, and ask the vendor if needed. If the shop refused it, send the buyer $<?= number_format($fullRefund, 2) ?> via ABA, then press Refund — the buyer keeps the item and the vendor is not paid. If not, keep waiting: the return goes back to the shop with a fresh deadline and the buyer is told.</p>
+                <?php else: ?>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">The shop has not pressed Received or "used, empty or different", and the return's time is up (<?= date('M j', strtotime($o['return_overdue_at'])) ?>). The shop can still press Received. Check the tracking and ask the vendor. If the parcel was delivered to the shop or refused, send the buyer $<?= number_format($fullRefund, 2) ?> via ABA, then press Refund. If it is still on its way, keep waiting with a fresh deadline.</p>
+                <?php endif; ?>
+                <div class="detail-row" style="margin-bottom:0.75rem;"><span class="detail-row-label">Buyer email</span><span class="detail-row-value"><?= htmlspecialchars($o['buyer_email']) ?></span></div>
+                <div class="popup-actions" style="flex-wrap:wrap;">
+                    <form method="POST" action="/admin/refund-action.php" onsubmit="return confirm('Sent the buyer $<?= number_format($fullRefund, 2) ?>? The buyer keeps the item and the vendor is not paid for this order.');">
+                        <?= csrf_input() ?>
+                        <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
+                        <button type="submit" name="action" value="bounce_refund" class="btn-approve">Refund ($<?= number_format($fullRefund, 2) ?>) — sent</button>
+                    </form>
+                    <form method="POST" action="/admin/refund-action.php">
+                        <?= csrf_input() ?>
+                        <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
+                        <button type="submit" name="action" value="keep_waiting" class="btn-reject">Keep waiting</button>
+                    </form>
+                </div>
 
                 <?php elseif ($refundState === 'return_disputed'): ?>
                 <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">The vendor says the returned item is <strong>used, empty or different</strong> and sent photos of what came back (see Photos). Compare them with the parcel as sent and the buyer's photos, then decide. For a refund, send the amount to the buyer via ABA first, then press the button. With no refund, the vendor posts the item back to the buyer, and the buyer pays the postage.</p>

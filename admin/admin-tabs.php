@@ -5,8 +5,9 @@
 // /admin-subnav/ is the whole navigation.
 $_atSection = $adminSection ?? '';
 $_atTab     = $adminTab     ?? '';
-// Refunds badge = requests to review + returns received awaiting the refund transfer
-$_atRefundCount    = admin_can('refunds') ? (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status IN ('refund_requested','return_received')")->fetchColumn() : 0;
+// Refunds badge = everything waiting on an admin (config/refund-action.php)
+require_once __DIR__ . '/../config/refund-action.php';
+$_atRefundCount    = admin_can('refunds') ? (int)$pdo->query('SELECT COUNT(*) FROM orders WHERE ' . ADMIN_REFUND_ACTION_SQL)->fetchColumn() : 0;
 $_atPendingPayment = admin_can('payments') ? (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending_confirmation'")->fetchColumn() : 0;
 $_atPendingPayout  = admin_can('payouts') ? (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))")->fetchColumn() : 0;
 ?>

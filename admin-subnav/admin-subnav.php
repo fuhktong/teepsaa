@@ -30,7 +30,8 @@ if (!isset($adminNavMessages)) {
 if (!isset($adminNavOrders)) {
     $adminNavOrders = 0;
     if (admin_can('payments')) $adminNavOrders += (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending_confirmation'")->fetchColumn();
-    if (admin_can('refunds'))  $adminNavOrders += (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status IN ('refund_requested','return_received')")->fetchColumn();
+    require_once __DIR__ . '/../config/refund-action.php';
+    if (admin_can('refunds'))  $adminNavOrders += (int)$pdo->query('SELECT COUNT(*) FROM orders WHERE ' . ADMIN_REFUND_ACTION_SQL)->fetchColumn();
     if (admin_can('payouts'))  $adminNavOrders += (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();
 }
 

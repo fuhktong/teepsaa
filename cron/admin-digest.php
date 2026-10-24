@@ -22,6 +22,7 @@ $today     = (new DateTime('now', new DateTimeZone('Asia/Phnom_Penh')))->format(
 $pendingPayments = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending_confirmation'")->fetchColumn();
 $refundRequests  = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn();
 $refundsToPay    = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'return_received'")->fetchColumn();
+$returnsHeld     = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'return_dispatched' AND (return_bounced_at IS NOT NULL OR return_overdue_at IS NOT NULL)")->fetchColumn();
 $pendingBiz      = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 0 AND deleted_at IS NULL")->fetchColumn();
 $unreadSupport   = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM support_messages WHERE sender IN ('buyer','vendor','guest') AND read_at IS NULL")->fetchColumn();
 $payoutsDue      = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)")->fetchColumn();
@@ -36,6 +37,7 @@ $rows = [
     ['Payments awaiting confirmation', $pendingPayments, $go('payments')],
     ['Refund requests',                $refundRequests,  $go('refunds')],
     ['Refunds awaiting payment',       $refundsToPay,    $go('refunds-pay')],
+    ['Returns refused or overdue',     $returnsHeld,     $go('refunds-held')],
     ['Businesses pending approval',    $pendingBiz,      $go('businesses')],
     ['Unread support threads',         $unreadSupport,   $go('messages')],
     ['Payouts due',                    $payoutsDue,      $go('payouts')],
@@ -44,7 +46,7 @@ $rows = [
     ['Sign-ups matching a suspended account', $flaggedSignups, $go('flagged')],
 ];
 
-$total = $pendingPayments + $refundRequests + $refundsToPay + $pendingBiz + $unreadSupport + $payoutsDue + $spotChecksDue + $followupsDue + $flaggedSignups;
+$total = $pendingPayments + $refundRequests + $refundsToPay + $returnsHeld + $pendingBiz + $unreadSupport + $payoutsDue + $spotChecksDue + $followupsDue + $flaggedSignups;
 if ($total === 0) {
     exit; // nothing pending — no email today
 }

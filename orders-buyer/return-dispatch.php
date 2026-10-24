@@ -52,7 +52,7 @@ if (!$orderId || $trackingUrl === null) {
 
 $stmt = $pdo->prepare("
     UPDATE orders
-    SET status = 'return_dispatched', return_tracking_url = ?
+    SET status = 'return_dispatched', return_tracking_url = ?, return_dispatched_at = NOW()
     WHERE id = ? AND buyer_user_id = ? AND status = 'return_approved'
 ");
 $stmt->execute([$trackingUrl, $orderId, $userId]);

@@ -24,14 +24,18 @@ $error   = $_SESSION['admin_error']   ?? '';
 unset($_SESSION['admin_success'], $_SESSION['admin_error']);
 
 $refundStatuses = ['refund_requested', 'return_approved', 'return_dispatched', 'return_received', 'refunded', 'refund_rejected'];
-$validFilters   = array_merge(['all'], $refundStatuses);
+$validFilters   = array_merge(['all', 'held'], $refundStatuses);
 $filter = in_array($_GET['status'] ?? '', $validFilters) ? ($_GET['status'] ?? 'all') : 'all';
 
 $statusIn = '\'refund_requested\',\'return_approved\',\'return_dispatched\',\'return_received\',\'refunded\',\'refund_rejected\'';
 
 // A rejected refund is no longer a status — the order is back to 'delivered'
 // and only refund_rejected_at marks it — so it is matched on the column.
-if ($filter === 'refund_rejected') {
+// 'held' is a return the buyer says was refused or came back, or one the shop
+// never confirmed in time — still 'return_dispatched', waiting on an admin.
+if ($filter === 'held') {
+    $filterClause = " AND o.status = 'return_dispatched' AND (o.return_bounced_at IS NOT NULL OR o.return_overdue_at IS NOT NULL)";
+} elseif ($filter === 'refund_rejected') {
     $filterClause = ' AND o.refund_rejected_at IS NOT NULL';
 } elseif ($filter !== 'all') {
     $filterClause = ' AND o.status = ' . $pdo->quote($filter) . ' AND o.refund_rejected_at IS NULL';
@@ -42,7 +46,7 @@ if ($filter === 'refund_rejected') {
 $sql = "
     SELECT o.id, o.subtotal, o.delivery_fee, o.discount_amount, o.status, o.created_at,
            o.refund_reason, o.refund_requested_at, o.refund_rejected_at, o.return_tracking_url,
-           o.return_disputed_at, o.refund_paid,
+           o.return_disputed_at, o.refund_paid, o.return_bounced_at, o.return_overdue_at,
            b.name AS business_name,
            bu.name AS buyer_name, bu.email AS buyer_email,
            v.name AS vendor_name, v.aba_qr AS vendor_aba_qr,
@@ -61,6 +65,8 @@ $orders = $pdo->query($sql)->fetchAll();
 $counts = $pdo->query("SELECT status, COUNT(*) AS n FROM orders WHERE status IN ('refund_requested','return_approved','return_dispatched','return_received','refunded','refund_rejected') AND refund_rejected_at IS NULL GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR);
 $counts['refund_rejected'] = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE refund_rejected_at IS NOT NULL")->fetchColumn();
 $totalCount = array_sum($counts);
+// Counted after the total: these are already inside 'return_dispatched'.
+$counts['held'] = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'return_dispatched' AND (return_bounced_at IS NOT NULL OR return_overdue_at IS NOT NULL)")->fetchColumn();
 
 $refundCount        = (int)($counts['refund_requested'] ?? 0);
 $pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))")->fetchColumn();
@@ -71,6 +77,7 @@ $filterLabels = [
     'refund_requested'  => 'Requested',
     'return_approved'   => 'Return Approved',
     'return_dispatched' => 'Return Sent',
+    'held'              => 'Refused / Overdue',
     'return_received'   => 'Item Received',
     'refunded'          => 'Refunded',
     'refund_rejected'   => 'Rejected',
@@ -81,6 +88,8 @@ $statusClasses = [
     'return_dispatched' => 'badge-yellow',
     'return_received'   => 'badge-blue',
     'return_disputed'   => 'badge-red',
+    'return_bounced'    => 'badge-red',
+    'return_overdue'    => 'badge-red',
     'refunded'          => 'badge-green',
     'refund_rejected'   => 'badge-grey',
 ];
@@ -90,6 +99,8 @@ $statusLabels = [
     'return_dispatched' => 'Return Sent',
     'return_received'   => 'Item Received',
     'return_disputed'   => 'Return Disputed',
+    'return_bounced'    => 'Refused / Came Back',
+    'return_overdue'    => 'Return Overdue',
     'refunded'          => 'Refunded',
     'refund_rejected'   => 'Rejected',
 ];
@@ -150,7 +161,7 @@ $adminTab     = 'refunds';
                 <span class="order-row-biz"><?= htmlspecialchars($o['business_name']) ?></span>
                 <span class="order-row-customer"><?= htmlspecialchars($o['buyer_name'] ?: $o['buyer_email']) ?></span>
                 <span class="order-row-total">$<?= number_format(refund_figure($o), 2) ?> refund</span>
-                <?php $rState = refund_state($o); ?>
+                <?php $rState = refund_admin_state($o); ?>
                 <span class="order-badge <?= $statusClasses[$rState] ?>"><?= $statusLabels[$rState] ?></span>
             </div>
             <?php if ($o['items']): ?>

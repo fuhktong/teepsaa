@@ -32,6 +32,7 @@ const GO_TARGETS = [
     'payments'    => '/admin/payments.php',
     'refunds'     => '/admin/refunds.php?status=refund_requested',
     'refunds-pay' => '/admin/refunds.php?status=return_received',
+    'refunds-held'=> '/admin/refunds.php?status=held',
     'businesses'  => '/admin/vendors.php?status=pending',
     'messages'    => '/admin/messages/',
     'payouts'     => '/admin/payouts.php',

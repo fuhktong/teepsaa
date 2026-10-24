@@ -56,7 +56,7 @@ $rows = $stmt->fetchAll();
 function app_target(array $row): ?array {
     $refundTypes = ['refund_requested', 'refund_approved', 'refund_rejected',
                     'refund_sent', 'return_dispatched', 'return_received', 'return_post_back',
-                    'refund_dispute'];
+                    'refund_dispute', 'return_bounced', 'return_overdue', 'return_bounce_refunded'];
 
     $link = (string)($row['link'] ?? '');
     $id   = null;

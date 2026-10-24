@@ -15,8 +15,10 @@ $_rsteps = [
     'refunded'          => $t['rstatus_refunded'],
 ];
 $_rkeys       = array_keys($_rsteps);
-// A disputed return is back with the vendor, held at that step until teepsaa decides.
-$_rcurrentIdx = array_search($refundStatus === 'return_disputed' ? 'return_received' : $refundStatus, $_rkeys);
+// A disputed return is back with the vendor, held at that step until teepsaa
+// decides; a refused or overdue one is held at the step before.
+$_rat = ['return_disputed' => 'return_received', 'return_bounced' => 'return_dispatched', 'return_overdue' => 'return_dispatched'];
+$_rcurrentIdx = array_search($_rat[$refundStatus] ?? $refundStatus, $_rkeys);
 ?>
 <?php if ($_rrejected): ?>
 <div class="ostatus-bar ostatus-cancelled"><?= $t['rstatus_rejected'] ?></div>

@@ -21,6 +21,12 @@
 // admin decides once the vendor has replied or the time is up, so a vendor
 // who says nothing cannot hold a refund past it.
 //
+// A return can also stall. The buyer can say the shop refused the parcel or
+// it came back to them, with photos; or the shop never presses either button
+// within the overdue window (cron/auto-confirm.php). Either way the order
+// stays 'return_dispatched' with return_bounced_at or return_overdue_at set,
+// and an admin decides: refund the buyer, who keeps the item, or keep waiting.
+//
 // Used by orders-buyer/refund-request.php, products/return-disputed.php and
 // products/refund-reply.php (website) and api/v1/buyer/order-action.php,
 // api/v1/refund-disputed.php and api/v1/refund-reply.php (apps), so the two
@@ -191,8 +197,73 @@ function refund_request_notify(PDO $pdo, int $orderId): void {
  */
 function refund_state(array $o): string {
     if (!empty($o['refund_rejected_at'])) return 'refund_rejected';
+    if ($o['status'] === 'return_dispatched' && !empty($o['return_bounced_at'])) return 'return_bounced';
     if ($o['status'] === 'return_received' && !empty($o['return_disputed_at'])) return 'return_disputed';
     return $o['status'];
+}
+
+/** refund_state() plus 'return_overdue', which only the admin is shown. Needs return_overdue_at. */
+function refund_admin_state(array $o): string {
+    $state = refund_state($o);
+    if ($state === 'return_dispatched' && !empty($o['return_overdue_at'])) return 'return_overdue';
+    return $state;
+}
+
+// Days a return may travel before it goes to an admin: the courier
+// auto-confirm days for that distance (config/shipping.php), whatever carrier
+// the buyer used, plus a couple of days for the shop to press a button.
+const RETURN_OVERDUE_GRACE_DAYS = 2;
+
+/** That number of days as SQL, for an orders row aliased `o`. */
+function return_overdue_days_sql(): string {
+    $ship = require __DIR__ . '/shipping.php';
+    $days = 'CASE';
+    foreach ($ship['courier_confirm_days'] as $tier) {
+        $days .= ' WHEN o.delivery_distance_km <= ' . (float)$tier['max_km'] . ' THEN ' . (int)$tier['days'];
+    }
+    $days .= ' ELSE ' . (int)$ship['courier_confirm_days_far'] . ' END';
+    return '(' . $days . ' + ' . RETURN_OVERDUE_GRACE_DAYS . ')';
+}
+
+/**
+ * The buyer's "The shop refused it / it came back to me". Returns null when
+ * done, or an error code: not_found, wrong_status, or a photo error.
+ */
+function return_bounce(PDO $pdo, int $orderId, int $buyerId, array $files): ?string {
+    $stmt = $pdo->prepare('SELECT status, return_bounced_at FROM orders WHERE id = ? AND buyer_user_id = ?');
+    $stmt->execute([$orderId, $buyerId]);
+    $o = $stmt->fetch();
+    if (!$o) return 'not_found';
+    if ($o['status'] !== 'return_dispatched' || $o['return_bounced_at']) return 'wrong_status';
+
+    [$photos, $err] = refund_photos_store($files, true);
+    if ($err) return $err;
+
+    $upd = $pdo->prepare("
+        UPDATE orders SET return_bounced_at = NOW()
+         WHERE id = ? AND buyer_user_id = ? AND status = 'return_dispatched' AND return_bounced_at IS NULL
+    ");
+    $upd->execute([$orderId, $buyerId]);
+    if ($upd->rowCount() === 0) {
+        refund_photos_discard($photos);
+        return 'wrong_status';
+    }
+    refund_photos_record($pdo, $orderId, 'buyer', 'bounced', $photos);
+
+    // Held for an admin now. A failure past here must not read as a failed report.
+    try {
+        $v = $pdo->prepare('SELECT o.public_id, o.created_at, b.user_id FROM orders o JOIN businesses b ON b.id = o.business_id WHERE o.id = ?');
+        $v->execute([$orderId]);
+        if ($row = $v->fetch()) {
+            $oid = order_display_id($orderId, $row['created_at']);
+            notify($pdo, 'vendor', (int)$row['user_id'], 'return_bounced',
+                'The buyer says the return for order #' . $oid . ' was refused or came back to them. teepsaa is checking.',
+                '/orders-vendor/refund.php?id=' . $row['public_id'], ['ref' => $oid]);
+        }
+    } catch (Throwable $e) {
+        error_log('return_bounce: notify failed for order ' . $orderId . ': ' . $e->getMessage());
+    }
+    return null;
 }
 
 /** What the buyer gets back, or got: refund_paid once decided, else the product price. */
@@ -207,7 +278,7 @@ function refund_figure(array $o): float {
  */
 function return_dispute(PDO $pdo, int $orderId, int $vendorId, array $files): ?string {
     $stmt = $pdo->prepare('
-        SELECT o.status, b.deleted_at AS business_closed
+        SELECT o.status, o.return_bounced_at, b.deleted_at AS business_closed
           FROM orders o JOIN businesses b ON b.id = o.business_id
          WHERE o.id = ? AND b.user_id = ?
     ');
@@ -215,7 +286,8 @@ function return_dispute(PDO $pdo, int $orderId, int $vendorId, array $files): ?s
     $o = $stmt->fetch();
     if (!$o) return 'not_found';
     if ($o['business_closed'] !== null) return 'shop_closed';
-    if ($o['status'] !== 'return_dispatched') return 'wrong_status';
+    // The buyer says it never reached the shop; teepsaa decides from here.
+    if ($o['status'] !== 'return_dispatched' || $o['return_bounced_at']) return 'wrong_status';
 
     [$photos, $err] = refund_photos_store($files, true);
     if ($err) return $err;
@@ -224,6 +296,7 @@ function return_dispute(PDO $pdo, int $orderId, int $vendorId, array $files): ?s
         UPDATE orders o JOIN businesses b ON b.id = o.business_id
            SET o.status = 'return_received', o.return_disputed_at = NOW()
          WHERE o.id = ? AND b.user_id = ? AND b.deleted_at IS NULL AND o.status = 'return_dispatched'
+           AND o.return_bounced_at IS NULL
     ");
     $upd->execute([$orderId, $vendorId]);
     if ($upd->rowCount() === 0) {

@@ -19,7 +19,7 @@ $publicId = trim((string)($body['id'] ?? ''));
 if ($publicId === '') api_json(['error' => 'missing_id'], 400);
 
 $stmt = $pdo->prepare('
-    SELECT o.id, o.status, b.deleted_at AS business_closed
+    SELECT o.id, o.status, o.return_bounced_at, b.deleted_at AS business_closed
       FROM orders o
       JOIN businesses b ON b.id = o.business_id
      WHERE o.public_id = ? AND b.user_id = ?
@@ -42,12 +42,17 @@ if ($o['status'] !== 'return_dispatched') {
     api_json(['error' => 'wrong_status', 'status' => $o['status']], 409);
 }
 
+// The buyer says the parcel was refused or came back to them; teepsaa decides.
+if ($o['return_bounced_at']) {
+    api_json(['error' => 'wrong_status', 'status' => $o['status']], 409);
+}
+
 $upd = $pdo->prepare("
     UPDATE orders o
       JOIN businesses b ON b.id = o.business_id
        SET o.status = 'return_received'
      WHERE o.id = ? AND b.user_id = ? AND b.deleted_at IS NULL
-       AND o.status = 'return_dispatched'
+       AND o.status = 'return_dispatched' AND o.return_bounced_at IS NULL
 ");
 $upd->execute([$orderId, $userId]);
 

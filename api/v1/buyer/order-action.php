@@ -1,9 +1,14 @@
 <?php
-// The three things a buyer can do to an order, one endpoint:
+// The four things a buyer can do to an order, one endpoint:
 //
 //   { order_id, action: 'confirm_delivery' }                      confirm-delivery.php
 //   { order_id, action: 'refund_request', reason_preset, reason_other, photos[] }  refund-request.php
 //   { order_id, action: 'return_dispatch', return_tracking_url }  return-dispatch.php
+//   { order_id, action: 'return_bounced', photos[] }              return-bounced.php
+//
+// 'return_bounced' is "the shop refused it / it came back to me": 1 to
+// REFUND_PHOTOS_MAX photos, required, and the return is held for teepsaa
+// (return_bounce() in config/refund-evidence.php).
 //
 // `order_id` is the public id. Every check those pages make is made again here,
 // and each status check sits inside the UPDATE itself, so two taps that arrive
@@ -45,7 +50,7 @@ $body     = $_POST ?: api_body();
 $publicId = trim((string)($body['order_id'] ?? ''));
 $action   = (string)($body['action'] ?? '');
 if ($publicId === '') api_json(['error' => 'missing_id'], 400);
-if (!in_array($action, ['confirm_delivery', 'refund_request', 'return_dispatch'], true)) {
+if (!in_array($action, ['confirm_delivery', 'refund_request', 'return_dispatch', 'return_bounced'], true)) {
     api_json(['error' => 'bad_action'], 400);
 }
 
@@ -136,7 +141,7 @@ if ($action === 'return_dispatch') {
     if ($url === null) api_json(['error' => 'invalid_return_url'], 400);
 
     $upd = $pdo->prepare("
-        UPDATE orders SET status = 'return_dispatched', return_tracking_url = ?
+        UPDATE orders SET status = 'return_dispatched', return_tracking_url = ?, return_dispatched_at = NOW()
          WHERE id = ? AND buyer_user_id = ? AND status = 'return_approved'
     ");
     $upd->execute([$url, $orderId, $userId]);
@@ -148,6 +153,13 @@ if ($action === 'return_dispatch') {
     } catch (Throwable $e) {
         error_log('buyer order-action: return notify failed for order ' . $orderId . ': ' . $e->getMessage());
     }
+}
+
+if ($action === 'return_bounced') {
+    $err = return_bounce($pdo, $orderId, $userId, refund_uploaded_files());
+    if ($err === 'wrong_status') $wrongStatus();
+    if ($err === 'too_many_photos') api_json(['error' => 'too_many_photos', 'max' => REFUND_PHOTOS_MAX], 400);
+    if ($err) api_json(['error' => $err], $err === 'save_failed' ? 500 : 400);
 }
 
 api_json(['ok' => true, 'order' => buyer_order_detail($pdo, $userId, $publicId)]);

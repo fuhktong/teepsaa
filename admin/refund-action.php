@@ -166,6 +166,53 @@ if ($action === 'approve') {
     } else {
         $_SESSION['admin_error'] = 'This refund has already been decided.';
     }
+
+} elseif ($action === 'bounce_refund' || $action === 'keep_waiting') {
+    // A return held because the buyer says the shop refused it or it came
+    // back to them, or because the shop never confirmed it in time
+    // (cron/auto-confirm.php). The order is still 'return_dispatched'.
+    $held = "status = 'return_dispatched' AND (return_bounced_at IS NOT NULL OR return_overdue_at IS NOT NULL)";
+    $h = $pdo->prepare("SELECT o.public_id, o.created_at, o.return_bounced_at, b.user_id
+                          FROM orders o JOIN businesses b ON b.id = o.business_id
+                         WHERE o.id = ? AND o.$held");
+    $h->execute([$orderId]);
+    $hr = $h->fetch();
+    if (!$hr) {
+        $_SESSION['admin_error'] = 'This return has already been decided.';
+    } elseif ($action === 'bounce_refund') {
+        // The buyer keeps the item. Refunded orders are never paid out.
+        $stmt = $pdo->prepare("UPDATE orders SET status = 'refunded', refunded_at = NOW(), refund_paid = subtotal - discount_amount WHERE id = ? AND $held");
+        $stmt->execute([$orderId]);
+        if ($stmt->rowCount()) {
+            $emailKey = 'refund_sent';
+            $amtStmt = $pdo->prepare('SELECT refund_paid FROM orders WHERE id = ?');
+            $amtStmt->execute([$orderId]);
+            audit_log($pdo, $hr['return_bounced_at'] ? 'refund.bounced' : 'refund.overdue', 'order', $orderId, [
+                'amount' => (float)$amtStmt->fetchColumn(),
+            ]);
+            $void = order_display_id($orderId, $hr['created_at']);
+            notify($pdo, 'vendor', (int)$hr['user_id'], 'return_bounce_refunded',
+                'teepsaa refunded the buyer for order #' . $void . ' because the return was refused or never confirmed.',
+                '/orders-vendor/refund.php?id=' . $hr['public_id'], ['ref' => $void]);
+        }
+        $_SESSION['admin_success'] = 'Buyer refunded and keeps the item. Make sure the refund has gone to the buyer via ABA.';
+    } else {
+        // Not shown to be refused: the return is in transit again on a fresh clock.
+        $stmt = $pdo->prepare("UPDATE orders SET return_bounced_at = NULL, return_overdue_at = NULL, return_dispatched_at = NOW() WHERE id = ? AND $held");
+        $stmt->execute([$orderId]);
+        if ($stmt->rowCount()) {
+            audit_log($pdo, 'refund.keep_waiting', 'order', $orderId);
+            if ($hr['return_bounced_at']) {
+                $bq = $pdo->prepare('SELECT buyer_user_id FROM orders WHERE id = ?');
+                $bq->execute([$orderId]);
+                $oid = order_display_id($orderId, $hr['created_at']);
+                notify($pdo, 'buyer', (int)$bq->fetchColumn(), 'return_bounce_dismissed',
+                    'teepsaa could not confirm that the return for order #' . $oid . ' was refused, so it is waiting for the shop again.',
+                    '/orders-buyer/order.php?id=' . $hr['public_id'], ['ref' => $oid]);
+            }
+        }
+        $_SESSION['admin_success'] = 'Back to waiting for the shop, with a fresh deadline.';
+    }
 }
 
 if ($emailKey) {

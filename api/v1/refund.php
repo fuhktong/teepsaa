@@ -23,7 +23,7 @@ if ($publicId === '') api_json(['error' => 'missing_id'], 400);
 $stmt = $pdo->prepare("
     SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.discount_amount, o.coupon_code,
            o.status, o.created_at, o.refund_reason, o.refund_rejected_at, o.return_tracking_url,
-           o.return_disputed_at, o.refund_paid,
+           o.return_disputed_at, o.refund_paid, o.return_bounced_at,
            o.refund_requested_at, o.vendor_reply, o.vendor_reply_at,
            b.name AS business_name,
            b.deleted_at AS business_closed,
@@ -77,6 +77,9 @@ $returnUrl = safe_external_url($o['return_tracking_url'] ?? null);
 // The website only offers the return link while the return is in transit, and
 // only then is there anything for the vendor to do with it.
 $inTransit = $o['status'] === 'return_dispatched';
+// The buyer says the shop refused it or it came back to them: teepsaa decides,
+// and the shop's buttons are closed (config/refund-evidence.php).
+$bounced = !empty($o['return_bounced_at']);
 
 api_json([
     'public_id'       => $o['public_id'],
@@ -84,6 +87,8 @@ api_json([
     'status'          => $o['status'],
     // 'return_disputed' is a return the vendor reported as used, empty or
     // different, held at 'return_received' until teepsaa decides.
+    // 'return_bounced' is one the buyer says was refused or came back to them,
+    // held at 'return_dispatched' the same way.
     'refund_state'    => refund_state($o),
     'created_at'      => $o['created_at'],
     'business_name'   => $o['business_name'],
@@ -123,5 +128,5 @@ api_json([
     // Confirming receipt is the vendor's only move here, it only exists while
     // the return is in transit, and a closed shop cannot make it — teepsaa
     // finishes those by hand.
-    'can_confirm'     => $inTransit && !$closed,
+    'can_confirm'     => $inTransit && !$bounced && !$closed,
 ]);

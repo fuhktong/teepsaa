@@ -102,7 +102,7 @@ if ($tab === 'refunds' && !empty($bizIds)) {
     $ph2  = implode(',', array_fill(0, count($bizIds), '?'));
     $stmt = $pdo->prepare("
         SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.discount_amount,
-               o.status, o.created_at, o.refund_reason, o.refund_rejected_at, o.return_disputed_at, o.refund_paid,
+               o.status, o.created_at, o.refund_reason, o.refund_rejected_at, o.return_disputed_at, o.refund_paid, o.return_bounced_at,
                b.name AS business_name,
                u.name AS buyer_name, u.email AS buyer_email,
                GROUP_CONCAT(CONCAT(oi.product_name, IFNULL(CONCAT(' (', oi.variant_label, ')'), ''), ' x', oi.quantity) ORDER BY oi.id SEPARATOR ', ') AS items

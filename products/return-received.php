@@ -36,6 +36,7 @@ $stmt = $pdo->prepare("
     JOIN businesses b ON b.id = o.business_id
     SET o.status = 'return_received'
     WHERE o.id = ? AND b.user_id = ? AND b.deleted_at IS NULL AND o.status = 'return_dispatched'
+      AND o.return_bounced_at IS NULL
 ");
 $stmt->execute([$orderId, $userId]);
 
