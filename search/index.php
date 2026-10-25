@@ -317,7 +317,7 @@ foreach ($selectedValueIds as $vid) {
 $headTitle = $title;
 $headDesc  = $q
     ? 'Search results for "' . $q . '" on teepsaa — ' . $count . ' product' . ($count !== 1 ? 's' : '') . ' found.'
-    : 'Browse all products on teepsaa — local Phnom Penh businesses, fast Grab delivery.';
+    : 'Browse all products on teepsaa — Cambodian businesses, delivery to every province.';
 
 // Every combination of search term, price band, category, rating and option
 // is its own URL, so the filters alone can generate millions of

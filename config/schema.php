@@ -184,20 +184,21 @@ function schema_website(): array {
 // orders-buyer/order.php measures against, so a rate change or a policy
 // change moves this block with it.
 
-// Delivery is Grab, priced by distance — there is no flat rate to state.
-// What is true is the band: the calculator in config/delivery-calc.php
-// clamps every fee up to the vehicle's minimum fare, and Grab goes no
-// further than grab_max_km (config/shipping.php), so the cheapest fee any
-// Grab order can produce is the lowest min_fare and the dearest is the
-// priciest vehicle at the cap. Both ends carry the markup checkout applies.
-// Courier prices beyond that are left out until Part 5 of the nationwide
-// shipping work changes this block for the whole country.
+// Delivery is Grab nearby, priced by distance, and a courier beyond
+// grab_max_km, priced by weight (config/shipping.php) — there is no flat rate
+// to state. What is true is the band. The calculator in
+// config/delivery-calc.php clamps every Grab fee up to the vehicle's minimum
+// fare and stops Grab at grab_max_km, so a Grab fee runs from the lowest
+// min_fare to the priciest vehicle at the cap. A courier fee runs from the
+// first weight band to the last: a heavier item can only go by Grab. Each end
+// carries the markup checkout applies.
 function schema_shipping_details(): array {
     static $cfg = null;
     if ($cfg === null) $cfg = require __DIR__ . '/delivery.php';
 
     $markup = 1 + (float)($cfg['markup'] ?? 0);
-    $maxKm  = (float)((require __DIR__ . '/shipping.php')['grab_max_km'] ?? 0);
+    $ship   = require __DIR__ . '/shipping.php';
+    $maxKm  = (float)($ship['grab_max_km'] ?? 0);
 
     $fares = [];
     foreach ($cfg as $rates) {
@@ -205,6 +206,10 @@ function schema_shipping_details(): array {
         if (!is_array($rates) || !isset($rates['min_fare'])) continue;
         $fares[] = round($rates['min_fare'] * $markup, 2);
         $fares[] = round(($rates['base_fare'] + $rates['per_km'] * $maxKm) * $markup, 2);
+    }
+    $courierMarkup = 1 + (float)($ship['courier_markup'] ?? 0);
+    foreach ([reset($ship['courier_bands']), end($ship['courier_bands'])] as $band) {
+        if ($band) $fares[] = round($band['fee'] * $courierMarkup, 2);
     }
     if (!$fares) return [];
 
@@ -222,17 +227,15 @@ function schema_shipping_details(): array {
         'shippingDestination' => [
             '@type'          => 'DefinedRegion',
             'addressCountry' => 'KH',
-            'addressRegion'  => 'Phnom Penh',
         ],
-        // Grab is same-day; a vendor who has to pack first may dispatch the
-        // next. One day at each stage covers both without promising an hour
-        // nobody has committed to.
+        // Grab is same-day and a courier takes one to three days (the FAQ's
+        // figure); a vendor who has to pack first may dispatch the next day.
         'deliveryTime' => [
             '@type'        => 'ShippingDeliveryTime',
             'handlingTime' => ['@type' => 'QuantitativeValue', 'minValue' => 0, 'maxValue' => 1, 'unitCode' => 'DAY'],
-            'transitTime'  => ['@type' => 'QuantitativeValue', 'minValue' => 0, 'maxValue' => 1, 'unitCode' => 'DAY'],
+            'transitTime'  => ['@type' => 'QuantitativeValue', 'minValue' => 0, 'maxValue' => 3, 'unitCode' => 'DAY'],
         ],
-        'shippingLabel' => 'Grab delivery in Phnom Penh — fee estimated by distance at checkout',
+        'shippingLabel' => 'Delivery anywhere in Cambodia — Grab nearby, courier by weight further away; fee shown at checkout',
     ];
 }
 

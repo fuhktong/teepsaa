@@ -3,9 +3,10 @@
 // price_delivery() in config/delivery-calc.php — every cart, checkout and
 // order in the website and both apps is priced from this one file.
 //
-// THE COURIER PRICES BELOW ARE MADE UP (2026-10-24), as placeholders until the
-// real courier price lists are in (decisions D and E). Replace them before
-// cities.php lists a second province.
+// The courier prices are J&T Express's Phnom Penh-to-province rates
+// (2026-10-25: 1 kg 6,000 KHR, 2 kg 6,600 KHR), at 4,000 KHR = $1 as in
+// config/delivery.php. J&T quoted only 1 and 2 kg; the heavier bands carry on
+// at their +600 KHR a kilo.
 //
 // Within grab_max_km of the shop: the Grab formula in config/delivery.php.
 // Beyond it: the courier band for the shop's total packed weight, plus
@@ -20,13 +21,14 @@ return [
 
     // Smallest first. A shop's weight takes the first band it fits under.
     'courier_bands' => [
-        ['max_g' => 1000,  'fee' => 1.50],
-        ['max_g' => 3000,  'fee' => 2.50],
-        ['max_g' => 5000,  'fee' => 3.50],
-        ['max_g' => 10000, 'fee' => 5.00],
+        ['max_g' => 1000,  'fee' => 1.50],   //  6,000 KHR
+        ['max_g' => 2000,  'fee' => 1.65],   //  6,600 KHR
+        ['max_g' => 3000,  'fee' => 1.80],   //  7,200 KHR
+        ['max_g' => 5000,  'fee' => 2.10],   //  8,400 KHR
+        ['max_g' => 10000, 'fee' => 2.85],   // 11,400 KHR
     ],
     // Past the last band: its fee plus this for each kilo or part of one over.
-    'courier_per_extra_kg' => 0.50,
+    'courier_per_extra_kg' => 0.15,          //    600 KHR
     'courier_markup'       => 0.20,
 
     // How long cron/auto-confirm.php waits after dispatch before marking a

@@ -184,8 +184,8 @@ if (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'buyer') {
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
 <?php
-$headTitle = 'teepsaa — Shop local businesses in Phnom Penh';
-$headDesc  = 'Discover and order from local Phnom Penh businesses on teepsaa. Fast Grab delivery, great products.';
+$headTitle = 'teepsaa — Shop Cambodian businesses, delivered anywhere in Cambodia';
+$headDesc  = 'Discover and order from Cambodian businesses on teepsaa. Delivered by Grab or courier to every province.';
 $headUrl   = 'https://teepsaa.com/';
 
 // Structured data, homepage only — these two describe the site as a whole, so

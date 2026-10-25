@@ -33,7 +33,7 @@ return [
     'footer_your_orders' => 'Your Orders',
     'footer_wishlist'    => 'Wishlist',
     'footer_sell_on'     => 'Sell on teepsaa',
-    'home_h1'            => 'Shop Phnom Penh businesses on teepsaa',
+    'home_h1'            => 'Shop Cambodian businesses on teepsaa',
     'crumb_home'         => 'Home',
     'crumb_shops'        => 'Shops',
     'crumb_label'        => 'Breadcrumb',
@@ -77,7 +77,7 @@ return [
     'cat_refine'         => 'Filter and sort these products',
     'cat_all_products'   => 'All products',
     'cat_empty'          => 'No products in this category yet. Check back soon — new shops are joining every week.',
-    'seo_cat_desc'       => 'Shop %s in Phnom Penh on teepsaa. Browse listings from local shops and order for delivery across the city.',
+    'seo_cat_desc'       => 'Shop %s on teepsaa. Browse listings from Cambodian shops and order for delivery anywhere in Cambodia.',
 
     // ── Pagination ───────────────────────────────────────────────────
     'pg_label'           => 'Pagination',
@@ -271,7 +271,7 @@ return [
     'order_confirm_delivery' => 'Confirm delivery',
     'order_options'        => 'Options',
     'order_issue'          => 'Issue with order?',
-    'order_refund_info'    => 'You will need to return the item via Grab at your own cost. Your refund will be %s (delivery fee is non-refundable).',
+    'order_refund_info'    => 'Your refund will be %s (the original delivery fee is not refunded). The Returns page explains who pays to send the item back.',
     'order_available_until' => 'Available until %s.',
     'order_select_reason'  => '— Select a reason —',
     'order_reason_1'       => 'Item not as described',
@@ -728,7 +728,7 @@ return [
     // ── About ────────────────────────────────────────────────────────────
     'about_title'      => 'About teepsaa',
     'about_coming_soon'=> 'More coming soon.',
-    'about_lead'       => 'teepsaa is a local marketplace connecting buyers and vendors across Phnom Penh — built to make buying and selling online simple, friendly, and trustworthy for everyone in Cambodia.',
+    'about_lead'       => 'teepsaa is a local marketplace connecting buyers and vendors across Cambodia — built to make buying and selling online simple, friendly, and trustworthy for everyone in Cambodia.',
     'about_mission_h'  => 'Our mission',
     'about_mission_p'  => 'We want shopping made easy. teepsaa gives small local vendors a place to reach customers online, and gives buyers a single, dependable place to discover and order from them — without the hassle.',
     'about_buyers_h'   => 'For buyers',
@@ -736,7 +736,7 @@ return [
     'about_vendors_h'  => 'For vendors',
     'about_vendors_p'  => 'Open a shop, list your products, and start reaching local buyers — no storefront required. Manage orders, message customers, and track payouts from one simple dashboard.',
     'about_cambodia_h' => 'Built for Cambodia',
-    'about_cambodia_p' => 'teepsaa works the way Phnom Penh shops: fully in Khmer and English, with local delivery and the payment methods people already use. We\'re a local team building for our own community, and we\'re just getting started.',
+    'about_cambodia_p' => 'teepsaa works the way Cambodia shops: fully in Khmer and English, with delivery to every province and the payment methods people already use. We\'re a local team building for our own community, and we\'re just getting started.',
     'about_cta_shop'   => 'Start shopping',
     'about_cta_hiring' => 'We\'re hiring',
 
@@ -814,15 +814,15 @@ return [
     'nf_browse'        => 'Browse all products',
     // Meta description for a shop that has written no description of its
     // own. %s is the shop name. Used by business/index.php for SEO only.
-    'seo_shop_desc'     => 'Shop %s on teepsaa. Browse products and order for delivery in Phnom Penh.',
+    'seo_shop_desc'     => 'Shop %s on teepsaa. Browse products and order for delivery anywhere in Cambodia.',
 
     // ── Meta descriptions for the static pages ───────────────────────────
     // Search-result blurbs only — never shown on the page itself. Around
     // 150 characters each; anything longer gets cut off by Google.
-    'seo_desc_about'    => 'teepsaa is a Phnom Penh marketplace connecting local shops with local buyers. Learn who we are and how ordering works.',
+    'seo_desc_about'    => 'teepsaa is a Cambodian marketplace connecting shops with buyers across the country. Learn who we are and how ordering works.',
     'seo_desc_help'     => 'Answers to common questions about ordering, delivery, payment and returns on teepsaa.',
     'seo_desc_contact'  => 'Get in touch with the teepsaa team about an order, your shop, or anything else.',
-    'seo_desc_careers'  => 'Open roles at teepsaa. Help build the marketplace for Phnom Penh shops and shoppers.',
+    'seo_desc_careers'  => 'Open roles at teepsaa. Help build the marketplace for Cambodian shops and shoppers.',
     'seo_desc_privacy'  => 'How teepsaa collects, uses and protects your personal information.',
     'seo_desc_terms'    => 'The terms you agree to when you buy or sell on teepsaa.',
     'seo_desc_returns'  => 'How returns and refunds work on teepsaa, and how long you have to request one.',
@@ -842,7 +842,7 @@ return [
 
     // ── Careers / job postings (careers/ + apply.php) ────────────────────
     'careers_title'    => 'Careers',
-    'careers_lead'     => 'We\'re building the go-to marketplace for Phnom Penh. If you\'d like to be part of it, we\'d love to hear from you.',
+    'careers_lead'     => 'We\'re building the go-to marketplace for Cambodia. If you\'d like to be part of it, we\'d love to hear from you.',
     'careers_empty'    => 'No open positions at this time. Check back soon.',
     'careers_apply'    => 'Apply for this role',
     'emp_full_time'    => 'Full-time',

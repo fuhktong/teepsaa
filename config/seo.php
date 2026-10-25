@@ -69,7 +69,7 @@ function seo_url(string $path, string $lang): string {
 // card rather than a generic page card.
 function seo_meta(string $title, string $description = '', string $image = '', string $canonicalUrl = '', bool $alternates = true, string $type = 'website'): string {
     static $base = 'https://teepsaa.com';
-    $defaultDesc = 'Shop from local Phnom Penh businesses on teepsaa — fast delivery, authentic products.';
+    $defaultDesc = 'Shop from Cambodian businesses on teepsaa — delivery to every province, authentic products.';
 
     $description = trim(strip_tags($description)) ?: $defaultDesc;
     if (mb_strlen($description) > 160) {
