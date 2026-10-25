@@ -34,7 +34,7 @@ $stmt = $pdo->prepare("
            o.royalty_rate, o.royalty_amount, o.vendor_payout,
            o.coupon_code, o.discount_amount,
            o.status, o.created_at, o.tracking_url, o.buyer_notes,
-           o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo,
+           o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo, o.delivery_service,
            b.name AS business_name, b.deleted_at AS business_closed,
            u.name AS buyer_name, u.email AS buyer_email, u.phone AS buyer_phone,
            u.house_number AS buyer_house_number, u.address AS buyer_address,
@@ -131,6 +131,9 @@ $reply = [
     'tracking_number' => $o['tracking_number'],
     'dispatch_photo'  => order_photo_url($o['dispatch_photo'], true),
     'shipping_methods' => SHIPPING_METHODS,
+    // What the buyer paid for at checkout: 'grab' | 'courier'. Null on orders
+    // placed before the choice existed. The dispatch form starts on it.
+    'delivery_service' => $o['delivery_service'],
 
     // The app should not re-derive this from the status: the rule for who may
     // dispatch lives on the server, and order-dispatch.php enforces it again.

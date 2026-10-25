@@ -8,7 +8,8 @@
 //
 // What the website keeps in the session travels in the request instead: the
 // coupon code comes in with every preview and with the confirm, and is checked
-// afresh each time by validate_coupon(), the one the website uses.
+// afresh each time by validate_coupon(), the one the website uses. So does
+// the Grab-or-courier pick per shop (`$ship`, see buyer_cart()).
 //
 // Everything that would stop confirm-checkout.php placing the order is named
 // up front in `blockers`, so "I've paid" is only offered when it will work:
@@ -66,9 +67,9 @@ function buyer_last_payment_id(PDO $pdo, int $userId): ?int
  * coupon, the discount and the total to pay, the QR, the address being
  * delivered to and the book to switch it from, and `blockers`.
  */
-function buyer_checkout(PDO $pdo, int $userId, string $couponCode = ''): array
+function buyer_checkout(PDO $pdo, int $userId, string $couponCode = '', array $ship = []): array
 {
-    $cart = buyer_cart($pdo, $userId);
+    $cart = buyer_cart($pdo, $userId, $ship);
 
     // Private ids for the coupon rules, which work on businesses.id. The cart
     // groups carry only the public id, so the subtotals are summed again here.

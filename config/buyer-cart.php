@@ -71,8 +71,12 @@ function buyer_cart_count(PDO $pdo, int $userId): int
  * sends the buyer to settings instead. The app shows the cart and names what
  * is missing above it, with `fix` saying which screen puts it right:
  * 'account' when only the phone is missing, else 'addresses'.
+ *
+ * `$ship` is the buyer's Grab-or-courier pick, keyed by the shop's public id
+ * ('grab' | 'courier'). Each group's `delivery` carries `service` (the one
+ * priced) and `options` (both fees, null where not on offer).
  */
-function buyer_cart(PDO $pdo, int $userId): array
+function buyer_cart(PDO $pdo, int $userId, array $ship = []): array
 {
     $stmt = $pdo->prepare('SELECT lat, lng, address, khan, sangkat, phone FROM buyers WHERE id = ?');
     $stmt->execute([$userId]);
@@ -137,7 +141,8 @@ function buyer_cart(PDO $pdo, int $userId): array
     $deliveryTotal = 0.0;
     foreach ($groups as &$g) {
         $g['delivery'] = $hasAddress
-            ? price_delivery($buyerLat, $buyerLng, $g['_lat'], $g['_lng'], $g['_lines'], $g['_vehicle'])
+            ? price_delivery($buyerLat, $buyerLng, $g['_lat'], $g['_lng'], $g['_lines'], $g['_vehicle'],
+                             is_string($ship[$g['business']['id']] ?? null) ? $ship[$g['business']['id']] : null)
             : ['state' => 'no_address'];
         if ($g['delivery']['state'] === 'ok') $deliveryTotal += $g['delivery']['fee'];
         $g['subtotal'] = round($g['subtotal'], 2);

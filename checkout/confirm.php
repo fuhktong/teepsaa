@@ -154,7 +154,9 @@ foreach ($items as $item) {
 // used: the markup is inside delivery_fee.
 $deliveryTotal = 0.0;
 foreach ($grouped as $bid => &$group) {
-    $d = price_delivery($buyerLat, $buyerLng, $group['biz_lat'], $group['biz_lng'], $group['items'], $group['vehicle_type']);
+    // The buyer's Grab-or-courier pick from checkout/index.php.
+    $d = price_delivery($buyerLat, $buyerLng, $group['biz_lat'], $group['biz_lng'], $group['items'], $group['vehicle_type'],
+                        $_SESSION['checkout_delivery'][$bid] ?? null);
     if ($d['state'] === 'out_of_range') {
         $_SESSION['cart_error'] = 'One or more businesses is outside the delivery area. Please update your cart.';
         header('Location: /cart/');
@@ -166,6 +168,7 @@ foreach ($grouped as $bid => &$group) {
     $group['vendor_delivery_bonus'] = 0.0;
     $group['delivery_distance_km']  = $d['distance_km'] ?? null;
     $group['delivery_weight_g']     = $d['weight_g'] ?? null;
+    $group['delivery_service']      = $d['service'] ?? null;
     $deliveryTotal += $group['delivery_fee'];
 
     // A shop on 0% (the trial or the waiver) still pays any penalty, on top of 0%.
@@ -297,9 +300,9 @@ try {
         $stmt = $pdo->prepare('
             INSERT INTO orders
                 (payment_id, buyer_user_id, business_id, subtotal, delivery_fee, vendor_delivery_bonus,
-                 delivery_distance_km, delivery_weight_g, royalty_rate, royalty_amount, vendor_payout, buyer_notes,
+                 delivery_distance_km, delivery_weight_g, delivery_service, royalty_rate, royalty_amount, vendor_payout, buyer_notes,
                  coupon_id, coupon_code, discount_amount, status, public_id, self_deal_flags, buyer_ip)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $stmt->execute([
             $paymentId, $userId, $businessId,
@@ -308,6 +311,7 @@ try {
             $group['vendor_delivery_bonus'],
             $group['delivery_distance_km'],
             $group['delivery_weight_g'],
+            $group['delivery_service'],
             $group['royalty_rate'],
             $group['royalty_amount'],
             $vendorPayout,
@@ -368,7 +372,7 @@ try {
     exit;
 }
 
-unset($_SESSION['checkout_coupon_code']);
+unset($_SESSION['checkout_coupon_code'], $_SESSION['checkout_delivery']);
 
 // Past this point the orders are committed and the buyer has already paid by
 // ABA transfer, so nothing below may report failure back to them. Before this

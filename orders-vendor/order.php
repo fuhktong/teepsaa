@@ -35,7 +35,7 @@ $stmt = $pdo->prepare('
            o.royalty_rate, o.royalty_amount, o.vendor_payout,
            o.coupon_code, o.discount_amount,
            o.status, o.created_at, o.tracking_url, o.buyer_notes,
-           o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo, o.dispatched_at,
+           o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo, o.dispatched_at, o.delivery_service,
            b.name AS business_name, b.deleted_at AS business_closed,
            u.name AS buyer_name, u.email AS buyer_email, u.phone AS buyer_phone,
            u.house_number AS buyer_house_number, u.address AS buyer_address,
@@ -248,6 +248,9 @@ require __DIR__ . '/../head/head.php';
         <?= $t['vorder_cod_warning'] ?>
     </div>
     <p style="font-size:0.85rem;color:#6b7280;margin:0 0 0.75rem;"><?= $t['vorder_dispatch_hint'] ?></p>
+    <?php if ($o['delivery_service']): ?>
+    <p class="dispatch-paid-for"><?= sprintf($t['order_paid_for'], '<strong>' . $t['checkout_ship_' . $o['delivery_service']] . '</strong>') ?></p>
+    <?php endif; ?>
     <?php if (!empty($_SESSION['dispatch_error'])): ?>
     <p class="dispatch-error"><?= htmlspecialchars($_SESSION['dispatch_error']) ?></p>
     <?php unset($_SESSION['dispatch_error']); endif; ?>
@@ -258,7 +261,8 @@ require __DIR__ . '/../head/head.php';
             <select name="shipping_method" required>
                 <option value=""><?= $t['ship_method_choose'] ?></option>
                 <?php foreach (SHIPPING_METHODS as $sm): ?>
-                <option value="<?= $sm ?>"><?= $t['ship_method_' . $sm] ?></option>
+                <?php /* Starts on what the buyer paid for. */ ?>
+                <option value="<?= $sm ?>"<?= $sm === $o['delivery_service'] ? ' selected' : '' ?>><?= $t['ship_method_' . $sm] ?></option>
                 <?php endforeach; ?>
             </select>
         </label>
@@ -286,6 +290,7 @@ require __DIR__ . '/../head/head.php';
         }
         f.addEventListener('input', check);
         f.addEventListener('change', check);
+        check();
     })();
     </script>
     <?php endif; ?>

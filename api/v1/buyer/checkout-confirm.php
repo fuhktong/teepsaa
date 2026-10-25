@@ -1,7 +1,10 @@
 <?php
 // "I've paid — place my order" — checkout/confirm.php with JSON in and out.
 //
-//   { coupon?, notes?, expected_total? }
+//   { coupon?, notes?, expected_total?, delivery? }
+//
+// `delivery` is the Grab-or-courier pick per shop, { SHOP_ID: 'grab'|'courier' },
+// as sent to the preview's ?ship. Left out, the default the preview showed.
 //
 // Every check there is repeated, in the same order, and the order is written
 // the same way: one payments row (pending_confirmation), one order per shop
@@ -49,10 +52,11 @@ $couponCode    = strtoupper(trim((string)($body['coupon'] ?? '')));
 $buyerNotes    = trim(mb_substr((string)($body['notes'] ?? ''), 0, 500));
 $expectedTotal = isset($body['expected_total']) && is_numeric($body['expected_total'])
     ? round((float)$body['expected_total'], 2) : null;
+$ship          = isset($body['delivery']) && is_array($body['delivery']) ? $body['delivery'] : [];
 
-$refuse = function (string $code, array $extra = []) use ($pdo, $userId, $couponCode): void {
+$refuse = function (string $code, array $extra = []) use ($pdo, $userId, $couponCode, $ship): void {
     $pdo->query("SELECT RELEASE_LOCK('checkout_buyer_" . $userId . "')");
-    api_json(['error' => $code] + $extra + ['checkout' => buyer_checkout($pdo, $userId, $couponCode)], 422);
+    api_json(['error' => $code] + $extra + ['checkout' => buyer_checkout($pdo, $userId, $couponCode, $ship)], 422);
 };
 
 // Held until the reply is sent. A second request waits here, then finds the
@@ -79,7 +83,7 @@ $stmt = $pdo->prepare('
                  * (100 - IF(p.sale_ends_at IS NOT NULL AND p.sale_ends_at > NOW() AND p.sale_percent IS NOT NULL, p.sale_percent, 0)) / 100, 2) AS effective_price,
            COALESCE(pv.stock, p.stock) AS effective_stock,
            pv.label AS variant_label, pv.label_km AS variant_label_km,
-           b.id AS business_id, b.name AS business_name, b.lat AS biz_lat, b.lng AS biz_lng,
+           b.id AS business_id, b.public_id AS business_public_id, b.name AS business_name, b.lat AS biz_lat, b.lng AS biz_lng,
            COALESCE(cat.royalty_rate, 0) AS royalty_rate,
            COALESCE(b.royalty_add_on, 0) AS business_royalty_add_on,
            COALESCE(p.royalty_add_on, 0) AS product_royalty_add_on
@@ -136,6 +140,7 @@ foreach ($items as $item) {
             'vehicle_type'   => 'bike',
             'biz_lat'        => ($item['biz_lat'] !== null) ? (float)$item['biz_lat'] : null,
             'biz_lng'        => ($item['biz_lng'] !== null) ? (float)$item['biz_lng'] : null,
+            'public_id'      => $item['business_public_id'],
         ];
     }
     $lineTotal     = $item['effective_price'] * $item['quantity'];
@@ -153,12 +158,15 @@ foreach ($items as $item) {
 // coupons. A shop with no pin has nothing to price from: no fee, as before.
 $deliveryTotal = 0.0;
 foreach ($grouped as $bid => &$group) {
-    $d = price_delivery($buyerLat, $buyerLng, $group['biz_lat'], $group['biz_lng'], $group['items'], $group['vehicle_type']);
+    $pick = $ship[$group['public_id']] ?? null;
+    $d = price_delivery($buyerLat, $buyerLng, $group['biz_lat'], $group['biz_lng'], $group['items'], $group['vehicle_type'],
+                        is_string($pick) ? $pick : null);
     if ($d['state'] === 'out_of_range') $refuse('out_of_range');
     $group['delivery_fee']          = $d['state'] === 'ok' ? $d['fee'] : 0.0;
     $group['vendor_delivery_bonus'] = 0.0;
     $group['delivery_distance_km']  = $d['distance_km'] ?? null;
     $group['delivery_weight_g']     = $d['weight_g'] ?? null;
+    $group['delivery_service']      = $d['service'] ?? null;
     $deliveryTotal += $group['delivery_fee'];
 
     // A shop on 0% (the trial or the waiver) still pays any penalty, on top of 0%.
@@ -284,9 +292,9 @@ try {
         $stmt = $pdo->prepare('
             INSERT INTO orders
                 (payment_id, buyer_user_id, business_id, subtotal, delivery_fee, vendor_delivery_bonus,
-                 delivery_distance_km, delivery_weight_g, royalty_rate, royalty_amount, vendor_payout, buyer_notes,
+                 delivery_distance_km, delivery_weight_g, delivery_service, royalty_rate, royalty_amount, vendor_payout, buyer_notes,
                  coupon_id, coupon_code, discount_amount, status, public_id, self_deal_flags, buyer_ip)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $stmt->execute([
             $paymentId, $userId, $businessId,
@@ -295,6 +303,7 @@ try {
             $group['vendor_delivery_bonus'],
             $group['delivery_distance_km'],
             $group['delivery_weight_g'],
+            $group['delivery_service'],
             $group['royalty_rate'],
             $group['royalty_amount'],
             $vendorPayout,

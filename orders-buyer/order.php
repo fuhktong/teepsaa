@@ -31,7 +31,7 @@ if ($publicId === '') {
 
 $stmt = $pdo->prepare('
     SELECT o.id, o.subtotal, o.delivery_fee, o.status, o.created_at, o.tracking_url,
-           o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo,
+           o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo, o.delivery_service,
            o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.return_photo, o.coupon_code, o.discount_amount,
            o.return_disputed_at, o.refund_paid, o.return_bounced_at,
            CASE WHEN o.delivered_at IS NULL OR TIMESTAMPDIFF(SECOND, o.delivered_at, NOW()) < ' . PAYOUT_WINDOW_SECONDS . ' THEN 1 ELSE 0 END AS refund_window_open,
@@ -179,7 +179,7 @@ require __DIR__ . '/../head/head.php';
         <div class="popup-subtotal"><span><?= $t['checkout_coupon_applied'] ?> <?= htmlspecialchars($o['coupon_code']) ?></span><span>&minus;$<?= number_format($o['discount_amount'], 2) ?></span></div>
         <?php endif; ?>
         <?php if ($o['delivery_fee'] > 0): ?>
-        <div class="popup-subtotal"><span><?= $t['order_delivery'] ?></span><span>$<?= number_format($o['delivery_fee'], 2) ?></span></div>
+        <div class="popup-subtotal"><span><?= $t['order_delivery'] ?><?= $o['delivery_service'] ? ': ' . $t['checkout_ship_' . $o['delivery_service']] : '' ?></span><span>$<?= number_format($o['delivery_fee'], 2) ?></span></div>
         <?php endif; ?>
         <div class="popup-total"><span><?= $t['checkout_total'] ?></span><span>$<?= number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2) ?></span></div>
     </div>

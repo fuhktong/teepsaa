@@ -210,6 +210,22 @@
     font-size: 0.88rem;
 }
 
+.checkout-ship-option {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    cursor: pointer;
+}
+
+.checkout-ship-option input {
+    margin: 0 0.35rem 0 0;
+    vertical-align: -1px;
+}
+
+.checkout-ship-option:has(input:checked) {
+    color: #111;
+    font-weight: 600;
+}
+
 .checkout-line--muted {
     color: var(--text-muted);
     font-size: 0.88rem;

@@ -103,10 +103,23 @@ foreach ($items as $item) {
 
 // Delivery is charged with the goods — the same price_delivery() confirm.php
 // charges, so the QR amount below is what the order will be.
+//
+// Where a shop offers both Grab and a courier, the buyer picks. The pick is
+// kept in the session, like the coupon, so applying a code keeps it, and
+// confirm.php charges from the same place.
+if (isset($_GET['ship']) && is_array($_GET['ship'])) {
+    foreach ($_GET['ship'] as $sbid => $svc) {
+        if (in_array($svc, ['grab', 'courier'], true)) $_SESSION['checkout_delivery'][(int)$sbid] = $svc;
+    }
+    header('Location: /checkout/');
+    exit;
+}
+$shipChoice = $_SESSION['checkout_delivery'] ?? [];
+
 $outOfRange    = [];
 $deliveryTotal = 0.0;
 foreach ($grouped as $bid => &$group) {
-    $group['delivery'] = price_delivery($buyerLat, $buyerLng, $group['biz_lat'], $group['biz_lng'], $group['items'], $group['vehicle_type']);
+    $group['delivery'] = price_delivery($buyerLat, $buyerLng, $group['biz_lat'], $group['biz_lng'], $group['items'], $group['vehicle_type'], $shipChoice[$bid] ?? null);
     if ($group['delivery']['state'] === 'out_of_range') $outOfRange[] = $group['name'];
     if ($group['delivery']['state'] === 'ok') $deliveryTotal += $group['delivery']['fee'];
 }
@@ -194,7 +207,7 @@ require __DIR__ . '/../head/head.php';
 
         <div class="checkout-summary">
             <h1><?= $t['checkout_order_summary'] ?></h1>
-            <?php foreach ($grouped as $group): ?>
+            <?php foreach ($grouped as $bid => $group): ?>
             <div class="checkout-vendor">
                 <h2><?= htmlspecialchars($group['name']) ?></h2>
                 <?php foreach ($group['items'] as $item): ?>
@@ -214,10 +227,22 @@ require __DIR__ . '/../head/head.php';
                     <span><?= format_price($group['subtotal'] ?? 0) ?></span>
                 </div>
                 <?php $d = $group['delivery']; ?>
-                <?php if ($d['state'] === 'ok'): ?>
+                <?php if ($d['state'] === 'ok' && $d['options']['grab'] !== null && $d['options']['courier'] !== null): ?>
+                <form method="GET" action="/checkout/" class="checkout-ship">
+                    <?php foreach (['grab', 'courier'] as $svc): ?>
+                    <label class="checkout-line checkout-ship-option">
+                        <span>
+                            <input type="radio" name="ship[<?= (int)$bid ?>]" value="<?= $svc ?>" <?= $d['service'] === $svc ? 'checked' : '' ?> onchange="this.form.submit()">
+                            <?= $t['checkout_delivery'] ?>: <?= $t['checkout_ship_' . $svc] ?>
+                        </span>
+                        <span class="checkout-delivery-est"><?= format_price($d['options'][$svc]) ?></span>
+                    </label>
+                    <?php endforeach; ?>
+                    <noscript><button type="submit" class="checkout-coupon-remove"><?= $t['checkout_ship_update'] ?></button></noscript>
+                </form>
+                <?php elseif ($d['state'] === 'ok'): ?>
                 <div class="checkout-line checkout-line--delivery">
-                    <?php /* No method named: the vendor chooses how it goes. */ ?>
-                    <span><?= $t['checkout_delivery'] ?></span>
+                    <span><?= $t['checkout_delivery'] ?>: <?= $t['checkout_ship_' . $d['service']] ?></span>
                     <span class="checkout-delivery-est"><?= format_price($d['fee']) ?></span>
                 </div>
                 <?php elseif ($d['state'] === 'out_of_range'): ?>

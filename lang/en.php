@@ -163,6 +163,10 @@ return [
     'checkout_order_placed'   => 'Order placed!',
     'checkout_view_orders'    => 'View my orders',
     'checkout_set_pin'        => 'Set your map pin to see it',
+    'checkout_ship_grab'      => 'Grab, today',
+    'checkout_ship_courier'   => 'Courier, 1–3 days',
+    'checkout_ship_update'    => 'Update',
+    'order_paid_for'          => 'Buyer paid for: %s',
     'checkout_use_address'    => 'Use this address',
     'checkout_change'         => 'Change',
     'checkout_default'        => 'Default',
@@ -187,7 +191,7 @@ return [
     'checkout_order_instructions' => 'Special instructions for this order (optional)',
     'checkout_confirm_note'   => 'Your order will be confirmed once we verify your payment. This usually takes less than 1 hour.',
     'checkout_grab_modal_1'   => 'Delivery is <strong>included in your teepsaa payment</strong>. Don\'t pay the driver or courier anything when it arrives.',
-    'checkout_grab_modal_2'   => 'Each shop chooses how to send its part: Grab nearby, or a courier further away.',
+    'checkout_grab_modal_2'   => 'You choose for each shop: Grab today when it is nearby, or a courier in 1–3 days. A shop too far for Grab sends by courier.',
 
     // ── Login (buyer) ────────────────────────────────────────────────────
     'login_title'     => 'Log in',

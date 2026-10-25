@@ -38,7 +38,7 @@ $stmt = $pdo->prepare('
            o.coupon_code, o.discount_amount,
            o.delivery_distance_km, o.delivery_weight_g,
            o.status, o.created_at, o.delivered_at, o.dispatched_at, o.tracking_url,
-           o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo,
+           o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo, o.delivery_service,
            o.refund_reason, o.refund_rejected_at, o.refund_closed_at,
            o.return_tracking_url, o.admin_note, o.buyer_notes,
            o.self_deal_flags,
@@ -234,7 +234,7 @@ $adminTab     = 'orders';
                 <div class="od-row"><span>Subtotal</span><span>$<?= number_format($o['subtotal'], 2) ?></span></div>
                 <div class="od-row"><span>Royalty (<?= $royaltyPct ?>%)</span><span>−$<?= number_format($royaltyAmt, 2) ?></span></div>
                 <?php if ($o['delivery_fee'] > 0): ?>
-                <div class="od-row"><span>Delivery</span><span>+$<?= number_format($o['delivery_fee'], 2) ?></span></div>
+                <div class="od-row"><span>Delivery<?= $o['delivery_service'] ? ' (buyer paid for ' . ($o['delivery_service'] === 'grab' ? 'Grab' : 'courier') . ')' : '' ?></span><span>+$<?= number_format($o['delivery_fee'], 2) ?></span></div>
                 <?php endif; ?>
                 <div class="od-row od-row--bold"><span>Vendor payout</span><span>$<?= number_format($o['vendor_payout'], 2) ?></span></div>
             </div>
@@ -351,7 +351,7 @@ $adminTab     = 'orders';
                 <div class="od-row"><span>Coupon (<?= htmlspecialchars($o['coupon_code']) ?>)</span><span>−$<?= number_format($vendorCouponDiscount, 2) ?></span></div>
                 <?php endif; ?>
                 <?php if ($o['delivery_fee'] > 0): ?>
-                <div class="od-row"><span>Delivery</span><span>+$<?= number_format($o['delivery_fee'], 2) ?></span></div>
+                <div class="od-row"><span>Delivery<?= $o['delivery_service'] ? ' (buyer paid for ' . ($o['delivery_service'] === 'grab' ? 'Grab' : 'courier') . ')' : '' ?></span><span>+$<?= number_format($o['delivery_fee'], 2) ?></span></div>
                 <?php endif; ?>
                 <?php if ($o['vendor_delivery_bonus'] > 0): ?>
                 <div class="od-row"><span>Delivery buffer</span><span>+$<?= number_format($o['vendor_delivery_bonus'], 2) ?></span></div>
