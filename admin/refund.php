@@ -12,6 +12,7 @@ require __DIR__ . '/../config/url.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/refund-evidence.php';
+require __DIR__ . '/../config/refund-payout.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -32,7 +33,7 @@ $statusIn = implode(',', array_map([$pdo, 'quote'], $refundStatuses));
 $stmt = $pdo->prepare("
     SELECT o.id, o.subtotal, o.delivery_fee, o.coupon_code, o.discount_amount, o.status, o.created_at,
            o.refund_reason, o.refund_requested_at, o.refund_rejected_at, o.refund_closed_at,
-           o.return_tracking_url, o.return_photo, o.dispatch_photo, o.delivered_at, o.paid_out_at,
+           o.return_tracking_url, o.return_photo, o.dispatch_photo, o.delivered_at, o.paid_out_at, o.vendor_payout,
            o.return_disputed_at, o.refund_paid, o.vendor_reply, o.vendor_reply_at,
            o.return_dispatched_at, o.return_bounced_at, o.return_overdue_at,
            b.name AS business_name,
@@ -64,7 +65,7 @@ $error   = $_SESSION['admin_error']   ?? '';
 unset($_SESSION['admin_success'], $_SESSION['admin_error']);
 
 $refundCount        = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn();
-$pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))")->fetchColumn();
+$pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE (status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))) OR (status = 'refunded' AND paid_out_at IS NULL AND (delivery_fee > 0 OR refund_paid < subtotal - discount_amount))")->fetchColumn();
 
 $statusClasses = [
     'refund_requested'  => 'badge-red',
@@ -296,6 +297,17 @@ $adminTab     = 'refunds';
 
                 <?php elseif ($refundState === 'refunded'): ?>
                 <p style="font-size:0.875rem;color:#1e7e34;margin:0;">Refund has been completed.</p>
+                <?php $rp = refund_vendor_payout($o); ?>
+                <?php if ($rp['total'] > 0): ?>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0.5rem 0 0;">
+                    <?php if ($o['paid_out_at']): ?>
+                    The vendor was paid $<?= number_format($rp['total'], 2) ?> on <?= date('M j, g:ia', strtotime($o['paid_out_at'])) ?> — the delivery fee<?= $rp['kept_share'] > 0 ? ' and their share of what was not refunded' : '' ?>.
+                    <?php else: ?>
+                    The vendor is still owed $<?= number_format($rp['total'], 2) ?> — the delivery fee<?= $rp['kept_share'] > 0 ? ' and their share of what was not refunded' : '' ?>.
+                    <a href="/admin/order.php?id=<?= $o['id'] ?>">Pay it from the order page</a>.
+                    <?php endif; ?>
+                </p>
+                <?php endif; ?>
 
                 <?php elseif ($refundState === 'refund_rejected'): ?>
                 <?php

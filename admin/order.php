@@ -14,6 +14,7 @@ require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/audit.php';
 require __DIR__ . '/../config/self-deal.php';
 require __DIR__ . '/../config/order-photo.php';
+require __DIR__ . '/../config/refund-payout.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -39,7 +40,7 @@ $stmt = $pdo->prepare('
            o.delivery_distance_km, o.delivery_weight_g,
            o.status, o.created_at, o.delivered_at, o.dispatched_at, o.tracking_url,
            o.shipping_method, o.courier, o.tracking_number, o.dispatch_photo, o.delivery_service,
-           o.refund_reason, o.refund_rejected_at, o.refund_closed_at,
+           o.refund_reason, o.refund_rejected_at, o.refund_closed_at, o.refund_paid, o.paid_out_at,
            o.return_tracking_url, o.admin_note, o.buyer_notes,
            o.self_deal_flags,
            b.id AS business_id, b.name AS business_name,
@@ -96,6 +97,15 @@ $windowPassed = !empty($o['refund_closed_at'])
     || ($o['delivered_at'] && (time() - strtotime($o['delivered_at'])) >= PAYOUT_WINDOW_SECONDS);
 $windowTime   = $o['delivered_at'] ? date('M j, g:ia', strtotime($o['delivered_at']) + PAYOUT_WINDOW_SECONDS) : null;
 
+// A refunded order still owes the vendor the delivery fee, and their share of
+// anything a part refund left (config/refund-payout.php). Nothing to wait for.
+$refundPayout    = $o['status'] === 'refunded' ? refund_vendor_payout($o) : null;
+$refundPayoutDue = $refundPayout && !$o['paid_out_at'] && $refundPayout['total'] > 0;
+if ($refundPayoutDue) {
+    $vendorPayout = $refundPayout['total'];
+    $windowPassed = true;
+}
+
 // ── Payout guards, mirrored from admin/payouts-action.php ─────────────────
 // The action file is the enforcement; this is only what the screen shows. Keep
 // the two in step — a button the server will reject is worse than no button.
@@ -129,7 +139,7 @@ $statusClass = $statusClasses[$o['status']] ?? 'badge-grey';
 $statusLabel = ucwords(str_replace('_', ' ', $o['status']));
 
 $refundCount        = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn();
-$pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))")->fetchColumn();
+$pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE (status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))) OR (status = 'refunded' AND paid_out_at IS NULL AND (delivery_fee > 0 OR refund_paid < subtotal - discount_amount))")->fetchColumn();
 $unreadMsgCount     = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM support_messages WHERE sender IN ('buyer','vendor','guest') AND read_at IS NULL")->fetchColumn();
 
 $grabParts = array_filter([
@@ -236,7 +246,7 @@ $adminTab     = 'orders';
                 <?php if ($o['delivery_fee'] > 0): ?>
                 <div class="od-row"><span>Delivery<?= $o['delivery_service'] ? ' (buyer paid for ' . ($o['delivery_service'] === 'grab' ? 'Grab' : 'courier') . ')' : '' ?></span><span>+$<?= number_format($o['delivery_fee'], 2) ?></span></div>
                 <?php endif; ?>
-                <div class="od-row od-row--bold"><span>Vendor payout</span><span>$<?= number_format($o['vendor_payout'], 2) ?></span></div>
+                <div class="od-row od-row--bold"><span>Vendor payout<?= $refundPayout ? ' before the refund' : '' ?></span><span>$<?= number_format($o['vendor_payout'], 2) ?></span></div>
             </div>
 
             <?php if ($o['refund_reason'] || in_array($o['status'], ['refund_requested','return_approved','return_dispatched','return_received','refunded','refund_rejected'])): ?>
@@ -342,9 +352,25 @@ $adminTab     = 'orders';
             </div>
             <?php endif; ?>
 
-            <?php if ($o['status'] === 'delivered'): ?>
+            <?php if ($refundPayout && $o['paid_out_at']): ?>
             <div class="od-card">
                 <div class="od-card-title">Vendor payout</div>
+                <div class="od-row od-row--bold"><span>Paid after the refund</span><span>$<?= number_format($refundPayout['total'], 2) ?></span></div>
+                <p style="font-size:0.8rem;color:#1e7e34;margin:0.5rem 0 0;">Sent <?= date('M j, g:ia', strtotime($o['paid_out_at'])) ?>.</p>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($o['status'] === 'delivered' || $refundPayoutDue): ?>
+            <div class="od-card">
+                <div class="od-card-title">Vendor payout</div>
+                <?php if ($refundPayoutDue): ?>
+                <div class="od-row"><span>Buyer paid for the goods</span><span>$<?= number_format($refundPayout['goods_paid'], 2) ?></span></div>
+                <div class="od-row"><span>Refunded to the buyer</span><span>−$<?= number_format($refundPayout['refunded'], 2) ?></span></div>
+                <?php if ($refundPayout['kept_share'] > 0): ?>
+                <div class="od-row"><span>Vendor's share of the rest, after royalty</span><span>+$<?= number_format($refundPayout['kept_share'], 2) ?></span></div>
+                <?php endif; ?>
+                <div class="od-row"><span>Delivery the vendor paid for</span><span>+$<?= number_format($refundPayout['delivery'], 2) ?></span></div>
+                <?php else: ?>
                 <div class="od-row"><span>Subtotal</span><span>$<?= number_format($o['subtotal'], 2) ?></span></div>
                 <div class="od-row"><span>Royalty (<?= $royaltyPct ?>%)</span><span>−$<?= number_format($royaltyAmt, 2) ?></span></div>
                 <?php if ($vendorCouponDiscount > 0): ?>
@@ -356,12 +382,13 @@ $adminTab     = 'orders';
                 <?php if ($o['vendor_delivery_bonus'] > 0): ?>
                 <div class="od-row"><span>Delivery buffer</span><span>+$<?= number_format($o['vendor_delivery_bonus'], 2) ?></span></div>
                 <?php endif; ?>
+                <?php endif; ?>
                 <div class="od-row od-row--bold"><span>Vendor payout</span><span>$<?= number_format($vendorPayout, 2) ?></span></div>
                 <?php if ($windowPassed): ?>
                 <details class="payout-confirm" style="margin-top:0.75rem;" open>
-                    <summary class="payout-confirm-toggle">The refund window has passed — you may pay out to the vendor</summary>
+                    <summary class="payout-confirm-toggle"><?= $refundPayoutDue ? 'The refund is done — pay the vendor what they are still owed' : 'The refund window has passed — you may pay out to the vendor' ?></summary>
                     <div class="payout-confirm-body">
-                        <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Scan the vendor's ABA QR and send <strong>$<?= number_format($vendorPayout, 2) ?></strong>, then mark as completed.</p>
+                        <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">Scan the vendor's ABA QR and send <strong>$<?= number_format($vendorPayout, 2) ?></strong>, then <?= $refundPayoutDue ? 'mark it paid' : 'mark as completed' ?>.</p>
                         <?php if ($o['vendor_aba_qr']): ?>
                             <div style="display:inline-block;text-align:center;border:2px solid #1e7e34;border-radius:8px;padding:0.75rem 1.25rem 1rem;margin-bottom:1rem;">
                                 <?php if ($o['vendor_aba_account_name']): ?>
@@ -425,7 +452,7 @@ $adminTab     = 'orders';
                                     I have confirmed the new bank account with the vendor directly
                                 </label>
                                 <?php endif; ?>
-                                <button type="submit" class="btn-approve">Mark completed</button>
+                                <button type="submit" class="btn-approve"><?= $refundPayoutDue ? 'Mark paid' : 'Mark completed' ?></button>
                             </form>
                         </div>
                         <?php endif; ?>

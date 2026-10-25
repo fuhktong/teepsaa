@@ -9,6 +9,7 @@
 require __DIR__ . '/../../config/api.php';
 require __DIR__ . '/../../config/url.php';
 require __DIR__ . '/../../config/refund-evidence.php';
+require __DIR__ . '/../../config/refund-payout.php';
 
 api_require_method('GET');
 
@@ -23,7 +24,7 @@ if ($publicId === '') api_json(['error' => 'missing_id'], 400);
 $stmt = $pdo->prepare("
     SELECT o.id, o.public_id, o.subtotal, o.delivery_fee, o.discount_amount, o.coupon_code,
            o.status, o.created_at, o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.return_photo,
-           o.return_disputed_at, o.refund_paid, o.return_bounced_at,
+           o.return_disputed_at, o.refund_paid, o.return_bounced_at, o.vendor_payout, o.paid_out_at,
            o.refund_requested_at, o.vendor_reply, o.vendor_reply_at,
            b.name AS business_name,
            b.deleted_at AS business_closed,
@@ -105,6 +106,10 @@ api_json([
     // What the buyer gets back: the product price, or what teepsaa decided
     // after a disputed return (part of it, or 0).
     'refund_amount'   => refund_figure($o),
+    // Once refunded, what the vendor is still paid: the delivery fee they paid
+    // for, plus their share of anything a part refund left. Null before then.
+    'payout'          => $o['status'] === 'refunded' ? refund_vendor_payout($o)['total'] : null,
+    'payout_sent'     => !empty($o['paid_out_at']),
     'refund_reason'   => $o['refund_reason'] ?: null,
     // The buyer's photos of the problem, sent with the request. Empty for a
     // change of mind and for requests made before photos were asked for.

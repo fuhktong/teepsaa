@@ -12,6 +12,7 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/notify.php';
 require __DIR__ . '/../config/audit.php';
+require __DIR__ . '/../config/refund-payout.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -31,17 +32,23 @@ $orderId = (int)($_POST['order_id'] ?? 0);
 
 // Everything the three guards below need, in one read.
 $gStmt = $pdo->prepare("
-    SELECT o.delivered_at, o.refund_closed_at, o.vendor_payout, o.self_deal_flags,
+    SELECT o.status, o.delivered_at, o.refund_closed_at, o.vendor_payout, o.self_deal_flags,
+           o.subtotal, o.discount_amount, o.delivery_fee, o.refund_paid,
            p.confirmed_by, p.id AS payment_id,
            v.id AS vendor_id, v.aba_changed_at
     FROM orders o
     JOIN payments p   ON p.id = o.payment_id
     JOIN businesses b ON b.id = o.business_id
     JOIN vendors v    ON v.id = b.user_id
-    WHERE o.id = ? AND o.status = 'delivered'
+    WHERE o.id = ? AND (o.status = 'delivered' OR " . refund_payout_due_sql('o') . ")
 ");
 $gStmt->execute([$orderId]);
 $guard = $gStmt->fetch();
+
+// A refunded order pays the vendor what the refund left them (config/refund-payout.php)
+// and stays 'refunded'. It has no refund window left to wait for.
+$isRefund = $guard && $guard['status'] === 'refunded';
+$amount   = $isRefund ? refund_vendor_payout($guard)['total'] : $amount;
 
 $fail = function (string $msg) use ($orderId): never {
     $_SESSION['admin_error'] = $msg;
@@ -57,7 +64,7 @@ $fail = function (string $msg) use ($orderId): never {
 // there is deliberately no standalone "skip the window" control.
 $deliveredAt = $guard['delivered_at'] ?? null;
 $refundClosed = !empty($guard['refund_closed_at']);
-if (!$refundClosed && $deliveredAt && (time() - strtotime($deliveredAt)) < PAYOUT_WINDOW_SECONDS) {
+if (!$isRefund && !$refundClosed && $deliveredAt && (time() - strtotime($deliveredAt)) < PAYOUT_WINDOW_SECONDS) {
     $fail('Refund window still open until '
         . date('M j, g:ia', strtotime($deliveredAt) + PAYOUT_WINDOW_SECONDS)
         . ' — the payout can\'t be completed before then.');
@@ -96,12 +103,17 @@ if ($soloPayout && !admin_is_super()) {
         . 'Ask another admin to complete it.');
 }
 
-$stmt = $pdo->prepare("UPDATE orders SET status = ?, paid_out_by = ?, paid_out_at = NOW() WHERE id = ? AND status = ?");
-$stmt->execute(['completed', admin_id(), $orderId, 'delivered']);
+if ($isRefund) {
+    $stmt = $pdo->prepare("UPDATE orders SET paid_out_by = ?, paid_out_at = NOW() WHERE id = ? AND status = 'refunded' AND paid_out_at IS NULL");
+    $stmt->execute([admin_id(), $orderId]);
+} else {
+    $stmt = $pdo->prepare("UPDATE orders SET status = ?, paid_out_by = ?, paid_out_at = NOW() WHERE id = ? AND status = ?");
+    $stmt->execute(['completed', admin_id(), $orderId, 'delivered']);
+}
 
 if ($stmt->rowCount() > 0) {
     $auditDetail = [
-        'amount'       => (float)($guard['vendor_payout'] ?? 0),
+        'amount'       => $amount,
         'vendor_id'    => (int)($guard['vendor_id'] ?? 0),
         'confirmed_by' => $guard['confirmed_by'] !== null ? (int)$guard['confirmed_by'] : null,
     ];
@@ -112,13 +124,13 @@ if ($stmt->rowCount() > 0) {
 
     if ($soloPayout) {
         audit_log($pdo, 'payout.solo_override', 'order', $orderId, [
-            'amount' => (float)($guard['vendor_payout'] ?? 0),
+            'amount' => $amount,
             'reason' => 'Same admin confirmed the payment and released the payout (super admin exemption).',
         ]);
     }
     if ($holdOverride) {
         audit_log($pdo, 'payout.hold_override', 'order', $orderId, [
-            'amount'          => (float)($guard['vendor_payout'] ?? 0),
+            'amount'          => $amount,
             'vendor_id'       => (int)($guard['vendor_id'] ?? 0),
             'bank_changed_at' => $bankChangedAt,
         ]);
@@ -136,16 +148,18 @@ if ($stmt->rowCount() > 0) {
     if ($vendor) {
         $oid = order_display_id((int)$vendor['order_id'], $vendor['created_at']);
         $msg = 'Your payout for order #' . $oid . ' has been sent to your ABA account.';
-        notify($pdo, 'vendor', (int)$vendor['vendor_id'], 'payout_sent', $msg, '/orders-vendor/order.php?id=' . $vendor['order_public_id'], ['ref' => $oid]);
+        // A refunded order is only on the vendor's refund page.
+        $page = ($isRefund ? '/orders-vendor/refund.php?id=' : '/orders-vendor/order.php?id=') . $vendor['order_public_id'];
+        notify($pdo, 'vendor', (int)$vendor['vendor_id'], 'payout_sent', $msg, $page, ['ref' => $oid]);
         [$subj, $html] = render_email_template($pdo, 'payout_sent', [
             'name'    => htmlspecialchars($vendor['name']),
             'order'   => $oid,
-            'cta_url' => 'https://teepsaa.com/orders-vendor/order.php?id=' . $vendor['order_public_id'],
+            'cta_url' => 'https://teepsaa.com' . $page,
         ]);
         if ($html !== '') send_email($vendor['email'], $subj, $html);
     }
 }
 
-$_SESSION['admin_success'] = 'Order marked as completed. Payout recorded.';
+$_SESSION['admin_success'] = $isRefund ? 'Payout recorded.' : 'Order marked as completed. Payout recorded.';
 header('Location: /admin/order.php?id=' . $orderId);
 exit;

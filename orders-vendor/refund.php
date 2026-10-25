@@ -11,6 +11,7 @@ require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/url.php';
 require __DIR__ . '/../config/refund-evidence.php';
+require __DIR__ . '/../config/refund-payout.php';
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'vendor') {
     header('Location: /login-vendor/');
@@ -35,7 +36,7 @@ $stmt = $pdo->prepare("
     SELECT o.id, o.subtotal, o.delivery_fee, o.status, o.created_at,
            o.refund_reason, o.refund_rejected_at, o.return_tracking_url, o.return_photo, o.coupon_code, o.discount_amount,
            o.return_disputed_at, o.refund_paid, o.refund_requested_at, o.vendor_reply, o.vendor_reply_at,
-           o.return_bounced_at,
+           o.return_bounced_at, o.vendor_payout, o.paid_out_at,
            b.name AS business_name,
            u.name AS buyer_name, u.email AS buyer_email
     FROM orders o
@@ -173,6 +174,11 @@ require __DIR__ . '/../head/head.php';
         <div class="popup-subtotal"><span><?= $t['vorder_delivery_nonrefund'] ?></span><span>$<?= number_format($o['delivery_fee'], 2) ?></span></div>
         <?php endif; ?>
         <div class="popup-total"><span><?= $refundTotalLabel ?></span><span>$<?= number_format(refund_figure($o), 2) ?></span></div>
+        <?php $refundPayout = $refundState === 'refunded' ? refund_vendor_payout($o)['total'] : 0; ?>
+        <?php if ($refundPayout > 0): ?>
+        <div class="popup-total popup-total--payout"><span><?= $t['vorder_refund_payout'] ?></span><span>$<?= number_format($refundPayout, 2) ?></span></div>
+        <p style="font-size:0.8rem;color:#6b7280;margin:0.25rem 0 0;"><?= $o['paid_out_at'] ? $t['vorder_refund_payout_sent'] : $t['vorder_refund_payout_due'] ?></p>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
 

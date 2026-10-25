@@ -11,6 +11,7 @@ require __DIR__ . '/../config/csrf.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../config/admin-auth.php';
 require __DIR__ . '/../config/audit.php';
+require __DIR__ . '/../config/refund-payout.php';
 
 if (empty($_SESSION['admin_id'])) {
     header('Location: /login-admin/');
@@ -26,8 +27,8 @@ unset($_SESSION['admin_success']);
 // opens the order, where the payout QR, refund-window check and "Mark
 // completed" button live
 $stmt = $pdo->query('
-    SELECT o.id, o.subtotal, o.delivery_fee, o.vendor_delivery_bonus, o.created_at,
-           o.delivered_at, o.refund_closed_at, o.self_deal_flags,
+    SELECT o.id, o.status, o.subtotal, o.discount_amount, o.delivery_fee, o.vendor_delivery_bonus, o.created_at,
+           o.vendor_payout, o.refund_paid, o.delivered_at, o.refund_closed_at, o.self_deal_flags,
            CASE WHEN c.business_id = o.business_id THEN o.discount_amount ELSE 0 END AS vendor_coupon_discount,
            b.name AS business_name,
            v.email AS vendor_email, v.aba_changed_at
@@ -35,7 +36,7 @@ $stmt = $pdo->query('
     JOIN businesses b ON b.id = o.business_id
     JOIN vendors v ON v.id = b.user_id
     LEFT JOIN coupons c ON c.id = o.coupon_id
-    WHERE o.status = \'delivered\'
+    WHERE o.status = \'delivered\' OR ' . refund_payout_due_sql('o') . '
     ORDER BY o.delivered_at ASC
 ');
 $payouts = $stmt->fetchAll();
@@ -54,6 +55,7 @@ $adminTab     = 'payouts';
     <link rel="stylesheet" href="/header/header.css">
     <link rel="stylesheet" href="/footer/footer.css">
     <link rel="stylesheet" href="/order-status/order-status.css">
+    <link rel="stylesheet" href="/refund-status/refund-status.css">
     <link rel="stylesheet" href="/admin/admin.css">
 </head>
 <body>
@@ -76,9 +78,13 @@ $adminTab     = 'payouts';
     <div class="order-list">
         <?php foreach ($payouts as $p): ?>
         <?php
-        $payout       = $p['subtotal'] - $p['vendor_coupon_discount'] + $p['delivery_fee'] + $p['vendor_delivery_bonus'];
+        // A refunded order owes the vendor the delivery fee and anything the refund left (config/refund-payout.php).
+        $isRefund     = $p['status'] === 'refunded';
+        $payout       = $isRefund
+            ? refund_vendor_payout($p)['total']
+            : $p['subtotal'] - $p['vendor_coupon_discount'] + $p['delivery_fee'] + $p['vendor_delivery_bonus'];
         $oid          = date('ymd', strtotime($p['created_at'])) . '-' . str_pad($p['id'], 4, '0', STR_PAD_LEFT);
-        $windowPassed = !empty($p['refund_closed_at'])
+        $windowPassed = $isRefund || !empty($p['refund_closed_at'])
             || ($p['delivered_at'] && (time() - strtotime($p['delivered_at'])) >= PAYOUT_WINDOW_SECONDS);
         $windowTime   = $p['delivered_at'] ? date('M j, g:ia', strtotime($p['delivered_at']) + PAYOUT_WINDOW_SECONDS) : null;
         $bankHold     = $p['aba_changed_at'] && (time() - strtotime($p['aba_changed_at'])) < BANK_CHANGE_HOLD_SECONDS;
@@ -92,6 +98,9 @@ $adminTab     = 'payouts';
                 <?php if ($p['self_deal_flags']): ?>
                 <span class="order-badge badge-red">Buyer looks like the vendor</span>
                 <?php endif; ?>
+                <?php if ($isRefund): ?>
+                <span class="order-badge badge-red">Refunded — delivery fee owed</span>
+                <?php endif; ?>
                 <?php if ($bankHold): ?>
                 <span class="order-badge badge-red">Bank details just changed</span>
                 <?php elseif ($windowPassed): ?>
@@ -102,7 +111,7 @@ $adminTab     = 'payouts';
                 <span class="order-row-total">$<?= number_format($payout, 2) ?></span>
             </div>
             <div class="order-row-bar">
-                <?php $orderStatus = 'delivered'; require __DIR__ . '/../order-status/order-status.php'; ?>
+                <?php $orderStatus = $p['status']; require __DIR__ . '/../order-status/order-status.php'; ?>
             </div>
         </div>
         </a>

@@ -567,6 +567,9 @@ return [
     'vorder_customer'      => 'Customer',
     'vorder_floor_unit'    => 'Floor / Unit',
     'vorder_delivery_nonrefund' => 'Delivery (non-refundable)',
+    'vorder_refund_payout'      => 'Paid to you (delivery and anything not refunded)',
+    'vorder_refund_payout_sent' => 'Sent to your ABA account',
+    'vorder_refund_payout_due'  => 'teepsaa will send it to your ABA account',
     // Vendor settings (vendor-specific)
     'vendor_no_business'   => 'You haven\'t submitted a business yet.',
     'vendor_submit_one'    => 'Submit one here.',

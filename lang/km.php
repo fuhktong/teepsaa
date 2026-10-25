@@ -567,6 +567,9 @@ return [
     'vorder_customer'      => 'អតិថិជន',
     'vorder_floor_unit'    => 'ជាន់ / បន្ទប់',
     'vorder_delivery_nonrefund' => 'ដឹកជញ្ជូន (មិនអាចសងវិញ)',
+    'vorder_refund_payout'      => 'ប្រាក់ទូទាត់ឱ្យអ្នក (ថ្លៃដឹកជញ្ជូន និងចំណែកដែលមិនបានសងវិញ)',
+    'vorder_refund_payout_sent' => 'បានផ្ញើទៅគណនី ABA របស់អ្នកហើយ',
+    'vorder_refund_payout_due'  => 'teepsaa នឹងផ្ញើទៅគណនី ABA របស់អ្នក',
     // Vendor settings (vendor-specific)
     'vendor_no_business'   => 'អ្នកមិនទាន់បានដាក់ស្នើអាជីវកម្មទេ។',
     'vendor_submit_one'    => 'ដាក់ស្នើនៅទីនេះ។',
