@@ -104,6 +104,10 @@ $bounced = $o['status'] === 'return_dispatched' && !empty($o['return_bounced_at'
 if ($bounced) $statusLabel = $t['order_badge_return_bounced'];
 $partRefund = $o['status'] === 'refunded' && $o['refund_paid'] !== null
     && round((float)$o['refund_paid'], 2) < round($o['subtotal'] - $o['discount_amount'], 2);
+// "I didn't receive it": offered while on its way and inside the refund window.
+$notArrived   = $o['refund_reason'] === REFUND_REASON_NOT_ARRIVED;
+$canNotArrive = not_arrived_open($o);
+$lostRefund   = '$' . number_format($o['subtotal'] - $o['discount_amount'] + $o['delivery_fee'], 2);
 ?>
 <!DOCTYPE html>
 <html lang="<?= current_lang() ?>">
@@ -214,7 +218,7 @@ require __DIR__ . '/../head/head.php';
     <?php if ($isRefund && $o['refund_reason']): ?>
     <div class="popup-section">
         <div class="popup-section-label"><?= $t['app_your_reason'] ?></div>
-        <p class="refund-reason-quote">"<?= htmlspecialchars($o['refund_reason']) ?>"</p>
+        <p class="refund-reason-quote">"<?= htmlspecialchars($notArrived ? $t['order_reason_not_arrived'] : $o['refund_reason']) ?>"</p>
         <?php if ($refundPhotos): ?>
         <div class="popup-section-label" style="margin-top:0.75rem;"><?= $t['order_your_photos'] ?></div>
         <div class="refund-photo-row">
@@ -237,7 +241,9 @@ require __DIR__ . '/../head/head.php';
             <?php endforeach; ?>
         </div>
         <?php endif; ?>
-        <?php if ($o['status'] === 'return_received' && $disputed): ?>
+        <?php if ($o['status'] === 'refund_requested' && $notArrived): ?>
+        <p class="order-refund-window" style="margin-top:0.75rem;"><?= sprintf($t['order_not_arrived_checking'], $lostRefund) ?></p>
+        <?php elseif ($o['status'] === 'return_received' && $disputed): ?>
         <p class="order-refund-window" style="margin-top:0.75rem;"><?= $t['order_return_disputed'] ?></p>
         <?php elseif ($bounced): ?>
         <p class="order-refund-window" style="margin-top:0.75rem;"><?= $t['order_return_bounced'] ?></p>
@@ -251,6 +257,19 @@ require __DIR__ . '/../head/head.php';
     <p class="order-refund-window order-refund-window--closed"><?= $t['order_return_refused'] ?></p>
     <?php endif; ?>
 
+<?php $notArrivedForm = function () use ($o, $t, $lostRefund) { ?>
+    <details class="order-options">
+        <summary class="order-options-toggle"><?= $t['order_not_arrived_heading'] ?></summary>
+        <div class="order-options-body">
+            <p style="font-size:0.875rem;color:#6b7280;margin:0.4rem 0 0.75rem;"><?= sprintf($t['order_not_arrived_info'], '<strong>' . $lostRefund . '</strong>') ?></p>
+            <form method="POST" action="/orders-buyer/not-arrived.php" onsubmit="return confirm(<?= htmlspecialchars(json_encode($t['order_not_arrived_confirm']), ENT_QUOTES) ?>);">
+                <?= csrf_input() ?>
+                <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
+                <button type="submit" class="btn-refund-request"><?= $t['order_not_arrived_submit'] ?></button>
+            </form>
+        </div>
+    </details>
+<?php }; ?>
     <?php if ($o['status'] === 'pending'): ?>
     <p class="order-pending-note"><?= $t['orders_awaiting_payment'] ?></p>
 
@@ -266,9 +285,11 @@ require __DIR__ . '/../head/head.php';
         <a href="<?= htmlspecialchars($o['tracking_url']) ?>" target="_blank" rel="noopener" class="btn-secondary"><?= $t['order_track_delivery'] ?></a>
         <?php endif; ?>
     </div>
+    <?php $notArrivedForm(); ?>
 
     <?php elseif ($o['status'] === 'delivered'): ?>
     <hr class="popup-divider">
+    <?php if ($canNotArrive) $notArrivedForm(); ?>
     <details class="order-options">
         <summary class="order-options-toggle"><?= $t['order_options'] ?></summary>
         <div class="order-options-body">

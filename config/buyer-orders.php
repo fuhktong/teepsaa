@@ -209,6 +209,9 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
             // them. Held at 'return_dispatched' for teepsaa to decide.
             'bounced'       => !empty($o['return_bounced_at']),
             'bounce_photos' => array_map(fn($f) => order_photo_url($f, true), refund_photos_of($pdo, $orderId)['buyer_bounced'] ?? []),
+            // The buyer said the parcel never arrived. While open, refund_amount
+            // is what a lost parcel pays back: the price and the delivery fee.
+            'not_arrived'   => $o['refund_reason'] === REFUND_REASON_NOT_ARRIVED,
         ],
         'return_address'      => $returnAddress,
         // Who pays to send the return: 'buyer' after a change of mind, 'shop'
@@ -224,6 +227,9 @@ function buyer_order_detail(PDO $pdo, int $userId, string $publicId): ?array
             'send_return'      => $status === 'return_approved',
             // "The shop refused it / it came back to me", with photos.
             'report_bounce'    => $status === 'return_dispatched' && empty($o['return_bounced_at']),
+            // "I didn't receive it": on its way, or inside the refund window.
+            // Nothing is sent back; a lost parcel refunds delivery too.
+            'report_not_arrived' => not_arrived_open($o),
             // Put the items back in the cart — buy-again.php checks it again.
             'buy_again'        => $reviewable,
         ],

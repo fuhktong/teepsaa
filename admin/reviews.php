@@ -21,7 +21,7 @@ admin_require('reviews');
 $search = trim((string)($_GET['q'] ?? ''));
 
 $refundCount        = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn();
-$pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE (status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))) OR (status = 'refunded' AND paid_out_at IS NULL AND (delivery_fee > 0 OR refund_paid < subtotal - discount_amount))")->fetchColumn();
+$pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE (status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))) OR (status = 'refunded' AND paid_out_at IS NULL AND ((delivery_fee > 0 AND (refund_paid IS NULL OR refund_paid < subtotal - discount_amount + delivery_fee)) OR refund_paid < subtotal - discount_amount))")->fetchColumn();
 $pendingVendorCount = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 0")->fetchColumn();
 
 $sql = '

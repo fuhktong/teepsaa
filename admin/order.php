@@ -139,7 +139,7 @@ $statusClass = $statusClasses[$o['status']] ?? 'badge-grey';
 $statusLabel = ucwords(str_replace('_', ' ', $o['status']));
 
 $refundCount        = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn();
-$pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE (status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))) OR (status = 'refunded' AND paid_out_at IS NULL AND (delivery_fee > 0 OR refund_paid < subtotal - discount_amount))")->fetchColumn();
+$pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE (status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))) OR (status = 'refunded' AND paid_out_at IS NULL AND ((delivery_fee > 0 AND (refund_paid IS NULL OR refund_paid < subtotal - discount_amount + delivery_fee)) OR refund_paid < subtotal - discount_amount))")->fetchColumn();
 $unreadMsgCount     = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM support_messages WHERE sender IN ('buyer','vendor','guest') AND read_at IS NULL")->fetchColumn();
 
 $grabParts = array_filter([

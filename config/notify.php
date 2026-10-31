@@ -55,6 +55,8 @@ function notification_text(array $row, array $t): string {
         case 'return_overdue':
         case 'return_bounce_refunded':
         case 'return_bounce_dismissed':
+        case 'parcel_lost_refunded':
+        case 'order_auto_delivered':
             return isset($data['ref']) ? sprintf($t[$key], $data['ref']) : ($row['message'] ?? '');
         case 'strike':
             // One line per step, since each step means something different.
@@ -62,6 +64,7 @@ function notification_text(array $row, array $t): string {
             if (!isset($t[$key . '_' . $lvl])) return $row['message'] ?? '';
             return $t[$key . '_' . $lvl] . (!empty($data['ended_trial']) ? ' ' . $t['notif_strike_trial'] : '');
         case 'refund_dispute':
+        case 'parcel_not_arrived':
             return isset($data['ref'], $data['hours']) ? sprintf($t[$key], $data['ref'], (int)$data['hours']) : ($row['message'] ?? '');
         case 'refund_part_sent':
             return isset($data['ref'], $data['amount']) ? sprintf($t[$key], $data['ref'], $data['amount']) : ($row['message'] ?? '');

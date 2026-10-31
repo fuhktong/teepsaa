@@ -20,7 +20,7 @@ $days .= ' ELSE ' . (int)$ship['courier_confirm_days_far'] . ' END';
 $hours = "CASE WHEN $courier THEN ($days) * 24 ELSE 24 END";
 
 $stmt = $pdo->query("
-    SELECT o.id, o.subtotal, o.created_at, $hours AS waited_hours,
+    SELECT o.id, o.public_id, o.buyer_user_id, o.subtotal, o.created_at, $hours AS waited_hours,
            b.name AS business_name,
            bu.name AS buyer_name, bu.email AS buyer_email
     FROM orders o
@@ -36,7 +36,22 @@ if ($orders) {
     // Mark them all delivered
     $ids          = array_column($orders, 'id');
     $placeholders = implode(',', array_fill(0, count($ids), '?'));
-    $pdo->prepare("UPDATE orders SET status = 'delivered', delivered_at = NOW() WHERE id IN ($placeholders)")->execute($ids);
+    // Still 'dispatched' in the UPDATE: a buyer who said "never arrived" in
+    // the meantime has moved it to 'refund_requested', and keeps it there.
+    $pdo->prepare("UPDATE orders SET status = 'delivered', delivered_at = NOW() WHERE id IN ($placeholders) AND status = 'dispatched'")->execute($ids);
+
+    // The buyer never said it arrived, and the refund window starts now —
+    // tell them, so "I didn't receive it" is not missed.
+    foreach ($orders as $o) {
+        try {
+            $ref = order_display_id((int)$o['id'], $o['created_at']);
+            notify($pdo, 'buyer', (int)$o['buyer_user_id'], 'order_auto_delivered',
+                'Order #' . $ref . ' was marked delivered. Not received it? Tell teepsaa from the order within 24 hours.',
+                '/orders-buyer/order.php?id=' . $o['public_id'], ['ref' => $ref]);
+        } catch (Throwable $e) {
+            error_log('auto-confirm: buyer notify failed for order ' . $o['id'] . ': ' . $e->getMessage());
+        }
+    }
 
     // Build email body
     $count = count($orders);

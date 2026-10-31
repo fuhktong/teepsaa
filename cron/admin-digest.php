@@ -25,7 +25,7 @@ $refundsToPay    = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 
 $returnsHeld     = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'return_dispatched' AND (return_bounced_at IS NOT NULL OR return_overdue_at IS NOT NULL)")->fetchColumn();
 $pendingBiz      = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 0 AND deleted_at IS NULL")->fetchColumn();
 $unreadSupport   = (int)$pdo->query("SELECT COUNT(DISTINCT thread_id) FROM support_messages WHERE sender IN ('buyer','vendor','guest') AND read_at IS NULL")->fetchColumn();
-$payoutsDue      = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE (status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)) OR (status = 'refunded' AND paid_out_at IS NULL AND (delivery_fee > 0 OR refund_paid < subtotal - discount_amount))")->fetchColumn();
+$payoutsDue      = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE (status = 'delivered' AND delivered_at IS NOT NULL AND delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND)) OR (status = 'refunded' AND paid_out_at IS NULL AND ((delivery_fee > 0 AND (refund_paid IS NULL OR refund_paid < subtotal - discount_amount + delivery_fee)) OR refund_paid < subtotal - discount_amount))")->fetchColumn();
 $spotChecksDue   = (int)$pdo->query("SELECT COUNT(*) FROM businesses WHERE approved = 1 AND deleted_at IS NULL AND approved_at <= NOW() - INTERVAL 7 DAY AND spot_checked_at IS NULL")->fetchColumn();
 // Canvassing follow-ups ride along in this digest rather than getting a cron
 // and an email of their own — one morning email is easier to actually read.

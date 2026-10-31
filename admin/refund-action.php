@@ -51,8 +51,9 @@ $replyDone = "(vendor_reply_at IS NOT NULL OR refund_requested_at IS NULL
 $replyWait = 'The vendor still has time to reply — approve or reject once they do or the ' . REFUND_REPLY_HOURS . ' hours are up.';
 
 if ($action === 'approve') {
-    $stmt = $pdo->prepare("UPDATE orders SET status = 'return_approved' WHERE id = ? AND status = 'refund_requested' AND $replyDone");
-    $stmt->execute([$orderId]);
+    // A parcel that never arrived has nothing to send back; it is decided below.
+    $stmt = $pdo->prepare("UPDATE orders SET status = 'return_approved' WHERE id = ? AND status = 'refund_requested' AND refund_reason <> ? AND $replyDone");
+    $stmt->execute([$orderId, REFUND_REASON_NOT_ARRIVED]);
     if ($stmt->rowCount()) {
         $emailKey = 'refund_approved';
         audit_log($pdo, 'refund.approve', 'order', $orderId);
@@ -66,12 +67,36 @@ if ($action === 'approve') {
     // back exactly where it was — otherwise it can never reach 'completed'
     // and falls out of the payout queue, and the vendor is never paid.
     // The rejection is recorded in its own column instead of in status.
-    $stmt = $pdo->prepare("UPDATE orders SET status = 'delivered', refund_rejected_at = NOW() WHERE id = ? AND status = 'refund_requested' AND $replyDone");
+    // A "never arrived" sent while the parcel was still on its way has no
+    // delivered_at yet; rejecting it says it was delivered, so it gets one.
+    $stmt = $pdo->prepare("UPDATE orders SET status = 'delivered', delivered_at = COALESCE(delivered_at, NOW()), refund_rejected_at = NOW() WHERE id = ? AND status = 'refund_requested' AND $replyDone");
     $stmt->execute([$orderId]);
     if ($stmt->rowCount()) {
         $emailKey = 'refund_rejected';
         audit_log($pdo, 'refund.reject', 'order', $orderId);
         $_SESSION['admin_success'] = 'Refund request rejected.';
+    } else {
+        $_SESSION['admin_error'] = $replyWait;
+    }
+
+} elseif ($action === 'lost_refund') {
+    // The parcel never arrived. The buyer gets everything back, delivery
+    // included, and the vendor is not paid: the shop chose the driver or
+    // courier and claims a lost parcel from them (config/refund-payout.php).
+    $stmt = $pdo->prepare("UPDATE orders SET status = 'refunded', refunded_at = NOW(), refund_paid = subtotal - discount_amount + delivery_fee
+                            WHERE id = ? AND status = 'refund_requested' AND refund_reason = ? AND $replyDone");
+    $stmt->execute([$orderId, REFUND_REASON_NOT_ARRIVED]);
+    if ($stmt->rowCount()) {
+        $emailKey = 'refund_sent';
+        $l = $pdo->prepare('SELECT o.public_id, o.created_at, o.refund_paid, b.user_id FROM orders o JOIN businesses b ON b.id = o.business_id WHERE o.id = ?');
+        $l->execute([$orderId]);
+        $lr = $l->fetch();
+        audit_log($pdo, 'refund.lost', 'order', $orderId, ['amount' => (float)$lr['refund_paid']]);
+        $void = order_display_id($orderId, $lr['created_at']);
+        notify($pdo, 'vendor', (int)$lr['user_id'], 'parcel_lost_refunded',
+            'teepsaa refunded the buyer for order #' . $void . ' because the parcel never arrived. This order will not be paid out — claim it from your courier or driver.',
+            '/orders-vendor/refund.php?id=' . $lr['public_id'], ['ref' => $void]);
+        $_SESSION['admin_success'] = 'Buyer refunded $' . number_format((float)$lr['refund_paid'], 2) . ', delivery included. Make sure it has gone to the buyer via ABA.';
     } else {
         $_SESSION['admin_error'] = $replyWait;
     }

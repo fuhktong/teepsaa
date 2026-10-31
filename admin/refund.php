@@ -36,6 +36,7 @@ $stmt = $pdo->prepare("
            o.return_tracking_url, o.return_photo, o.dispatch_photo, o.delivered_at, o.paid_out_at, o.vendor_payout,
            o.return_disputed_at, o.refund_paid, o.vendor_reply, o.vendor_reply_at,
            o.return_dispatched_at, o.return_bounced_at, o.return_overdue_at,
+           o.dispatched_at, o.shipping_method, o.delivery_service, o.courier, o.tracking_number, o.tracking_url,
            b.name AS business_name,
            bu.name AS buyer_name, bu.email AS buyer_email,
            v.id AS vendor_id, v.name AS vendor_name, v.aba_qr AS vendor_aba_qr
@@ -52,6 +53,7 @@ $o = $stmt->fetch();
 // URL becomes null here, so the surrounding `if` drops the link entirely
 // rather than rendering a javascript: href (config/url.php).
 if (isset($o['return_tracking_url'])) $o['return_tracking_url'] = safe_external_url($o['return_tracking_url']);
+if (isset($o['tracking_url'])) $o['tracking_url'] = safe_external_url($o['tracking_url']);
 
 if (!$o) {
     header('Location: /admin/refunds.php');
@@ -65,7 +67,7 @@ $error   = $_SESSION['admin_error']   ?? '';
 unset($_SESSION['admin_success'], $_SESSION['admin_error']);
 
 $refundCount        = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'refund_requested'")->fetchColumn();
-$pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE (status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))) OR (status = 'refunded' AND paid_out_at IS NULL AND (delivery_fee > 0 OR refund_paid < subtotal - discount_amount))")->fetchColumn();
+$pendingPayoutCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE (status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))) OR (status = 'refunded' AND paid_out_at IS NULL AND ((delivery_fee > 0 AND (refund_paid IS NULL OR refund_paid < subtotal - discount_amount + delivery_fee)) OR refund_paid < subtotal - discount_amount))")->fetchColumn();
 
 $statusClasses = [
     'refund_requested'  => 'badge-red',
@@ -94,6 +96,10 @@ $statusLabels = [
 // refund_admin_state() adds a return the shop never confirmed in time.
 $refundState = refund_admin_state($o);
 $fullRefund  = round($o['subtotal'] - $o['discount_amount'], 2);
+// The buyer says the parcel never arrived: nothing goes back, and a lost
+// parcel refunds the delivery fee too (config/refund-evidence.php).
+$notArrived  = $o['refund_reason'] === REFUND_REASON_NOT_ARRIVED;
+$lostRefund  = round($fullRefund + $o['delivery_fee'], 2);
 $statusClass = $statusClasses[$refundState] ?? 'badge-grey';
 $statusLabel = $statusLabels[$refundState] ?? ucwords(str_replace('_', ' ', $refundState));
 $adminSection = 'orders';
@@ -150,7 +156,11 @@ $adminTab     = 'refunds';
                 <?php if ($o['discount_amount'] > 0): ?>
                 <div class="detail-row"><span class="detail-row-label">Coupon (<?= htmlspecialchars($o['coupon_code']) ?>)</span><span class="detail-row-value">−$<?= number_format($o['discount_amount'], 2) ?></span></div>
                 <?php endif; ?>
+                <?php if ($notArrived): ?>
+                <div class="detail-row"><span class="detail-row-label">Delivery (refunded if lost)</span><span class="detail-row-value">+$<?= number_format($o['delivery_fee'], 2) ?></span></div>
+                <?php else: ?>
                 <div class="detail-row"><span class="detail-row-label">Delivery (non-refundable)</span><span class="detail-row-value">−$<?= number_format($o['delivery_fee'], 2) ?></span></div>
+                <?php endif; ?>
                 <div class="detail-row"><span class="detail-row-label" style="font-weight:700;"><?= $o['refund_paid'] !== null && (float)$o['refund_paid'] < $fullRefund ? 'Part refund to buyer' : 'Refund to buyer' ?></span><span class="detail-row-value" style="font-weight:700;">$<?= number_format(refund_figure($o), 2) ?></span></div>
             </div>
         </div>
@@ -201,6 +211,32 @@ $adminTab     = 'refunds';
                 <div class="detail-card-title">Actions</div>
                 <?php if ($refundState === 'refund_requested' && refund_reply_open($o)): ?>
                 <p style="font-size:0.875rem;color:#6b7280;margin:0;">Waiting for the vendor's reply, until <strong><?= date('M j, g:ia', refund_reply_until($o)) ?></strong>. You can approve or reject once they reply or the <?= REFUND_REPLY_HOURS ?> hours are up.</p>
+
+                <?php elseif ($refundState === 'refund_requested' && $notArrived): ?>
+                <?php if (!$o['vendor_reply_at'] && refund_reply_until($o) !== null): ?>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.5rem;">The vendor did not reply within <?= REFUND_REPLY_HOURS ?> hours.</p>
+                <?php endif; ?>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0 0 0.75rem;">The buyer says the parcel <strong>never arrived</strong>. Check the parcel photo, the tracking and the vendor's reply. If it was delivered, reject. If it was lost, send the buyer $<?= number_format($lostRefund, 2) ?> via ABA — the price and the delivery fee — then press Parcel lost. The vendor is not paid for a lost parcel and claims it from their courier or driver.</p>
+                <?php if ($o['dispatched_at']): ?>
+                <div class="detail-row" style="margin-bottom:0.5rem;"><span class="detail-row-label">Sent</span><span class="detail-row-value"><?= date('M j, Y g:ia', strtotime($o['dispatched_at'])) ?><?= $o['delivered_at'] ? '' : ' — not yet marked delivered' ?></span></div>
+                <?php endif; ?>
+                <div class="detail-row" style="margin-bottom:0.5rem;"><span class="detail-row-label">Sent by</span><span class="detail-row-value"><?= htmlspecialchars(ucfirst((string)($o['shipping_method'] ?: $o['delivery_service'] ?: '—'))) ?><?= $o['courier'] ? ' — ' . htmlspecialchars($o['courier']) : '' ?><?= $o['tracking_number'] ? ' · ' . htmlspecialchars($o['tracking_number']) : '' ?></span></div>
+                <?php if ($o['tracking_url']): ?>
+                <div class="detail-row" style="margin-bottom:0.5rem;"><span class="detail-row-label">Tracking</span><span class="detail-row-value"><a href="<?= htmlspecialchars($o['tracking_url']) ?>" target="_blank" rel="noopener">Track the parcel</a></span></div>
+                <?php endif; ?>
+                <div class="detail-row" style="margin-bottom:0.75rem;"><span class="detail-row-label">Buyer email</span><span class="detail-row-value"><?= htmlspecialchars($o['buyer_email']) ?></span></div>
+                <div class="popup-actions" style="flex-wrap:wrap;">
+                    <form method="POST" action="/admin/refund-action.php" onsubmit="return confirm('Sent the buyer $<?= number_format($lostRefund, 2) ?>? The vendor is not paid for this order.');">
+                        <?= csrf_input() ?>
+                        <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
+                        <button type="submit" name="action" value="lost_refund" class="btn-approve">Parcel lost — refund ($<?= number_format($lostRefund, 2) ?>) sent</button>
+                    </form>
+                    <form method="POST" action="/admin/refund-action.php">
+                        <?= csrf_input() ?>
+                        <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
+                        <button type="submit" name="action" value="reject" class="btn-reject">It was delivered — reject</button>
+                    </form>
+                </div>
 
                 <?php elseif ($refundState === 'refund_requested'): ?>
                 <?php if (!$o['vendor_reply_at'] && refund_reply_until($o) !== null): ?>
@@ -298,6 +334,9 @@ $adminTab     = 'refunds';
                 <?php elseif ($refundState === 'refunded'): ?>
                 <p style="font-size:0.875rem;color:#1e7e34;margin:0;">Refund has been completed.</p>
                 <?php $rp = refund_vendor_payout($o); ?>
+                <?php if ($notArrived): ?>
+                <p style="font-size:0.875rem;color:#6b7280;margin:0.5rem 0 0;">The parcel was lost: the buyer got the delivery fee back too, and the vendor is not paid for this order.</p>
+                <?php endif; ?>
                 <?php if ($rp['total'] > 0): ?>
                 <p style="font-size:0.875rem;color:#6b7280;margin:0.5rem 0 0;">
                     <?php if ($o['paid_out_at']): ?>

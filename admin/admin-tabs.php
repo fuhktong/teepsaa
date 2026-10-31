@@ -9,7 +9,7 @@ $_atTab     = $adminTab     ?? '';
 require_once __DIR__ . '/../config/refund-action.php';
 $_atRefundCount    = admin_can('refunds') ? (int)$pdo->query('SELECT COUNT(*) FROM orders WHERE ' . ADMIN_REFUND_ACTION_SQL)->fetchColumn() : 0;
 $_atPendingPayment = admin_can('payments') ? (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending_confirmation'")->fetchColumn() : 0;
-$_atPendingPayout  = admin_can('payouts') ? (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE (status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))) OR (status = 'refunded' AND paid_out_at IS NULL AND (delivery_fee > 0 OR refund_paid < subtotal - discount_amount))")->fetchColumn() : 0;
+$_atPendingPayout  = admin_can('payouts') ? (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE (status = 'delivered' AND delivered_at IS NOT NULL AND (refund_closed_at IS NOT NULL OR delivered_at < DATE_SUB(NOW(), INTERVAL " . PAYOUT_WINDOW_SECONDS . " SECOND))) OR (status = 'refunded' AND paid_out_at IS NULL AND ((delivery_fee > 0 AND (refund_paid IS NULL OR refund_paid < subtotal - discount_amount + delivery_fee)) OR refund_paid < subtotal - discount_amount))")->fetchColumn() : 0;
 ?>
 <?php /* the ?denied=1 alert renders in admin-subnav, not here */ ?>
 <?php if ($_atSection === 'orders'): ?>

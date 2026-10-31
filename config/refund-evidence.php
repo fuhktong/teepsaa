@@ -27,6 +27,14 @@
 // stays 'return_dispatched' with return_bounced_at or return_overdue_at set,
 // and an admin decides: refund the buyer, who keeps the item, or keep waiting.
 //
+// A parcel can also never arrive. The buyer says so while it is 'dispatched',
+// or inside the refund window once the timer has marked it delivered. No photo
+// (there is nothing to photograph) and nothing goes back: the order becomes a
+// dispute with refund_reason REFUND_REASON_NOT_ARRIVED, the vendor replies with
+// proof of delivery, and the admin either rejects it or rules the parcel lost.
+// Lost means the buyer gets everything back, delivery included, and the vendor
+// is not paid — the shop chose the driver or courier and claims from them.
+//
 // Used by orders-buyer/refund-request.php, products/return-disputed.php and
 // products/refund-reply.php (website) and api/v1/buyer/order-action.php,
 // api/v1/refund-disputed.php and api/v1/refund-reply.php (apps), so the two
@@ -36,6 +44,7 @@ require_once __DIR__ . '/order-photo.php';
 require_once __DIR__ . '/refund-action.php';
 
 const REFUND_REASON_CHANGED_MIND = 'Changed my mind';
+const REFUND_REASON_NOT_ARRIVED  = 'Never arrived';
 const REFUND_PHOTOS_MAX = 3;
 const REFUND_REPLY_MAX_LENGTH = 1000;
 
@@ -171,7 +180,11 @@ function refund_request_notify(PDO $pdo, int $orderId): void {
     ]);
     if ($html !== '') send_email($o['vendor_email'], $subj, $html);
     // A dispute is the vendor's cue to reply; a change of mind needs nothing.
-    if ($o['status'] === 'refund_requested') {
+    if ($o['refund_reason'] === REFUND_REASON_NOT_ARRIVED) {
+        notify($pdo, 'vendor', (int)$o['vendor_id'], 'parcel_not_arrived',
+            'The buyer says order #' . $oid . ' never arrived. You have ' . REFUND_REPLY_HOURS . ' hours to reply with proof of delivery.',
+            $vendorLink, ['ref' => $oid, 'hours' => REFUND_REPLY_HOURS]);
+    } elseif ($o['status'] === 'refund_requested') {
         notify($pdo, 'vendor', (int)$o['vendor_id'], 'refund_dispute',
             'A refund was requested for order #' . $oid . '. You have ' . REFUND_REPLY_HOURS . ' hours to reply with your side.',
             $vendorLink, ['ref' => $oid, 'hours' => REFUND_REPLY_HOURS]);
@@ -266,10 +279,64 @@ function return_bounce(PDO $pdo, int $orderId, int $buyerId, array $files): ?str
     return null;
 }
 
-/** What the buyer gets back, or got: refund_paid once decided, else the product price. */
+/**
+ * What the buyer gets back, or got: refund_paid once decided, else the product
+ * price — plus delivery when the parcel never arrived.
+ */
 function refund_figure(array $o): float {
     if (isset($o['refund_paid'])) return round((float)$o['refund_paid'], 2);
-    return round((float)$o['subtotal'] - (float)$o['discount_amount'], 2);
+    $figure = (float)$o['subtotal'] - (float)$o['discount_amount'];
+    if (($o['refund_reason'] ?? null) === REFUND_REASON_NOT_ARRIVED) $figure += (float)($o['delivery_fee'] ?? 0);
+    return round($figure, 2);
+}
+
+/**
+ * The buyer may say the parcel never arrived: while it is on its way, or
+ * inside the refund window after delivery, unless a refund was already
+ * refused. Needs status, refund_rejected_at and refund_window_open.
+ */
+function not_arrived_open(array $o): bool {
+    if ($o['status'] === 'dispatched') return true;
+    return $o['status'] === 'delivered' && empty($o['refund_rejected_at']) && !empty($o['refund_window_open']);
+}
+
+/**
+ * The buyer's "I didn't receive it". Returns null when done, or an error
+ * code: not_found, wrong_status, refund_denied, refund_closed.
+ */
+function parcel_not_arrived(PDO $pdo, int $orderId, int $buyerId): ?string {
+    $stmt = $pdo->prepare('
+        SELECT status, refund_rejected_at,
+               CASE WHEN delivered_at IS NULL OR TIMESTAMPDIFF(SECOND, delivered_at, NOW()) < ' . PAYOUT_WINDOW_SECONDS . ' THEN 1 ELSE 0 END AS refund_window_open
+          FROM orders WHERE id = ? AND buyer_user_id = ?
+    ');
+    $stmt->execute([$orderId, $buyerId]);
+    $o = $stmt->fetch();
+    if (!$o) return 'not_found';
+    if (!not_arrived_open($o)) {
+        if ($o['status'] !== 'delivered' && $o['status'] !== 'dispatched') return 'wrong_status';
+        return $o['refund_rejected_at'] ? 'refund_denied' : 'refund_closed';
+    }
+
+    // The same rule again inside the UPDATE, so two taps, or a tap racing the
+    // timer, act once.
+    $upd = $pdo->prepare("
+        UPDATE orders SET status = 'refund_requested', refund_reason = ?, refund_requested_at = NOW()
+         WHERE id = ? AND buyer_user_id = ?
+           AND (status = 'dispatched'
+                OR (status = 'delivered' AND refund_rejected_at IS NULL
+                    AND TIMESTAMPDIFF(SECOND, delivered_at, NOW()) < " . PAYOUT_WINDOW_SECONDS . "))
+    ");
+    $upd->execute([REFUND_REASON_NOT_ARRIVED, $orderId, $buyerId]);
+    if ($upd->rowCount() === 0) return 'wrong_status';
+
+    // Held for the vendor's reply now. A failure past here must not read as a failed report.
+    try {
+        refund_request_notify($pdo, $orderId);
+    } catch (Throwable $e) {
+        error_log('parcel_not_arrived: notify failed for order ' . $orderId . ': ' . $e->getMessage());
+    }
+    return null;
 }
 
 /**

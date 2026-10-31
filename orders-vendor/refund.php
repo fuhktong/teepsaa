@@ -171,7 +171,7 @@ require __DIR__ . '/../head/head.php';
         <div class="popup-subtotal"><span><?= $t['checkout_coupon_applied'] ?> <?= htmlspecialchars($o['coupon_code']) ?></span><span>&minus;$<?= number_format($o['discount_amount'], 2) ?></span></div>
         <?php endif; ?>
         <?php if ($o['delivery_fee'] > 0): ?>
-        <div class="popup-subtotal"><span><?= $t['vorder_delivery_nonrefund'] ?></span><span>$<?= number_format($o['delivery_fee'], 2) ?></span></div>
+        <div class="popup-subtotal"><span><?= $t[$o['refund_reason'] === REFUND_REASON_NOT_ARRIVED ? 'vorder_delivery_refunded' : 'vorder_delivery_nonrefund'] ?></span><span>$<?= number_format($o['delivery_fee'], 2) ?></span></div>
         <?php endif; ?>
         <div class="popup-total"><span><?= $refundTotalLabel ?></span><span>$<?= number_format(refund_figure($o), 2) ?></span></div>
         <?php $refundPayout = $refundState === 'refunded' ? refund_vendor_payout($o)['total'] : 0; ?>
@@ -185,7 +185,10 @@ require __DIR__ . '/../head/head.php';
     <?php if ($o['refund_reason']): ?>
     <div class="popup-section">
         <div class="popup-section-label"><?= $t['vorder_buyer_reason'] ?></div>
-        <p style="font-size:0.875rem;color:#374151;font-style:italic;margin:0;">"<?= htmlspecialchars($o['refund_reason']) ?>"</p>
+        <p style="font-size:0.875rem;color:#374151;font-style:italic;margin:0;">"<?= htmlspecialchars($o['refund_reason'] === REFUND_REASON_NOT_ARRIVED ? $t['order_reason_not_arrived'] : $o['refund_reason']) ?>"</p>
+        <?php if ($o['refund_reason'] === REFUND_REASON_NOT_ARRIVED && $o['status'] === 'refund_requested'): ?>
+        <p style="font-size:0.875rem;color:#6b7280;margin:0.5rem 0 0;"><?= $t['vorder_not_arrived'] ?></p>
+        <?php endif; ?>
         <?php $buyerPhotos = refund_photos_of($pdo, $orderId)['buyer_request'] ?? []; ?>
         <?php if ($buyerPhotos): ?>
         <div class="popup-section-label" style="margin-top:0.75rem;"><?= $t['vorder_buyer_photos'] ?></div>
