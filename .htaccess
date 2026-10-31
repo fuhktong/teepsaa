@@ -106,7 +106,7 @@ AddType application/manifest+json .webmanifest
 # vendor.teepsaa.com and admin.teepsaa.com — so no one sees the site before
 # launch. On admin it also serves as the second lock on top of the admin login.
 #
-# Three things are let straight through, before the password rule is reached:
+# Four things are let straight through, before the password rule is reached:
 #   - localhost, so MAMP never prompts.
 #   - /api/v1/, which the vendor and buyer apps call. They send their own
 #     "Authorization: Bearer" header, which a Basic Auth prompt would reject,
@@ -115,6 +115,9 @@ AddType application/manifest+json .webmanifest
 #     avatars). An app's <img> can't answer a password prompt, so gated it
 #     shows no pictures at all. Directory listing stays off, and the names
 #     are random, so nothing there can be browsed.
+#   - /api/order-photo.php, the dispatch and return photos. Same reason: the
+#     apps show them in an <img>. The script has its own guard — the filename
+#     is a 32-character random key (config/order-photo.php).
 #
 # The password file lives on the server and is never deployed (rsync
 # excludes .htpasswd*; the FilesMatch rule above also stops it being
@@ -135,15 +138,16 @@ AddType application/manifest+json .webmanifest
 # password.
 #
 # AT LAUNCH: the public site must answer without a password, or Google
-# indexes nothing. Put back the admin-only version — replace the two
-# SetEnvIf lines for LOCAL_DEV, API_OPEN and UPLOADS_OPEN with:
+# indexes nothing. Put back the admin-only version — replace the four
+# SetEnvIf lines for LOCAL_DEV, API_OPEN, UPLOADS_OPEN and PHOTO_OPEN with:
 #   SetEnvIf Host "." NOT_ADMIN_HOST
 #   SetEnvIf Host "^admin\.teepsaa\.com(:|$)" !NOT_ADMIN_HOST
-# the three "Require env" lines with "Require env NOT_ADMIN_HOST", and delete
+# the four "Require env" lines with "Require env NOT_ADMIN_HOST", and delete
 # the mod_headers block under them.
 SetEnvIf Host "^(localhost|127\.0\.0\.1)(:|$)" LOCAL_DEV
 SetEnvIf Request_URI "^/api/v1/" API_OPEN
 SetEnvIf Request_URI "^/uploads/" UPLOADS_OPEN
+SetEnvIf Request_URI "^/api/order-photo\.php$" PHOTO_OPEN
 AuthType Basic
 AuthName "teepsaa — coming soon"
 AuthUserFile /home/u767733958/domains/teepsaa.com/public_html/.htpasswd-admin
@@ -151,6 +155,7 @@ AuthUserFile /home/u767733958/domains/teepsaa.com/public_html/.htpasswd-admin
     Require env LOCAL_DEV
     Require env API_OPEN
     Require env UPLOADS_OPEN
+    Require env PHOTO_OPEN
     Require valid-user
 </RequireAny>
 # The server still stamps its Basic challenge onto the API's own JSON 401s
